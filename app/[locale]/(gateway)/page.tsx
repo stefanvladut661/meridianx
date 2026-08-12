@@ -1,37 +1,47 @@
+import { cookies } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
-import { getTranslations } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
+import { getDivisionFromCookies } from "@/lib/division";
+import { GatewaySplit } from "@/components/gateway/gateway-split";
+import { ClearDivision } from "@/components/gateway/clear-division";
 
 /**
- * PLACEHOLDER FAZA 0 — pagina reală de gateway (split-screen
- * VIDEO | SOFTWARE) e livrabilul FAZEI 1, care rescrie complet
- * acest fișier. Există doar ca build-ul să treacă și ca cheile
- * i18n din namespace-ul `gateway` să aibă un consumator.
+ * Gateway-ul MERIDIAN (FAZA 1) — split-screen VIDEO | SOFTWARE.
+ *
+ * Memoria diviziei (server, NU în middleware — înghețat):
+ * - cookie `meridian_division` prezent și fără `?stay` → redirect
+ *   server-side spre divizia salvată, cu locale-ul curent păstrat;
+ * - `?stay=1` (link-ul „Vezi ambele divizii" din header-e/footer)
+ *   sare peste redirect; <ClearDivision> șterge cookie-ul la mount
+ *   și curăță query-ul din URL. Cookie-ul se șterge și la click pe
+ *   link, în client — dublă asigurare.
+ * - redirectul există DOAR aici, pe `/` — link-urile directe spre
+ *   orice altă rută nu sunt atinse.
  */
-export default async function GatewayPlaceholder({
+
+export default async function GatewayPage({
   params,
-}: Readonly<{ params: Promise<{ locale: string }> }>) {
-  const { locale } = await params;
+  searchParams,
+}: Readonly<{
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}>) {
+  const [{ locale }, sp] = await Promise.all([params, searchParams]);
   setRequestLocale(locale);
-  const t = await getTranslations("gateway");
+
+  const stay = sp.stay !== undefined;
+
+  if (!stay) {
+    const division = getDivisionFromCookies(await cookies());
+    if (division) {
+      redirect({ href: `/${division}`, locale });
+    }
+  }
 
   return (
-    <main className="grid min-h-dvh grid-rows-2 md:grid-cols-2 md:grid-rows-1">
-      <section
-        data-world="video"
-        className="flex items-center justify-center bg-bg text-fg"
-      >
-        <h1 className="font-display text-3xl tracking-tight">
-          {t("video.title")}
-        </h1>
-      </section>
-      <section
-        data-world="software"
-        className="flex items-center justify-center border-t border-line bg-bg text-fg md:border-l md:border-t-0"
-      >
-        <h1 className="font-display text-3xl tracking-tight">
-          {t("software.title")}
-        </h1>
-      </section>
-    </main>
+    <>
+      {stay && <ClearDivision />}
+      <GatewaySplit />
+    </>
   );
 }
