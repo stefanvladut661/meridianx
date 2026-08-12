@@ -11,7 +11,7 @@ Fișier de coordonare între terminale. Fiecare fază scrie aici la final de ses
 | Fază | Branch | Status | Merge în main |
 |---|---|---|---|
 | 0 — Fundație | `faza-0-fundatie` | ✅ gata | ✅ |
-| 1 — Gateway + shell | `faza-1-gateway` | ⬜ poate porni (F0 în main) | ⬜ |
+| 1 — Gateway + shell | `faza-1-gateway` | ✅ gata | ✅ |
 | 2 — Video core | `faza-2-video-core` | ⬜ poate porni (F0 în main) | ⬜ |
 | 3 — Video reclame + funnel | `faza-3-video-funnel` | ⬜ poate porni (F0 în main) | ⬜ |
 | 4 — Software core | `faza-4-software-core` | ⬜ poate porni (F0 în main) | ⬜ |
@@ -89,9 +89,17 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 ---
 
 ### FAZA 1 — Gateway + shell
-**Terminat:**
-**Componente construite local (candidate la deduplicare în F7):**
+**Terminat:** Gateway split-screen rescris (signature „un arc, două dialecte" — același path SVG traversează cusătura: arc de lumină în video, geodezică cu gradații în software; expansiune 60/40 la hover doar motion-safe; mobil stivuit; reduced motion complet static; fără GSAP — CSS + rAF minimal). Redirect după cookie implementat ÎN pagină (server, păstrează locale-ul), verificat la runtime: fără cookie 200, cu cookie 307, `?stay=1` sare redirectul. Shell complet: `video-header` (fix, transparent, se condensează), `camera-hud` (timecode legat de scroll — 6px = 1 frame @24fps, accent tungsten→daylight, static sub reduced motion), `software-header` (sticky, CTA „Cere ofertă" → /software/brief, indicator de rută), footer unic adaptiv cu ANPC SAL + SOL, meniu mobil pe `<dialog>` nativ, switch limbă/divizie. Layout-urile de grup au acum skip link + `<main id="continut">` + shell integrat.
+**Decizii care afectează pe alții:**
+- **F2–F5: NU puneți `<main>` în pagini** — există în layout-urile de grup (`id="continut"`); paginile încep direct cu secțiuni.
+- Header video e FIX și transparent — hero-urile video se proiectează sub el, fără padding compensatoriu. HUD-ul e montat o dată în layout — nu-l reconstruiți.
+- Header software e STICKY în flux (h-16) — conținutul F4/F5 începe natural sub el. Linia meridian cu gradații rămâne signature-ul paginilor F4, nu al shell-ului.
+- „Vezi ambele divizii" = link `/?stay=1`; gateway-ul sare redirectul la orice `?stay` și șterge cookie-ul.
+- Rutele de navigare au sursă unică în `components/shell/nav-links.ts` (+ `LEGAL_LINKS` pentru F7). Timecode util partajat: `components/shell/timecode.ts`.
+**Componente construite local (candidate la deduplicare în F7):** `nav-links.ts` (refolosibil la sitemap), `MeridianMark`/`Logo` (de înlocuit cu logo real), geometria arcului în `components/gateway/meridian-arc.tsx` (`ARC_PATH`), burger/close SVG duplicat în mobile-menu.
 **Observații:**
+- `NextIntlClientProvider` fără `messages` explicit serializează toate namespace-urile în fiecare pagină — de restrâns per-rută în F7 pentru LCP.
+- Worktree-uri: junction de node_modules nu merge cu Turbopack (`turbopack.root`); soluția e copie reală a node_modules în worktree, fără npm install.
 
 ---
 
