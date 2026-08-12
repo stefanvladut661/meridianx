@@ -10,9 +10,25 @@
     "closeMenu": "Close menu",
     "skipToContent": "Skip to content",
     "switchToEnglish": "Schimbă pe română",
-    "seeBothDivisions": "See both divisions"
+    "seeBothDivisions": "See both divisions",
+    "language": "Language",
+    "footer": {
+      "contact": "Contact",
+      "divisions": "Divisions",
+      "legal": "Legal",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp",
+      "instagram": "Instagram",
+      "anpcSal": "ANPC — Alternative dispute resolution (Romania)",
+      "sol": "ODR — Online dispute resolution (EU)",
+      "rights": "© {year} MERIDIAN. All rights reserved.",
+      "newWindow": "opens in a new tab"
+    }
   },
   "nav": {
+    "primary": "Main navigation",
+    "switchToVideo": "Switch to the Video division",
+    "switchToSoftware": "Switch to the Software division",
     "video": {
       "home": "Video",
       "services": "Services",
@@ -27,7 +43,8 @@
       "funding": "Grants",
       "projects": "Projects",
       "process": "Process",
-      "brief": "Brief"
+      "brief": "Brief",
+      "cta": "Request a quote"
     },
     "legal": {
       "privacy": "Privacy",
@@ -38,11 +55,15 @@
   "gateway": {
     "video": {
       "title": "VIDEO",
-      "promise": "Video production that sells. Campaigns that land."
+      "promise": "Video production that sells. Campaigns that land.",
+      "enter": "Step onto the set",
+      "aria": "Enter the Video division — production and campaigns"
     },
     "software": {
       "title": "SOFTWARE",
-      "promise": "Custom web and apps. Built to spec, shipped on time."
+      "promise": "Custom web and apps. Built to spec, shipped on time.",
+      "enter": "Calibrate your project",
+      "aria": "Enter the Software division — custom web and apps"
     },
     "choosePrompt": "Two divisions. Pick your world."
   },

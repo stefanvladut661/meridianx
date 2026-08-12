@@ -10,9 +10,25 @@
     "closeMenu": "Închide meniul",
     "skipToContent": "Sari la conținut",
     "switchToEnglish": "Switch to English",
-    "seeBothDivisions": "Vezi ambele divizii"
+    "seeBothDivisions": "Vezi ambele divizii",
+    "language": "Limbă",
+    "footer": {
+      "contact": "Contact",
+      "divisions": "Divizii",
+      "legal": "Legal",
+      "phone": "Telefon",
+      "whatsapp": "WhatsApp",
+      "instagram": "Instagram",
+      "anpcSal": "ANPC — Soluționarea alternativă a litigiilor (SAL)",
+      "sol": "SOL — Soluționarea online a litigiilor (UE)",
+      "rights": "© {year} MERIDIAN. Toate drepturile rezervate.",
+      "newWindow": "se deschide în filă nouă"
+    }
   },
   "nav": {
+    "primary": "Navigare principală",
+    "switchToVideo": "Treci la divizia Video",
+    "switchToSoftware": "Treci la divizia Software",
     "video": {
       "home": "Video",
       "services": "Servicii",
@@ -27,7 +43,8 @@
       "funding": "Fonduri",
       "projects": "Proiecte",
       "process": "Proces",
-      "brief": "Brief"
+      "brief": "Brief",
+      "cta": "Cere ofertă"
     },
     "legal": {
       "privacy": "Confidențialitate",
@@ -38,11 +55,15 @@
   "gateway": {
     "video": {
       "title": "VIDEO",
-      "promise": "Producție video care vinde. Campanii care ajung unde trebuie."
+      "promise": "Producție video care vinde. Campanii care ajung unde trebuie.",
+      "enter": "Intră în platou",
+      "aria": "Intră în divizia Video — producție video și campanii"
     },
     "software": {
       "title": "SOFTWARE",
-      "promise": "Web și aplicații la comandă. Construite pe măsură, livrate la termen."
+      "promise": "Web și aplicații la comandă. Construite pe măsură, livrate la termen.",
+      "enter": "Calibrează-ți proiectul",
+      "aria": "Intră în divizia Software — web și aplicații la comandă"
     },
     "choosePrompt": "Două divizii. Alege lumea ta."
   },
