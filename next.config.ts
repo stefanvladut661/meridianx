@@ -1,7 +1,13 @@
+import path from "path";
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Există un package-lock.json rătăcit în C:\Users\PC care derutează
+  // detecția de workspace a Turbopack — fixăm rădăcina explicit.
+  turbopack: { root: path.join(__dirname) },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

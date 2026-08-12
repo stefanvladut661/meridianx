@@ -1,0 +1,77 @@
+{
+  "common": {
+    "brand": "MERIDIAN",
+    "tagline": "Your growth starts here.",
+    "loading": "Loading…",
+    "close": "Close",
+    "back": "Back",
+    "next": "Continue",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "skipToContent": "Skip to content",
+    "switchToEnglish": "Schimbă pe română",
+    "seeBothDivisions": "See both divisions"
+  },
+  "nav": {
+    "video": {
+      "home": "Video",
+      "services": "Services",
+      "portfolio": "Work",
+      "ads": "Advertising",
+      "process": "Process",
+      "contact": "Contact"
+    },
+    "software": {
+      "home": "Software",
+      "services": "Services",
+      "funding": "Grants",
+      "projects": "Projects",
+      "process": "Process",
+      "brief": "Brief"
+    },
+    "legal": {
+      "privacy": "Privacy",
+      "terms": "Terms of service",
+      "cookies": "Cookies"
+    }
+  },
+  "gateway": {
+    "video": {
+      "title": "VIDEO",
+      "promise": "Video production that sells. Campaigns that land."
+    },
+    "software": {
+      "title": "SOFTWARE",
+      "promise": "Custom web and apps. Built to spec, shipped on time."
+    },
+    "choosePrompt": "Two divisions. Pick your world."
+  },
+  "video": {},
+  "software": {},
+  "forms": {
+    "labels": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "company": "Company",
+      "message": "Message"
+    },
+    "errors": {
+      "required": "Fill in this field so we can continue.",
+      "invalidEmail": "That email address doesn't look valid — check the format.",
+      "invalidPhone": "That phone number doesn't look valid.",
+      "tooLong": "The text exceeds the {max} character limit.",
+      "submitFailed": "Your request didn't go through. Check your connection and try again — your answers are still here.",
+      "rateLimited": "Too many requests in a short time. Wait a minute and try again."
+    },
+    "states": {
+      "submitting": "Sending…",
+      "successAnnouncement": "Your request has been sent."
+    }
+  },
+  "legal": {
+    "privacy": { "title": "Privacy policy" },
+    "terms": { "title": "Terms of service" },
+    "cookies": { "title": "Cookie policy" }
+  }
+}

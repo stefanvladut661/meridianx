@@ -1,26 +1,213 @@
 @import "tailwindcss";
 
+/* ============================================================
+   MERIDIAN — design tokens (FAZA 0, ÎNGHEȚAT)
+   Modificările se cer în PLAN.md, nu se fac direct.
+
+   Arhitectură:
+   1. Palete brute:  --v-* (video) și --s-* (software) — nu se
+      folosesc direct în componente decât în zona propriei divizii.
+   2. Tokens semantici: --bg, --surface, --fg, --accent...
+      Sunt REMAPAȚI de [data-world="video"] / [data-world="software"].
+      Primitivele din components/ui/ folosesc DOAR tokens semantici,
+      deci moștenesc automat lumea în care sunt randate.
+   3. Scara comună (spacing 4px, radius, shadow, z) e identică în
+      ambele lumi — e unul dintre firele comune ale brandului.
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ---------- Lumea VIDEO — „Temperatura culorii" ---------- */
+  --v-void: #08090c; /* platou neluminat */
+  --v-surface: #101319;
+  --v-tungsten: #ff8c3b; /* 3200K, cald */
+  --v-daylight: #43c9e0; /* 5600K, rece */
+  --v-bone: #ede8e0; /* text principal, nu alb pur */
+  --v-dim: #6b6f78;
+
+  /* ---------- Lumea SOFTWARE — „Instrumentul de precizie" ---------- */
+  --s-ink: #060a12; /* fundal */
+  --s-panel: #0d1421;
+  --s-grid: #1a2536; /* linii de blueprint */
+  --s-signal: #4c7dff; /* primar, acțiune */
+  --s-data: #d9a441; /* cifre, metrici, evidențiere */
+  --s-paper: #dee5f0; /* text */
+  --s-muted: #7c8798;
+
+  /* ---------- Scara comună (fir comun între lumi) ---------- */
+  /* spacing: scara implicită Tailwind (bază 0.25rem = 4px) */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-soft: 0 2px 8px rgb(0 0 0 / 0.35);
+  --shadow-raised: 0 8px 24px rgb(0 0 0 / 0.45);
+  --shadow-overlay: 0 16px 48px rgb(0 0 0 / 0.6);
+
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-header: 40;
+  --z-overlay: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+  --z-signature: 80; /* HUD video / linia meridian software */
+
+  /* ---------- Tokens semantici — default neutru (gateway/admin) ---------- */
+  --bg: var(--s-ink);
+  --surface: var(--s-panel);
+  --fg: var(--s-paper);
+  --muted: var(--s-muted);
+  --line: var(--s-grid);
+  --accent: var(--s-signal);
+  --accent-contrast: #ffffff;
+  --accent-2: var(--s-data);
+  --font-display: var(--font-satoshi);
+  --font-body: var(--font-satoshi);
+  --font-mono: var(--font-plexmono);
+  --focus-ring: var(--s-signal);
 }
 
+/* Lumea VIDEO — se aplică pe containerul diviziei (layout-ul (video)) */
+[data-world="video"] {
+  --bg: var(--v-void);
+  --surface: var(--v-surface);
+  --fg: var(--v-bone);
+  --muted: var(--v-dim);
+  --line: #232730;
+  --accent: var(--v-tungsten);
+  --accent-contrast: #1a0e02;
+  --accent-2: var(--v-daylight);
+  --font-display: var(--font-clash);
+  --font-body: var(--font-switzer);
+  --font-mono: var(--font-jbmono);
+  --focus-ring: var(--v-daylight);
+}
+
+/* Lumea SOFTWARE — explicit (identic cu default-ul, dar declarat
+   intenționat: default-ul poate diverge ulterior fără să strice divizia) */
+[data-world="software"] {
+  --bg: var(--s-ink);
+  --surface: var(--s-panel);
+  --fg: var(--s-paper);
+  --muted: var(--s-muted);
+  --line: var(--s-grid);
+  --accent: var(--s-signal);
+  --accent-contrast: #ffffff;
+  --accent-2: var(--s-data);
+  --font-display: var(--font-satoshi);
+  --font-body: var(--font-satoshi);
+  --font-mono: var(--font-plexmono);
+  --focus-ring: var(--s-signal);
+}
+
+/* ============================================================
+   Maparea Tailwind v4 — utilități semantice.
+   În componente: bg-bg, bg-surface, text-fg, text-muted,
+   border-line, bg-accent, text-accent-2, font-display,
+   font-body, font-mono, rounded-md, shadow-raised etc.
+   Culorile brute rămân accesibile: text-v-tungsten, bg-s-panel...
+   ============================================================ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* semantice — urmează lumea curentă */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-accent-2: var(--accent-2);
+
+  /* brute — doar în interiorul propriei divizii */
+  --color-v-void: var(--v-void);
+  --color-v-surface: var(--v-surface);
+  --color-v-tungsten: var(--v-tungsten);
+  --color-v-daylight: var(--v-daylight);
+  --color-v-bone: var(--v-bone);
+  --color-v-dim: var(--v-dim);
+  --color-s-ink: var(--s-ink);
+  --color-s-panel: var(--s-panel);
+  --color-s-grid: var(--s-grid);
+  --color-s-signal: var(--s-signal);
+  --color-s-data: var(--s-data);
+  --color-s-paper: var(--s-paper);
+  --color-s-muted: var(--s-muted);
+
+  /* fonturi */
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  /* radius comun */
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  /* umbre */
+  --shadow-soft: var(--shadow-soft);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============================================================
+   Bază globală
+   ============================================================ */
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+/* Focus vizibil, consecvent, pe ambele palete */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Skip link — folosit de shell (F1); stilul e partajat */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: var(--z-toast);
+  transform: translateY(-200%);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  transition: transform 150ms ease;
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ============================================================
+   prefers-reduced-motion — plasă de siguranță globală.
+   Componentele de motion trebuie ORICUM să verifice preferința
+   (useReducedMotion / <Reveal>); asta prinde ce scapă.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
