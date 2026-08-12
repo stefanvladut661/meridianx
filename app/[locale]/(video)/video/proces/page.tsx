@@ -34,7 +34,7 @@ export default async function VideoProcessPage({
 
       <Section spacing="sm" className="pt-28 sm:pt-36">
         <Container>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-fg/60">
             {/* i18n: */}
             PROCES · TC 01:00 → 05:00
           </p>

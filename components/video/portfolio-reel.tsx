@@ -207,7 +207,7 @@ export function PortfolioReel({
               </div>
             ))}
           </div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-8 flex items-center justify-between px-6 font-mono text-xs tracking-[0.25em] text-muted lg:px-12">
+          <div className="pointer-events-none absolute inset-x-0 bottom-8 flex items-center justify-between px-6 font-mono text-xs tracking-[0.25em] text-fg/60 lg:px-12">
             {/* i18n: */}
             <span>SCROLL = DERULARE PELICULĂ</span>
             <span ref={counterRef}>
@@ -285,7 +285,7 @@ function ProjectCard({
             <span className="absolute bottom-0 right-0 size-4 border-b border-r border-v-bone/60" />
           </span>
         </span>
-        <span className="mt-4 flex items-baseline justify-between gap-4 font-mono text-xs tracking-[0.2em] text-muted">
+        <span className="mt-4 flex items-baseline justify-between gap-4 font-mono text-xs tracking-[0.2em] text-fg/60">
           <span>
             {code}
             {project.segment

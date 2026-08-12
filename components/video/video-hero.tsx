@@ -97,7 +97,7 @@ export function VideoHero() {
       </div>
 
       <Container className="relative">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-fg/60">
           {/* i18n: */}
           MERIDIAN VIDEO · WB{" "}
           <span ref={readoutRef} className="text-fg/80">
@@ -148,7 +148,7 @@ export function VideoHero() {
         <div className="mt-16 max-w-xl">
           <label
             htmlFor="mv-wb-hero"
-            className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted"
+            className="font-mono text-[11px] uppercase tracking-[0.25em] text-fg/60"
           >
             {/* i18n: */}
             Balans de alb — trage și vezi diferența

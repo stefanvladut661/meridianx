@@ -25,7 +25,7 @@ export function CtaBand({ slate, title, lead, cta, secondary }: CtaBandProps) {
         className="absolute inset-0 bg-[radial-gradient(60%_120%_at_10%_100%,rgba(255,140,59,0.14),transparent_60%),radial-gradient(50%_120%_at_90%_0%,rgba(67,201,224,0.11),transparent_60%)]"
       />
       <Container className="relative py-20 sm:py-28">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-fg/60">
           {slate}
         </p>
         <h2 className="mt-5 max-w-3xl text-balance font-display text-4xl tracking-tight sm:text-6xl">

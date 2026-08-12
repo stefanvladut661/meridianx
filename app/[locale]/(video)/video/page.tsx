@@ -107,7 +107,7 @@ export default async function VideoHomePage({
         <Container>
           <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <Reveal>
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+              <p className="font-mono text-xs uppercase tracking-[0.3em] text-fg/60">
                 {/* i18n: */}
                 PRODUCȚIE + DIFUZARE
               </p>

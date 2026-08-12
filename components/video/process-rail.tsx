@@ -83,7 +83,7 @@ export function ProcessRail({ steps }: { steps: ProcessStep[] }) {
                 {step.title}
               </h2>
               {step.duration ? (
-                <p className="mt-2 font-mono text-xs tracking-[0.2em] text-muted">
+                <p className="mt-2 font-mono text-xs tracking-[0.2em] text-fg/60">
                   {/* i18n: */}
                   DURATĂ: {step.duration.toUpperCase()}
                 </p>

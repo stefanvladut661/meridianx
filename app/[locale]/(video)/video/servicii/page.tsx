@@ -37,7 +37,7 @@ export default async function VideoServicesPage({
 
       <Section spacing="sm" className="pt-28 sm:pt-36">
         <Container>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-fg/60">
             {/* i18n: */}
             SERVICII · FIȘE DE PRODUCȚIE
           </p>
@@ -59,7 +59,7 @@ export default async function VideoServicesPage({
           <Container>
             <div className="grid gap-10 border-t border-line pt-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
               <Reveal>
-                <p className="font-mono text-xs tracking-[0.25em] text-muted">
+                <p className="font-mono text-xs tracking-[0.25em] text-fg/60">
                   SRV.{String(index + 1).padStart(2, "0")}
                   {service.duration
                     ? ` · ${service.duration.toUpperCase()}`
@@ -88,7 +88,7 @@ export default async function VideoServicesPage({
                     {service.stack.map((item) => (
                       <li
                         key={item}
-                        className="rounded-xs border border-line px-2.5 py-1 font-mono text-[11px] tracking-wider text-muted"
+                        className="rounded-xs border border-line px-2.5 py-1 font-mono text-[11px] tracking-wider text-fg/60"
                       >
                         {item}
                       </li>
@@ -139,7 +139,7 @@ export default async function VideoServicesPage({
                     {item.question}
                     <span
                       aria-hidden="true"
-                      className="font-mono text-muted transition-transform group-open:rotate-45"
+                      className="font-mono text-fg/60 transition-transform group-open:rotate-45"
                     >
                       +
                     </span>

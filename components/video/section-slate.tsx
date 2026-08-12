@@ -16,7 +16,7 @@ export interface SectionSlateProps {
 export function SectionSlate({ code, title, lead, className }: SectionSlateProps) {
   return (
     <div className={cn("max-w-3xl", className)}>
-      <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+      <p className="font-mono text-xs uppercase tracking-[0.3em] text-fg/60">
         <span aria-hidden="true" className="text-accent">
           ■{" "}
         </span>

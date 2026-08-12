@@ -83,7 +83,7 @@ export function SegmentScenes() {
               className="group -mx-3 grid gap-3 rounded-sm px-3 py-7 transition-colors hover:bg-surface/70 sm:grid-cols-[8.5rem_1fr_auto] sm:items-baseline sm:py-9"
             >
               <span className="font-mono text-xs tracking-[0.2em]">
-                <span className="text-muted">{scene.code}</span>{" "}
+                <span className="text-fg/60">{scene.code}</span>{" "}
                 <span className={warm ? "text-v-tungsten" : "text-v-daylight"}>
                   {scene.temp}
                 </span>
@@ -108,7 +108,7 @@ export function SegmentScenes() {
               </span>
               <span
                 aria-hidden="true"
-                className="hidden font-mono text-muted transition-transform group-hover:translate-x-1 sm:block"
+                className="hidden font-mono text-fg/60 transition-transform group-hover:translate-x-1 sm:block"
               >
                 →
               </span>

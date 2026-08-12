@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import type { Project } from "@/content/types";
 import { Dialog } from "@/components/ui/dialog";
 import { SEGMENT_LABELS, projectCode } from "./segments";
@@ -17,6 +18,17 @@ export function CaseStudyDialog({
   project: Project | null;
   onClose: () => void;
 }) {
+  // Blochează scroll-ul paginii (inclusiv cel Lenis, care derulează
+  // fereastra) cât timp overlay-ul e deschis.
+  useEffect(() => {
+    if (project === null) return;
+    const previous = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = previous;
+    };
+  }, [project]);
+
   return (
     <Dialog
       open={project !== null}
@@ -26,7 +38,7 @@ export function CaseStudyDialog({
     >
       {project ? (
         <div className="space-y-6">
-          <p className="-mt-2 font-mono text-xs tracking-[0.2em] text-muted">
+          <p className="-mt-2 font-mono text-xs tracking-[0.2em] text-fg/60">
             {projectCode(project)}
             {project.segment
               ? ` · ${SEGMENT_LABELS[project.segment].toUpperCase()}`
@@ -62,7 +74,7 @@ export function CaseStudyDialog({
           </div>
 
           {project.isPlaceholder ? (
-            <p className="font-mono text-[11px] leading-relaxed tracking-wider text-muted">
+            <p className="font-mono text-[11px] leading-relaxed tracking-wider text-fg/60">
               {/* i18n: */}
               STUDIU DE CAZ PLACEHOLDER — PROIECTUL REAL (VIDEO + CIFRE) SE
               MONTEAZĂ AICI CU UN SINGUR COMMIT.
@@ -120,7 +132,7 @@ export function CaseStudyDialog({
                   <p className="font-mono text-lg text-accent-2">
                     {metric.value}
                   </p>
-                  <p className="mt-1 text-xs text-muted">{metric.label}</p>
+                  <p className="mt-1 text-xs text-fg/60">{metric.label}</p>
                 </div>
               ))}
             </div>

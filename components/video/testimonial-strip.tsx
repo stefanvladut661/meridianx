@@ -18,7 +18,7 @@ export function TestimonialStrip() {
           )}
         >
           {testimonial.isPlaceholder ? (
-            <span className="absolute right-4 top-4 rounded-xs border border-line px-2 py-1 font-mono text-[10px] tracking-[0.2em] text-muted">
+            <span className="absolute right-4 top-4 rounded-xs border border-line px-2 py-1 font-mono text-[10px] tracking-[0.2em] text-fg/60">
               PLACEHOLDER
             </span>
           ) : null}
@@ -30,7 +30,7 @@ export function TestimonialStrip() {
           >
             „{testimonial.quote}”
           </blockquote>
-          <figcaption className="mt-5 font-mono text-xs tracking-[0.15em] text-muted">
+          <figcaption className="mt-5 font-mono text-xs tracking-[0.15em] text-fg/60">
             {testimonial.author} · {testimonial.role} · {testimonial.company}
           </figcaption>
         </figure>

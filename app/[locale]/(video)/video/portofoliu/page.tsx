@@ -50,7 +50,7 @@ export default async function VideoPortfolioPage({
 
       <Section spacing="sm" className="pt-28 sm:pt-36">
         <Container size="wide">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-fg/60">
             {/* i18n: */}
             PORTOFOLIU · {String(videoProjects.length).padStart(2, "0")} CADRE ·
             INTEGRAL PLACEHOLDER
