@@ -1,0 +1,202 @@
+# PLAN.md — MERIDIAN
+
+Fișier de coordonare între terminale. Fiecare fază scrie aici la final de sesiune. Citește-l înainte să începi — s-ar putea să fi apărut ceva care te privește.
+
+**Regulă:** adaugă, nu șterge. Nu rescrie ce a notat altă fază.
+
+---
+
+## Stare faze
+
+| Fază | Branch | Status | Merge în main |
+|---|---|---|---|
+| 0 — Fundație | `faza-0-fundatie` | ✅ gata | ✅ |
+| 1 — Gateway + shell | `faza-1-gateway` | ⬜ poate porni (F0 în main) | ⬜ |
+| 2 — Video core | `faza-2-video-core` | ⬜ poate porni (F0 în main) | ⬜ |
+| 3 — Video reclame + funnel | `faza-3-video-funnel` | ⬜ poate porni (F0 în main) | ⬜ |
+| 4 — Software core | `faza-4-software-core` | ⬜ poate porni (F0 în main) | ⬜ |
+| 5 — Software brief | `faza-5-software-brief` | ⬜ poate porni (F0 în main) | ⬜ |
+| 6 — Backend + admin | `faza-6-backend` | ⬜ poate porni (F0 în main) | ⬜ |
+| 7 — i18n, SEO, legal | `faza-7-final` | ⬜ blocat de F1–6 | ⬜ |
+
+Legendă: ⬜ neînceput · 🟡 în lucru · ✅ gata · 🔴 blocat
+
+---
+
+## Contracte înghețate după FAZA 0
+
+*(FAZA 0 completează această secțiune. După aceea, nimeni nu o modifică fără acordul omului.)*
+
+**Tokens și fișiere partajate — INTERZIS la editare:**
+- `app/globals.css` (Tailwind v4 — tokens + maparea `@theme` stau AICI; nu există `tailwind.config.*`)
+- `app/fonts.ts` + `app/fonts/`
+- `components/ui/*` (Button, Input, Textarea, Select, Label, Field, Dialog, Toast, Container, Section, Reveal)
+- `content/types.ts`
+- `lib/utils.ts` · `lib/division.ts` · `lib/utm.ts` · `lib/validations/lead.ts`
+- `i18n/*` · `middleware.ts` · `next.config.ts`
+- `app/[locale]/layout.tsx` (root layout public) · `app/(admin)/layout.tsx` (F6 poate extinde, nu rescrie)
+- `supabase/migrations/*`
+
+**Cum se consumă tokens-ii:** layout-urile de grup pun `data-world="video|software"`; componentele folosesc DOAR clase semantice — `bg-bg`, `bg-surface`, `text-fg`, `text-muted`, `border-line`, `bg-accent`, `text-accent-contrast`, `text-accent-2`, `font-display`, `font-body`, `font-mono`, `rounded-xs..xl`, `shadow-soft/raised/overlay`. Culori brute (`text-v-tungsten`, `bg-s-panel`...) doar în interiorul propriei divizii. Z-index: `var(--z-header|overlay|modal|toast|signature)`.
+
+**Rutare i18n (decizie F0):** toate rutele publice sub `app/[locale]/` — RO default FĂRĂ prefix (`/video`), EN cu prefix (`/en/video`); `localePrefix: "as-needed"`. În pagini se folosește `Link`/`useRouter` din `@/i18n/navigation`, NU din `next/link`/`next/navigation`. Admin (`app/(admin)/`) și API sunt în afara i18n-ului. Zonele de proprietate din CLAUDE.md se citesc cu prefixul `[locale]`: `app/(video)/...` → `app/[locale]/(video)/...`.
+
+**Contract API** (scheme complete în `lib/validations/lead.ts` — F3/F5 validează cu ele pe client, F6 pe server):
+```
+POST   /api/leads                    body LeadInput
+       201 → { ok: true, id: string }
+       400 → { ok: false, error: string }
+       429 → { ok: false, error: string }            (rate limit, F6)
+       honeypot (`website` non-gol) → 200 { ok: true, id: "" }, fără insert
+POST   /api/leads/[id]/events        body LeadEventInput { type, payload }
+       201 → { ok: true, id: string }
+GET    /api/leads?division=&status=&q=&from=&to=&page=&perPage=   (protejat, F6)
+       200 → { ok: true, items: Lead[], total, page, perPage }
+PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
+       200 → { ok: true, id: string }
+```
+
+**Alte contracte:**
+- Cookie divizie: `meridian_division` (`video|software`, 90 zile) — `lib/division.ts` (server) + `useDivision()` (client)
+- UTM first-touch: `captureUTM()` la mount, `getStoredUTM()` în payload — `lib/utm.ts`
+- Reduced motion: `useReducedMotion()` din `lib/hooks/use-reduced-motion` + `<Reveal>` din `components/ui/reveal`
+- Statusuri lead: `new → contacted → qualified → proposal → won|lost`
+
+**Tipuri de conținut disponibile:**
+`Service` · `Project` · `Testimonial` · `ProcessStep` · `FAQItem` · `TeamMember` — toate cu `isPlaceholder` obligatoriu; schelete goale în `content/video/` și `content/software/` (services, projects, testimonials, process, faq)
+
+**Chei i18n — namespace-uri:**
+`common` · `nav` · `gateway` · `video` · `software` · `forms` · `legal` — schelet în `messages/ro.json` + `en.json`; fazele adaugă chei în namespace-ul propriu, F7 finalizează
+
+---
+
+## Jurnal per fază
+
+### FAZA 0 — Fundație
+**Terminat:** Next.js 15.5 (Turbopack) + TS strict + Tailwind v4; tokens compleți (`--v-*`, `--s-*`, semantici remapați prin `data-world`) în `app/globals.css`; fonturi locale variable (Clash Display, Switzer, Satoshi — Fontshare/FFL) + JetBrains Mono, IBM Plex Mono (Google) în `app/fonts.ts`; primitivele `components/ui/` (11 componente, inclusiv `Reveal`); `content/types.ts` + 10 schelete de conținut; migrarea Supabase (`leads`, `lead_events`, enums, RLS, indexuri); stub-uri API cu validare Zod pe toate cele 4 rute; i18n next-intl (middleware, routing, mesaje RO/EN pe namespace-uri); utilitare (`cn`, `useReducedMotion`, `useDivision`, UTM); README cu harta fișierelor; `.env.example`. Build verde: TS + ESLint + 7 rute.
+**Decizii luate care afectează pe alții:**
+- Rutele publice stau sub `app/[locale]/` — zonele din CLAUDE.md se citesc cu acest prefix. RO fără prefix de URL, EN cu `/en`. Navigarea DOAR prin `@/i18n/navigation`.
+- Tailwind v4 nu are `tailwind.config.*` — tot ce era „config" e în `@theme` din `globals.css`. Nu creați config nou.
+- Layout-urile de grup `app/[locale]/(video)/layout.tsx` și `(software)/layout.tsx` există și pun `data-world` — F1 le DEȚINE pentru integrarea shell-ului (header/footer/HUD/linia meridian), restul fazelor nu le ating.
+- Honeypot-ul din formulare se numește `website` și e obligatoriu în toate formularele (F3, F5).
+- `Field` folosește render prop pentru id-uri/aria corecte — vezi exemplul din `components/ui/field.tsx`.
+- Erorile de formular au deja mesaje standard în `messages/*.json` sub `forms.errors.*` — folosiți-le, nu inventați altele pentru aceleași cazuri.
+**Observații:**
+- `npm audit` raportează 3 vulnerabilități high (tranzitive, din tooling-ul scaffold-ului). De revizuit în F7, nu blochează dezvoltarea.
+- Logo-ul real nu există încă în repo — paletele sunt cele din brief; ajustarea după logo e pe lista de lansare.
+- GSAP + Lenis sunt instalate (lockfile stabil), dar NEIMPORTATE — se încarcă lazy doar în divizia video (F2/F3).
+
+---
+
+### FAZA 1 — Gateway + shell
+**Terminat:**
+**Componente construite local (candidate la deduplicare în F7):**
+**Observații:**
+
+---
+
+### FAZA 2 — Video core
+**Terminat:**
+**Componente construite local:**
+**Observații:**
+
+---
+
+### FAZA 3 — Video reclame + funnel
+**Terminat:**
+**Componente construite local:**
+**Observații:**
+
+---
+
+### FAZA 4 — Software core
+**Terminat:**
+**Componente construite local:**
+**Observații:**
+
+---
+
+### FAZA 5 — Software brief
+**Terminat:**
+**Componente construite local:**
+**Observații:**
+
+---
+
+### FAZA 6 — Backend + admin
+**Terminat:**
+**Componente construite local:**
+**Observații:**
+
+---
+
+### FAZA 7 — Final
+**Terminat:**
+**Observații:**
+
+---
+
+## Cereri către fișiere partajate
+
+*(Ai nevoie de o modificare într-un fișier înghețat sau din zona altei faze? Scrie aici, nu edita.)*
+
+| Cine cere | Ce fișier | Ce modificare | De ce | Rezolvat |
+|---|---|---|---|---|
+| | | | | |
+
+---
+
+## Dependențe noi adăugate
+
+*(Notează înainte de `npm install`, ca să nu se ciocnească două terminale în lockfile.)*
+
+| Fază | Pachet | De ce |
+|---|---|---|
+| 0 | zod | validare formulare + API (contract partajat) |
+| 0 | next-intl | i18n RO/EN |
+| 0 | gsap, lenis | motion divizia video (preinstalate ca lockfile-ul să nu se mai atingă; import lazy în F2/F3) |
+| 0 | @supabase/supabase-js, @supabase/ssr | client DB + auth admin (F6) |
+| 0 | resend | email transacțional (F6) |
+| 0 | clsx, tailwind-merge | `cn()` din lib/utils.ts |
+
+---
+
+## Observații între faze
+
+*(Ai văzut un bug sau o inconsecvență în zona altcuiva? Scrie aici, nu repara.)*
+
+| Cine a observat | Unde | Ce |
+|---|---|---|
+| | | |
+
+---
+
+## De verificat înainte de lansare
+
+- [ ] Logo integrat în toate variantele (light, dark, mark pentru favicon)
+- [ ] Paletele ajustate față de culorile reale din logo
+- [ ] Portofoliu video real înlocuiește placeholder-ele
+- [ ] Proiecte software reale înlocuiesc placeholder-ele
+- [ ] Testimoniale reale, cu acord scris de la clienți
+- [ ] Textele legale validate juridic
+- [ ] Link-uri ANPC SAL și SOL funcționale în footer
+- [ ] Detaliile despre programele de finanțare verificate și actualizate
+- [ ] Cont admin creat în Supabase, parolă schimbată
+- [ ] Toate variabilele de mediu setate în Vercel
+- [ ] Domeniu `meridianagency.ro` cumpărat și conectat
+- [ ] Email transacțional testat pe ambele divizii
+- [ ] Cal.com configurat pentru video și software separat
+- [ ] Numere WhatsApp și telefon corecte
+- [ ] Lighthouse 90+ performanță, 100 accesibilitate pe rutele principale
+- [ ] Testat pe iPhone real și Android real, nu doar în devtools
+- [ ] Un om care nu a lucrat la site parcurge ambele divizii și confirmă că par două lumi diferite
+
+---
+
+## Ce rămâne pentru iterația 2
+
+- CRM complet: pipeline vizual, task-uri, follow-up automat, istoric de comunicare
+- ERP: facturare, proiecte, pontaj, costuri, rentabilitate per proiect
+- Migrare conținut din `content/` în CMS (Sanity sau Payload)
+- Blog și studii de caz detaliate
+- Pagină de echipă

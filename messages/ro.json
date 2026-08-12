@@ -1,0 +1,77 @@
+{
+  "common": {
+    "brand": "MERIDIAN",
+    "tagline": "Punctul zero al creșterii tale.",
+    "loading": "Se încarcă…",
+    "close": "Închide",
+    "back": "Înapoi",
+    "next": "Continuă",
+    "openMenu": "Deschide meniul",
+    "closeMenu": "Închide meniul",
+    "skipToContent": "Sari la conținut",
+    "switchToEnglish": "Switch to English",
+    "seeBothDivisions": "Vezi ambele divizii"
+  },
+  "nav": {
+    "video": {
+      "home": "Video",
+      "services": "Servicii",
+      "portfolio": "Portofoliu",
+      "ads": "Reclame",
+      "process": "Proces",
+      "contact": "Contact"
+    },
+    "software": {
+      "home": "Software",
+      "services": "Servicii",
+      "funding": "Fonduri",
+      "projects": "Proiecte",
+      "process": "Proces",
+      "brief": "Brief"
+    },
+    "legal": {
+      "privacy": "Confidențialitate",
+      "terms": "Termeni și condiții",
+      "cookies": "Cookie-uri"
+    }
+  },
+  "gateway": {
+    "video": {
+      "title": "VIDEO",
+      "promise": "Producție video care vinde. Campanii care ajung unde trebuie."
+    },
+    "software": {
+      "title": "SOFTWARE",
+      "promise": "Web și aplicații la comandă. Construite pe măsură, livrate la termen."
+    },
+    "choosePrompt": "Două divizii. Alege lumea ta."
+  },
+  "video": {},
+  "software": {},
+  "forms": {
+    "labels": {
+      "name": "Nume",
+      "email": "Email",
+      "phone": "Telefon",
+      "company": "Companie",
+      "message": "Mesaj"
+    },
+    "errors": {
+      "required": "Completează câmpul ca să putem continua.",
+      "invalidEmail": "Adresa de email nu e validă — verifică formatul.",
+      "invalidPhone": "Numărul de telefon nu e valid — folosește formatul 07xx xxx xxx.",
+      "tooLong": "Textul depășește lungimea maximă de {max} caractere.",
+      "submitFailed": "Cererea nu a plecat. Verifică conexiunea și încearcă din nou — datele tale au rămas completate.",
+      "rateLimited": "Ai trimis prea multe cereri într-un timp scurt. Așteaptă un minut și încearcă din nou."
+    },
+    "states": {
+      "submitting": "Se trimite…",
+      "successAnnouncement": "Cererea a fost trimisă."
+    }
+  },
+  "legal": {
+    "privacy": { "title": "Politica de confidențialitate" },
+    "terms": { "title": "Termeni și condiții" },
+    "cookies": { "title": "Politica de cookie-uri" }
+  }
+}
