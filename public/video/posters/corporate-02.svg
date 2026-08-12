@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#43C9E0" stop-opacity="0.5"/>
+      <stop offset="0.6" stop-color="#0b0d12" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="r" cx="0.15" cy="0.95" r="1.1">
+      <stop offset="0" stop-color="#FF8C3B" stop-opacity="0.32"/>
+      <stop offset="0.65" stop-color="#0b0d12" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="#0b0d12"/>
+  <rect width="1600" height="900" fill="url(#g)"/>
+  <rect width="1600" height="900" fill="url(#r)"/>
+  <path d="M 48 104 L 48 48 L 104 48" fill="none" stroke="#EDE8E0" stroke-opacity="0.5" stroke-width="3"/>
+  <path d="M 1552 104 L 1552 48 L 1496 48" fill="none" stroke="#EDE8E0" stroke-opacity="0.5" stroke-width="3"/>
+  <path d="M 48 796 L 48 852 L 104 852" fill="none" stroke="#EDE8E0" stroke-opacity="0.5" stroke-width="3"/>
+  <path d="M 1552 796 L 1552 852 L 1496 852" fill="none" stroke="#EDE8E0" stroke-opacity="0.5" stroke-width="3"/>
+  <text x="78" y="500" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="210" fill="#EDE8E0" fill-opacity="0.16" letter-spacing="6">CRP.02</text>
+  <text x="80" y="788" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="30" fill="#EDE8E0" fill-opacity="0.72" letter-spacing="3">FILM ANIVERSAR — 25 DE ANI</text>
+  <text x="80" y="836" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="22" fill="#EDE8E0" fill-opacity="0.45" letter-spacing="2">POSTER PLACEHOLDER · 1600×900 · SE INLOCUIESTE CU CADRUL REAL</text>
+</svg>
