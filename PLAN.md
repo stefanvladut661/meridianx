@@ -13,7 +13,7 @@ Fișier de coordonare între terminale. Fiecare fază scrie aici la final de ses
 | 0 — Fundație | `faza-0-fundatie` | ✅ gata | ✅ |
 | 1 — Gateway + shell | `faza-1-gateway` | ✅ gata | ✅ |
 | 2 — Video core | `faza-2-video-core` | ✅ gata | ✅ |
-| 3 — Video reclame + funnel | `faza-3-video-funnel` | ⬜ poate porni (F0 în main) | ⬜ |
+| 3 — Video reclame + funnel | `faza-3-video-funnel` | ✅ gata | ✅ |
 | 4 — Software core | `faza-4-software-core` | ⬜ poate porni (F0 în main) | ⬜ |
 | 5 — Software brief | `faza-5-software-brief` | ⬜ poate porni (F0 în main) | ⬜ |
 | 6 — Backend + admin | `faza-6-backend` | ⬜ poate porni (F0 în main) | ⬜ |
@@ -117,9 +117,17 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 ---
 
 ### FAZA 3 — Video reclame + funnel
-**Terminat:**
-**Componente construite local:**
+**Terminat:** Ambele pagini + tot funnel-ul video. `/video/reclame` — signature „curba de uzură”: argumentul paginii desenat ca grafic SVG (curba caldă = aceeași reclamă opt săptămâni, curba rece = creativ nou la fiecare trei săptămâni, cu marcajele de reîmprospătare). Se desenează la intrarea în viewport prin `stroke-dashoffset` + `pathLength=1`; sub reduced motion e completă din prima. **Fără valori pe axa Y și fără cifre de rezultat** — graficul descrie mecanismul, nu performanțe măsurate, iar asta scrie sub el. Restul paginii stă cuminte: diptic „de obicei / la noi”, patru fișe de platformă (Meta, Google, TikTok, LinkedIn — fiecare cu ce livrăm + adevărul incomod), ritmul de raportare, pachetul combinat. `/video/contact` — signature „panoul de regie”: canalele ca linii de patch (CH.01–CH.05), fiecare cu latență reală și motivul pentru care l-ai alege; vocea prima și la aceeași greutate ca formularul. Formulare: audit (4 câmpuri, 3 obligatorii) și ofertă (7 câmpuri, 2 obligatorii), ambele cu validare pe schema F0, captură UTM first-touch, honeypot `website`, stări distincte de loading/eroare/succes și confirmare în vocabularul butonului („Audit cerut.” / „Ofertă cerută.”). Cal.com prin iframe montat la intrarea în viewport, fără dependență nouă. Build verde: TS + ESLint + 19 rute.
+**Decizii care afectează pe alții:**
+- **Zod a ieșit din bundle-ul inițial.** `components/video/forms/validate.ts` (singurul loc care importă `leadInputSchema` pe client) se încarcă prin `await import()` la prima trimitere. Fără asta, paginile cu formular ajungeau la 221 kB First Load JS față de ~150 kB restul. **F5: fă la fel pe brief/estimator** — altfel divizia software plătește ~70 kB degeaba.
+- Contactul se poate deep-linka: `/video/contact?tip=<segment>` preselectează tipul de proiect, folosind exact segmentele din `components/video/segments.ts` (F2). Verificat că merge și în build de producție, nu doar în dev. F2 poate lega butoanele din case study direct aici.
+- Datele de contact vin EXCLUSIV din env (`NEXT_PUBLIC_PHONE`, `..._WHATSAPP_NUMBER`, `..._INSTAGRAM`, `..._CAL_VIDEO`). Canal neconfigurat = canal ascuns, nu `href="#"`. În dev apare în loc un avertisment vizibil. **Fără aceste variabile, pagina de contact rămâne doar cu formularul.**
+- `source` pentru F6: `video-audit` (lead magnet reclame) și `video-contact` (ofertă). La audit, platformele bifate ajung în `projectType`, sub forma `Audit campanii · Meta, TikTok`, iar bugetul lunar de media în `budgetRange` — contractul nu are câmp dedicat pentru platforme.
+**Componente construite local (candidate la deduplicare în F7):** `components/video/cta/` (`channels.ts` — sursa unică de canale + mesaje WhatsApp contextuale, `voice-cta.tsx`, `channel-panel.tsx`, `cal-embed.tsx`), `components/video/forms/` (`use-lead-submit.ts` — motorul comun UTM+validare+POST, `validate.ts`, `honeypot.tsx`, `form-success.tsx`, `audit-form.tsx`, `contact-form.tsx`). **`useLeadSubmit` + `Honeypot` + `FormSuccess` sunt scrise ca să le poată prelua F5 aproape neschimbate** — singurul lucru specific video e `division: "video"` hardcodat în hook.
 **Observații:**
+- Honeypot-ul din contract nu funcționează pe server — detaliat în „Cereri către fișiere partajate”. F3 îl rezolvă local, în client.
+- Programul de lucru și baza (oraș, acoperire) de pe `/video/contact` sunt **placeholder marcat vizibil** — de confirmat cu omul înainte de lansare.
+- Nu am putut face verificare vizuală: extensia de browser nu era conectată în sesiune. Responsive-ul e verificat prin calcul, nu prin ochi — graficul primește `overflow-x-auto` + `min-w-[48rem]` pentru că altfel etichetele mono ajungeau la ~4px pe 360. **De trecut cu ochiul peste ambele pagini la 360 și 768 înainte de lansare.**
 
 ---
 
@@ -159,6 +167,7 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 | F2 | `app/globals.css` (tokens) | Re-verificat `--v-dim` #6B6F78 pe `--v-void`: contrast 3.9:1, sub AA pentru text mic | F2 a ocolit local cu `text-fg/60`; F1/F3/F7 să nu folosească `text-muted` pentru text informativ mic pe video | ⬜ (decizie om / F7) |
 | F2 | `components/ui/dialog.tsx` | Dialog-ul nu blochează scroll-ul de fundal | F2 a rezolvat local în `CaseStudyDialog`; F5/F6 vor lovi la fel | ⬜ (F7 sau acord om) |
 | F2 | `content/types.ts` | `Project.media.poster` să fie obligatoriu când `kind: "video"` (union discriminat) | Quality floor cere poster obligatoriu | ⬜ (F7) |
+| F3 | `lib/validations/lead.ts` **sau** `app/api/leads/route.ts` | Honeypot-ul nu ajunge niciodată să fie evaluat: `website: z.string().max(0)` respinge valoarea non-goală, deci `safeParse` pică și ruta răspunde **400**, nu `200 { ok: true, id: "" }` cum scrie contractul. Fie `website` devine `z.string().optional()` fără `max(0)` (verificarea rămâne în rută), fie ruta verifică honeypot-ul pe body-ul brut, înainte de parse. | Verificat la runtime cu POST real. F3 a acoperit local (scurtcircuit în client, botul vede succes fals și nu se lovește de API), dar **F5 va lovi exact la fel**, iar pe server contractul rămâne rupt | ⬜ (F6 — e ruta lui) |
 
 ---
 
@@ -183,7 +192,8 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 
 | Cine a observat | Unde | Ce |
 |---|---|---|
-| | | |
+| F3 | `components/ui/field.tsx` | `Field` merge doar pentru un singur control cu label. Pentru grupuri de checkbox-uri (platformele din formularul de audit) am construit local `fieldset`/`legend` cu `aria-describedby` propriu. Dacă F5 are aceeași nevoie, merită un `FieldGroup` în `components/ui/` la F7 — nu îl adaug eu într-un fișier înghețat. |
+| F3 | `components/shell/footer.tsx` | Footerul construiește `tel:` cu `phone.replace(/\s/g,"")`, deci păstrează `+` doar dacă env-ul îl are. `components/video/cta/channels.ts` normalizează la `tel:+<cifre>`, ca linkul să meargă și dacă numărul e scris fără prefix. De unificat la F7 — nu am atins footerul. |
 
 ---
 
