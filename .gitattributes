@@ -1,0 +1,17 @@
+# Fișierele binare NU trec prin normalizarea de linii a git-ului.
+# Fără regula asta, pe Windows (core.autocrlf) un PDF sau o imagine se
+# corupe la checkout: LF-urile din interiorul fluxului binar devin CRLF
+# și offset-urile din fișier nu mai sunt valide.
+# Adăugat de FAZA 5 odată cu primul PDF din repo — notat în PLAN.md.
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.mp4 binary
+*.mov binary
+*.woff binary
+*.woff2 binary
+*.ico binary
