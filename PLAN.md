@@ -15,7 +15,7 @@ Fișier de coordonare între terminale. Fiecare fază scrie aici la final de ses
 | 2 — Video core | `faza-2-video-core` | ✅ gata | ✅ |
 | 3 — Video reclame + funnel | `faza-3-video-funnel` | ✅ gata | ✅ |
 | 4 — Software core | `faza-4-software-core` | ⬜ poate porni (F0 în main) | ⬜ |
-| 5 — Software brief | `faza-5-software-brief` | ⬜ poate porni (F0 în main) | ⬜ |
+| 5 — Software brief | `faza-5-software-brief` | ✅ gata | ✅ |
 | 6 — Backend + admin | `faza-6-backend` | ⬜ poate porni (F0 în main) | ⬜ |
 | 7 — i18n, SEO, legal | `faza-7-final` | ⬜ blocat de F1–6 | ⬜ |
 
@@ -139,9 +139,19 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 ---
 
 ### FAZA 5 — Software brief
-**Terminat:**
-**Componente construite local:**
+**Terminat:** `/software/brief` — brief multi-step (5 pași) cu estimatorul integrat în pasul 2, exact cum permitea promptul. Signature: **„fișa de calibrare"** — un instrument a cărui precizie crește: pornește la ±35% cu tipul proiectului, ajunge la ±10% cu brief-ul completat, iar lățimea benzii de pe riglă e chiar cât de puțin știm încă. Rezultatul e ÎNTOTDEAUNA un interval, niciodată un preț; peste 60.000 € afișează „Peste 60.000 €" în loc de cifre, ca să nu sugereze o precizie pe care n-o avem. Riglă logaritmică cu gradații 2.5k–60k, contor sub 400ms, tranziții sub 150ms (lumea software). Pașii: tip proiect · ce conține (ecrane, funcționalități, integrări, limbi, mentenanță) · context · buget+termen+fonduri · contact. Stare persistată în sessionStorage cu bară de restaurare („continuă" / „începe din nou"), navigare înapoi fără pierderi, focus mutat pe titlul pasului, anunț `aria-live` la fiecare schimbare. Lead magnete: discovery call (Cal.com în iframe montat la intrarea în viewport) și ghid PDF cu gate pe email. Build verde: TS + ESLint.
+**Decizii care afectează pe alții:**
+- **`lib/estimator-config.ts` e fișier nou, creat de F5** (promptul de fază îl cere explicit acolo, ca omul să regleze prețurile fără să umble prin componente). Nu e în lista de fișiere înghețate. **⚠️ CIFRELE DIN EL SUNT PROPUNERI, NU ADEVĂRURI — omul trebuie să le confirme înainte de lansare.** E singurul loc din site unde apar prețuri.
+- **F4:** am folosit `components/software/forms/` și `components/software/estimator/` — restul lui `components/software/` e al tău, nu l-am atins. `/software/brief` e singura rută pe care am creat-o. Header-ul (F1) leagă deja „Cere ofertă" → `/software/brief`, deci ruta e vie chiar dacă restul diviziei nu e gata.
+- **F4, coordonare de signature:** rigla mea are gradații orizontale într-un panou de instrument. Signature-ul tău e linia meridian **verticală** de pagină. Sunt obiecte diferite, dar dacă ți se pare că se calcă, spune — schimb eu, e mai ieftin.
+- **F6:** brief-ul trimite `source: "software-brief"`, iar după crearea lead-ului postează 5 evenimente pe `/api/leads/[id]/events`: patru `brief_step` (câte unul per pas, cu răspunsurile structurate) și un `estimator_used` (interval, incertitudine, dacă a atins plafonul). Evenimentele pleacă după confirmare și, dacă pică, nu strică succesul — sunt analitice, nu lead-ul. Ghidul vine cu `source: "software-ghid"`.
+- Detaliile de finanțare (linia + termenul de decontare) nu au câmp în contract, deci merg în `message`, într-un bloc marcat `— Finanțare —`, împreună cu un bloc `— Din estimator —`. `isFunded` e setat corect pe lead.
+- Zod încărcat lazy și aici, ca la F3 — `/software/brief` stă la 158 kB First Load JS.
+**Componente construite local (candidate la deduplicare în F7):** `validate.ts`, `honeypot.tsx` și `use-lead-submit.ts` sunt **duplicate conștiente** ale celor din `components/video/forms/` (CLAUDE.md §6.6 — duplicarea temporară bate conflictul de merge între terminale). La F7 se extrag într-un `lib/leads/` comun; diferențele reale sunt doar `division` și trimiterea de evenimente.
 **Observații:**
+- **Nu am inventat detalii despre programele de finanțare.** Linia de finanțare e câmp liber, fără listă de programe, iar sub el scrie explicit că nu dăm consultanță pe eligibilitate. F4 (`/software/fonduri`) e singura care afirmă ceva despre programe — dacă acolo apare un vocabular de linii de finanțare, merită folosit și aici.
+- PDF-ul ghidului (`public/software/ghid-modernizare-placeholder.pdf`) e un fișier real și valid, dar cu conținut schelet, marcat „PLACEHOLDER" și în interfață, nu doar în cod. `public/software/` nu era atribuit nimănui — l-am ocupat prin analogie cu `public/video/` al F2.
+- Verificat la runtime: lead 201 + eveniment 201 pe id-ul real, estimatorul rulat pe 5 scenarii (inclusiv plafon și „neestimabil"), toate au ieșit cum trebuie. **Verificarea vizuală lipsește din nou** — extensia de browser nu e conectată. De trecut cu ochiul la 360 și 768.
 
 ---
 
@@ -177,6 +187,7 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 
 | Fază | Pachet | De ce |
 |---|---|---|
+| 5 | *niciunul* | Cal.com e prin iframe, nu prin `@calcom/embed-react`; estimatorul și wizard-ul sunt scrise de mână. Zero dependențe noi în F3 și F5. |
 | 0 | zod | validare formulare + API (contract partajat) |
 | 0 | next-intl | i18n RO/EN |
 | 0 | gsap, lenis | motion divizia video (preinstalate ca lockfile-ul să nu se mai atingă; import lazy în F2/F3) |
@@ -193,6 +204,7 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 | Cine a observat | Unde | Ce |
 |---|---|---|
 | F3 | `components/ui/field.tsx` | `Field` merge doar pentru un singur control cu label. Pentru grupuri de checkbox-uri (platformele din formularul de audit) am construit local `fieldset`/`legend` cu `aria-describedby` propriu. Dacă F5 are aceeași nevoie, merită un `FieldGroup` în `components/ui/` la F7 — nu îl adaug eu într-un fișier înghețat. |
+| F5 | `components/ui/reveal.tsx` | `duration` are default 500ms, dar lumea software cere sub 400 (CLAUDE.md §2). F5 trimite `duration={320}` la fiecare folosire. Merită ca `Reveal` să ia default-ul din `data-world`, la F7 — nu îl schimb într-un fișier înghețat. |
 | F3 | `components/shell/footer.tsx` | Footerul construiește `tel:` cu `phone.replace(/\s/g,"")`, deci păstrează `+` doar dacă env-ul îl are. `components/video/cta/channels.ts` normalizează la `tel:+<cifre>`, ca linkul să meargă și dacă numărul e scris fără prefix. De unificat la F7 — nu am atins footerul. |
 
 ---
