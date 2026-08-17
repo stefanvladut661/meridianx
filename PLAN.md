@@ -16,7 +16,7 @@ Fișier de coordonare între terminale. Fiecare fază scrie aici la final de ses
 | 3 — Video reclame + funnel | `faza-3-video-funnel` | ✅ gata | ✅ |
 | 4 — Software core | `faza-4-software-core` | ✅ gata | ✅ |
 | 5 — Software brief | `faza-5-software-brief` | ✅ gata | ✅ |
-| 6 — Backend + admin | `faza-6-backend` | ⬜ poate porni (F0 în main) | ⬜ |
+| 6 — Backend + admin | `faza-6-backend` | ✅ gata | ✅ |
 | 7 — i18n, SEO, legal | `faza-7-final` | ⬜ blocat de F1–6 | ⬜ |
 
 Legendă: ⬜ neînceput · 🟡 în lucru · ✅ gata · 🔴 blocat
@@ -166,9 +166,24 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 ---
 
 ### FAZA 6 — Backend + admin
-**Terminat:**
-**Componente construite local:**
+**Terminat:** API-ul complet pe contractul FAZEI 0, emailuri Resend și dashboard-ul de lead-uri.
+`POST /api/leads` — honeypot verificat pe body-ul brut, rate limit pe IP, validare Zod cu schema partajată, insert + eveniment `created`, emailuri fire-and-forget. `GET /api/leads` (protejat, filtrare + paginare), `PATCH /api/leads/[id]` (protejat, cu evenimente `status_changed`/`note_added`), `GET /api/leads/[id]` (protejat, lead + istoric), `POST /api/leads/[id]/events` (public, rate-limited — F5 trimite pașii de brief), `GET /api/leads/export` (protejat, CSV), `POST /api/admin/session` (reîmprospătare sesiune).
+`/admin` — autentificare Supabase email+parolă, bandă de indicatori (săptămâna asta cu deltă, total, split video/software, fonduri, rată de calificare), tabel dens cu marcaj vizual pentru lead-urile din segmentul fonduri, filtre în URL prin formular GET nativ, panou de detaliu lateral pe `?lead=<id>` cu istoric, schimbare de status și note, export CSV al filtrului curent.
+Emailuri: notificare către admin cu subiect de triaj (`[SOFTWARE · FONDURI] Nume · buget · formular`) și confirmare către client, cu ton diferit pe divizii — video direct și obraznic, software calm și cu pașii următori.
+Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu id gol, JSON invalid 400, rate limit 429 cu `Retry-After`, toate rutele protejate 401 fără sesiune, `/admin` 307 spre login.
+**Decizii care afectează pe alții:**
+- **Cererea F3 e rezolvată.** Honeypot-ul se verifică pe body-ul BRUT, înainte de `safeParse` (`isHoneypotTripped` din `app/api/_lib/api.ts`). Schema FAZEI 0 rămâne neatinsă. `POST /api/leads` cu `website` non-gol întoarce acum **200 `{ ok: true, id: "" }`**, conform contractului. F3 poate scoate scurtcircuitul din client când vrea — sau îl poate lăsa, e o apărare în plus care economisește un drum la server.
+- **F5:** `POST /api/leads/[id]/events` e public și rate-limited (60 / 10 min / IP). Trimite `{ type, payload }` exact ca în schema F0. Un lead inexistent dă 404, nu 500.
+- **F3/F5 — comportament fără `.env.local`:** în DEZVOLTARE, `POST /api/leads` și ruta de evenimente răspund 201 cu id sintetic și scriu lead-ul în consola serverului, ca formularele să rămână testabile. În PRODUCȚIE, aceleași cazuri dau 503 — un lead pierdut în tăcere e mai rău decât o eroare vizibilă.
+- **F5:** dacă brief-ul afișează un mesaj propriu la 429, folosește antetul `Retry-After` (secunde) — îl trimit pe toate răspunsurile de rate limit.
+- Statusul „calificat" din indicatori = orice status diferit de `new` și `lost`. Dacă F7 sau omul vrea altă definiție, e o singură linie în `getLeadStats`.
+**Componente construite local (candidate la deduplicare în F7):** `app/api/_lib/api.ts` (răspunsuri, IP, rate limit, honeypot), `lib/supabase/{types,clients,leads}.ts`, `lib/email/send.ts`, `emails/{shell,lead-notification,lead-confirmation}.ts`, `app/(admin)/admin/_components/*`. `STATUS_LABELS` din `lib/supabase/types.ts` e sursa unică pentru etichetele de status în RO — folosiți-o, nu rescrieți lista.
 **Observații:**
+- **`.env.example` NU e în git.** `.gitignore` are `.env*`, care îl prinde și pe el, deci fișierul există doar pe mașina pe care l-a scris FAZA 0. La un clone nou sau la configurarea Vercel nu are nimeni lista de variabile. Cerere depusă mai jos. Variabilă nouă cerută de F6: `RESEND_FROM_EMAIL` (adresa expeditor verificată în Resend).
+- **Rate limiting în memoria procesului**, fără dependență nouă. Pe serverless contorul e per instanță, deci plafonul real e mai mare decât cel afișat și se pierde la scale-down. E suficient pentru spam de formular; pentru protecție serioasă trebuie Upstash/Redis — decizie conștientă, nu scăpare.
+- **Sesiunea de admin** nu se poate reîmprospăta în componente de server (nu se pot scrie cookie-uri acolo), iar locul obișnuit — `middleware.ts` — e înghețat. Soluția e `POST /api/admin/session` + `SessionKeeper`, care lovește ruta la 45 de minute și la revenirea în filă. Dacă F7 dezgheață middleware-ul, mută refresh-ul acolo și șterge ambele.
+- **Nu am putut testa fluxul complet cu Supabase și Resend reale** — nu există proiect Supabase și nici cheie Resend în mediul de dezvoltare. Verificate la runtime: contractul HTTP, codurile de status, gărzile de autentificare, degradarea fără configurare. NEverificate cu date reale: insert-ul, interogările, RLS, randarea emailurilor în clienți de mail. `/admin` fără configurare arată ecranul de instalare în cinci pași, nu o eroare.
+- `POST /api/leads/[id]/events` fiind publică, oricine are un id de lead poate adăuga zgomot în istoricul acelui lead. Nu poate citi nimic și nu poate schimba statusul. Alternativa (token semnat per lead) cerea un contract nou cu F5, care lucra în paralel.
 
 ---
 
@@ -187,9 +202,13 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 | F2 | `app/globals.css` (tokens) | Re-verificat `--v-dim` #6B6F78 pe `--v-void`: contrast 3.9:1, sub AA pentru text mic | F2 a ocolit local cu `text-fg/60`; F1/F3/F7 să nu folosească `text-muted` pentru text informativ mic pe video | ⬜ (decizie om / F7) |
 | F2 | `components/ui/dialog.tsx` | Dialog-ul nu blochează scroll-ul de fundal | F2 a rezolvat local în `CaseStudyDialog`; F5/F6 vor lovi la fel | ⬜ (F7 sau acord om) |
 | F2 | `content/types.ts` | `Project.media.poster` să fie obligatoriu când `kind: "video"` (union discriminat) | Quality floor cere poster obligatoriu | ⬜ (F7) |
-| F3 | `lib/validations/lead.ts` **sau** `app/api/leads/route.ts` | Honeypot-ul nu ajunge niciodată să fie evaluat: `website: z.string().max(0)` respinge valoarea non-goală, deci `safeParse` pică și ruta răspunde **400**, nu `200 { ok: true, id: "" }` cum scrie contractul. Fie `website` devine `z.string().optional()` fără `max(0)` (verificarea rămâne în rută), fie ruta verifică honeypot-ul pe body-ul brut, înainte de parse. | Verificat la runtime cu POST real. F3 a acoperit local (scurtcircuit în client, botul vede succes fals și nu se lovește de API), dar **F5 va lovi exact la fel**, iar pe server contractul rămâne rupt | ⬜ (F6 — e ruta lui) |
+| F3 | `lib/validations/lead.ts` **sau** `app/api/leads/route.ts` | Honeypot-ul nu ajunge niciodată să fie evaluat: `website: z.string().max(0)` respinge valoarea non-goală, deci `safeParse` pică și ruta răspunde **400**, nu `200 { ok: true, id: "" }` cum scrie contractul. Fie `website` devine `z.string().optional()` fără `max(0)` (verificarea rămâne în rută), fie ruta verifică honeypot-ul pe body-ul brut, înainte de parse. | Verificat la runtime cu POST real. F3 a acoperit local (scurtcircuit în client, botul vede succes fals și nu se lovește de API), dar **F5 va lovi exact la fel**, iar pe server contractul rămâne rupt | ✅ (F6 — rezolvat în rută, schema neatinsă) |
 | F4 | `app/globals.css` (tokens) | `--accent-contrast` pe `[data-world="software"]`: alb pe `--s-signal` #4C7DFF dă **3,69:1**, sub AA pentru text normal. Cu `--s-ink` (#060A12) urcă la **5,36:1** | Orice buton primar din divizia software pică AA — inclusiv „Cere ofertă" din header-ul F1. F4 a ocolit local cu `softwareCtaClasses()`; când tokenul se repară, clasele rămân valide și headerul se aliniază singur | ⬜ (F7 sau acord om) |
 | F4 | `components/shell/nav-links.ts` (F1) | Nicio modificare cerută — doar semnalez că rutele software linkuite de F4 (`/software/{servicii,fonduri,proiecte,proces,brief}`) se potrivesc exact cu sursa F1 | Verificat, fără acțiune | ✅ |
+| F6 | `.gitignore` (linia 34, `.env*`) | Adaugă excepția `!.env.example` și commit-uie fișierul | `.env*` îl prinde și pe `.env.example`, deci NU e în git — există doar pe mașina pe care l-a scris F0. La un clone nou sau la setarea variabilelor în Vercel nu are nimeni lista de configurat | ⬜ (F7 sau om) |
+| F6 | `.env.example` (netrack-uit) | Variabilă nouă: `RESEND_FROM_EMAIL` — adresa expeditor verificată în Resend. Fără ea se cade pe `notificari@meridianagency.ro`, care trebuie oricum verificat pe domeniu | Emailurile tranzacționale nu pleacă de pe un domeniu neverificat | ⬜ (F7 sau om) |
+| F6 | `messages/*.json` → `forms.errors.rateLimited` | Textul spune „Așteaptă un minut", dar fereastra reală e de 10 minute. Propunere: „Ai trimis prea multe cereri într-un timp scurt. Mai încearcă peste câteva minute — sau sună-ne, e mai rapid." | O eroare care minte despre durată e o eroare vagă (CLAUDE.md §4). Mesajul de pe server e deja corectat; cel afișat de F3/F5 vine din i18n | ⬜ (F7) |
+| F6 | `middleware.ts` | Dacă se dezgheață vreodată: mută reîmprospătarea sesiunii Supabase acolo și șterge `POST /api/admin/session` + `SessionKeeper` | E locul standard pentru rotația tokenului. Ocolirea actuală funcționează, dar e o piesă în plus de întreținut | ⬜ (F7, opțional) |
 
 ---
 
@@ -233,7 +252,10 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 - [ ] Detaliile despre programele de finanțare verificate și actualizate
 - [ ] **DECIZIE DE BUSINESS (F4):** intervalul „5.000 – 60.000 €" e publicat în cartușul din hero-ul `/software`. E scos din brief (buget țintă 5–15k, deschidere până la 60k) și califică lead-urile, dar e o cifră publică — confirmă sau schimbă în `TITLE_BLOCK_ROWS` din `app/[locale]/(software)/software/page.tsx`
 - [ ] **JURIDIC (F4):** `content/software/funding.ts` — citit de consultant de fonduri / jurist tot ce e marcat `needsLegalReview: true` și comentariile `// TODO: verificat juridic`
-- [ ] Cont admin creat în Supabase, parolă schimbată
+- [ ] Cont admin creat în Supabase (Authentication → Users → Add user); nu există înregistrare din site
+- [ ] Migrarea `supabase/migrations/00000000000001_leads.sql` rulată pe proiectul real
+- [ ] Domeniu verificat în Resend + `RESEND_FROM_EMAIL` setat, altfel emailurile nu pleacă
+- [ ] Un lead de test trimis din fiecare formular, verificat că apare în `/admin` și că ajung ambele emailuri
 - [ ] Toate variabilele de mediu setate în Vercel
 - [ ] Domeniu `meridianagency.ro` cumpărat și conectat
 - [ ] Email transacțional testat pe ambele divizii
