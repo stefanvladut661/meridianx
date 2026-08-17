@@ -17,7 +17,7 @@ Fișier de coordonare între terminale. Fiecare fază scrie aici la final de ses
 | 4 — Software core | `faza-4-software-core` | ⬜ poate porni (F0 în main) | ⬜ |
 | 5 — Software brief | `faza-5-software-brief` | ✅ gata | ✅ |
 | 6 — Backend + admin | `faza-6-backend` | ⬜ poate porni (F0 în main) | ⬜ |
-| 7 — i18n, SEO, legal | `faza-7-final` | ⬜ blocat de F1–6 | ⬜ |
+| 7 — i18n, SEO, legal | `faza-7-final` | 🟡 parțial — legal/SEO/consimțământ gata; i18n + audite așteaptă F4/F6 | ✅ |
 
 Legendă: ⬜ neînceput · 🟡 în lucru · ✅ gata · 🔴 blocat
 
@@ -163,8 +163,34 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 ---
 
 ### FAZA 7 — Final
+**⚠️ RULATĂ PARȚIAL, ÎNAINTE DE TERMEN.** F7 trebuia să ruleze după merge-ul tuturor fazelor. La momentul rulării, F4 avea lucru committed dar **nemergat** în `main`, iar F6 nu livrase nimic. S-a făcut tot ce nu depinde de ele; ce depinde e listat mai jos ca rest de lucru.
+
 **Terminat:**
+- **Legal complet.** Trei documente scrise integral, RO + EN, în `app/[locale]/(legal)/legal/_content/documents.ts`: confidențialitate (GDPR — temeiuri legale per scop, durate de păstrare, împuterniciți, transferuri, drepturi, ANSPDCP), termeni (ofertare, plată, termene, **proprietate intelectuală separată pe video vs software**, răspundere, ANPC SAL + SOL) și cookie-uri. Notă vizibilă sus pe fiecare pagină că textul **nu e validat juridic**. Datele firmei sunt placeholder marcat — nu inventăm CUI sau sediu.
+- **Politica de cookie-uri e concretă, nu generică:** listează cheile reale pe care le scrie site-ul — `meridian_division`, `meridian_consent`, `meridian_utm`, `meridian_brief_v1`, `mv-shutter-seen` — cu ce face fiecare, unde stă și cât ține.
+- **Consimțământ care chiar blochează.** `lib/consent.ts` + banner cu trei categorii, nimic pre-bifat, „Doar necesare" la aceeași greutate vizuală ca „Acceptă tot". Verificat la runtime: **fără consimțământ, HTML-ul nu conține niciun script de analytics.** Retragerea se face dintr-un buton pe `/legal/cookies`, iar scriptul se scoate din pagină pe loc.
+- **SEO.** Canonical automat pe orice rută (`canonical: "./"` în root, rezolvat de Next la calea curentă — funcționează și pentru paginile care încă nu există); hreflang ro/en/x-default pe toate paginile existente prin `pageSeo()`; imagini OG generate dinamic, două șabloane distincte per divizie; JSON-LD Organization + WebSite pe tot site-ul, Service pe `/video/servicii`; `sitemap.xml` (16 rute × 2 limbi, construit din `nav-links.ts` ca să nu existe două liste care se ceartă) și `robots.txt`.
+- **Analytics** cu wrapper de conversii (`lib/analytics.ts`), listă închisă de evenimente, totul condiționat de consimțământ.
+- **README** refăcut: deploy, tabel de variabile de mediu cu „ce se strică fără ea", tabel complet de placeholder-e cu locul exact în cod.
+
+**Decizii care afectează pe alții:**
+- **Ruta OG se numește `/og.png`, nu `/og`** — middleware-ul i18n (ÎNGHEȚAT) prinde orice cale fără punct și i-ar pune prefix de limbă. Nu schimbați numele.
+- **`lib/seo.ts` e sursa unică pentru canonical, hreflang, OG și JSON-LD.** **F4: paginile tale au nevoie de `pageSeo({ route, locale, division: "software", title, description })` în `generateMetadata` — exemplu în docstring.** Fără el primesc canonical corect, dar rămân fără hreflang.
+- Root layout-ul (înghețat) a primit trei adăugiri punctuale: JSON-LD de nivel site, bannerul de cookie-uri și încărcătorul de analytics. Toate trei trebuie să existe o singură dată pe site — de-aia stau acolo.
+- `.gitattributes` (adăugat la F5) protejează binarele; PDF-ul verificat că trece intact prin checkout.
+- Paginile legale preiau paleta diviziei din cookie, ca vizitatorul să nu simtă că a nimerit pe alt site când dă click în subsol. Fără cookie rămân neutre.
+
+**Rest de lucru — NU e făcut, depinde de F4/F6:**
+1. **Extragerea i18n a copy-ului din pagini.** Tot textul de marketing din F2, F3, F4 și F5 e încă hardcodat RO, marcat cu `// i18n:`. **Nu am extras jumătate din el intenționat**: EN nu e traducere, e adaptare, iar vocea trebuie ținută unitară pe tot site-ul — făcut în două tranșe, ar ieși două voci. De făcut într-o singură trecere, după ce F4 e în `main`. Infrastructura e gata (namespace-uri, `forms.errors.*`, `cookies.*`, `legal.*` complete în ambele limbi).
+2. **Audit de coerență între lumi** — nu se poate face fără paginile F4.
+3. **Lighthouse pe rutele principale** — jumătate din rute încă dau 404 în `main`; în plus, extensia de browser nu e conectată în sesiune, deci n-am putut rula nimic vizual.
+4. **`pageSeo()` pe paginile F4** — vezi mai sus.
+5. **Verificarea vizuală a bannerului de cookie-uri** — logica e verificată prin HTML (scriptul chiar lipsește fără accept), dar interacțiunea în browser nu.
+
 **Observații:**
+- Nu am emis `LocalBusiness` și nici `AggregateRating`: primul cere adresă reală, al doilea recenzii reale. Structured data inventată e minciună citită de mașini — și e și penalizată. De adăugat când există datele.
+- Categoria „marketing" din banner nu corespunde momentan niciunui script. Am scris asta explicit în politică, în loc s-o ascundem.
+- Imaginile OG s-au verificat vizual (singurul lucru pe care l-am putut vedea în sesiune): diacriticele românești ies corect, inclusiv ș/ț cu virgulă dedesubt, nu cu sedilă.
 
 ---
 

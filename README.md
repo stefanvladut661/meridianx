@@ -79,6 +79,53 @@ Fișierele **ÎNGHEȚATE** nu se editează după FAZA 0 — cererile de modifica
 
 Tokens-ii semantici (`--bg`, `--surface`, `--fg`, `--muted`, `--line`, `--accent`, `--accent-2`, `--font-display/body/mono`) sunt remapați de atributul `data-world="video|software"` pus pe layout-urile de grup. Primitivele din `components/ui/` folosesc doar clase semantice (`bg-accent`, `text-fg`, `font-display`...), deci se colorează automat după divizia în care sunt randate. Culorile brute (`text-v-tungsten`, `bg-s-panel`) se folosesc doar în interiorul propriei divizii.
 
-## Placeholder-e care trebuie înlocuite înainte de lansare
+## SEO, consimțământ și analytics (FAZA 7)
 
-Vezi lista completă în `PLAN.md` § „De verificat înainte de lansare". Pe scurt: logo real, portofoliu/proiecte/testimoniale reale (`isPlaceholder: true` peste tot momentan), texte legale validate juridic, detaliile programelor de finanțare verificate, chei Supabase/Resend/Cal.com, numere de telefon/WhatsApp.
+- **Canonical** se generează automat pentru orice rută: root layout-ul are `alternates: { canonical: "./" }`, pe care Next îl rezolvă la calea curentă. O pagină nouă primește canonical corect fără să facă nimic.
+- **hreflang** (ro, en, x-default) se adaugă per pagină prin `pageSeo()` din `lib/seo.ts`. Paginile noi ar trebui să-l folosească — vezi exemplul din docstring.
+- **Imagini Open Graph** generate dinamic la `/og.png?division=video|software&title=…&subtitle=…`, două șabloane, unul per divizie. Ruta se numește cu extensie pentru că middleware-ul i18n prinde orice cale fără punct.
+- **JSON-LD**: Organization + WebSite pe toate rutele publice, Service pe paginile de servicii. Deliberat **fără** `LocalBusiness` și `AggregateRating` — nu emitem structured data pe care n-o putem susține.
+- **Consimțământ**: `lib/consent.ts` + bannerul din `components/consent/`. Scripturile opționale nu se încarcă înainte de accept — `lib/analytics.ts` verifică înainte de a injecta ceva. Retragerea se face din `/legal/cookies`.
+- **Vercel Analytics** se încarcă prin script propriu, nu prin pachetul `@vercel/analytics`, exact ca să poată fi condiționat de consimțământ. Zero dependențe adăugate.
+
+## Deploy
+
+1. Importă repo-ul în Vercel. Framework-ul e detectat automat (Next.js, Turbopack).
+2. Setează variabilele de mediu de mai jos în **Project Settings → Environment Variables**, pentru Production și Preview.
+3. Rulează migrarea din `supabase/migrations/` în proiectul Supabase, apoi creează contul de admin.
+4. Conectează domeniul `meridianagency.ro` și verifică `NEXT_PUBLIC_SITE_URL` — din el se construiesc canonical, hreflang, sitemap și robots. Dacă e greșit, tot SEO-ul arată spre domeniul greșit.
+5. Verifică după deploy: `/sitemap.xml`, `/robots.txt`, `/og.png?division=video&title=test`.
+
+## Variabile de mediu
+
+| Variabilă | Obligatorie | Ce se strică fără ea |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | da | canonical, hreflang, sitemap și robots arată spre domeniul implicit |
+| `NEXT_PUBLIC_SUPABASE_URL` | da (F6) | nu se salvează niciun lead |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | da (F6) | idem |
+| `SUPABASE_SERVICE_ROLE_KEY` | da (F6) | insert-ul de pe server |
+| `RESEND_API_KEY` | da (F6) | nu pleacă emailuri de notificare |
+| `LEAD_NOTIFICATION_EMAIL` | da (F6) | nu se știe cui se trimit lead-urile |
+| `NEXT_PUBLIC_PHONE` | da | blocul „Sună direct" dispare de pe paginile video |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | da | butoanele de WhatsApp dispar (inclusiv cele contextuale) |
+| `NEXT_PUBLIC_INSTAGRAM` | nu | canalul Instagram dispare din panou și din footer |
+| `NEXT_PUBLIC_CAL_VIDEO` | nu | secțiunea de programare de pe `/video/contact` nu se randează |
+| `NEXT_PUBLIC_CAL_SOFTWARE` | nu | discovery call-ul de pe `/software/brief` nu se randează |
+
+Canalele neconfigurate se **ascund**, nu rămân ca link-uri moarte. În dev apare în locul lor un avertisment vizibil.
+
+## Ce e placeholder și trebuie înlocuit
+
+| Ce | Unde | Cum se vede că e placeholder |
+|---|---|---|
+| Texte legale | `app/[locale]/(legal)/legal/_content/documents.ts` | Notă vizibilă sus pe fiecare pagină: **nevalidat juridic** |
+| Datele firmei (denumire, CUI, reg. com., sediu, email) | același fișier, `COMPANY_PLACEHOLDER` | `[DENUMIRE SRL]` etc. + badge PLACEHOLDER |
+| Prețurile din estimator | `lib/estimator-config.ts` | comentariu de avertizare în capul fișierului |
+| Ghidul PDF | `public/software/ghid-modernizare-placeholder.pdf` | badge PLACEHOLDER pe card + notă după descărcare |
+| Portofoliu video (8 proiecte) și testimoniale | `content/video/` | `isPlaceholder: true` |
+| Proiecte software și testimoniale | `content/software/` | `isPlaceholder: true` |
+| Postere video | `public/video/posters/*.svg` | SVG-uri generate, nu cadre reale |
+| Bază și program | `app/[locale]/(video)/video/contact/page.tsx`, `STUDIO` | badge PLACEHOLDER lângă bloc |
+| Logo | peste tot (`components/shell/logo.tsx`) | marcaj geometric provizoriu |
+
+Lista de lansare completă e în `PLAN.md` § „De verificat înainte de lansare".
