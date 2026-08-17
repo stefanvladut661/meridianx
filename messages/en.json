@@ -91,8 +91,56 @@
     }
   },
   "legal": {
-    "privacy": { "title": "Privacy policy" },
-    "terms": { "title": "Terms of service" },
-    "cookies": { "title": "Cookie policy" }
+    "lastUpdated": "Last updated: {date}",
+    "draftNotice": "Drafted in-house, not yet reviewed by a lawyer. We publish it now so you know what happens to your data — but treat it as a working version until counsel signs off.",
+    "contents": "What's in here",
+    "identityHeading": "Who runs this site",
+    "identityPlaceholder": "Company registration details go in before launch.",
+    "privacy": {
+      "title": "Privacy policy",
+      "lead": "What we ask for, why, how long we keep it, and what you can do about it at any time."
+    },
+    "terms": {
+      "title": "Terms of service",
+      "lead": "How we work, what you get, what we owe each other, and who owns what at the end."
+    },
+    "cookies": {
+      "title": "Cookie policy",
+      "lead": "The full list of what we store in your browser — actual names, not vague categories."
+    }
+  },
+  "cookies": {
+    "eyebrow": "COOKIES",
+    "title": "You decide what runs.",
+    "body": "The necessary ones keep the site working and can't be turned off. Everything else stays dark until you say otherwise.",
+    "readPolicy": "See the full list",
+    "categoriesLegend": "Cookie categories",
+    "alwaysOn": "ALWAYS ON",
+    "acceptAll": "Accept all",
+    "rejectAll": "Necessary only",
+    "saveChoice": "Save my choice",
+    "customize": "Choose by category",
+    "categories": {
+      "necessary": {
+        "label": "Necessary",
+        "description": "They remember which division you picked and the choice you make here. Without them, the site would ask you the same thing on every page."
+      },
+      "analytics": {
+        "label": "Analytics",
+        "description": "They show us which pages get read and where forms get abandoned. Aggregate numbers, no individual profiling."
+      },
+      "marketing": {
+        "label": "Marketing",
+        "description": "For remarketing in campaigns. We currently run nothing in this category — it exists so we don't have to ask you again when we do."
+      }
+    },
+    "manage": {
+      "title": "Your preferences",
+      "current": "Current choice:",
+      "none": "You haven't chosen yet.",
+      "button": "Change preferences",
+      "granted": "accepted",
+      "denied": "declined"
+    }
   }
 }

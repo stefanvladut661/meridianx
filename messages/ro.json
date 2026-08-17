@@ -91,8 +91,56 @@
     }
   },
   "legal": {
-    "privacy": { "title": "Politica de confidențialitate" },
-    "terms": { "title": "Termeni și condiții" },
-    "cookies": { "title": "Politica de cookie-uri" }
+    "lastUpdated": "Ultima actualizare: {date}",
+    "draftNotice": "Text redactat intern, încă nevalidat juridic. Îl publicăm de pe acum ca să știi ce facem cu datele tale — dar până la avizul avocatului, tratează-l ca pe o versiune de lucru.",
+    "contents": "Ce găsești aici",
+    "identityHeading": "Cine operează site-ul",
+    "identityPlaceholder": "Datele de identificare ale firmei se completează înainte de lansare.",
+    "privacy": {
+      "title": "Politica de confidențialitate",
+      "lead": "Ce date îți cerem, de ce, cât le ținem și ce poți face oricând ca să le controlezi."
+    },
+    "terms": {
+      "title": "Termeni și condiții",
+      "lead": "Cum lucrăm, ce primești, ce ne datorăm reciproc și cine deține ce, la final."
+    },
+    "cookies": {
+      "title": "Politica de cookie-uri",
+      "lead": "Lista completă a ce stocăm în browserul tău — cu numele exacte, nu cu formulări generice."
+    }
+  },
+  "cookies": {
+    "eyebrow": "COOKIE-URI",
+    "title": "Alegi tu ce pornește.",
+    "body": "Cele necesare fac site-ul să funcționeze și nu se pot opri. Restul rămân stinse până apeși tu.",
+    "readPolicy": "Vezi lista completă",
+    "categoriesLegend": "Categorii de cookie-uri",
+    "alwaysOn": "MEREU ACTIVE",
+    "acceptAll": "Acceptă tot",
+    "rejectAll": "Doar necesare",
+    "saveChoice": "Salvează alegerea",
+    "customize": "Alege pe categorii",
+    "categories": {
+      "necessary": {
+        "label": "Necesare",
+        "description": "Rețin divizia pe care ai ales-o și alegerea ta de aici. Fără ele, site-ul te-ar întreba același lucru la fiecare pagină."
+      },
+      "analytics": {
+        "label": "Analitice",
+        "description": "Ne arată ce pagini se citesc și unde se abandonează formularele. Cifre agregate, fără profilare individuală."
+      },
+      "marketing": {
+        "label": "Marketing",
+        "description": "Pentru remarketing în campanii. Momentan nu rulăm niciun script din categoria asta — categoria există ca să nu te întrebăm din nou când o vom face."
+      }
+    },
+    "manage": {
+      "title": "Preferințele tale",
+      "current": "Alegerea curentă:",
+      "none": "Nu ai ales încă.",
+      "button": "Schimbă preferințele",
+      "granted": "acceptat",
+      "denied": "refuzat"
+    }
   }
 }
