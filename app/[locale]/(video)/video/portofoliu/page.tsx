@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { pageSeo } from "@/lib/seo";
 import type { VideoSegment } from "@/content/types";
 import { videoProjects } from "@/content/video/projects";
 import { Container } from "@/components/ui/container";
@@ -13,11 +15,28 @@ import { VIDEO_SEGMENTS } from "@/components/video/segments";
 import { CtaBand } from "@/components/video/cta-band";
 
 // i18n: metadata hardcodată RO — F7 localizează
-export const metadata: Metadata = {
-  title: "Portofoliu video",
-  description:
-    "Reel-ul MERIDIAN VIDEO: proiecte pe imobiliare, corporate, evenimente, personal brand și industrial. Fiecare proiect cu context, execuție și rezultat.",
-};
+const TITLE = "Portofoliu video";
+const DESCRIPTION =
+  "Reel-ul MERIDIAN VIDEO: proiecte pe imobiliare, corporate, evenimente, personal brand și industrial. Fiecare proiect cu context, execuție și rezultat.";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    ...pageSeo({
+      route: "/video/portofoliu",
+      locale: locale as Locale,
+      division: "video",
+      title: TITLE,
+      description: DESCRIPTION,
+    }),
+  };
+}
 
 /**
  * /video/portofoliu (FAZA 2).

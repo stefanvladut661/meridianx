@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { pageSeo } from "@/lib/seo";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -15,11 +17,29 @@ import { AD_PLATFORMS, PACKAGE_INCLUDES, REPORTING } from "./ads-content";
 import { FatigueCurve } from "./fatigue-curve";
 
 // i18n: metadata hardcodată RO — F7 localizează
-export const metadata: Metadata = {
-  title: "Management campanii — reclame Meta, Google, TikTok, LinkedIn",
-  description:
-    "Producem creativul și îl difuzăm noi. Campanii pe Meta, Google, TikTok și LinkedIn, cu creativ nou înainte să crească costul per rezultat. Audit gratuit al campaniilor pe care le rulezi acum.",
-};
+const TITLE = "Management campanii — reclame Meta, Google, TikTok, LinkedIn";
+const DESCRIPTION =
+  "Producem creativul și îl difuzăm noi. Campanii pe Meta, Google, TikTok și LinkedIn, cu creativ nou înainte să crească costul per rezultat. Audit gratuit al campaniilor pe care le rulezi acum.";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    ...pageSeo({
+      route: "/video/reclame",
+      locale: locale as Locale,
+      division: "video",
+      title: TITLE,
+      description: DESCRIPTION,
+      ogTitle: "Filmul și bugetul, în aceeași mână.",
+    }),
+  };
+}
 
 /**
  * /video/reclame (FAZA 3).

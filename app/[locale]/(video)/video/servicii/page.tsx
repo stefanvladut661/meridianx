@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { pageSeo, serviceSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { videoServices } from "@/content/video/services";
 import { videoFAQ } from "@/content/video/faq";
 import { Container } from "@/components/ui/container";
@@ -12,11 +15,29 @@ import { SectionSlate } from "@/components/video/section-slate";
 import { CtaBand } from "@/components/video/cta-band";
 
 // i18n: metadata hardcodată RO — F7 localizează
-export const metadata: Metadata = {
-  title: "Servicii video",
-  description:
-    "Filmare comercială, editare și post-producție, conținut UGC pentru social și filmări cu dronă. Fiecare serviciu cu livrabile concrete: formate, durate, drepturi de utilizare.",
-};
+const TITLE = "Servicii video";
+const DESCRIPTION =
+  "Filmare comercială, editare și post-producție, conținut UGC pentru social și filmări cu dronă. Fiecare serviciu cu livrabile concrete: formate, durate, drepturi de utilizare.";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    ...pageSeo({
+      route: "/video/servicii",
+      locale: locale as Locale,
+      division: "video",
+      title: TITLE,
+      description: DESCRIPTION,
+      ogTitle: "Ce primești, negru pe alb.",
+    }),
+  };
+}
 
 /**
  * /video/servicii (FAZA 2).
@@ -32,6 +53,19 @@ export default async function VideoServicesPage({
 
   return (
     <>
+      {/* F7: structured data pe servicii reale, scrise de noi — nu pe
+          promisiuni de rezultat, pe care nu le-am putea susține */}
+      <JsonLd
+        schema={videoServices.map((service) =>
+          serviceSchema({
+            name: service.title,
+            description: service.promise,
+            division: "video",
+            route: "/video/servicii",
+            locale: locale as Locale,
+          })
+        )}
+      />
       <VideoMotionStyles />
       <VideoLenis />
 

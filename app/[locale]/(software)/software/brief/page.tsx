@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { pageSeo } from "@/lib/seo";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
@@ -8,11 +10,29 @@ import { DiscoveryCall } from "@/components/software/forms/discovery-call";
 import { GatedGuide } from "@/components/software/forms/gated-guide";
 
 // i18n: metadata hardcodată RO — F7 localizează
-export const metadata: Metadata = {
-  title: "Brief și estimare de preț",
-  description:
-    "Cinci pași, un interval de preț care se strânge cu fiecare răspuns. Estimare orientativă pentru site-uri, magazine online, aplicații web și mobile, automatizări și integrări.",
-};
+const TITLE = "Brief și estimare de preț";
+const DESCRIPTION =
+  "Cinci pași, un interval de preț care se strânge cu fiecare răspuns. Estimare orientativă pentru site-uri, magazine online, aplicații web și mobile, automatizări și integrări.";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    ...pageSeo({
+      route: "/software/brief",
+      locale: locale as Locale,
+      division: "software",
+      title: TITLE,
+      description: DESCRIPTION,
+      ogTitle: "Estimarea nu începe precisă. Devine.",
+    }),
+  };
+}
 
 /**
  * /software/brief (FAZA 5).

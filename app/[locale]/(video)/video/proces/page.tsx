@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { pageSeo } from "@/lib/seo";
 import { videoProcess } from "@/content/video/process";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -10,11 +12,28 @@ import { ProcessRail } from "@/components/video/process-rail";
 import { CtaBand } from "@/components/video/cta-band";
 
 // i18n: metadata hardcodată RO — F7 localizează
-export const metadata: Metadata = {
-  title: "Procesul de producție",
-  description:
-    "De la brief la livrare în cinci etape cu marcaje clare: ce facem noi, ce aduci tu, cât durează. Fără improvizație în ziua filmării.",
-};
+const TITLE = "Procesul de producție";
+const DESCRIPTION =
+  "De la brief la livrare în cinci etape cu marcaje clare: ce facem noi, ce aduci tu, cât durează. Fără improvizație în ziua filmării.";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    ...pageSeo({
+      route: "/video/proces",
+      locale: locale as Locale,
+      division: "video",
+      title: TITLE,
+      description: DESCRIPTION,
+    }),
+  };
+}
 
 /**
  * /video/proces (FAZA 2).

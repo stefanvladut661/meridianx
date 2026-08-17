@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import type { Locale } from "@/i18n/routing";
+import { pageSeo } from "@/lib/seo";
 import { buttonClasses } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -17,11 +19,29 @@ import { TestimonialStrip } from "@/components/video/testimonial-strip";
 import { CtaBand } from "@/components/video/cta-band";
 
 // i18n: metadata hardcodată RO — F7 localizează
-export const metadata: Metadata = {
-  title: "Producție video comercială",
-  description:
-    "MERIDIAN VIDEO: filmare comercială, editare, UGC și dronă pentru imobiliare, corporate, evenimente, personal brand și industrie. Filmul care vinde — plus campaniile care îl difuzează.",
-};
+const TITLE = "Producție video comercială";
+const DESCRIPTION =
+  "MERIDIAN VIDEO: filmare comercială, editare, UGC și dronă pentru imobiliare, corporate, evenimente, personal brand și industrie. Filmul care vinde — plus campaniile care îl difuzează.";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    ...pageSeo({
+      route: "/video",
+      locale: locale as Locale,
+      division: "video",
+      title: TITLE,
+      description: DESCRIPTION,
+      ogTitle: "Filmul care vinde. Campania care îl duce acolo.",
+    }),
+  };
+}
 
 /**
  * /video — home-ul diviziei (FAZA 2).

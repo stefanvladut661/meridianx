@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
+import { pageSeo } from "@/lib/seo";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
@@ -17,11 +19,29 @@ import { VIDEO_SEGMENTS } from "@/components/video/segments";
 import type { VideoSegment } from "@/content/types";
 
 // i18n: metadata hardcodată RO — F7 localizează
-export const metadata: Metadata = {
-  title: "Contact — producție video și campanii",
-  description:
-    "WhatsApp, telefon, formular sau call de 20 de minute. Toate canalele MERIDIAN Video într-un singur loc, cu timpul de răspuns scris lângă fiecare.",
-};
+const TITLE = "Contact — producție video și campanii";
+const DESCRIPTION =
+  "WhatsApp, telefon, formular sau call de 20 de minute. Toate canalele MERIDIAN Video într-un singur loc, cu timpul de răspuns scris lângă fiecare.";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    ...pageSeo({
+      route: "/video/contact",
+      locale: locale as Locale,
+      division: "video",
+      title: TITLE,
+      description: DESCRIPTION,
+      ogTitle: "Alege canalul. Toate ajung la aceeași echipă.",
+    }),
+  };
+}
 
 /**
  * /video/contact (FAZA 3).
