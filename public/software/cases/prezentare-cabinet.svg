@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img">
+  <title>Machetă de structură — conținut placeholder</title>
+  <defs>
+    <pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1A2536" stroke-width="1" stroke-opacity="0.55"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="#0D1421"/>
+  <rect width="1600" height="900" fill="url(#g)"/>
+  <rect x="40" y="40" width="1520" height="820" fill="none" stroke="#1A2536"/>
+  <path d="M 60 88 L 60 60 L 88 60" fill="none" stroke="#4C7DFF" stroke-opacity="0.45" stroke-width="2"/>
+  <path d="M 1540 88 L 1540 60 L 1512 60" fill="none" stroke="#4C7DFF" stroke-opacity="0.45" stroke-width="2"/>
+  <path d="M 60 812 L 60 840 L 88 840" fill="none" stroke="#4C7DFF" stroke-opacity="0.45" stroke-width="2"/>
+  <path d="M 1540 812 L 1540 840 L 1512 840" fill="none" stroke="#4C7DFF" stroke-opacity="0.45" stroke-width="2"/>
+  <rect x="240" y="240" width="340" height="250" fill="none" stroke="#1A2536"/>
+    <rect x="240" y="240" width="340" height="150" fill="#1A2536" fill-opacity="0.5"/>
+    <rect x="260" y="418" width="200" height="12" rx="2" fill="#4C7DFF" fill-opacity="0.6"/>
+    <rect x="260" y="446" width="120" height="10" rx="2" fill="#7C8798" fill-opacity="0.3"/>
+    <rect x="630" y="240" width="340" height="250" fill="none" stroke="#1A2536"/>
+    <rect x="630" y="240" width="340" height="150" fill="#1A2536" fill-opacity="0.5"/>
+    <rect x="650" y="418" width="200" height="12" rx="2" fill="#4C7DFF" fill-opacity="0.6"/>
+    <rect x="650" y="446" width="120" height="10" rx="2" fill="#7C8798" fill-opacity="0.3"/>
+    <rect x="1020" y="240" width="340" height="250" fill="none" stroke="#1A2536"/>
+    <rect x="1020" y="240" width="340" height="150" fill="#1A2536" fill-opacity="0.5"/>
+    <rect x="1040" y="418" width="200" height="12" rx="2" fill="#4C7DFF" fill-opacity="0.6"/>
+    <rect x="1040" y="446" width="120" height="10" rx="2" fill="#7C8798" fill-opacity="0.3"/>
+    <rect x="240" y="540" width="340" height="250" fill="none" stroke="#1A2536"/>
+    <rect x="240" y="540" width="340" height="150" fill="#1A2536" fill-opacity="0.5"/>
+    <rect x="260" y="718" width="200" height="12" rx="2" fill="#4C7DFF" fill-opacity="0.6"/>
+    <rect x="260" y="746" width="120" height="10" rx="2" fill="#7C8798" fill-opacity="0.3"/>
+    <rect x="630" y="540" width="340" height="250" fill="none" stroke="#1A2536"/>
+    <rect x="630" y="540" width="340" height="150" fill="#1A2536" fill-opacity="0.5"/>
+    <rect x="650" y="718" width="200" height="12" rx="2" fill="#4C7DFF" fill-opacity="0.6"/>
+    <rect x="650" y="746" width="120" height="10" rx="2" fill="#7C8798" fill-opacity="0.3"/>
+    <rect x="1020" y="540" width="340" height="250" fill="none" stroke="#1A2536"/>
+    <rect x="1020" y="540" width="340" height="150" fill="#1A2536" fill-opacity="0.5"/>
+    <rect x="1040" y="718" width="200" height="12" rx="2" fill="#4C7DFF" fill-opacity="0.6"/>
+    <rect x="1040" y="746" width="120" height="10" rx="2" fill="#7C8798" fill-opacity="0.3"/>
+  <rect x="1280" y="86" width="220" height="34" rx="2" fill="#060A12" stroke="#D9A441" stroke-opacity="0.5"/>
+  <text x="1390" y="109" fill="#D9A441" font-family="ui-monospace, monospace" font-size="15" letter-spacing="3" text-anchor="middle">PLACEHOLDER</text>
+  <text x="100" y="822" fill="#7C8798" font-family="ui-monospace, monospace" font-size="17" letter-spacing="3.5">PORTOFOLIU · MACHETĂ</text>
+  <text x="100" y="848" fill="#7C8798" font-family="ui-monospace, monospace" font-size="14" letter-spacing="2" opacity="0.7">MERIDIAN · SW · PREZENTARE-CABINET</text>
+</svg>

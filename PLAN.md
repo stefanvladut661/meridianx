@@ -14,7 +14,7 @@ Fișier de coordonare între terminale. Fiecare fază scrie aici la final de ses
 | 1 — Gateway + shell | `faza-1-gateway` | ✅ gata | ✅ |
 | 2 — Video core | `faza-2-video-core` | ✅ gata | ✅ |
 | 3 — Video reclame + funnel | `faza-3-video-funnel` | ✅ gata | ✅ |
-| 4 — Software core | `faza-4-software-core` | ⬜ poate porni (F0 în main) | ⬜ |
+| 4 — Software core | `faza-4-software-core` | ✅ gata | ✅ |
 | 5 — Software brief | `faza-5-software-brief` | ✅ gata | ✅ |
 | 6 — Backend + admin | `faza-6-backend` | ⬜ poate porni (F0 în main) | ⬜ |
 | 7 — i18n, SEO, legal | `faza-7-final` | 🟡 parțial — legal/SEO/consimțământ gata; i18n + audite așteaptă F4/F6 | ✅ |
@@ -132,9 +132,19 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 ---
 
 ### FAZA 4 — Software core
-**Terminat:**
-**Componente construite local:**
+**Terminat:** Toate cele 5 pagini, cu signature per pagină, în dialectul „instrument de precizie": `/software` — planșa de desen tehnic cu **CARTUȘ** (blocul de identificare al unui desen de execuție, umplut cu parametrii comerciali reali: interval de buget, termen, preț fix, cod sursă, garanție); `/software/servicii` — **indexul** de 8 intrări (cod, serviciu, public, durată) și fișe pe trei axe (pentru cine / ce primești / tehnologii), fără prețuri; `/software/fonduri` — **calendarul de decontare citit invers**, de la termenul clientului spre ziua în care trebuie semnat, pe două benzi (noi / el), plus test de încadrare care poate răspunde și „încă nu"; `/software/proiecte` — **sloturile de metrică în așteptare** (instrument necalibrat în loc de cifre inventate), filtrare `?tip=` pe server, fără JS; `/software/proces` — **graficul de responsabilitate**, o linie care țese între banda noastră și a clientului, cu nod la fiecare predare. Signature de divizie pe toate: linia meridian cu gradații, măsurată din DOM (poziția reală a secțiunilor, nu distribuție decorativă), navigație funcțională prin ancore reale. Content complet: 8 servicii + 6 etape de proces + 8 FAQ = copy de brand real; 6 studii de caz + 3 testimoniale integral placeholder, marcate vizibil. Zero GSAP, zero Lenis, zero cursor custom, zero iconițe: doar CSS + IntersectionObserver, toate animațiile ≤380ms. Build verde: TS + ESLint + 25 rute; JS specific pe pagină 2,0–5,9 kB.
+**Decizii care afectează pe alții:**
+- **F5:** `/software/brief` primește trafic din 5 locuri cu context diferit. De pe `/software/fonduri` vin oameni cu finanțare — merită un câmp „linie de finanțare + termen de decontare" în brief; pagina le-a promis explicit că îl pot menționa acolo.
+- **F5/F7:** CTA-urile software NU folosesc `buttonClasses({variant:"primary"})` — vezi cererea de mai jos despre `--accent-contrast`. Folosiți `softwareCtaClasses()` din `components/software/cta.tsx` până se repară tokenul, altfel butonul pică AA.
+- **F5:** `EligibilityCheck` din `/software/fonduri` NU e formular și nu trimite nimic — dacă F5 vrea să preia răspunsurile în brief, trebuie un contract nou (query params sau sessionStorage). Nu l-am inventat eu.
+- Filtrarea pe `/software/proiecte` se face pe server prin `?tip=`, ca la `?segment=` din F2, dar fără client JS. Valoare invalidă → toate proiectele, fără eroare.
+- Machetele de studiu de caz: `public/software/cases/<project-id>.svg` (1600×900). Înlocuire cu proiect real = capturi în același folder + edit `content/software/projects.ts`, un singur commit. Cifra reală înlocuiește `PENDING_METRIC`, iar slotul își schimbă singur randarea.
+- `content/software/projects.ts` exportă `SoftwareProject extends Project` cu `kind` și `industry`, pentru că `content/types.ts` e înghețat și `segment` e doar pentru video. Dacă F7 rafinează tipul, aici e locul.
+**Componente construite local (candidate la deduplicare în F7):** `SectionHead` + `PlaceholderTag` (echivalentele software ale `SectionSlate` / badge-ului din F2), `CtaPanel` + `softwareCtaClasses` (echivalentul `CtaBand`), `MeridianRail`, `DrawIn` + `drawDelay` + `SoftwareMotionStyles` (perechea lui `motion-styles.tsx` din video), `CountUp`, `MetricSlot`, `BlueprintPlate` + `TitleBlock`, `FundingTimeline`, `EligibilityCheck`, `ResponsibilityChart`. Geodezica e definită local în `hero-plate.tsx` — nu am importat `ARC_PATH` din zona F1, ca să nu cuplez fazele; F7 poate unifica.
 **Observații:**
+- `drawDelay()` a trebuit scos într-un fișier fără `"use client"` (`components/software/draw.ts`): o funcție exportată dintr-un modul client devine referință client și nu poate fi apelată la randare pe server. Diagramele SVG sunt componente de server. Capcană utilă pentru F5.
+- Diagramele SVG (calendar, grafic de responsabilitate) sunt `aria-hidden` și `hidden md:block`; informația completă stă mereu în lista semantică de sub ele. Nimic nu există doar în desen — și la 360px pagina nu pierde conținut.
+- Tot ce atinge zona legislativă pe `/software/fonduri` e scris generic, fără nume de program, sume, procente sau sesiuni, și e marcat `needsLegalReview: true` în `content/software/funding.ts`. Pagina spune explicit că nu scriem dosarul și nu garantăm aprobarea. **Nu publicați fără citire juridică.**
 
 ---
 
@@ -204,6 +214,8 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 | F2 | `components/ui/dialog.tsx` | Dialog-ul nu blochează scroll-ul de fundal | F2 a rezolvat local în `CaseStudyDialog`; F5/F6 vor lovi la fel | ⬜ (F7 sau acord om) |
 | F2 | `content/types.ts` | `Project.media.poster` să fie obligatoriu când `kind: "video"` (union discriminat) | Quality floor cere poster obligatoriu | ⬜ (F7) |
 | F3 | `lib/validations/lead.ts` **sau** `app/api/leads/route.ts` | Honeypot-ul nu ajunge niciodată să fie evaluat: `website: z.string().max(0)` respinge valoarea non-goală, deci `safeParse` pică și ruta răspunde **400**, nu `200 { ok: true, id: "" }` cum scrie contractul. Fie `website` devine `z.string().optional()` fără `max(0)` (verificarea rămâne în rută), fie ruta verifică honeypot-ul pe body-ul brut, înainte de parse. | Verificat la runtime cu POST real. F3 a acoperit local (scurtcircuit în client, botul vede succes fals și nu se lovește de API), dar **F5 va lovi exact la fel**, iar pe server contractul rămâne rupt | ⬜ (F6 — e ruta lui) |
+| F4 | `app/globals.css` (tokens) | `--accent-contrast` pe `[data-world="software"]`: alb pe `--s-signal` #4C7DFF dă **3,69:1**, sub AA pentru text normal. Cu `--s-ink` (#060A12) urcă la **5,36:1** | Orice buton primar din divizia software pică AA — inclusiv „Cere ofertă" din header-ul F1. F4 a ocolit local cu `softwareCtaClasses()`; când tokenul se repară, clasele rămân valide și headerul se aliniază singur | ⬜ (F7 sau acord om) |
+| F4 | `components/shell/nav-links.ts` (F1) | Nicio modificare cerută — doar semnalez că rutele software linkuite de F4 (`/software/{servicii,fonduri,proiecte,proces,brief}`) se potrivesc exact cu sursa F1 | Verificat, fără acțiune | ✅ |
 
 ---
 
@@ -245,6 +257,8 @@ PATCH  /api/leads/[id]               body LeadPatch { status?, notes? }
 - [ ] Textele legale validate juridic
 - [ ] Link-uri ANPC SAL și SOL funcționale în footer
 - [ ] Detaliile despre programele de finanțare verificate și actualizate
+- [ ] **DECIZIE DE BUSINESS (F4):** intervalul „5.000 – 60.000 €" e publicat în cartușul din hero-ul `/software`. E scos din brief (buget țintă 5–15k, deschidere până la 60k) și califică lead-urile, dar e o cifră publică — confirmă sau schimbă în `TITLE_BLOCK_ROWS` din `app/[locale]/(software)/software/page.tsx`
+- [ ] **JURIDIC (F4):** `content/software/funding.ts` — citit de consultant de fonduri / jurist tot ce e marcat `needsLegalReview: true` și comentariile `// TODO: verificat juridic`
 - [ ] Cont admin creat în Supabase, parolă schimbată
 - [ ] Toate variabilele de mediu setate în Vercel
 - [ ] Domeniu `meridianagency.ro` cumpărat și conectat
