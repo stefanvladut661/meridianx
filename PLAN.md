@@ -17,7 +17,14 @@ Fișier de coordonare între terminale. Fiecare fază scrie aici la final de ses
 | 4 — Software core | `faza-4-software-core` | ✅ gata | ✅ |
 | 5 — Software brief | `faza-5-software-brief` | ✅ gata | ✅ |
 | 6 — Backend + admin | `faza-6-backend` | ✅ gata | ✅ |
-| 7 — i18n, SEO, legal | `faza-7-final` | ⬜ blocat de F1–6 | ⬜ |
+| 7 — i18n, SEO, legal | `faza-7-final` | 🟡 în lucru — **deblocat, vezi nota de mai jos** | ⬜ |
+
+> **F7 — CITEȘTE ASTA.** `main` conține acum TOATE fazele 0–6. Branch-ul
+> `faza-7-final` a plecat din `5b8b4fe`, adică dinainte ca F4 (cele cinci
+> pagini `/software`) și F6 (API + `/admin`) să intre. Fă
+> `git merge main` în `faza-7-final` înainte să continui, altfel auditul
+> final se face pe un arbore fără divizia software și fără backend.
+> Nu sunt conflicte de așteptat în afară de `PLAN.md`.
 
 Legendă: ⬜ neînceput · 🟡 în lucru · ✅ gata · 🔴 blocat
 
@@ -236,6 +243,7 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 |---|---|---|
 | F3 | `components/ui/field.tsx` | `Field` merge doar pentru un singur control cu label. Pentru grupuri de checkbox-uri (platformele din formularul de audit) am construit local `fieldset`/`legend` cu `aria-describedby` propriu. Dacă F5 are aceeași nevoie, merită un `FieldGroup` în `components/ui/` la F7 — nu îl adaug eu într-un fișier înghețat. |
 | F5 | `components/ui/reveal.tsx` | `duration` are default 500ms, dar lumea software cere sub 400 (CLAUDE.md §2). F5 trimite `duration={320}` la fiecare folosire. Merită ca `Reveal` să ia default-ul din `data-world`, la F7 — nu îl schimb într-un fișier înghețat. |
+| F6 | `main` (integrare) | F4 și F6 merge-uite în `main` (`c36d77c`, `39eb8e0`). Prima construcție cu F4+F5+F6 împreună: **build verde**, 13 rute publice × 2 limbi + `/admin` + 5 rute API. Zero coliziuni de fișiere între F4 și F5 în `components/software/`. Verificat la runtime că payload-ul brief-ului F5 trece validarea serverului F6 (răspunde 503 „fără bază de date", nu 400 „date invalide"), și că honeypot-ul dă 200 cu id gol pe ambele divizii. Singurele conflicte la merge au fost în `PLAN.md`, rezolvate păstrând ambele părți |
 | F3 | `components/shell/footer.tsx` | Footerul construiește `tel:` cu `phone.replace(/\s/g,"")`, deci păstrează `+` doar dacă env-ul îl are. `components/video/cta/channels.ts` normalizează la `tel:+<cifre>`, ca linkul să meargă și dacă numărul e scris fără prefix. De unificat la F7 — nu am atins footerul. |
 
 ---
