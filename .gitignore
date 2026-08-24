@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...dar șablonul TREBUIE să fie în repo: fără el, la un clone nou sau la
+# configurarea Vercel nimeni nu are lista de variabile. Nu conține secrete.
+!.env.example
 
 # vercel
 .vercel

@@ -12,9 +12,9 @@ const STEPS: Array<{ title: string; body: string; code?: string }> = [
     body: "Din consola Supabase, proiect nou, regiunea cea mai apropiată de clienți (Frankfurt).",
   },
   {
-    title: "Rulează migrarea",
-    body: "Conținutul fișierului de migrare, în SQL Editor. Creează tabelele leads și lead_events, enum-urile, indexurile și politicile RLS.",
-    code: "supabase/migrations/00000000000001_leads.sql",
+    title: "Rulează AMBELE migrări, în ordine",
+    body: "Conținutul fișierelor, în SQL Editor. Prima creează tabelele leads și lead_events, enum-urile, indexurile și politicile RLS. A doua adaugă updated_at, triggerul și indexurile de panou — fără ea, panoul nu poate citi lead-urile.",
+    code: "supabase/migrations/00000000000001_leads.sql\nsupabase/migrations/00000000000002_lead_activity.sql",
   },
   {
     title: "Completează variabilele de mediu",
@@ -22,8 +22,9 @@ const STEPS: Array<{ title: string; body: string; code?: string }> = [
     code: "NEXT_PUBLIC_SUPABASE_URL · NEXT_PUBLIC_SUPABASE_ANON_KEY · SUPABASE_SERVICE_ROLE_KEY",
   },
   {
-    title: "Creează contul de admin",
-    body: "Authentication → Users → Add user, cu email și parolă. Nu există înregistrare din site: contul se face manual, intenționat.",
+    title: "Creează contul de admin și trece-l pe listă",
+    body: "Authentication → Users → Add user, cu email și parolă. Nu există înregistrare din site: contul se face manual, intenționat. Apoi pune aceeași adresă în ADMIN_EMAILS — proiectele Supabase acceptă înregistrări implicit, iar fără listă orice cont creat pe proiect ar vedea toate lead-urile.",
+    code: "ADMIN_EMAILS",
   },
   {
     title: "Pornește emailurile",
@@ -43,7 +44,9 @@ export function SetupNotice() {
       </h1>
       <p className="mt-3 text-pretty leading-relaxed text-fg/75">
         Lipsesc variabilele de mediu pentru Supabase, deci nu avem de unde
-        citi lead-uri. Cinci pași, o singură dată:
+        citi lead-uri. Cinci pași, o singură dată. La final,
+        <code className="mx-1 font-mono text-[0.9em] text-accent-2">/api/health</code>
+        îți confirmă că toate sunt legate.
       </p>
 
       <ol className="mt-10 border-t border-line">
@@ -63,7 +66,7 @@ export function SetupNotice() {
                 {step.body}
               </p>
               {step.code ? (
-                <p className="mt-2 overflow-x-auto rounded-xs bg-surface px-2.5 py-1.5 font-mono text-[11px] leading-relaxed text-accent-2">
+                <p className="mt-2 overflow-x-auto whitespace-pre-line rounded-xs bg-surface px-2.5 py-1.5 font-mono text-[11px] leading-relaxed text-accent-2">
                   {step.code}
                 </p>
               ) : null}

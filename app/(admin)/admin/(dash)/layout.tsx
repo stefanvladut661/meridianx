@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { getAdminUser } from "@/lib/supabase/clients";
+import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { signOut } from "../login/actions";
 import { SessionKeeper } from "../_components/session-keeper";
+import { SetupNotice } from "../_components/setup-notice";
 
 /**
  * Garda zonei protejate (FAZA 6).
@@ -12,10 +13,17 @@ import { SessionKeeper } from "../_components/session-keeper";
  *
  * `getAdminUser()` folosește `getUser()`, care validează tokenul la
  * Supabase — nu are încredere în cookie-ul local.
+ *
+ * Ordinea contează: fără Supabase configurat, redirectul spre login ar
+ * duce la un formular care nu are cum să reușească. Un drum înfundat cu
+ * un câmp de parolă e mai rău decât o eroare — deci arătăm instrucțiunile
+ * de instalare, nu login-ul.
  */
 export default async function AdminDashLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  if (!isAuthConfigured()) return <SetupNotice />;
+
   const user = await getAdminUser();
   if (!user) redirect("/admin/login");
 

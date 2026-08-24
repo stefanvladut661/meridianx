@@ -3,6 +3,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
+  ADMIN_ACCESS_MESSAGES,
+  checkAdminEmail,
   createWritableSessionClient,
   isAuthConfigured,
 } from "@/lib/supabase/clients";
@@ -10,8 +12,12 @@ import { LIMITS, rateLimit } from "@/app/api/_lib/api";
 
 /**
  * Autentificarea de admin (FAZA 6).
- * Un singur cont la început — orice utilizator Supabase autentificat e
- * admin. Când apar mai mulți oameni, aici se adaugă verificarea de rol.
+ *
+ * Autentificarea o face Supabase; AUTORIZAREA o face `ADMIN_EMAILS`.
+ * Verificarea de aici e doar ca să dăm un mesaj util — poarta adevărată e
+ * `getAdminUser()`, prin care trec toate rutele și acțiunile. Dacă am lăsa
+ * doar poarta, un cont din afara listei ar reuși login-ul și ar fi trimis
+ * înapoi la login de gardă: o buclă fără explicație.
  */
 
 export interface LoginState {
@@ -58,12 +64,20 @@ export async function signIn(
     return { error: "Nu ne putem conecta la Supabase chiar acum." };
   }
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     // Mesaj identic pentru email inexistent și parolă greșită: altfel
     // formularul devine un instrument de aflat ce conturi există.
     return { error: "Email sau parolă greșite." };
+  }
+
+  const access = checkAdminEmail(data.user?.email ?? email);
+  if (access !== "allowed") {
+    // Sesiunea a fost deja creată de Supabase — o închidem, ca să nu rămână
+    // un cookie valid pentru un cont care oricum nu trece de gardă.
+    await supabase.auth.signOut();
+    return { error: ADMIN_ACCESS_MESSAGES[access] };
   }
 
   redirect("/admin");

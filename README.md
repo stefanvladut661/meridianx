@@ -92,9 +92,22 @@ Tokens-ii semantici (`--bg`, `--surface`, `--fg`, `--muted`, `--line`, `--accent
 
 1. Importă repo-ul în Vercel. Framework-ul e detectat automat (Next.js, Turbopack).
 2. Setează variabilele de mediu de mai jos în **Project Settings → Environment Variables**, pentru Production și Preview.
-3. Rulează migrarea din `supabase/migrations/` în proiectul Supabase, apoi creează contul de admin.
+3. Rulează **ambele** migrări din `supabase/migrations/`, în ordinea numerelor, apoi creează contul de admin (Authentication → Users → Add user) și pune aceeași adresă în `ADMIN_EMAILS`.
 4. Conectează domeniul `meridianagency.ro` și verifică `NEXT_PUBLIC_SITE_URL` — din el se construiesc canonical, hreflang, sitemap și robots. Dacă e greșit, tot SEO-ul arată spre domeniul greșit.
-5. Verifică după deploy: `/sitemap.xml`, `/robots.txt`, `/og.png?division=video&title=test`.
+5. Verifică după deploy: `/api/health` (trebuie `"ready": true`), `/sitemap.xml`, `/robots.txt`, `/og.png?division=video&title=test`.
+
+### Verificarea backendului
+
+`GET /api/health` răspunde cu starea fiecărei variabile care contează — public doar cu „configurat / neconfigurat”, fără valori. Autentificat ca admin, adaugă și un diagnostic viu: baza răspunde? sunt ambele migrări aplicate? câte lead-uri sunt?
+
+Contractul HTTP întreg (honeypot, coduri de eroare, plafoane, gărzi de autentificare) se verifică automat:
+
+```bash
+npm run dev            # într-un terminal
+npm run verify:backend # în altul — sau: npm run verify:backend https://meridianagency.ro
+```
+
+Scriptul merge și pe producție: e doar `fetch`, nu scrie nimic care să nu fie deja marcat ca test.
 
 ## Variabile de mediu
 
@@ -104,8 +117,10 @@ Tokens-ii semantici (`--bg`, `--surface`, `--fg`, `--muted`, `--line`, `--accent
 | `NEXT_PUBLIC_SUPABASE_URL` | da (F6) | nu se salvează niciun lead |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | da (F6) | idem |
 | `SUPABASE_SERVICE_ROLE_KEY` | da (F6) | insert-ul de pe server |
+| `ADMIN_EMAILS` | **da în producție** | fără ea, panoul se blochează intenționat — proiectele Supabase acceptă înregistrări implicit, deci fără listă orice cont creat pe proiect ar vedea toate lead-urile |
 | `RESEND_API_KEY` | da (F6) | nu pleacă emailuri de notificare |
 | `LEAD_NOTIFICATION_EMAIL` | da (F6) | nu se știe cui se trimit lead-urile |
+| `RESEND_FROM_EMAIL` | da (F6) | se cade pe `notificari@meridianagency.ro`; dacă domeniul nu e verificat în Resend, nu pleacă nimic |
 | `NEXT_PUBLIC_PHONE` | da | blocul „Sună direct" dispare de pe paginile video |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | da | butoanele de WhatsApp dispar (inclusiv cele contextuale) |
 | `NEXT_PUBLIC_INSTAGRAM` | nu | canalul Instagram dispare din panou și din footer |

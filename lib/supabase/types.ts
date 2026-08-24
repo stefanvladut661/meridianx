@@ -18,6 +18,8 @@ import type { LeadInput, LeadStatus } from "@/lib/validations/lead";
 export interface LeadRow {
   id: string;
   created_at: string;
+  /** Atinsă de triggerul `leads_set_updated_at` la orice update. */
+  updated_at: string;
   division: Division;
   source: string;
   locale: string;
@@ -51,6 +53,12 @@ export interface LeadEventRow {
 export interface Lead {
   id: string;
   createdAt: string;
+  /**
+   * Ultima atingere din panou (status sau note). Egal cu `createdAt`
+   * pentru un lead pe care nu a lucrat încă nimeni — de aici se citește
+   * „stă neatins de X zile”.
+   */
+  updatedAt: string;
   division: Division;
   source: string;
   locale: string;
@@ -102,6 +110,7 @@ export function toLead(row: LeadRow): Lead {
   return {
     id: row.id,
     createdAt: row.created_at,
+    updatedAt: row.updated_at ?? row.created_at,
     division: row.division,
     source: row.source,
     locale: row.locale,
@@ -144,7 +153,7 @@ function orNull(value: string | undefined): string | null {
 /** Payload-ul validat (contractul F0) → rândul de inserat. */
 export function toLeadInsert(
   input: LeadInput
-): Omit<LeadRow, "id" | "created_at" | "status" | "notes"> {
+): Omit<LeadRow, "id" | "created_at" | "updated_at" | "status" | "notes"> {
   return {
     division: input.division,
     source: input.source,

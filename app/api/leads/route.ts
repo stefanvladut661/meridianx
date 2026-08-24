@@ -71,7 +71,13 @@ export async function POST(request: NextRequest) {
 
   // 4. Emailurile nu blochează răspunsul: lead-ul e deja salvat, iar
   //    utilizatorul nu are de ce să aștepte după Resend.
-  void sendLeadEmails(result.data);
+  //    Pe un duplicat (dublu-click, refresh) nu se retrimit: omul a primit
+  //    deja confirmarea, iar noi am primit deja notificarea.
+  if (result.data.duplicate) {
+    console.info(`[leads] trimitere duplicată în fereastra de 5 min — lead ${result.data.id}`);
+  } else {
+    void sendLeadEmails(result.data);
+  }
 
   const response: LeadCreatedResponse = { ok: true, id: result.data.id };
   return NextResponse.json(response, { status: 201 });

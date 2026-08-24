@@ -83,7 +83,7 @@
       "invalidPhone": "Numărul de telefon nu e valid — folosește formatul 07xx xxx xxx.",
       "tooLong": "Textul depășește lungimea maximă de {max} caractere.",
       "submitFailed": "Cererea nu a plecat. Verifică conexiunea și încearcă din nou — datele tale au rămas completate.",
-      "rateLimited": "Ai trimis prea multe cereri într-un timp scurt. Așteaptă un minut și încearcă din nou."
+      "rateLimited": "Ai trimis prea multe cereri într-un timp scurt. Mai încearcă peste câteva minute — sau sună-ne, e mai rapid."
     },
     "states": {
       "submitting": "Se trimite…",

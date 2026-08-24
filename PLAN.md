@@ -23,6 +23,11 @@ Fișier de coordonare între terminale. Fiecare fază scrie aici la final de ses
 > 0–6 (F4 prin `c3a4e36`, F6 prin merge-ul de integrare backend). Auditul final
 > se face pe arborele complet. Singurul conflict a fost, ca prevăzut, `PLAN.md`.
 
+> **Backend consolidat.** După merge, a rulat o trecere separată doar pe backend
+> (jurnalul „FAZA 6b"), într-un singur terminal: autorizare pe `/admin`, migrarea 2,
+> dedup, `/api/health`, `npm run verify:backend`. Zonele de design ale F1–F5 nu au
+> fost atinse — se poate lucra la ele în paralel fără riscul de conflicte.
+
 Legendă: ⬜ neînceput · 🟡 în lucru · ✅ gata · 🔴 blocat
 
 ---
@@ -223,6 +228,32 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 
 ---
 
+### FAZA 6b — Consolidare backend (rulată din terminalul F7, singură)
+
+**Context:** rulată după merge-ul tuturor fazelor, într-un singur terminal, ca omul să poată lucra la design în paralel fără riscul de conflicte. Atinge doar zona de backend (F6) plus editurile punctuale care sunt oricum ale F7 (`messages/`, `README`, `.gitignore`, `.env.example`).
+
+**Terminat:**
+- **`ADMIN_EMAILS` — autorizare, nu doar autentificare.** Până acum, „autentificat în Supabase" însemna „admin". Proiectele Supabase acceptă înregistrarea prin email IMPLICIT, deci oricine își făcea cont pe proiect intra în panou și vedea toate lead-urile, cu telefoane și bugete. Acum: listă de adrese, comparate case-insensitive. Poarta e în `getAdminUser()` (prin care trec toate rutele și acțiunile), iar formularul de login verifică și el, ca să dea un mesaj în loc de o buclă de redirect. Fără variabilă: în dezvoltare trece orice cont, în **producție panoul se blochează** cu mesaj care spune exact ce lipsește.
+- **Migrarea 2** — `supabase/migrations/00000000000002_lead_activity.sql`. Fișier NOU (migrarea 1 rămâne neatinsă, e înghețată): `updated_at` + trigger, index pe activitate, index parțial pentru segmentul fonduri, indexuri pentru căutarea de dubluri. Panoul arată acum „atins acum N zile" pe lead-urile pe care s-a lucrat. **Obligatorie** — `LEAD_COLUMNS` o cere.
+- **Dublu-submit.** Aceeași divizie + același formular + același email/telefon în 5 minute → nu se mai creează al doilea lead. Se întoarce id-ul primului (contractul rămâne 201 cu id valid), se scrie un eveniment `duplicate_suppressed` și NU se retrimit emailurile. Un dublu-click nu mai produce două notificări și două rânduri între care nu știi pe care ai lucrat.
+- **Plafon de 200 de evenimente per lead.** Ruta de evenimente e publică (contract cu F5), deci cine află un id putea umple istoricul. Peste plafon se răspunde ca la succes și nu se scrie nimic — unui bot nu-i spui că a atins o limită.
+- **`GET /api/health`.** Public: doar „configurat / neconfigurat" pentru cele șase variabile care contează, plus `ready`. Autentificat ca admin: interogare reală în bază, care distinge „baza nu răspunde" de „migrarea 2 nu e aplicată". Rate-limited, `no-store`, zero valori scurse.
+- **`npm run verify:backend`** — `scripts/verify-backend.mjs`, zero dependențe. 18 verificări pe contractul HTTP: honeypot, JSON invalid, validare, plafon + `Retry-After`, evenimente, toate cele patru rute protejate, sesiunea de admin, ecranul de instalare. Fiecare test pe alt `X-Forwarded-For`, ca plafoanele să nu se scurgă între ele. Merge și pe producție: `npm run verify:backend https://meridianagency.ro`.
+- **`/admin` fără configurare arată acum chiar ecranul de instalare.** Nu îl arăta: garda din layout redirecta spre un login care nu avea cum să reușească. Afirmația din jurnalul F6 era corectă ca intenție, greșită ca fapt — acum e adevărată.
+- **`.env.example` e în git** (excepție în `.gitignore`), cu `RESEND_FROM_EMAIL` și `ADMIN_EMAILS`. Cererile F6 sunt închise. `forms.errors.rateLimited` corectat în RO și EN — EN adaptat, nu tradus.
+
+**Verificat la runtime:** build verde (TS strict + ESLint + 24 de rute); 18/18 pe `verify:backend` în dezvoltare ȘI pe un server de producție (`next build` + `next start`), unde s-a confirmat separat că fără Supabase `POST /api/leads` și ruta de evenimente dau **503**, nu 201 sintetic. Cu `ADMIN_EMAILS` setat, `/api/health` raportează `adminAllowlist: true`.
+
+**NEverificat, și nu se poate în mediul ăsta:** insert-ul real, RLS, triggerul de `updated_at`, dedup-ul pe date reale, randarea emailurilor în clienți de mail. Nu există proiect Supabase, nu există cheie Resend, iar Docker nu e instalat, deci nici stack Supabase local. Toate astea se verifică în ziua configurării, cu `/api/health` autentificat + un lead de test din fiecare formular.
+
+**Decizii care afectează pe alții:**
+- **Rate limiting rămâne în memoria procesului.** Am cântărit un adaptor Upstash prin REST (fără dependență nouă) și l-am respins: ar fi fost cod care rulează doar în producție și pe care nu-l pot testa aici. Pentru un formular de agenție, plafonul per instanță e suficient — decizia F6 rămâne în picioare, cu ea intră `LIMITS` dintr-un singur loc când va fi nevoie.
+- **Ruta de evenimente rămâne publică.** Token semnat per lead ar cere schimbarea contractului cu F5 și o editură în formularele lui. Plafonul de 200 mărginește paguba; restul e o decizie pentru iterația 2.
+- **`middleware.ts` NU a fost dezghețat.** `POST /api/admin/session` + `SessionKeeper` rămân. Funcționează; mutarea în middleware e o curățenie, nu o reparație.
+- **Design (F1–F5): nimic din zonele voastre nu a fost atins.** Singurele fișiere de interfață modificate sunt sub `app/(admin)/`.
+
+---
+
 ## Cereri către fișiere partajate
 
 *(Ai nevoie de o modificare într-un fișier înghețat sau din zona altei faze? Scrie aici, nu edita.)*
@@ -235,9 +266,9 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 | F3 | `lib/validations/lead.ts` **sau** `app/api/leads/route.ts` | Honeypot-ul nu ajunge niciodată să fie evaluat: `website: z.string().max(0)` respinge valoarea non-goală, deci `safeParse` pică și ruta răspunde **400**, nu `200 { ok: true, id: "" }` cum scrie contractul. Fie `website` devine `z.string().optional()` fără `max(0)` (verificarea rămâne în rută), fie ruta verifică honeypot-ul pe body-ul brut, înainte de parse. | Verificat la runtime cu POST real. F3 a acoperit local (scurtcircuit în client, botul vede succes fals și nu se lovește de API), dar **F5 va lovi exact la fel**, iar pe server contractul rămâne rupt | ✅ (F6 — rezolvat în rută, schema neatinsă) |
 | F4 | `app/globals.css` (tokens) | `--accent-contrast` pe `[data-world="software"]`: alb pe `--s-signal` #4C7DFF dă **3,69:1**, sub AA pentru text normal. Cu `--s-ink` (#060A12) urcă la **5,36:1** | Orice buton primar din divizia software pică AA — inclusiv „Cere ofertă" din header-ul F1. F4 a ocolit local cu `softwareCtaClasses()`; când tokenul se repară, clasele rămân valide și headerul se aliniază singur | ⬜ (F7 sau acord om) |
 | F4 | `components/shell/nav-links.ts` (F1) | Nicio modificare cerută — doar semnalez că rutele software linkuite de F4 (`/software/{servicii,fonduri,proiecte,proces,brief}`) se potrivesc exact cu sursa F1 | Verificat, fără acțiune | ✅ |
-| F6 | `.gitignore` (linia 34, `.env*`) | Adaugă excepția `!.env.example` și commit-uie fișierul | `.env*` îl prinde și pe `.env.example`, deci NU e în git — există doar pe mașina pe care l-a scris F0. La un clone nou sau la setarea variabilelor în Vercel nu are nimeni lista de configurat | ⬜ (F7 sau om) |
-| F6 | `.env.example` (netrack-uit) | Variabilă nouă: `RESEND_FROM_EMAIL` — adresa expeditor verificată în Resend. Fără ea se cade pe `notificari@meridianagency.ro`, care trebuie oricum verificat pe domeniu | Emailurile tranzacționale nu pleacă de pe un domeniu neverificat | ⬜ (F7 sau om) |
-| F6 | `messages/*.json` → `forms.errors.rateLimited` | Textul spune „Așteaptă un minut", dar fereastra reală e de 10 minute. Propunere: „Ai trimis prea multe cereri într-un timp scurt. Mai încearcă peste câteva minute — sau sună-ne, e mai rapid." | O eroare care minte despre durată e o eroare vagă (CLAUDE.md §4). Mesajul de pe server e deja corectat; cel afișat de F3/F5 vine din i18n | ⬜ (F7) |
+| F6 | `.gitignore` (linia 34, `.env*`) | Adaugă excepția `!.env.example` și commit-uie fișierul | `.env*` îl prinde și pe `.env.example`, deci NU e în git — există doar pe mașina pe care l-a scris F0. La un clone nou sau la setarea variabilelor în Vercel nu are nimeni lista de configurat | ✅ (F7 — excepție adăugată, fișierul e în git) |
+| F6 | `.env.example` (netrack-uit) | Variabilă nouă: `RESEND_FROM_EMAIL` — adresa expeditor verificată în Resend. Fără ea se cade pe `notificari@meridianagency.ro`, care trebuie oricum verificat pe domeniu | Emailurile tranzacționale nu pleacă de pe un domeniu neverificat | ✅ (F7 — în `.env.example` și în tabelul din README) |
+| F6 | `messages/*.json` → `forms.errors.rateLimited` | Textul spune „Așteaptă un minut", dar fereastra reală e de 10 minute. Propunere: „Ai trimis prea multe cereri într-un timp scurt. Mai încearcă peste câteva minute — sau sună-ne, e mai rapid." | O eroare care minte despre durată e o eroare vagă (CLAUDE.md §4). Mesajul de pe server e deja corectat; cel afișat de F3/F5 vine din i18n | ✅ (F7 — RO și EN, EN adaptat nu tradus) |
 | F6 | `middleware.ts` | Dacă se dezgheață vreodată: mută reîmprospătarea sesiunii Supabase acolo și șterge `POST /api/admin/session` + `SessionKeeper` | E locul standard pentru rotația tokenului. Ocolirea actuală funcționează, dar e o piesă în plus de întreținut | ⬜ (F7, opțional) |
 
 ---
@@ -284,7 +315,11 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 - [ ] **DECIZIE DE BUSINESS (F4):** intervalul „5.000 – 60.000 €" e publicat în cartușul din hero-ul `/software`. E scos din brief (buget țintă 5–15k, deschidere până la 60k) și califică lead-urile, dar e o cifră publică — confirmă sau schimbă în `TITLE_BLOCK_ROWS` din `app/[locale]/(software)/software/page.tsx`
 - [ ] **JURIDIC (F4):** `content/software/funding.ts` — citit de consultant de fonduri / jurist tot ce e marcat `needsLegalReview: true` și comentariile `// TODO: verificat juridic`
 - [ ] Cont admin creat în Supabase (Authentication → Users → Add user); nu există înregistrare din site
-- [ ] Migrarea `supabase/migrations/00000000000001_leads.sql` rulată pe proiectul real
+- [ ] **`ADMIN_EMAILS` setat cu adresa contului de admin** — fără ea panoul se blochează în producție, intenționat
+- [ ] Dezactivat „Enable email signups" în Supabase → Authentication → Providers, dacă nu e nevoie de el (a doua încuietoare, după `ADMIN_EMAILS`)
+- [ ] **Ambele** migrări rulate pe proiectul real, în ordine: `00000000000001_leads.sql`, apoi `00000000000002_lead_activity.sql`
+- [ ] `/api/health` răspunde `"ready": true`, iar autentificat ca admin arată `reachable: true` și `schemaCurrent: true`
+- [ ] `npm run verify:backend https://meridianagency.ro` — 18/18
 - [ ] Domeniu verificat în Resend + `RESEND_FROM_EMAIL` setat, altfel emailurile nu pleacă
 - [ ] Un lead de test trimis din fiecare formular, verificat că apare în `/admin` și că ajung ambele emailuri
 - [ ] Toate variabilele de mediu setate în Vercel

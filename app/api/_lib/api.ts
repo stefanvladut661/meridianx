@@ -141,6 +141,8 @@ export const LIMITS = {
   leadEvent: { limit: 60, windowMs: 10 * 60 * 1000 },
   /** Încercări de autentificare per IP. */
   login: { limit: 10, windowMs: 15 * 60 * 1000 },
+  /** Verificarea de sănătate — generoasă pentru un uptime check la minut. */
+  health: { limit: 60, windowMs: 60 * 1000 },
 } as const;
 
 // ---------------------------------------------------------------------------

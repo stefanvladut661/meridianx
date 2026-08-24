@@ -34,7 +34,7 @@ export type DataResult<T> =
   | { ok: false; reason: "unconfigured" | "not_found" | "error"; detail?: string };
 
 const LEAD_COLUMNS =
-  "id, created_at, division, source, locale, name, email, phone, company, " +
+  "id, created_at, updated_at, division, source, locale, name, email, phone, company, " +
   "project_type, budget_range, timeline, message, status, utm_source, " +
   "utm_medium, utm_campaign, referrer, notes, is_funded";
 
@@ -67,6 +67,49 @@ function asRows<T>(data: unknown): T[] {
 // ---------------------------------------------------------------------------
 
 /**
+ * Fereastra în care două trimiteri identice se consideră aceeași trimitere.
+ * Cinci minute: acoperă dublu-click, refresh cu formularul completat și
+ * „n-a mers, mai încerc o dată”, dar nu blochează un om care revine peste
+ * o oră cu alt proiect de pe aceeași adresă.
+ */
+const DEDUPE_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * Lead-ul identic trimis adineauri, dacă există.
+ *
+ * DE CE: formularele au stare de loading, dar un dublu-click rapid, un
+ * refresh sau o rețea proastă tot produc două POST-uri. Două rânduri
+ * pentru același om înseamnă două emailuri de notificare și un panou în
+ * care nu știi pe care dintre ele ai lucrat. Contractul rămâne intact —
+ * răspunsul e tot 201 cu un id valid, doar că e id-ul primului.
+ */
+async function findRecentDuplicate(
+  supabase: SupabaseClient,
+  input: LeadInput
+): Promise<Lead | null> {
+  const contact = input.email?.trim() || input.phone?.trim();
+  if (!contact) return null;
+
+  const since = new Date(Date.now() - DEDUPE_WINDOW_MS).toISOString();
+
+  const { data, error } = await supabase
+    .from("leads")
+    .select(LEAD_COLUMNS)
+    .eq("division", input.division)
+    .eq("source", input.source)
+    .eq(input.email?.trim() ? "email" : "phone", contact)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // O căutare eșuată nu are voie să blocheze un lead: mai bine un duplicat
+  // decât o vânzare pierdută.
+  if (error || !data) return null;
+  return toLead(asRow<LeadRow>(data));
+}
+
+/**
  * Inserează lead-ul și evenimentul `created` în aceeași operațiune logică.
  *
  * Dacă evenimentul eșuează, lead-ul RĂMÂNE — un istoric incomplet e mult
@@ -74,9 +117,24 @@ function asRows<T>(data: unknown): T[] {
  */
 export async function createLead(
   input: LeadInput
-): Promise<DataResult<Lead>> {
+): Promise<DataResult<Lead & { duplicate?: true }>> {
   const supabase = createAdminClient();
   if (!supabase) return fail("unconfigured");
+
+  const existing = await findRecentDuplicate(supabase, input);
+  if (existing) {
+    // Se notează în istoric, nu se ascunde: dacă cineva se întreabă de ce
+    // n-a primit două emailuri, răspunsul e vizibil pe lead.
+    const { error: eventError } = await supabase.from("lead_events").insert({
+      lead_id: existing.id,
+      type: "duplicate_suppressed",
+      payload: { source: input.source, withinSeconds: DEDUPE_WINDOW_MS / 1000 },
+    });
+    if (eventError) {
+      console.error("[leads] duplicat detectat, evenimentul a eșuat:", eventError.message);
+    }
+    return { ok: true, data: { ...existing, duplicate: true } };
+  }
 
   const { data, error } = await supabase
     .from("leads")
@@ -107,6 +165,17 @@ export async function createLead(
   return { ok: true, data: lead };
 }
 
+/**
+ * Plafon de evenimente per lead.
+ *
+ * Ruta de evenimente e publică (F5 trimite pașii de brief din browser),
+ * deci cine află un id poate umple istoricul acelui lead cu zgomot.
+ * Rate limit-ul pe IP încetinește, dar nu plafonează. Un brief real
+ * generează sub 40 de evenimente; 200 lasă loc și pentru revenirea
+ * cuiva care completează în trei reprize.
+ */
+const MAX_EVENTS_PER_LEAD = 200;
+
 /** Evenimente ulterioare (pași de brief, estimator, download, call). */
 export async function addLeadEvent(
   leadId: string,
@@ -126,6 +195,19 @@ export async function addLeadEvent(
 
   if (lookupError) return fail("error", lookupError.message);
   if (!lead) return fail("not_found");
+
+  const { count, error: countError } = await supabase
+    .from("lead_events")
+    .select("id", { count: "exact", head: true })
+    .eq("lead_id", leadId);
+
+  if (!countError && (count ?? 0) >= MAX_EVENTS_PER_LEAD) {
+    // Răspundem ca la un succes: clientul legitim (wizard-ul de brief) nu
+    // are ce face cu o eroare pe telemetrie, iar unui bot nu-i spunem că a
+    // atins un plafon. Rândul nu se scrie.
+    console.warn(`[events] plafon atins pentru lead ${leadId} — eveniment ignorat: ${type}`);
+    return { ok: true, data: "" };
+  }
 
   const { data, error } = await supabase
     .from("lead_events")
@@ -382,6 +464,52 @@ export async function updateLead(
   }
 
   return { ok: true, data: toLead(asRow<LeadRow>(data)) };
+}
+
+// ---------------------------------------------------------------------------
+// Diagnostic
+// ---------------------------------------------------------------------------
+
+export interface DatabasePing {
+  /** Conexiunea + autentificarea cu service role funcționează. */
+  reachable: boolean;
+  /** Ambele migrări sunt aplicate (`updated_at` vine din a doua). */
+  schemaCurrent: boolean;
+  leadCount: number | null;
+  detail?: string;
+}
+
+/**
+ * O interogare reală, nu o verificare de variabile de mediu.
+ *
+ * Diferența contează exact în ziua deploy-ului: „cheile sunt setate” și
+ * „baza răspunde și are schema corectă” sunt două lucruri, iar al doilea
+ * e cel care spune dacă lead-urile chiar au unde să aterizeze. Selectăm
+ * toate coloanele pe care le folosește aplicația, ca o migrare neaplicată
+ * să iasă la iveală aici, nu la primul formular trimis de un client.
+ */
+export async function pingDatabase(): Promise<DatabasePing> {
+  const supabase = createAdminClient();
+  if (!supabase) {
+    return { reachable: false, schemaCurrent: false, leadCount: null, detail: "unconfigured" };
+  }
+
+  const { error, count } = await supabase
+    .from("leads")
+    .select(LEAD_COLUMNS, { count: "exact", head: true });
+
+  if (error) {
+    // Coloana lipsă înseamnă migrarea 2 neaplicată, nu bază căzută.
+    const missingColumn = /column .* does not exist/i.test(error.message);
+    return {
+      reachable: !missingColumn ? false : true,
+      schemaCurrent: false,
+      leadCount: null,
+      detail: error.message,
+    };
+  }
+
+  return { reachable: true, schemaCurrent: true, leadCount: count ?? 0 };
 }
 
 /** Marchează trimiterea emailurilor, ca să se vadă în istoric. */

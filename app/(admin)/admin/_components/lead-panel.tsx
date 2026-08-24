@@ -31,6 +31,17 @@ function formatDateTime(iso: string): string {
   });
 }
 
+/**
+ * „Neatins de 6 zile” spune mai mult decât o dată calendaristică: panoul e
+ * o coadă de lucru, iar întrebarea zilnică e pe cine n-ai mai sunat.
+ */
+function relativeDays(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "azi";
+  if (days === 1) return "ieri";
+  return `acum ${days} zile`;
+}
+
 function Row({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
@@ -85,6 +96,12 @@ export function LeadPanel({
             <span>{lead.division === "video" ? "Video" : "Software"}</span>
             <span aria-hidden="true">·</span>
             <span>{formatDateTime(lead.createdAt)}</span>
+            {lead.updatedAt !== lead.createdAt ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>atins {relativeDays(lead.updatedAt)}</span>
+              </>
+            ) : null}
             {lead.isFunded ? (
               <span className="rounded-xs border border-accent-2/50 px-1.5 py-0.5 text-accent-2">
                 Fonduri
