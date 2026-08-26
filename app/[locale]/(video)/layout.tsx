@@ -1,22 +1,14 @@
 import { setRequestLocale } from "next-intl/server";
-import { getTranslations } from "next-intl/server";
-import { VideoHeader } from "@/components/shell/video-header";
-import { CameraHud } from "@/components/shell/camera-hud";
-import { Footer } from "@/components/shell/footer";
 
 /**
- * Scope-ul lumii VIDEO (FAZA 0 a creat fișierul; FAZA 1 îl deține
- * pentru integrarea shell-ului — header video, HUD, footer).
+ * Scope-ul diviziei VIDEO.
  *
- * data-world="video" remapează tokens-ii semantici (--bg, --accent,
- * --font-display...) la paleta tungsten/daylight. Tot ce se randează
- * înăuntru — inclusiv primitivele din components/ui/ — preia automat
- * lumea video. Nu seta culori brute --s-* aici.
- *
- * Notă pentru F2/F3: header-ul video e FIX și transparent peste
- * conținut (se condensează la scroll) — hero-urile se proiectează
- * sub el, fără padding compensatoriu. HUD-ul de cameră e montat aici,
- * o singură dată — nu-l reconstruiți în pagini.
+ * După redesign, layout-ul e gol intenționat: landing-ul `/video`
+ * își poartă singur shell-ul (bară, subsol, tokens `data-scope`),
+ * pentru că e o pagină cu propriul temperament, nu o pagină dintr-un
+ * șablon. Vechiul shell — header cu HUD, cursor de focus, Lenis —
+ * a coborât în `video/(clasic)/layout.tsx`, unde deservește
+ * sub-paginile care încă nu au fost migrate pe noul sistem.
  */
 export default async function VideoWorldLayout({
   children,
@@ -27,17 +19,5 @@ export default async function VideoWorldLayout({
 }>) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("common");
-
-  return (
-    <div data-world="video" className="min-h-dvh bg-bg text-fg">
-      <a href="#continut" className="skip-link">
-        {t("skipToContent")}
-      </a>
-      <VideoHeader />
-      <CameraHud />
-      <main id="continut">{children}</main>
-      <Footer division="video" />
-    </div>
-  );
+  return <>{children}</>;
 }

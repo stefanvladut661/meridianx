@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { getDivisionFromCookies } from "@/lib/division";
-import { GatewaySplit } from "@/components/gateway/gateway-split";
+import { GatewayScreen } from "@/components/site/pages/gateway";
 import { ClearDivision } from "@/components/gateway/clear-division";
 
 /**
@@ -41,7 +41,7 @@ export default async function GatewayPage({
   return (
     <>
       {stay && <ClearDivision />}
-      <GatewaySplit />
+      <GatewayScreen />
     </>
   );
 }

@@ -78,7 +78,7 @@ export function VideoHeader() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <BothDivisionsLink className="hidden xl:block" />
+          <BothDivisionsLink className="hidden lg:block" />
           <DivisionSwitch current="video" className="hidden md:inline-flex" />
           <LanguageSwitch className="hidden md:flex" />
           <MobileMenu division="video" className="md:hidden" />

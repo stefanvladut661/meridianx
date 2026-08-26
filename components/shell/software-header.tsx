@@ -57,7 +57,7 @@ export function SoftwareHeader() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <BothDivisionsLink className="hidden xl:block" />
+          <BothDivisionsLink className="hidden lg:block" />
           <DivisionSwitch current="software" className="hidden lg:inline-flex" />
           <LanguageSwitch className="hidden lg:flex" />
           <Link

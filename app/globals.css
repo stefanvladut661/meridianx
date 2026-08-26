@@ -211,3 +211,1265 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   MERIDIAN - SISTEMUL DE DESIGN AL SITE-ULUI (redesign 2026-08)
+
+   Se aplica pe [data-scope="video" | "software" | "gate"]. Cele trei
+   lumi impart aceeasi gramatica de suprafete - near-black sau hartie,
+   bleed-uri de lumina, glass subtil, spatiu generos - si difera prin
+   culoare, raze de colt si temperament de motion.
+
+   Firul comun: arcul de meridian, scara de spacing si marca.
+
+   Blocul coexista cu sistemul vechi (--v-*, --s-*, [data-world]) care
+   mai deserveste sub-paginile nemigrate. Numele nu se suprapun; cand
+   sub-paginile trec pe noul sistem, blocul vechi se poate sterge.
+   ============================================================ */
+
+:root {
+  --md-bg: #07070a;
+  --md-bg-2: #0b0c11;
+  --md-fg: #f4f5f7;
+  --md-muted: #979bab;
+  --md-line: rgb(255 255 255 / 0.09);
+  --md-line-strong: rgb(255 255 255 / 0.16);
+  --md-glass: rgb(255 255 255 / 0.035);
+  --md-glass-2: rgb(255 255 255 / 0.06);
+
+  /* accente — suprascrise per versiune */
+  --md-a1: #ff7a3d;
+  --md-a2: #c33bff;
+  --md-a3: #ffd7a8;
+  --md-on-a1: #1a0a02;
+
+  --md-r-sm: 10px;
+  --md-r: 16px;
+  --md-r-lg: 24px;
+  --md-r-xl: 32px;
+
+  --md-font-display: var(--font-clash), "Arial Narrow", system-ui,
+    sans-serif;
+  --md-font-body: var(--font-switzer), "Helvetica Neue", system-ui,
+    sans-serif;
+  --md-font-mono: var(--font-jbmono), ui-monospace, monospace;
+}
+
+
+
+
+
+/* ---------- V4 · HIBRID — capul de la AURORA, corpul de la SIGNAL ----------
+   Paleta rămâne integral cea din v2: același indigo, aceleași fonturi.
+   Diferă doar arhitectura paginii, nu lumea cromatică. */
+[data-scope="video"] {
+  --md-bg: #050509;
+  --md-bg-2: #0a0a14;
+  --md-fg: #f2f3f8;
+  --md-muted: #9095ad;
+  --md-a1: #5b5bf0;
+  --md-a2: #a9b0ff;
+  --md-a3: #cfd4ff;
+  --md-on-a1: #ffffff;
+  --md-font-display: var(--font-satoshi), "Helvetica Neue", system-ui,
+    sans-serif;
+  --md-font-body: var(--font-satoshi), "Helvetica Neue", system-ui,
+    sans-serif;
+}
+
+
+
+/* ============================================================
+   POARTA — [data-scope="gate"]
+   Singurul loc unde cele două lumi se ating. Shell-ul e neutru
+   intenționat: fără accent propriu, ca să nu concureze cu cele
+   două jumătăți. Accentul e lumina, nu culoarea.
+   ============================================================ */
+[data-scope="gate"] {
+  --md-bg: #060608;
+  --md-bg-2: #0c0d11;
+  --md-fg: #edeef2;
+  --md-muted: #8a8f9c;
+  --md-line: rgb(255 255 255 / 0.1);
+  --md-line-strong: rgb(255 255 255 / 0.2);
+  --md-a1: #edeef2;
+  --md-a2: #b9bdc9;
+  --md-a3: #ffffff;
+  --md-on-a1: #08080b;
+  --md-font-display: var(--font-satoshi), "Helvetica Neue", system-ui,
+    sans-serif;
+  --md-font-body: var(--font-satoshi), "Helvetica Neue", system-ui,
+    sans-serif;
+}
+
+/* Split-screen: jumătatea privită crește, cealaltă se retrage.
+   Pe focus, nu doar pe hover — altfel tastatura nu vede nimic. */
+.gate-half {
+  transition: flex-grow 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 450ms ease;
+}
+@media (min-width: 1024px) {
+  .gate-split:hover .gate-half,
+  .gate-split:focus-within .gate-half {
+    opacity: 0.5;
+  }
+  .gate-split .gate-half:hover,
+  .gate-split .gate-half:focus-within {
+    flex-grow: 1.38;
+    opacity: 1;
+  }
+}
+
+/* Arcul de meridian — firul comun între lumi (CLAUDE.md §2).
+   Același traseu în ambele jumătăți: la video e un arc de lumină
+   care circulă, la software o geodezică desenată pe grilă. */
+.arc-travel {
+  stroke-dasharray: 9 91;
+  animation: md-arc 6s linear infinite;
+}
+.arc-travel-2 {
+  animation-delay: -3s;
+}
+@keyframes md-arc {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ============================================================
+   COMUTATORUL DE LUMI — sfert de cerc în colț
+
+   Stă lipit în colțul pe care lumea-destinație îl ocupă în poartă:
+   pe pagina de video, dreapta sus (acolo e software); pe software,
+   stânga sus (acolo e video). Poziția devine memorie spațială.
+
+   Intrarea folosește `translate` + `opacity`, hover-ul folosește
+   `scale`. Sunt proprietăți separate intenționat: dacă animația de
+   intrare ar atinge `scale`, `animation-fill-mode: both` ar bloca
+   tranziția de hover pe veci.
+   ============================================================ */
+.ws-corner {
+  --ws-r: 120px;
+  position: fixed;
+  top: 0;
+  /* deasupra barei de sus (z 50): în referință bara trece pe sub colț */
+  z-index: 55;
+  width: var(--ws-r);
+  height: var(--ws-r);
+  overflow: hidden;
+  background: color-mix(in oklab, var(--md-bg) 90%, transparent);
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  box-shadow: inset 0 0 0 1px var(--md-line),
+    0 18px 46px -22px
+      color-mix(in oklab, var(--md-glow, var(--md-a1)) 70%, transparent);
+  transition: scale 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 420ms ease;
+}
+
+.ws-corner[data-side="left"] {
+  left: 0;
+  border-radius: 0 0 100% 0;
+  transform-origin: 0 0;
+  animation: ws-corner-l 780ms cubic-bezier(0.16, 1, 0.3, 1) 620ms both;
+}
+.ws-corner[data-side="right"] {
+  right: 0;
+  border-radius: 0 0 0 100%;
+  transform-origin: 100% 0;
+  animation: ws-corner-r 780ms cubic-bezier(0.16, 1, 0.3, 1) 620ms both;
+}
+
+.ws-corner:hover,
+.ws-corner:focus-visible {
+  scale: 1.12;
+  box-shadow: inset 0 0 0 1px var(--md-line-strong),
+    0 26px 64px -22px
+      color-mix(in oklab, var(--md-glow, var(--md-a1)) 90%, transparent);
+}
+.ws-corner:active {
+  scale: 1.05;
+}
+
+@keyframes ws-corner-l {
+  from {
+    opacity: 0;
+    translate: -38% -38%;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes ws-corner-r {
+  from {
+    opacity: 0;
+    translate: 38% -38%;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Interiorul sfertului: cuvantul, sageata alaturi de el si un arc fin de
+   meridian - acelasi motiv ca pe poarta, redus la un sfert. */
+.ws-arc {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 34;
+  transition: stroke-dashoffset 620ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 340ms ease;
+  opacity: 0.5;
+}
+.ws-corner:hover .ws-arc,
+.ws-corner:focus-visible .ws-arc {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+.ws-node {
+  transition: scale 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 340ms ease;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0.6;
+}
+.ws-corner:hover .ws-node,
+.ws-corner:focus-visible .ws-node {
+  scale: 1.5;
+  opacity: 1;
+}
+.ws-arrow {
+  transition: translate 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ws-corner[data-side="left"]:hover .ws-arrow,
+.ws-corner[data-side="left"]:focus-visible .ws-arrow {
+  translate: -2px -2px;
+}
+.ws-corner[data-side="right"]:hover .ws-arrow,
+.ws-corner[data-side="right"]:focus-visible .ws-arrow {
+  translate: 2px -2px;
+}
+
+/* Rezervă loc în bara de sus pentru sfertul de cerc, dar numai cât e
+   nevoie: peste ~1450px marginile containerului max-w-6xl îl găzduiesc
+   singure, deci padding-ul revine la normal. Sub 640px sfertul nu se
+   afișează deloc, așa că nu rezervăm nimic. */
+@media (min-width: 640px) {
+  .ws-inset-left {
+    padding-left: clamp(1.5rem, calc(130px - (100vw - 72rem) / 2), 130px);
+  }
+  .ws-inset-right {
+    padding-right: clamp(1.5rem, calc(130px - (100vw - 72rem) / 2), 130px);
+  }
+}
+
+/* Vălul circular la apăsare: crește din colț până acoperă ecranul,
+   în culoarea lumii în care intri. */
+.ws-wipe {
+  position: fixed;
+  z-index: 90;
+  width: 220vmax;
+  height: 220vmax;
+  border-radius: 50%;
+  translate: -50% -50%;
+  scale: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--md-a1) 70%, var(--md-bg)) 0%,
+    var(--md-bg) 62%
+  );
+  animation: ws-wipe 620ms cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+@keyframes ws-wipe {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+.ws-wipe-label {
+  animation: ws-label 620ms ease-out 180ms both;
+}
+@keyframes ws-label {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* ============================================================
+   LUMEA SOFTWARE — [data-scope="software"]
+   Aceeași gramatică de suprafețe ca la video, alt temperament:
+   raze mai mici, colțuri mai strânse, motion sub 400ms, structură
+   de grilă vizibilă. Culoarea NU e fixată aici — pagina poartă un
+   [data-palette] pe care îl schimbă selectorul din lab.
+   ============================================================ */
+[data-scope="software"] {
+  color-scheme: light;
+  --md-r-sm: 8px;
+  --md-r: 12px;
+  --md-r-lg: 16px;
+  --md-r-xl: 22px;
+  --md-font-display: var(--font-satoshi), "Helvetica Neue", system-ui,
+    sans-serif;
+  --md-font-body: var(--font-satoshi), "Helvetica Neue", system-ui, sans-serif;
+  --md-font-mono: var(--font-plexmono), ui-monospace, monospace;
+
+  /* paleta "Hartie" - cea aleasa pentru divizia software */
+  --md-bg: #f6f7f5;
+  --md-bg-2: #ffffff;
+  --md-fg: #12171b;
+  --md-muted: #5c6672;
+  --md-line: rgb(18 23 27 / 0.12);
+  --md-line-strong: rgb(18 23 27 / 0.22);
+  --md-glass: rgb(18 23 27 / 0.025);
+  --md-glass-a: rgb(255 255 255 / 0.9);
+  --md-glass-b: rgb(255 255 255 / 0.5);
+  --md-edge: rgb(18 23 27 / 0.1);
+  --md-grid-line: rgb(18 23 27 / 0.05);
+  --md-scroll: rgb(18 23 27 / 0.18);
+  --md-grain: 0.02;
+  --md-glow-o: 0.16;
+  --md-glow: #2fa37e;
+  --md-a1: #1c6e54;
+  --md-a2: #14543f;
+  --md-a3: #2fa37e;
+  --md-on-a1: #ffffff;
+}
+
+/* ---------- Paletele testabile ----------
+   Fiecare rescrie întregul set, inclusiv suprafețele de sticlă și
+   liniile de grilă — de asta funcționează și pe fundal deschis. */
+
+/* GRAFIT — aur instituțional pe grafit. Serios, bancar. */
+[data-palette="grafit"] {
+  --md-bg: #0b0c0e;
+  --md-bg-2: #121419;
+  --md-fg: #edeff2;
+  --md-muted: #8d939e;
+  --md-line: rgb(255 255 255 / 0.1);
+  --md-line-strong: rgb(255 255 255 / 0.18);
+  --md-glass: rgb(255 255 255 / 0.035);
+  --md-glass-a: rgb(255 255 255 / 0.07);
+  --md-glass-b: rgb(255 255 255 / 0.02);
+  --md-edge: rgb(255 255 255 / 0.32);
+  --md-grid-line: rgb(255 255 255 / 0.05);
+  --md-scroll: rgb(255 255 255 / 0.14);
+  --md-grain: 0.045;
+  --md-glow-o: 0.4;
+  --md-a1: #d8a02b;
+  --md-a2: #f0c368;
+  --md-a3: #ffe1a6;
+  --md-on-a1: #1a1305;
+}
+
+/* SMARALD — verde de creștere. Fintech, operațional. */
+[data-palette="smarald"] {
+  --md-bg: #070e0b;
+  --md-bg-2: #0d1713;
+  --md-fg: #e9f1ec;
+  --md-muted: #869c92;
+  --md-line: rgb(255 255 255 / 0.1);
+  --md-line-strong: rgb(255 255 255 / 0.18);
+  --md-glass: rgb(255 255 255 / 0.035);
+  --md-glass-a: rgb(255 255 255 / 0.07);
+  --md-glass-b: rgb(255 255 255 / 0.02);
+  --md-edge: rgb(255 255 255 / 0.32);
+  --md-grid-line: rgb(255 255 255 / 0.05);
+  --md-scroll: rgb(255 255 255 / 0.14);
+  --md-grain: 0.045;
+  --md-glow-o: 0.4;
+  --md-a1: #16a46b;
+  --md-a2: #4fd9a0;
+  --md-a3: #b9f0d6;
+  --md-on-a1: #03170e;
+}
+
+/* PETROL — teal rece. Infrastructură, date. */
+[data-palette="petrol"] {
+  --md-bg: #071013;
+  --md-bg-2: #0d191e;
+  --md-fg: #e6eff2;
+  --md-muted: #83969c;
+  --md-line: rgb(255 255 255 / 0.1);
+  --md-line-strong: rgb(255 255 255 / 0.18);
+  --md-glass: rgb(255 255 255 / 0.035);
+  --md-glass-a: rgb(255 255 255 / 0.07);
+  --md-glass-b: rgb(255 255 255 / 0.02);
+  --md-edge: rgb(255 255 255 / 0.32);
+  --md-grid-line: rgb(255 255 255 / 0.05);
+  --md-scroll: rgb(255 255 255 / 0.14);
+  --md-grain: 0.045;
+  --md-glow-o: 0.4;
+  --md-a1: #0fb5c9;
+  --md-a2: #58dce9;
+  --md-a3: #b7edf4;
+  --md-on-a1: #04181c;
+}
+
+/* CUPRU — cald, industrial, mai puțin „tech". */
+[data-palette="cupru"] {
+  --md-bg: #0d0b0a;
+  --md-bg-2: #171311;
+  --md-fg: #f2ede8;
+  --md-muted: #988f88;
+  --md-line: rgb(255 255 255 / 0.1);
+  --md-line-strong: rgb(255 255 255 / 0.18);
+  --md-glass: rgb(255 255 255 / 0.035);
+  --md-glass-a: rgb(255 255 255 / 0.07);
+  --md-glass-b: rgb(255 255 255 / 0.02);
+  --md-edge: rgb(255 255 255 / 0.32);
+  --md-grid-line: rgb(255 255 255 / 0.05);
+  --md-scroll: rgb(255 255 255 / 0.14);
+  --md-grain: 0.05;
+  --md-glow-o: 0.4;
+  --md-a1: #c0703c;
+  --md-a2: #e39a66;
+  --md-a3: #f6d3b4;
+  --md-on-a1: #200e04;
+}
+
+/* BORDO — zmeură închisă. Distinctiv, premium, deloc „corporate gri". */
+[data-palette="bordo"] {
+  --md-bg: #100a0e;
+  --md-bg-2: #1a1116;
+  --md-fg: #f5ebef;
+  --md-muted: #a58f99;
+  --md-line: rgb(255 255 255 / 0.1);
+  --md-line-strong: rgb(255 255 255 / 0.18);
+  --md-glass: rgb(255 255 255 / 0.035);
+  --md-glass-a: rgb(255 255 255 / 0.07);
+  --md-glass-b: rgb(255 255 255 / 0.02);
+  --md-edge: rgb(255 255 255 / 0.32);
+  --md-grid-line: rgb(255 255 255 / 0.05);
+  --md-scroll: rgb(255 255 255 / 0.14);
+  --md-grain: 0.045;
+  --md-glow-o: 0.42;
+  --md-a1: #d24d7a;
+  --md-a2: #e8749a;
+  --md-a3: #fbc6d6;
+  --md-on-a1: #16040a;
+}
+
+/* HÂRTIE — singura paletă pe fundal deschis. Cea mai „firmă serioasă". */
+[data-palette="hartie"] {
+  color-scheme: light;
+  --md-bg: #f6f7f5;
+  --md-bg-2: #ffffff;
+  --md-fg: #12171b;
+  --md-muted: #5c6672;
+  --md-line: rgb(18 23 27 / 0.12);
+  --md-line-strong: rgb(18 23 27 / 0.22);
+  --md-glass: rgb(18 23 27 / 0.025);
+  --md-glass-a: rgb(255 255 255 / 0.9);
+  --md-glass-b: rgb(255 255 255 / 0.5);
+  --md-edge: rgb(18 23 27 / 0.1);
+  --md-grid-line: rgb(18 23 27 / 0.05);
+  --md-scroll: rgb(18 23 27 / 0.18);
+  --md-grain: 0.02;
+  --md-glow-o: 0.16;
+  /* Accentul paletei deschise e prea închis pentru halouri. Bula de
+     comutare stă pe pagina CEALALTĂ lume, deci are nevoie de o
+     variantă luminoasă care se vede și pe fundal întunecat. */
+  --md-glow: #2fa37e;
+  --md-a1: #1c6e54;
+  --md-a2: #14543f;
+  --md-a3: #2fa37e;
+  --md-on-a1: #ffffff;
+}
+
+@theme inline {
+  --color-ink: var(--md-bg);
+  --color-char: var(--md-bg-2);
+  --color-glass: var(--md-glass);
+  --color-bone: var(--md-fg);
+  --color-dim: var(--md-muted);
+  --color-hair: var(--md-line);
+  --color-hair-strong: var(--md-line-strong);
+  --color-a1: var(--md-a1);
+  --color-a2: var(--md-a2);
+  --color-a3: var(--md-a3);
+  --color-on-a1: var(--md-on-a1);
+
+  --font-md-display: var(--md-font-display);
+  --font-md-body: var(--md-font-body);
+  --font-jbmono: var(--md-font-mono);
+
+  --radius-panel-sm: var(--md-r-sm);
+  --radius-panel: var(--md-r);
+  --radius-panel-lg: var(--md-r-lg);
+  --radius-panel-xl: var(--md-r-xl);
+}
+
+/* ============================================================
+   Bază
+   ============================================================ */
+html {
+  color-scheme: dark;
+}
+
+body.md-body {
+  background: var(--md-bg);
+  color: var(--md-fg);
+  font-family: var(--md-font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Paleta deschisa e singura care are nevoie ca <body> sa o urmeze:
+   altfel overscroll-ul arata fundalul intunecat de sub pagina.
+   Copil DIRECT, nu descendent: pe poarta paleta sta pe o jumatate de
+   ecran, iar shell-ul din jur trebuie sa ramana intunecat. */
+body.md-body:has(> [data-scope="software"]) {
+  background: #f6f7f5;
+  color: #12171b;
+}
+
+.md-root {
+  position: relative;
+  isolation: isolate;
+  background: var(--md-bg);
+  color: var(--md-fg);
+  font-family: var(--md-font-body);
+}
+
+:focus-visible {
+  outline: 2px solid var(--md-a1);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--md-a1);
+  color: var(--md-on-a1);
+}
+
+/* Scrollbar discret, în ton */
+.md-root ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.md-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.md-root ::-webkit-scrollbar-thumb {
+  background: var(--md-scroll, rgb(255 255 255 / 0.12));
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* ============================================================
+   Suprafețe — glassmorphism ușor
+   ============================================================ */
+.glass {
+  background: var(--md-glass);
+  border: 1px solid var(--md-line);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  border-radius: var(--md-r-lg);
+}
+
+.glass-2 {
+  background: linear-gradient(
+    180deg,
+    var(--md-glass-a, rgb(255 255 255 / 0.07)),
+    var(--md-glass-b, rgb(255 255 255 / 0.02))
+  );
+  border: 1px solid var(--md-line);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border-radius: var(--md-r-lg);
+}
+
+/* muchie de lumină pe marginea de sus — trucul care face glass-ul „scump" */
+.edge-light {
+  position: relative;
+}
+.edge-light::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--md-edge, rgb(255 255 255 / 0.35)) 30%,
+    var(--md-edge, rgb(255 255 255 / 0.35)) 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* bleed de culoare din interiorul cardului (ca în referințe) */
+.bleed {
+  position: relative;
+  overflow: hidden;
+}
+.bleed::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -55%;
+  width: 130%;
+  aspect-ratio: 1 / 1;
+  translate: -50% 0;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--md-a1) 55%, transparent) 0%,
+    transparent 62%
+  );
+  filter: blur(42px);
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 500ms ease, translate 500ms ease;
+}
+.bleed:hover::after,
+.bleed:focus-within::after {
+  opacity: 0.8;
+  translate: -50% -8%;
+}
+.bleed-top::after {
+  bottom: auto;
+  top: -60%;
+}
+
+/* ============================================================
+   Lumină ambientală — blob-uri care se mișcă lent
+   ============================================================ */
+.aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  will-change: transform;
+  z-index: 0;
+}
+
+.aurora-drift {
+  animation: md-drift 26s ease-in-out infinite alternate;
+}
+.aurora-drift-2 {
+  animation: md-drift-2 34s ease-in-out infinite alternate;
+}
+
+@keyframes md-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(4%, -6%, 0) scale(1.12);
+  }
+}
+@keyframes md-drift-2 {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.08);
+  }
+  to {
+    transform: translate3d(-5%, 5%, 0) scale(0.95);
+  }
+}
+
+/* raze din colțuri — referința „Tracle" */
+.ray {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--md-a2) 42%, transparent),
+    transparent
+  );
+  filter: blur(48px);
+  opacity: 0.55;
+  animation: md-ray 14s ease-in-out infinite alternate;
+}
+@keyframes md-ray {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.7;
+  }
+}
+
+/* grilă tehnică foarte discretă */
+.techgrid {
+  background-image: linear-gradient(
+      to right,
+      var(--md-grid-line, rgb(255 255 255 / 0.045)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--md-grid-line, rgb(255 255 255 / 0.045)) 1px,
+      transparent 1px
+    );
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent);
+  -webkit-mask-image: radial-gradient(
+    ellipse 80% 60% at 50% 0%,
+    #000 20%,
+    transparent
+  );
+}
+
+/* film grain — dă textură peste gradiente, altfel se văd benzi */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--md-grain, 0.045);
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   Tipografie
+   ============================================================ */
+.display {
+  font-family: var(--md-font-display);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.eyebrow {
+  font-family: var(--md-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--md-muted);
+}
+
+.grad-text {
+  background: linear-gradient(
+    100deg,
+    var(--md-fg) 0%,
+    var(--md-a3) 45%,
+    var(--md-a1) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grad-text-soft {
+  background: linear-gradient(
+    100deg,
+    var(--md-a2) 0%,
+    var(--md-a3) 60%,
+    var(--md-a2) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: md-shift 9s ease-in-out infinite alternate;
+}
+@keyframes md-shift {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+/* ============================================================
+   Componente
+   ============================================================ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4375rem 0.875rem 0.4375rem 0.6875rem;
+  border-radius: 99px;
+  border: 1px solid var(--md-line);
+  background: var(--md-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 0.8125rem;
+  color: var(--md-fg);
+  white-space: nowrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  border-radius: 99px;
+  font-weight: 550;
+  font-size: 0.9375rem;
+  line-height: 1;
+  padding: 1rem 1.5rem;
+  transition: transform 220ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    background 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  min-height: 48px;
+  cursor: pointer;
+}
+.btn:active {
+  transform: scale(0.975);
+}
+
+.btn-primary {
+  background: var(--md-a1);
+  color: var(--md-on-a1);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--md-a1) 60%, transparent),
+    0 12px 34px -12px color-mix(in oklab, var(--md-a1) 90%, transparent);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--md-a1) 70%, transparent),
+    0 20px 48px -14px color-mix(in oklab, var(--md-a1) 95%, transparent);
+}
+
+.btn-light {
+  background: var(--md-fg);
+  color: var(--md-bg);
+}
+.btn-light:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px -18px rgb(255 255 255 / 0.5);
+}
+
+.btn-ghost {
+  background: var(--md-glass);
+  border: 1px solid var(--md-line-strong);
+  color: var(--md-fg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.btn-ghost:hover {
+  background: var(--md-glass-2);
+  border-color: rgb(255 255 255 / 0.3);
+  transform: translateY(-2px);
+}
+
+/* săgeata care alunecă la hover */
+.btn .arw {
+  transition: transform 260ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.btn:hover .arw {
+  transform: translateX(4px);
+}
+
+/* card ridicat la hover */
+.lift {
+  transition: transform 380ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    border-color 380ms ease, background 380ms ease;
+}
+.lift:hover {
+  transform: translateY(-4px);
+  border-color: var(--md-line-strong);
+}
+
+/* linie hairline cu punct de accent */
+.rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--md-line-strong),
+    transparent
+  );
+}
+
+/* ============================================================
+   Motion — reveal la scroll
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--d, 0ms);
+  will-change: opacity, transform;
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+.reveal-blur {
+  filter: blur(8px);
+  transition: opacity 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-blur.is-in {
+  filter: none;
+}
+.reveal-scale {
+  transform: translateY(28px) scale(0.97);
+}
+.reveal-scale.is-in {
+  transform: none;
+}
+
+/* marquee orizontal */
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: md-marquee var(--dur, 38s) linear infinite;
+}
+.marquee:hover {
+  animation-play-state: paused;
+}
+@keyframes md-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* marquee vertical — coloane de testimoniale */
+.marquee-v {
+  display: flex;
+  flex-direction: column;
+  animation: md-marquee-v var(--dur, 46s) linear infinite;
+}
+.marquee-v.rev {
+  animation-direction: reverse;
+}
+.marquee-col:hover .marquee-v {
+  animation-play-state: paused;
+}
+@keyframes md-marquee-v {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+.fade-y {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+.fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+}
+
+/* puls de înregistrare — semnătura diviziei video */
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--md-a1);
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--md-a1) 70%, transparent);
+  animation: md-rec 2.4s ease-out infinite;
+}
+@keyframes md-rec {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--md-a1) 70%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* sweep de lumină peste o suprafață (playere, plăci media) */
+.sweep {
+  position: relative;
+  overflow: hidden;
+}
+.sweep::before {
+  content: "";
+  position: absolute;
+  inset: -40% -120%;
+  background: linear-gradient(
+    75deg,
+    transparent 42%,
+    var(--md-edge, rgb(255 255 255 / 0.35)) 50%,
+    transparent 58%
+  );
+  animation: md-sweep 7s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes md-sweep {
+  0%,
+  65% {
+    transform: translateX(-60%);
+  }
+  100% {
+    transform: translateX(60%);
+  }
+}
+
+/* bară de „redare" care se umple, legată de scroll pe timeline-uri */
+.scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--md-a1), transparent);
+  animation: md-scan 5.5s ease-in-out infinite;
+}
+@keyframes md-scan {
+  0%,
+  100% {
+    top: 8%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  90% {
+    opacity: 0.9;
+  }
+  50% {
+    top: 92%;
+  }
+}
+
+/* plutire lentă pentru carduri flotante peste hero */
+.float {
+  animation: md-float 8s ease-in-out infinite alternate;
+}
+.float-2 {
+  animation: md-float 10s ease-in-out 0.8s infinite alternate-reverse;
+}
+@keyframes md-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-12px);
+  }
+}
+
+/* accordion FAQ */
+.acc-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.acc-body > div {
+  overflow: hidden;
+}
+.acc-open .acc-body {
+  grid-template-rows: 1fr;
+}
+.acc-open .acc-sign {
+  transform: rotate(45deg);
+}
+.acc-sign {
+  transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* carusel cu snap */
+.snap-row {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+}
+.snap-row::-webkit-scrollbar {
+  display: none;
+}
+.snap-row > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   Semnături SOFTWARE
+   ============================================================ */
+
+/* Nodul — echivalentul software al punctului REC de la video.
+   Pătrat rotit, nu cerc: geometrie, nu organic. */
+.node-dot {
+  width: 7px;
+  height: 7px;
+  rotate: 45deg;
+  background: var(--md-a1);
+  animation: md-node 3s ease-in-out infinite;
+}
+@keyframes md-node {
+  0%,
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.45;
+    scale: 0.82;
+  }
+}
+
+/* Reveal rapid — lumea software nu are răbdare (CLAUDE.md §2) */
+.reveal-fast {
+  transition-duration: 380ms !important;
+}
+
+/* Linie care se desenează la intrarea în viewport */
+.draw-line {
+  stroke-dasharray: var(--len, 400);
+  stroke-dashoffset: var(--len, 400);
+  transition: stroke-dashoffset 1100ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.is-in .draw-line,
+.draw-line.is-in {
+  stroke-dashoffset: 0;
+}
+
+/* Grilă de blueprint pe toată suprafața, nu doar sus */
+.blueprint {
+  background-image: linear-gradient(
+      to right,
+      var(--md-grid-line, rgb(255 255 255 / 0.045)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--md-grid-line, rgb(255 255 255 / 0.045)) 1px,
+      transparent 1px
+    );
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000, transparent);
+  -webkit-mask-image: radial-gradient(
+    ellipse 70% 70% at 50% 50%,
+    #000,
+    transparent
+  );
+}
+
+/* Bara de progres a configuratorului */
+.step-bar {
+  transition: width 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   Reduced motion — pagina rămâne completă, doar se liniștește
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .marquee,
+  .marquee-v,
+  .node-dot,
+  .aurora-drift,
+  .aurora-drift-2,
+  .ray,
+  .rec-dot,
+  .sweep::before,
+  .scan,
+  .float,
+  .float-2,
+  .grad-text-soft {
+    animation: none !important;
+  }
+  .sweep::before {
+    display: none;
+  }
+  .scan {
+    top: 50%;
+    opacity: 0.5;
+  }
+  .lift:hover,
+  .btn:hover,
+  .btn-primary:hover {
+    transform: none;
+  }
+  .snap-row {
+    scroll-behavior: auto;
+  }
+  .draw-line {
+    stroke-dashoffset: 0 !important;
+  }
+  .step-bar {
+    transition: none;
+  }
+  .arc-travel {
+    animation: none;
+    stroke-dasharray: none;
+    opacity: 0.7;
+  }
+  .gate-half {
+    transition: none;
+  }
+  .ws-corner {
+    animation: none;
+    opacity: 1;
+    translate: 0 0;
+    transition: none;
+  }
+  .ws-corner:hover,
+  .ws-corner:focus-visible {
+    scale: 1;
+  }
+  .ws-arc,
+  .ws-node,
+  .ws-arrow {
+    transition: none;
+  }
+  .ws-arc {
+    stroke-dashoffset: 0;
+    opacity: 0.8;
+  }
+  .ws-node {
+    opacity: 0.9;
+  }
+  .ws-wipe,
+  .ws-wipe-label {
+    animation: none;
+  }
+  .gate-split:hover .gate-half,
+  .gate-split:focus-within .gate-half {
+    opacity: 1;
+  }
+  .gate-split .gate-half:hover,
+  .gate-split .gate-half:focus-within {
+    flex-grow: 1;
+  }
+}

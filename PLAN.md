@@ -299,6 +299,7 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 | F5 | `components/ui/reveal.tsx` | `duration` are default 500ms, dar lumea software cere sub 400 (CLAUDE.md §2). F5 trimite `duration={320}` la fiecare folosire. Merită ca `Reveal` să ia default-ul din `data-world`, la F7 — nu îl schimb într-un fișier înghețat. |
 | F6 | `main` (integrare) | F4 și F6 merge-uite în `main` (`c36d77c`, `39eb8e0`). Prima construcție cu F4+F5+F6 împreună: **build verde**, 13 rute publice × 2 limbi + `/admin` + 5 rute API. Zero coliziuni de fișiere între F4 și F5 în `components/software/`. Verificat la runtime că payload-ul brief-ului F5 trece validarea serverului F6 (răspunde 503 „fără bază de date", nu 400 „date invalide"), și că honeypot-ul dă 200 cu id gol pe ambele divizii. Singurele conflicte la merge au fost în `PLAN.md`, rezolvate păstrând ambele părți |
 | F3 | `components/shell/footer.tsx` | Footerul construiește `tel:` cu `phone.replace(/\s/g,"")`, deci păstrează `+` doar dacă env-ul îl are. `components/video/cta/channels.ts` normalizează la `tel:+<cifre>`, ca linkul să meargă și dacă numărul e scris fără prefix. De unificat la F7 — nu am atins footerul. |
+| F7 | `i18n/routing.ts` (FAZA 0) | **Modificat, cu acord explicit de la om.** Am adăugat `localeDetection: false`. Fără el, next-intl citea `Accept-Language` și cookie-ul `NEXT_LOCALE` și redirecta `/` spre `/en` pentru orice browser setat pe engleză — deci gateway-ul în română nu se vedea niciodată pe o instalare de Windows în engleză, iar cu cookie-ul de divizie setat drumul era `/` → `/en` → `/en/video`. Româna e limba sursă (CLAUDE.md §4); engleza se alege manual din comutatorul de limbă. Efect secundar așteptat: comutatorul de pe paginile EN trimite spre `/ro/video`, pe care middleware-ul îl normalizează 307 spre `/video` — un hop în plus, corect funcțional. |
 
 ---
 
@@ -340,3 +341,215 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 - Migrare conținut din `content/` în CMS (Sanity sau Payload)
 - Blog și studii de caz detaliate
 - Pagină de echipă
+
+---
+
+## LAB — redesign front-end VIDEO (2026-08-25)
+
+Zonă nouă, complet izolată de producție: `app/(lab)/`.
+
+**Rute:** `/lab` (index) · `/lab/v1` · `/lab/v2` · `/lab/v3` · `/lab/v4`
+
+**Izolare:**
+- root layout propriu (`app/(lab)/layout.tsx`), cu fonturi proprii (`--font-lab-*`)
+- sistem de design propriu în `app/(lab)/lab.css` — NU importă `app/globals.css`,
+  nu folosește tokens-ii `[data-world]`, nu are cum să se scurgă în `/video` sau `/software`
+- paginile de producție rămân neatinse; build-ul le raportează identic
+
+**Direcțiile:**
+| | Concept | Accent | Display | Semnătura |
+|---|---|---|---|---|
+| v1 AURORA | cald, cinematic, hero asimetric | `#ff7a3d` / `#c33bff` | Clash Display | placa media cu aurora + carduri flotante |
+| v2 SIGNAL | indigo, centrat, orientat pe produs | `#5b5bf0` | Satoshi | panoul „ce rulează acum" de sub hero |
+| v3 REEL | editorial, crimson, serif | `#e5484d` | Instrument Serif | orizontul de lumină din CTA-ul final |
+| v4 HIBRID | capul de la AURORA, corpul de la SIGNAL | paleta v2 | Satoshi | contrastul dintre deschiderea cinematică și corpul riguros |
+
+**Copy:** scris integral de la zero pentru poziționarea „producție + distribuție
+plătită + optimizare lunară", în `app/(lab)/lab/_components/content.ts`. Fără
+prețuri, totul pe ofertă. Toate versiunile împart același copy — diferă
+doar limbajul vizual, ca să fie comparabile.
+
+**Placeholder marcat explicit** (nu se publică fără confirmarea clientului):
+`TESTIMONIALS`, `CAPABILITY_STATS`, `CONTACT` (telefon, WhatsApp, email),
+plăcile media din `MediaFrame`.
+
+### Cerere către fișier partajat — REZOLVATĂ
+- `middleware.ts`: adăugat `lab` la excluderile matcher-ului i18n, ca `/lab` să nu
+  fie rescris spre `/ro/lab` (care nu există). O singură cuvânt-cheie în regex,
+  zero efect asupra rutelor existente.
+
+### De decis
+- care direcție devine noul `/video`
+- numerele din `CAPABILITY_STATS` și datele de contact reale
+- dacă păstrăm marca redesenată vectorial (`_components/mark.tsx`) sau folosim
+  `public/brand/meridian-logo.jpeg`
+
+---
+
+## LAB — divizia SOFTWARE (2026-08-25)
+
+**Rută:** `/lab/soft` — o singură direcție, corporate, cu selector de paletă.
+
+**Poziționare:** partener de implementare pentru firme care au obținut finanțare
+de digitalizare și trebuie să transforme banii în infrastructură folosită real.
+Copy nou în `app/(lab)/lab/_components/soft-content.ts`. Fără prețuri.
+
+**Ce se vinde:** aplicații de business la comandă, fidelizare, dashboard-uri
+custom, mecanisme de vânzare, SaaS, aplicații mobile, site-uri de conversie,
+integrări. Argumente: livrare pe etape scurte, interfețe care se învață în
+minute, performanță măsurată, preț competitiv, cod și conturi pe firma clientului.
+
+**Lead magnet — configuratorul de proiect** (`_components/configurator.tsx`):
+patru pași (module → scară → integrări → termen și finanțare), fișa proiectului
+se completează în timp real la dreapta (scop, etape propuse, interval orientativ
+de timp), iar pasul cinci e programarea consultanței. Estimarea de timp e
+marcată vizibil ca orientativă; costul apare doar în ofertă, după consultanță.
+NU e conectat la `/api/leads` — se oprește la starea de succes locală.
+
+**Selector de paletă** (`_components/palette.tsx`): buton flotant jos-dreapta,
+șase palete, alegerea se ține în `localStorage`. Funcționează pentru că nicio
+culoare nu e scrisă direct în componente — totul trece prin `[data-palette]`.
+
+| Paletă | Caracter | Accent | Contrast accent/fundal |
+|---|---|---|---|
+| Grafit | aur instituțional, „bancă și contract" | `#d8a02b` | 8.4 |
+| Smarald | verde de creștere, operațional | `#16a46b` | 6.1 |
+| Petrol | teal rece, infrastructură | `#0fb5c9` | 7.8 |
+| Cupru | cald, industrial | `#c0703c` | 5.3 |
+| Bordo | zmeură, memorabil | `#d24d7a` | 4.7 |
+| Hârtie | **fundal deschis**, cel mai sobru | `#1c6e54` | 5.7 |
+
+Toate trec AA pe text mic. Zero albastru — indigo-ul de la video rămâne al video-ului.
+
+**Separarea de video** (CLAUDE.md §2): colțuri mai strânse (8/12/16 vs 10/16/24),
+motion sub 400ms (`.reveal-fast`), IBM Plex Mono în loc de JetBrains, `.node-dot`
+(pătrat rotit) în loc de `.rec-dot` (puls REC), grilă de blueprint, iar obiectul
+memorabil din hero e o interfață de aplicație desenată din tokens, nu o placă
+media.
+
+### De decis
+- ce paletă rămâne pentru software
+- dacă păstrăm configuratorul ca lead magnet principal sau îl mutăm pe pagină separată
+- textele marcate `TODO: verificat juridic` despre documentația de raportare
+
+---
+
+## LAB — POARTA (2026-08-26)
+
+**Rută:** `/lab/gateway` — pagina intermediară, echivalentul rădăcinii site-ului.
+
+Singura pagină în care cele două lumi apar împreună, fără să se amestece.
+Fiecare jumătate poartă propriul `[data-lab]` pe elementul de link, deci propria
+paletă, propriile raze de colț și propriul temperament de motion. Shell-ul —
+bara de sus, banda de sub fold, footer-ul — rulează pe un scope neutru nou,
+`[data-lab="gate"]`, fără accent propriu, ca să nu concureze cu niciuna.
+
+**Firul comun, implementat de-adevăratelea** (`_components/meridian.tsx`):
+același traseu SVG în ambele jumătăți — două curbe de meridian plus cercul —
+tratat ca lumină care circulă pe traseu la video și ca geodezică desenată peste
+grilă, cu gradații de latitudine, la software. Cele două arcuri sunt tăiate
+exact la cusătură, unde stă marca.
+
+**Interacțiune:** split-screen clasic — jumătatea privită crește (`flex-grow`),
+cealaltă se retrage. Funcționează pe `:focus-within`, nu doar pe `:hover`, deci
+și de la tastatură. Sub `prefers-reduced-motion` ambele rămân egale și complet
+lizibile. Pe telefon se stivuiesc, chip-urile de industrii dispar și înălțimea
+scade la `46dvh`, ca a doua opțiune să înceapă vizibil pe primul ecran.
+
+**Selectorul de paletă e disponibil și aici** — poarta e locul în care se vede
+dacă paleta aleasă pentru software stă bine lângă indigo-ul de la video.
+Regula CSS care face `<body>` să urmeze paleta deschisă a fost restrânsă la
+copil direct (`:has(> [data-palette="hartie"])`), altfel ar fi luminat și
+shell-ul porții, unde paleta ocupă doar o jumătate de ecran.
+
+**Copy:** decizia se ia în trei secunde, deci nu există nimic de citit înainte
+de alegere. Argumentele („o agenție, două echipe" — un singur punct de contact,
+nu amestecăm, se ajută reciproc) și ieșirea de siguranță pentru cine ezită stau
+sub fold.
+
+### De decis
+- dacă poarta rămâne la `100dvh` pe desktop sau se scurtează
+- ordinea diviziilor: video în stânga sau software în stânga
+
+---
+
+## LAB — comutatorul de lumi + tema implicită (2026-08-26)
+
+**Tema Hârtie a devenit implicită** (`DEFAULT_PALETTE = "hartie"` în
+`_components/palette.tsx`), deci și pentru `/lab/soft` și pentru `/lab/gateway`.
+Selectorul rămâne disponibil; alegerea salvată în `localStorage` are prioritate
+față de implicit.
+
+**Fix de contrast pe poartă:** jumătățile nu-și declarau culoarea de text, deci
+titlul „SOFTWARE" moștenea albul shell-ului neutru și dispărea pe fundal deschis.
+Ambele jumătăți au acum `text-bone`, adică își iau culoarea din propria lume.
+
+**Comutatorul de lumi** (`_components/world-switch.tsx`) — sfert de cerc lipit
+în colț, după referința din `ideas/2`. Respectă memoria spațială a porții: pe
+`/lab/v4` stă **dreapta sus** (acolo e software în poartă), pe `/lab/soft`
+**stânga sus** (acolo e video). Poartă `data-lab` și paleta lumii în care duce,
+nu ale paginii pe care stă — e o gaură în colț prin care se vede cealaltă lume.
+
+- rază 120px, sticlă cu blur. Observația care schimbă tot: într-un sfert lipit
+  în colț, lățimea maximă e chiar lângă muchia de sus — la 14px sub ea mai sunt
+  ~119px. Deci textul nu trebuie curbat sau rotit ca să încapă, doar urcat.
+  Toate modelele țin tipografia orizontală.
+- **trei modele de comparat**, în `_components/corner-faces.tsx`, alese de pe
+  `/lab/colt`:
+  · **Fereastră** — colțul e o gaură în perete: se vede un fragment din lumea de
+  dincolo (cadru cu redare și bandă de timecode la video, fragment de interfață
+  cu bare la software), eticheta stă sus pe muchie
+  · **Comutator** — arată și unde ești și unde ajungi: divizia curentă stinsă
+  deasupra, cea de destinație aprinsă dedesubt, cu o linie care coboară între ele
+  · **Etichetă** — marca, „TRECI LA", numele diviziei, o linie care se lungește
+  la hover. Zero decor
+- alegerea se ține în `localStorage` (`meridian-lab-face`, hook `useFace`), la fel
+  ca paleta: pagina de test o scrie, `/lab/v4` și `/lab/soft` o citesc
+- **intrare**: alunecă din colț (`translate` + `opacity`), după 620ms
+- **hover**: `scale: 1.12` cu origine în colț, deci crește spre pagină; gradațiile
+  se aprind în culoarea accentului, insigna crește și din ea pleacă o undă
+- **apăsare**: văl circular care crește din colț până acoperă ecranul, în
+  culoarea destinației, cu marca și numele diviziei; navigarea la 560ms
+
+Intrarea folosește `translate`, hover-ul `scale` — proprietăți separate
+intenționat: dacă animația de intrare ar atinge `scale`,
+`animation-fill-mode: both` ar bloca tranziția de hover pe veci. Vălul merge
+prin `createPortal` în `<body>`, fiindcă `translate` pe sfert îl face bloc de
+conținere pentru descendenții `fixed`.
+
+Sfertul stă la `z-index: 55`, deci **peste** bara de sus (50) — exact ca în
+referință, unde bara trece pe sub colț. Ca să nu acopere logo-ul sau CTA-ul,
+barele primesc `.ws-inset-left` / `.ws-inset-right`:
+`clamp(1.5rem, calc(130px - (100vw - 72rem) / 2), 130px)` — rezervă loc doar
+când e nevoie, iar peste ~1450px marginile lui `max-w-6xl` îl găzduiesc singure.
+
+Sub 640px sfertul nu se afișează: în colțul de sus al unui telefon stă bara de
+navigare. Acolo, trecerea dintre divizii e o linie în meniul mobil
+(`WorldSwitchMobileLink`).
+
+Sub `prefers-reduced-motion`: fără intrare, fără creștere, fără văl — link
+obișnuit care navighează direct.
+
+---
+
+## LAB — pagină de test pentru colț (2026-08-26)
+
+**Rută:** `/lab/colt`
+
+Cele trei modele de interior, fiecare în ambele contexte (pagina de video cu
+colțul în dreapta, pagina de software cu colțul în stânga), la dimensiune reală
+de 120px, în rame care imită pagina-gazdă — cu bară de sus, titlu și butoane, ca
+să se vadă cât înseamnă colțul peste conținut real. Ramele sunt mai înguste
+decât un ecran, deci proporția pare mai mare acolo decât în pagină; scrie și pe
+pagină.
+
+Fiecare model are un buton „Pune-l pe site" care scrie alegerea în browser;
+paginile de divizie o preiau automat, deci se poate compara și în pagina
+întreagă, nu doar în ramă. Selectorul de paletă e disponibil și aici, fiindcă
+colțul spre software își ia culoarea din paleta aleasă.
+
+Varianta de previzualizare a colțului e aceeași componentă, cu `.ws-corner--preview`
+peste: `position: absolute` în loc de `fixed` și fără animația de intrare.
+
+### De decis
+- care dintre cele trei modele rămâne (implicit acum: **Comutator**)

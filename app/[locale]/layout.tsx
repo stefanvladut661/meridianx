@@ -58,7 +58,7 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale}>
-      <body className={`${fontVariables} antialiased`}>
+      <body className={`${fontVariables} md-body antialiased`}>
         <NextIntlClientProvider>
           {children}
           <CookieBanner />
