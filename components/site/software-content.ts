@@ -376,10 +376,7 @@ export const CONSULT_OUTPUT = [
   },
 ] as const;
 
-/* ---------- Contact ---------- */
-export const SCONTACT = {
-  phone: "+40 700 000 000", // TODO: număr real
-  phoneHref: "tel:+40700000000",
-  email: "software@meridianagency.ro", // TODO: adresă reală
-  isPlaceholder: true as const,
-};
+/* ---------- Contact ----------
+   Vine din env (`components/site/contact.ts`). Reexportat sub numele
+   vechi ca paginile să nu-și schimbe importurile. */
+export { SOFTWARE_CONTACT as SCONTACT } from "./contact";

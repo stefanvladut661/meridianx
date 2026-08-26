@@ -5,7 +5,7 @@ import { Reveal } from "./motion";
 import { TESTIMONIALS } from "./video-content";
 
 /* ============================================================
-   Piese de interfață partajate de cele trei versiuni de lab.
+   Piese de interfață partajate de cele două lumi și de poartă.
    ============================================================ */
 
 /* ---------- Iconuri: linie de 1.5, colț la 90°, fără librărie ---------- */
@@ -198,15 +198,18 @@ export function MediaFrame({
         ))}
       </div>
 
-      <button
-        type="button"
+      {/* Cât timp placa e un exemplu, butonul de redare nu e buton:
+          un control focusabil care nu face nimic e o promisiune ratată
+          și o capcană la navigarea cu tastatura. Rămâne semnul vizual;
+          devine buton când intră materialul real. */}
+      <span
+        aria-hidden
         className="absolute inset-0 z-10 flex items-center justify-center"
-        aria-label={`Redă: ${label}`}
       >
         <span className="glass-2 flex size-14 items-center justify-center rounded-full text-bone transition-transform duration-300 group-hover:scale-110">
           <Icon name="play" size={20} className="ml-0.5" />
         </span>
-      </button>
+      </span>
 
       <figcaption className="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <span className="min-w-0">

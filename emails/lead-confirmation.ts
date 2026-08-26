@@ -72,7 +72,7 @@ export function leadConfirmationEmail(lead: Lead): EmailContent {
           phone
             ? paragraph(`Dacă nu ai chef să aștepți — și nu te-am condamna — sună tu.`, theme.muted) +
               button(`Sună ${phone}`, `tel:${phone.replace(/[^\d+]/g, "")}`, theme)
-            : button("Vezi portofoliul", `${siteUrl()}/video/portofoliu`, theme)
+            : button("Vezi ce filmăm", `${siteUrl()}/video#servicii`, theme)
         }
       `,
       footer: `MERIDIAN — producție video și campanii. Ai primit acest email pentru că ai completat un formular pe ${esc(siteUrl().replace(/^https?:\/\//, ""))}.`,
@@ -125,7 +125,7 @@ export function leadConfirmationEmail(lead: Lead): EmailContent {
       ${fundedNote}
       ${stepList(steps, theme)}
       ${paragraph("Dacă între timp îți amintești ceva important, răspunde direct la acest email — ajunge la aceeași persoană care îți citește cererea.", theme.muted)}
-      ${button("Vezi cum lucrăm", `${siteUrl()}/software/proces`, theme)}
+      ${button("Vezi cum lucrăm", `${siteUrl()}/software#proces`, theme)}
     `,
     footer: `MERIDIAN — web și aplicații la comandă. Ai primit acest email pentru că ai completat un formular pe ${esc(siteUrl().replace(/^https?:\/\//, ""))}.`,
   });

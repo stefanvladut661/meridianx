@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isDivision, type Division } from "@/lib/division";
 import {
@@ -14,7 +13,7 @@ import {
 } from "@/lib/consent";
 
 /**
- * Bannerul de cookie-uri (FAZA 7).
+ * Bannerul de cookie-uri.
  *
  * Blochează efectiv: `lib/analytics.ts` nu injectează nimic până nu
  * există un „da” pe categoria respectivă. Refuzul e la fel de vizibil
@@ -22,9 +21,16 @@ import {
  * gri ascuns în colț.
  *
  * Se colorează după lumea în care se află vizitatorul (cookie-ul de
- * divizie, citit pe client): pe /video e cald, pe /software e rece, pe
- * gateway e neutru. Citirea pe server ar fi făcut toate paginile
- * dinamice — nu merită pentru un banner.
+ * divizie, citit pe client): pe /video e indigo pe fundal închis, pe
+ * /software e verde pe hârtie, pe poartă e neutru. Citirea pe server ar
+ * fi făcut toate paginile dinamice — nu merită pentru un banner.
+ *
+ * `data-scope` pe înveliș nu e decorativ: el aduce tokens-ii `--md-*`
+ * în subarborele bannerului, care stă în afara oricărui `.md-root`.
+ *
+ * z-index 70 — peste comutatorul de lumi (55) și peste barele fixe
+ * (50). Un banner de consimțământ care intră sub altceva e o problemă
+ * juridică, nu una vizuală.
  */
 
 function readDivision(): Division | null {
@@ -70,8 +76,8 @@ export function CookieBanner() {
 
   return (
     <div
-      data-world={world ?? undefined}
-      className="fixed inset-x-0 bottom-0 z-(--z-toast) p-3 sm:p-4"
+      data-scope={world ?? "gate"}
+      className="fixed inset-x-0 bottom-0 z-[70] p-3 sm:p-4"
     >
       <div
         ref={ref}
@@ -80,29 +86,30 @@ export function CookieBanner() {
         aria-modal="false"
         aria-labelledby="cookie-banner-title"
         aria-describedby="cookie-banner-body"
-        className="mx-auto max-w-4xl rounded-md border border-line bg-surface p-5 shadow-overlay outline-none sm:p-6"
+        className="mx-auto max-w-4xl rounded-panel border border-hair bg-char p-5 text-bone shadow-2xl shadow-black/40 outline-none sm:p-6"
       >
-        <p className="font-mono text-[11px] tracking-[0.24em] text-accent">
-          {t("eyebrow")}
-        </p>
+        <p className="eyebrow">{t("eyebrow")}</p>
         <h2
           id="cookie-banner-title"
-          className="mt-3 font-display text-xl tracking-tight sm:text-2xl"
+          className="display mt-3 text-[clamp(1.15rem,2.6vw,1.5rem)]"
         >
           {t("title")}
         </h2>
-        <p id="cookie-banner-body" className="mt-2 text-sm text-muted">
+        <p
+          id="cookie-banner-body"
+          className="mt-2 text-[14.5px] leading-relaxed text-dim"
+        >
           {t("body")}{" "}
           <Link
             href="/legal/cookies"
-            className="text-accent underline-offset-4 hover:underline"
+            className="text-a1 underline-offset-4 hover:underline"
           >
             {t("readPolicy")}
           </Link>
         </p>
 
         {expanded ? (
-          <fieldset className="mt-5 divide-y divide-line border-y border-line">
+          <fieldset className="mt-5 divide-y divide-hair border-y border-hair">
             <legend className="sr-only">{t("categoriesLegend")}</legend>
 
             <CategoryRow
@@ -132,24 +139,33 @@ export function CookieBanner() {
         ) : null}
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <Button onClick={() => decide({ analytics: true, marketing: true })}>
+          <button
+            type="button"
+            className="btn btn-primary !min-h-11 !px-5 !py-2.5 !text-[14px]"
+            onClick={() => decide({ analytics: true, marketing: true })}
+          >
             {t("acceptAll")}
-          </Button>
-          <Button
-            variant="secondary"
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost !min-h-11 !px-5 !py-2.5 !text-[14px]"
             onClick={() => decide(CONSENT_NONE)}
           >
             {t("rejectAll")}
-          </Button>
+          </button>
           {expanded ? (
-            <Button variant="ghost" onClick={() => decide({ analytics, marketing })}>
+            <button
+              type="button"
+              className="btn btn-ghost !min-h-11 !px-5 !py-2.5 !text-[14px]"
+              onClick={() => decide({ analytics, marketing })}
+            >
               {t("saveChoice")}
-            </Button>
+            </button>
           ) : (
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="text-sm text-muted underline-offset-4 transition-colors duration-150 hover:text-fg hover:underline"
+              className="text-[14px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
             >
               {t("customize")}
             </button>
@@ -188,23 +204,25 @@ function CategoryRow({
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
         className={cn(
-          "mt-1 size-4 shrink-0 accent-[var(--accent)]",
+          "mt-1 size-4 shrink-0 accent-[var(--md-a1)]",
           disabled && "opacity-60"
         )}
       />
       <div className="min-w-0">
         <label
           htmlFor={id}
-          className="flex flex-wrap items-center gap-2 text-sm font-medium text-fg"
+          className="flex flex-wrap items-center gap-2 text-[14.5px] font-medium text-bone"
         >
           {label}
           {lockedLabel ? (
-            <span className="font-mono text-[10px] tracking-[0.18em] text-accent-2">
+            <span className="font-md-mono text-[10px] tracking-[0.18em] text-a2">
               {lockedLabel}
             </span>
           ) : null}
         </label>
-        <p className="mt-1 text-sm text-muted">{description}</p>
+        <p className="mt-1 text-[14px] leading-relaxed text-dim">
+          {description}
+        </p>
       </div>
     </div>
   );

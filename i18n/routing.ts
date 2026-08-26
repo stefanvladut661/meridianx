@@ -1,18 +1,21 @@
 import { defineRouting } from "next-intl/routing";
 
 /**
- * Rutare i18n (FAZA 0, ÎNGHEȚAT).
+ * Rutare i18n.
  * RO e default și NU are prefix vizibil: /video, /software.
- * EN are prefix: /en/video, /en/software.
  *
- * `localeDetection: false` (F7): fără el, next-intl citește
- * `Accept-Language` și cookie-ul `NEXT_LOCALE` și redirecta `/` spre
- * `/en` pentru orice browser setat pe engleză — inclusiv al nostru.
- * Româna e limba sursă (CLAUDE.md §4), engleza se alege manual din
- * comutatorul de limbă, nu se ghicește din browser.
+ * **Lansăm doar în română.** Copy-ul de după redesign e scris direct
+ * în componentele din `components/site/`, nu în `messages/`, deci o
+ * rută `/en/*` ar fi afișat titluri englezești peste text românesc.
+ * Până adaptăm copy-ul (CLAUDE.md §4: EN se adaptează, nu se traduce),
+ * `en` iese din listă și `/en/*` dă 404 — mai onest decât o pagină
+ * pe jumătate tradusă. `messages/en.json` rămâne în repo, nefolosit.
+ *
+ * `localeDetection: false` rămâne: și cu o singură limbă, next-intl ar
+ * citi `Accept-Language` și ar redirecta rădăcina degeaba.
  */
 export const routing = defineRouting({
-  locales: ["ro", "en"],
+  locales: ["ro"],
   defaultLocale: "ro",
   localePrefix: "as-needed",
   localeDetection: false,

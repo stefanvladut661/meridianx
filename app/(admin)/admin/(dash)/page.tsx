@@ -151,7 +151,7 @@ export default async function AdminDashboardPage({
               }
             : {
                 title: "Încă nu a venit niciun lead",
-                body: "Când cineva completează un formular pe site, apare aici în secunda următoare și primești și un email. Până atunci, verifică dacă formularele trimit corect: deschide /video/contact și trimite o cerere de test.",
+                body: "Când cineva completează un formular pe site, apare aici în secunda următoare și primești și un email. Până atunci, verifică dacă formularele trimit corect: deschide /video și trimite o cerere de test din formularul de jos.",
               }
         }
       />

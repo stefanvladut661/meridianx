@@ -3,6 +3,7 @@
 import { Link } from "@/i18n/navigation";
 import { useState, type ComponentProps } from "react";
 import { Mark } from "@/components/site/mark";
+import { LEGAL_LINKS } from "@/components/site/legal-links";
 import {
   CountUp,
   Marquee,
@@ -1043,9 +1044,25 @@ function Foot() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl border-t border-hair px-5 py-6 text-[13px] text-dim sm:px-6">
-        © 2026 MERIDIAN. Datele de contact de pe această pagină sunt
-        placeholder.
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-hair px-5 py-6 text-[13px] text-dim sm:px-6">
+        <span>
+          © 2026 MERIDIAN.
+          {SCONTACT.isPlaceholder && " Datele de contact de pe această pagină sunt placeholder."}
+        </span>
+        <nav aria-label="Documente legale">
+          <ul className="flex flex-wrap gap-x-5 gap-y-1">
+            {LEGAL_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link
+                  href={l.href}
+                  className="transition-colors hover:text-bone"
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
       <p

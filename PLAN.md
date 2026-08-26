@@ -553,3 +553,95 @@ peste: `position: absolute` în loc de `fixed` și fără animația de intrare.
 
 ### De decis
 - care dintre cele trei modele rămâne (implicit acum: **Comutator**)
+
+---
+
+## LANSARE — noul site înlocuiește vechiul (2026-08-26)
+
+Deciziile din secțiunile LAB de mai sus sunt închise. Ce s-a ales:
+**V4 HIBRID** pentru video, paleta **Hârtie** pentru software, modelul
+**Comutator** pentru colț, video în stânga la poartă. Selectoarele de
+palete și de colț, rutele `/lab/*` și paginile de test au dispărut —
+alegerea e acum singura variantă din cod, nu una dintre șase.
+
+### Ce a înlocuit ce
+
+| Înainte | Acum |
+|---|---|
+| `/`, `/video`, `/software` — versiunea de acum câteva zile | `components/site/pages/{gateway,video,software}.tsx` |
+| 10 sub-pagini de divizie (servicii, portofoliu, reclame, proces, contact, fonduri, proiecte, brief) | **șterse** — landing-urile sunt o pagină cu ancore |
+| `components/{video,software,shell,ui}/`, `content/` | **șterse** — nu mai avea ce le importa |
+| `lib/estimator-config.ts`, `lib/hooks/use-reduced-motion.ts` | **șterse** — orfane după ștergerea estimatorului |
+
+Vechile rute dau 404, nu redirect: site-ul n-a fost niciodată public,
+deci nu există link-uri de intrare de salvat. `nav-links.ts` a dispărut
+odată cu shell-ul, iar sitemap-ul are acum o listă explicită de șase
+rute — o ancoră nu se indexează separat, deci n-avea ce căuta acolo.
+
+### Ce a trebuit reparat odată cu ștergerea
+
+- **Paginile legale** atârnau de `components/shell/footer` și de
+  primitivele din `components/ui/`, deci ar fi rămas singurele pagini
+  publice în limbajul vizual vechi. Au primit shell propriu, pe
+  `[data-scope]`, cu paleta diviziei din care vine vizitatorul.
+- **Bannerul de cookie-uri** era pe tokens-ii vechi și pe `data-world`.
+  Trecut pe `[data-scope]` — atributul îi aduce tokens-ii în subarbore,
+  fiindcă stă în afara oricărui `.md-root`. z-index urcat la 70, peste
+  colțul de comutare (55): un banner de consimțământ care intră sub
+  altceva e o problemă juridică, nu una vizuală.
+- **Niciun subsol nu avea link-uri legale.** Adăugate în toate trei,
+  din `components/site/legal-links.ts`.
+- **Emailul de confirmare** trimitea lead-ul spre `/video/portofoliu`
+  și `/software/proces` — ambele 404 după ștergere. Acum duc la ancore.
+- **`font-md-mono` nu exista** în maparea Tailwind, deși e folosit în
+  22 de locuri: tot textul mono din paginile noi se randa cu fontul de
+  body. Token adăugat.
+
+### Formularele, conectate
+
+Ambele trec prin `components/site/lead.ts` — o singură cale spre
+`POST /api/leads`, cu schema Zod din FAZA 0 rulată și pe client, ca un
+payload care trece acolo să nu poată fi respins pe server.
+
+- **Configuratorul** (`software-configurator`) nu mai se oprea la o
+  stare locală de succes, iar ecranul de confirmare nu mai scrie
+  „demonstrație de lab, nu trimite nimic". Alegerile devin
+  `projectType`, `timeline` și un rezumat citibil în `message` —
+  altfel dashboard-ul ar fi arătat doar un nume. `isFunded` e adevărat
+  și pentru finanțarea „în curs": aceeași nevoie, același termen fix.
+- **`/video` n-avea niciun formular** — doar WhatsApp și telefon, deci
+  zero lead-uri video ajungeau în bază. Adăugat `video-form.tsx`: trei
+  câmpuri, lângă blocul de voce, la aceeași greutate vizuală
+  (CLAUDE.md §8 cere ambele proeminente, nu una în locul celeilalte).
+- Honeypot-ul are acum o clasă proprie, `.hp-field`: off-screen, nu
+  `display:none` — destule boturi sar peste câmpurile ascunse așa.
+
+Verificat la runtime: 201 pe ambele forme de payload, 200 cu id gol pe
+honeypot, 429 pe plafon.
+
+### Datele de contact vin din env
+
+`components/site/contact.ts` citește `NEXT_PUBLIC_PHONE`,
+`NEXT_PUBLIC_WHATSAPP_NUMBER` și adresele per divizie. Fără ele rămân
+numerele de demonstrație, iar subsolul scrie explicit că sunt
+placeholder — nota dispare singură când se completează env-ul. Lansarea
+nu mai cere editat cod.
+
+### Engleza, oprită temporar
+
+Copy-ul nou e scris direct în `components/site/*-content.ts`, nu în
+`messages/`, deci `/en/*` ar fi afișat titluri englezești peste text
+românesc. `en` a ieșit din `i18n/routing.ts` și dă 404.
+`messages/en.json` și versiunile EN ale documentelor legale rămân în
+repo, scrise, pentru când adaptăm restul.
+
+### Rămâne de făcut înainte de lansarea propriu-zisă
+
+- numărul de telefon, WhatsApp-ul și cele două adrese de email în env
+- validarea juridică a celor trei documente + datele reale ale firmei
+- materialul video real în locul plăcilor marcate „exemplu" (butonul de
+  redare e inert cât timp placa e un exemplu — un control focusabil
+  care nu face nimic e o promisiune ratată)
+- testimonialele și cifrele din `CAPABILITY_STATS`
+- afirmațiile despre programele de finanțare marcate `TODO: verificat juridic`
+- versiunea EN, adaptată — nu tradusă

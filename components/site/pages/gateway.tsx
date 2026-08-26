@@ -2,6 +2,7 @@
 
 import { Link } from "@/i18n/navigation";
 import { Mark } from "@/components/site/mark";
+import { LEGAL_LINKS } from "@/components/site/legal-links";
 import { MeridianSoftware, MeridianVideo } from "@/components/site/meridian";
 import { Reveal } from "@/components/site/motion";
 import { Icon } from "@/components/site/ui";
@@ -13,7 +14,7 @@ import { SCONTACT } from "@/components/site/software-content";
 
    Singura pagină în care cele două lumi apar împreună. Regula din
    CLAUDE.md §2 rămâne: nu se amestecă. Aici se ating, atât — fiecare
-   jumătate poartă propriul [data-lab], deci propria paletă, propriile
+   jumătate poartă propriul [data-scope], deci propria paletă, propriile
    raze de colț și propriul temperament. Shell-ul (bara, banda de jos,
    footer-ul) e neutru intenționat, ca să nu concureze cu niciuna.
 
@@ -409,9 +410,25 @@ function Foot() {
         </span>
       </div>
 
-      <div className="mx-auto max-w-[1500px] border-t border-hair px-5 py-5 text-[12.5px] text-dim sm:px-8">
-        © 2026 MERIDIAN. Datele de contact de pe această pagină sunt
-        placeholder.
+      <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-hair px-5 py-5 text-[12.5px] text-dim sm:px-8">
+        <span>
+          © 2026 MERIDIAN.
+          {(CONTACT.isPlaceholder || SCONTACT.isPlaceholder) && " Datele de contact de pe această pagină sunt placeholder."}
+        </span>
+        <nav aria-label="Documente legale">
+          <ul className="flex flex-wrap gap-x-5 gap-y-1">
+            {LEGAL_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link
+                  href={l.href}
+                  className="transition-colors hover:text-bone"
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
     </footer>
   );

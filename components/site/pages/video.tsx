@@ -3,6 +3,8 @@
 import { Link } from "@/i18n/navigation";
 import { useState } from "react";
 import { Mark } from "@/components/site/mark";
+import { LEGAL_LINKS } from "@/components/site/legal-links";
+import { VideoLeadForm } from "@/components/site/video-form";
 import {
   WorldSwitch,
   WorldSwitchMobileLink,
@@ -844,18 +846,34 @@ function FinalCta() {
               Douăzeci de minute, fără prezentare de agenție. Ne uităm la ce
               faci acum și îți spunem ce am schimba primul.
             </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <a href={CONTACT.whatsapp} className="btn btn-primary !px-7">
-                Rezervă apelul
-                <Icon name="arrowRight" size={17} className="arw" />
-              </a>
-              <a
-                href={CONTACT.phoneHref}
-                className="btn !bg-transparent !px-4 text-bone hover:!text-a2"
-              >
-                sau sună direct
-                <Icon name="arrowRight" size={16} className="arw" />
-              </a>
+            {/* Două căi, aceeași greutate (CLAUDE.md §8): vocea pentru
+                cine decide acum, formularul pentru cine citește la 23:40.
+                Nu ascundem a doua sub „alte metode de contact". */}
+            <div className="mx-auto mt-11 grid max-w-4xl gap-4 text-left md:grid-cols-2">
+              <div className="glass edge-light flex flex-col justify-between p-7">
+                <div>
+                  <p className="eyebrow">Cel mai rapid</p>
+                  <h3 className="display mt-3 text-[clamp(1.2rem,2.6vw,1.5rem)]">
+                    Scrie-ne acum
+                  </h3>
+                  <p className="mt-2 text-[14px] leading-relaxed text-dim">
+                    Pe WhatsApp răspundem în minute, în program. Trimite-ne
+                    linkul paginii tale și îți spunem pe loc ce am schimba.
+                  </p>
+                </div>
+                <div className="mt-7 flex flex-col gap-2.5">
+                  <a href={CONTACT.whatsapp} className="btn btn-primary !w-full">
+                    <Icon name="whatsapp" size={17} />
+                    WhatsApp
+                  </a>
+                  <a href={CONTACT.phoneHref} className="btn btn-ghost !w-full">
+                    <Icon name="phone" size={16} />
+                    {CONTACT.phone}
+                  </a>
+                </div>
+              </div>
+
+              <VideoLeadForm />
             </div>
 
             <ol className="mx-auto mt-14 grid max-w-3xl gap-6 text-left sm:grid-cols-2 lg:grid-cols-4">
@@ -936,9 +954,25 @@ function Foot() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl border-t border-hair px-5 py-6 text-[13px] text-dim sm:px-6">
-        © 2026 MERIDIAN. Datele de contact de pe această pagină sunt
-        placeholder.
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-hair px-5 py-6 text-[13px] text-dim sm:px-6">
+        <span>
+          © 2026 MERIDIAN.
+          {CONTACT.isPlaceholder && " Datele de contact de pe această pagină sunt placeholder."}
+        </span>
+        <nav aria-label="Documente legale">
+          <ul className="flex flex-wrap gap-x-5 gap-y-1">
+            {LEGAL_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link
+                  href={l.href}
+                  className="transition-colors hover:text-bone"
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
       <p

@@ -2,6 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import { Icon } from "./ui";
+import { submitLead, useUtmCapture } from "./lead";
 
 /* ============================================================
    CONFIGURATOR DE PROIECT — lead magnetul diviziei software.
@@ -17,8 +18,10 @@ import { Icon } from "./ui";
 
    Nu afișează prețuri (regula clientului). Estimarea de timp e
    orientativă și e marcată ca atare, vizibil, în interfață.
-   NU e conectat la /api/leads — în lab se oprește la starea de
-   succes locală. Conectarea se face când alegem direcția finală.
+
+   Trimite la /api/leads cu division "software". Ce a bifat omul nu se
+   pierde: alegerile devin `projectType`, `timeline` și un rezumat în
+   `message`, ca să nu deschidem dashboard-ul și să vedem doar un nume.
    ============================================================ */
 
 type Choice = { id: string; label: string; hint?: string };
@@ -152,11 +155,85 @@ function phases(s: State) {
   return out;
 }
 
+/* Traducerea alegerilor în payload-ul de lead.
+
+   Contractul FAZEI 0 are câmpuri scurte cu limite de lungime, iar aici
+   omul poate bifa opt module și șapte integrări. Deci: etichetele
+   scurte intră în `projectType` și `timeline` (tăiate la limită, ca
+   serverul să nu respingă un formular corect completat), iar povestea
+   întreagă — inclusiv etapele propuse și intervalul estimat — intră în
+   `message`, unde încap 5000 de caractere.
+
+   `isFunded` e adevărat și pentru finanțarea „în curs": segmentul de
+   fonduri e prioritatea #1, iar cine e în curs de aprobare are exact
+   aceeași nevoie și un termen la fel de fix. */
+function labelsOf(list: Choice[], ids: string[]): string {
+  return ids
+    .map((id) => list.find((c) => c.id === id)?.label ?? id)
+    .join(", ");
+}
+
+function clip(value: string, max: number): string {
+  return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
+}
+
+function buildLead(s: State) {
+  const est = estimate(s);
+  const plan = phases(s);
+
+  const message = [
+    `Module: ${labelsOf(MODULES, s.module) || "—"}`,
+    `Scară: ${labelsOf(SCALE, [s.scale]) || "—"}`,
+    `Integrări: ${labelsOf(INTEGRATIONS, s.integr) || "—"}`,
+    `Termen: ${labelsOf(DEADLINE, [s.when]) || "—"}`,
+    `Finanțare: ${labelsOf(FUNDING, [s.funding]) || "—"}`,
+    "",
+    `Estimare orientativă: ${est.low}–${est.high} săptămâni`,
+    "Etape propuse:",
+    ...plan.map((f) => `  ${f.n} · ${f.t}`),
+  ].join("\n");
+
+  return {
+    division: "software" as const,
+    source: "software-configurator",
+    name: s.nume.trim(),
+    company: s.firma.trim() || undefined,
+    email: s.email.trim() || undefined,
+    phone: s.telefon.trim() || undefined,
+    projectType: clip(labelsOf(MODULES, s.module), 80),
+    timeline: clip(
+      `${labelsOf(DEADLINE, [s.when])} · ${est.low}–${est.high} săptămâni`,
+      160
+    ),
+    message: clip(message, 5000),
+    isFunded: s.funding === "yes" || s.funding === "wip",
+  };
+}
+
 export function Configurator() {
   const [step, setStep] = useState(0);
   const [s, setS] = useState<State>(EMPTY);
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
   const uid = useId();
+
+  useUtmCapture();
+
+  const sent = status === "sent";
+
+  async function send() {
+    if (status === "sending") return;
+    setStatus("sending");
+    setError(null);
+    const result = await submitLead({ ...buildLead(s), website: honeypot });
+    if (result.ok) {
+      setStatus("sent");
+    } else {
+      setStatus("idle");
+      setError(result.error);
+    }
+  }
 
   const est = useMemo(() => estimate(s), [s]);
   const plan = useMemo(() => phases(s), [s]);
@@ -273,8 +350,12 @@ export function Configurator() {
                 <ContactStep
                   uid={uid}
                   s={s}
+                  sending={status === "sending"}
+                  error={error}
+                  honeypot={honeypot}
+                  onHoneypot={setHoneypot}
                   onChange={(k, v) => setS((p) => ({ ...p, [k]: v }))}
-                  onSubmit={() => setSent(true)}
+                  onSubmit={send}
                 />
               )}
             </div>
@@ -468,11 +549,19 @@ function ChipGroup({
 function ContactStep({
   uid,
   s,
+  sending,
+  error,
+  honeypot,
+  onHoneypot,
   onChange,
   onSubmit,
 }: {
   uid: string;
   s: State;
+  sending: boolean;
+  error: string | null;
+  honeypot: string;
+  onHoneypot: (v: string) => void;
   onChange: (k: keyof State, v: string) => void;
   onSubmit: () => void;
 }) {
@@ -521,21 +610,55 @@ function ContactStep({
         ))}
       </div>
 
+      {/* Honeypot — contractul FAZEI 0. Off-screen, nu display:none. */}
+      <div className="hp-field" aria-hidden>
+        <label htmlFor={`${uid}-website`}>Site web</label>
+        <input
+          id={`${uid}-website`}
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => onHoneypot(e.target.value)}
+        />
+      </div>
+
       <p className="text-[12.5px] leading-relaxed text-dim">
         Te sunăm o singură dată, ca să stabilim ora consultanței. Fișa de
         proiect o primești pe email indiferent dacă mergem mai departe împreună
         sau nu.
       </p>
 
+      {error && (
+        <p
+          role="alert"
+          className="rounded-panel-sm border border-a2/50 bg-glass px-3.5 py-3 text-[13.5px] leading-relaxed text-bone"
+        >
+          {error}
+        </p>
+      )}
+
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <button type="submit" className="btn btn-primary !min-h-11 !px-6 !py-2.5 !text-[14px]">
+        <button
+          type="submit"
+          disabled={sending}
+          aria-busy={sending}
+          className="btn btn-primary !min-h-11 !px-6 !py-2.5 !text-[14px] disabled:cursor-progress disabled:opacity-60"
+        >
           <Icon name="calendar" size={16} />
-          Programează consultanța
+          {sending ? "Se trimite…" : "Programează consultanța"}
         </button>
         <span className="text-[12.5px] text-dim">
           Fără obligații. Fără prezentare de agenție.
         </span>
       </div>
+
+      {/* Starea de trimitere, anunțată separat: butonul își schimbă
+          eticheta, dar un cititor de ecran nu reia butonul de la sine. */}
+      <span aria-live="polite" className="sr-only">
+        {sending ? "Se trimite cererea." : ""}
+      </span>
     </form>
   );
 }
@@ -570,11 +693,6 @@ function Success({
         ) : (
           "."
         )}
-      </p>
-      <p className="mt-6 rounded-panel-sm border border-hair bg-glass px-3.5 py-3 text-[12.5px] leading-relaxed text-dim">
-        Demonstrație de lab: formularul nu trimite încă nimic. Se conectează la{" "}
-        <code className="font-md-mono text-bone">/api/leads</code> când alegem
-        direcția finală.
       </p>
     </div>
   );

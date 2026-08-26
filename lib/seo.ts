@@ -16,7 +16,7 @@ import type { Division } from "./division";
  *     const { locale } = await params;
  *     return {
  *       title: "…",
- *       ...pageSeo({ route: "/video/servicii", locale, division: "video",
+ *       ...pageSeo({ route: "/video", locale, division: "video",
  *                    title: "…", description: "…" }),
  *     };
  *   }
@@ -80,7 +80,8 @@ export function pageSeo(options: {
     openGraph: {
       type: "website",
       siteName: "MERIDIAN",
-      locale: options.locale === "en" ? "en_US" : "ro_RO",
+      // O singură limbă până adaptăm copy-ul în EN (i18n/routing.ts).
+      locale: "ro_RO",
       title: options.title,
       description: options.description,
       url: `${BASE}${getPathname({ href: options.route, locale: options.locale })}`,
@@ -121,7 +122,7 @@ export function websiteSchema(locale: Locale) {
     "@type": "WebSite",
     name: "MERIDIAN",
     url: `${BASE}${getPathname({ href: "/", locale })}`,
-    inLanguage: locale === "en" ? "en" : "ro",
+    inLanguage: "ro",
   };
 }
 

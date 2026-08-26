@@ -1,18 +1,19 @@
 @import "tailwindcss";
 
 /* ============================================================
-   MERIDIAN — design tokens (FAZA 0, ÎNGHEȚAT)
-   Modificările se cer în PLAN.md, nu se fac direct.
+   SISTEMUL VECHI — [data-world], --v-*, --s-*
+   Nu mai deservește nicio pagină publică.
 
-   Arhitectură:
-   1. Palete brute:  --v-* (video) și --s-* (software) — nu se
-      folosesc direct în componente decât în zona propriei divizii.
-   2. Tokens semantici: --bg, --surface, --fg, --accent...
-      Sunt REMAPAȚI de [data-world="video"] / [data-world="software"].
-      Primitivele din components/ui/ folosesc DOAR tokens semantici,
-      deci moștenesc automat lumea în care sunt randate.
-   3. Scara comună (spacing 4px, radius, shadow, z) e identică în
-      ambele lumi — e unul dintre firele comune ale brandului.
+   Site-ul public rulează integral pe sistemul de mai jos
+   ([data-scope], --md-*). Blocul acesta a rămas pentru /admin, care
+   are root layout propriu, e în afara i18n-ului și e o unealtă de
+   lucru, nu o pagină de marketing — n-are ce câștiga dintr-o
+   remigrare, dar ar avea ce pierde.
+
+   Numele nu se suprapun cu cele noi, deci cele două sisteme pot
+   coexista fără să se calce. Dacă admin-ul trece vreodată pe
+   [data-scope], tot blocul până la „SISTEMUL DE DESIGN AL
+   SITE-ULUI" se poate șterge.
    ============================================================ */
 
 :root {
@@ -179,7 +180,7 @@ body {
   border-radius: var(--radius-xs);
 }
 
-/* Skip link — folosit de shell (F1); stilul e partajat */
+/* Skip link — folosit de shell-urile ambelor sisteme */
 .skip-link {
   position: absolute;
   left: 0.5rem;
@@ -222,9 +223,9 @@ body {
 
    Firul comun: arcul de meridian, scara de spacing si marca.
 
-   Blocul coexista cu sistemul vechi (--v-*, --s-*, [data-world]) care
-   mai deserveste sub-paginile nemigrate. Numele nu se suprapun; cand
-   sub-paginile trec pe noul sistem, blocul vechi se poate sterge.
+   Acesta e sistemul intregului site public: poarta, /video, /software
+   si paginile legale. Sistemul vechi de deasupra a ramas doar pentru
+   /admin.
    ============================================================ */
 
 :root {
@@ -509,8 +510,9 @@ body {
    LUMEA SOFTWARE — [data-scope="software"]
    Aceeași gramatică de suprafețe ca la video, alt temperament:
    raze mai mici, colțuri mai strânse, motion sub 400ms, structură
-   de grilă vizibilă. Culoarea NU e fixată aici — pagina poartă un
-   [data-palette] pe care îl schimbă selectorul din lab.
+   de grilă vizibilă. Paleta „Hârtie" e cea aleasă la finalul
+   testelor; celelalte cinci variante și selectorul lor au fost
+   șterse odată cu lansarea.
    ============================================================ */
 [data-scope="software"] {
   color-scheme: light;
@@ -545,147 +547,6 @@ body {
   --md-on-a1: #ffffff;
 }
 
-/* ---------- Paletele testabile ----------
-   Fiecare rescrie întregul set, inclusiv suprafețele de sticlă și
-   liniile de grilă — de asta funcționează și pe fundal deschis. */
-
-/* GRAFIT — aur instituțional pe grafit. Serios, bancar. */
-[data-palette="grafit"] {
-  --md-bg: #0b0c0e;
-  --md-bg-2: #121419;
-  --md-fg: #edeff2;
-  --md-muted: #8d939e;
-  --md-line: rgb(255 255 255 / 0.1);
-  --md-line-strong: rgb(255 255 255 / 0.18);
-  --md-glass: rgb(255 255 255 / 0.035);
-  --md-glass-a: rgb(255 255 255 / 0.07);
-  --md-glass-b: rgb(255 255 255 / 0.02);
-  --md-edge: rgb(255 255 255 / 0.32);
-  --md-grid-line: rgb(255 255 255 / 0.05);
-  --md-scroll: rgb(255 255 255 / 0.14);
-  --md-grain: 0.045;
-  --md-glow-o: 0.4;
-  --md-a1: #d8a02b;
-  --md-a2: #f0c368;
-  --md-a3: #ffe1a6;
-  --md-on-a1: #1a1305;
-}
-
-/* SMARALD — verde de creștere. Fintech, operațional. */
-[data-palette="smarald"] {
-  --md-bg: #070e0b;
-  --md-bg-2: #0d1713;
-  --md-fg: #e9f1ec;
-  --md-muted: #869c92;
-  --md-line: rgb(255 255 255 / 0.1);
-  --md-line-strong: rgb(255 255 255 / 0.18);
-  --md-glass: rgb(255 255 255 / 0.035);
-  --md-glass-a: rgb(255 255 255 / 0.07);
-  --md-glass-b: rgb(255 255 255 / 0.02);
-  --md-edge: rgb(255 255 255 / 0.32);
-  --md-grid-line: rgb(255 255 255 / 0.05);
-  --md-scroll: rgb(255 255 255 / 0.14);
-  --md-grain: 0.045;
-  --md-glow-o: 0.4;
-  --md-a1: #16a46b;
-  --md-a2: #4fd9a0;
-  --md-a3: #b9f0d6;
-  --md-on-a1: #03170e;
-}
-
-/* PETROL — teal rece. Infrastructură, date. */
-[data-palette="petrol"] {
-  --md-bg: #071013;
-  --md-bg-2: #0d191e;
-  --md-fg: #e6eff2;
-  --md-muted: #83969c;
-  --md-line: rgb(255 255 255 / 0.1);
-  --md-line-strong: rgb(255 255 255 / 0.18);
-  --md-glass: rgb(255 255 255 / 0.035);
-  --md-glass-a: rgb(255 255 255 / 0.07);
-  --md-glass-b: rgb(255 255 255 / 0.02);
-  --md-edge: rgb(255 255 255 / 0.32);
-  --md-grid-line: rgb(255 255 255 / 0.05);
-  --md-scroll: rgb(255 255 255 / 0.14);
-  --md-grain: 0.045;
-  --md-glow-o: 0.4;
-  --md-a1: #0fb5c9;
-  --md-a2: #58dce9;
-  --md-a3: #b7edf4;
-  --md-on-a1: #04181c;
-}
-
-/* CUPRU — cald, industrial, mai puțin „tech". */
-[data-palette="cupru"] {
-  --md-bg: #0d0b0a;
-  --md-bg-2: #171311;
-  --md-fg: #f2ede8;
-  --md-muted: #988f88;
-  --md-line: rgb(255 255 255 / 0.1);
-  --md-line-strong: rgb(255 255 255 / 0.18);
-  --md-glass: rgb(255 255 255 / 0.035);
-  --md-glass-a: rgb(255 255 255 / 0.07);
-  --md-glass-b: rgb(255 255 255 / 0.02);
-  --md-edge: rgb(255 255 255 / 0.32);
-  --md-grid-line: rgb(255 255 255 / 0.05);
-  --md-scroll: rgb(255 255 255 / 0.14);
-  --md-grain: 0.05;
-  --md-glow-o: 0.4;
-  --md-a1: #c0703c;
-  --md-a2: #e39a66;
-  --md-a3: #f6d3b4;
-  --md-on-a1: #200e04;
-}
-
-/* BORDO — zmeură închisă. Distinctiv, premium, deloc „corporate gri". */
-[data-palette="bordo"] {
-  --md-bg: #100a0e;
-  --md-bg-2: #1a1116;
-  --md-fg: #f5ebef;
-  --md-muted: #a58f99;
-  --md-line: rgb(255 255 255 / 0.1);
-  --md-line-strong: rgb(255 255 255 / 0.18);
-  --md-glass: rgb(255 255 255 / 0.035);
-  --md-glass-a: rgb(255 255 255 / 0.07);
-  --md-glass-b: rgb(255 255 255 / 0.02);
-  --md-edge: rgb(255 255 255 / 0.32);
-  --md-grid-line: rgb(255 255 255 / 0.05);
-  --md-scroll: rgb(255 255 255 / 0.14);
-  --md-grain: 0.045;
-  --md-glow-o: 0.42;
-  --md-a1: #d24d7a;
-  --md-a2: #e8749a;
-  --md-a3: #fbc6d6;
-  --md-on-a1: #16040a;
-}
-
-/* HÂRTIE — singura paletă pe fundal deschis. Cea mai „firmă serioasă". */
-[data-palette="hartie"] {
-  color-scheme: light;
-  --md-bg: #f6f7f5;
-  --md-bg-2: #ffffff;
-  --md-fg: #12171b;
-  --md-muted: #5c6672;
-  --md-line: rgb(18 23 27 / 0.12);
-  --md-line-strong: rgb(18 23 27 / 0.22);
-  --md-glass: rgb(18 23 27 / 0.025);
-  --md-glass-a: rgb(255 255 255 / 0.9);
-  --md-glass-b: rgb(255 255 255 / 0.5);
-  --md-edge: rgb(18 23 27 / 0.1);
-  --md-grid-line: rgb(18 23 27 / 0.05);
-  --md-scroll: rgb(18 23 27 / 0.18);
-  --md-grain: 0.02;
-  --md-glow-o: 0.16;
-  /* Accentul paletei deschise e prea închis pentru halouri. Bula de
-     comutare stă pe pagina CEALALTĂ lume, deci are nevoie de o
-     variantă luminoasă care se vede și pe fundal întunecat. */
-  --md-glow: #2fa37e;
-  --md-a1: #1c6e54;
-  --md-a2: #14543f;
-  --md-a3: #2fa37e;
-  --md-on-a1: #ffffff;
-}
-
 @theme inline {
   --color-ink: var(--md-bg);
   --color-char: var(--md-bg-2);
@@ -701,7 +562,7 @@ body {
 
   --font-md-display: var(--md-font-display);
   --font-md-body: var(--md-font-body);
-  --font-jbmono: var(--md-font-mono);
+  --font-md-mono: var(--md-font-mono);
 
   --radius-panel-sm: var(--md-r-sm);
   --radius-panel: var(--md-r);
@@ -1472,4 +1333,24 @@ body.md-body:has(> [data-scope="software"]) {
   .gate-split .gate-half:focus-within {
     flex-grow: 1;
   }
+}
+
+/* ============================================================
+   Honeypot — câmpul `website` din contractul de lead-uri.
+
+   NU `display:none` și nici `hidden`: destule boturi sar peste
+   câmpurile ascunse așa, tocmai ca să nu cadă în capcană. Îl scoatem
+   din ecran, dar rămâne un input real, focusabil de browser dacă
+   insistă cineva. `aria-hidden` + `tabindex="-1"` îl țin în afara
+   drumului cititoarelor de ecran și al navigării cu tastatura.
+   ============================================================ */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }

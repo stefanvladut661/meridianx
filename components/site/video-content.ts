@@ -334,14 +334,10 @@ export const CAPABILITY_STATS: (Placeholderable & {
   },
 ];
 
-/* ---------- Contact ---------- */
-export const CONTACT = {
-  phone: "+40 700 000 000", // TODO: număr real
-  phoneHref: "tel:+40700000000",
-  whatsapp: "https://wa.me/40700000000", // TODO: număr real
-  email: "salut@meridianagency.ro", // TODO: adresă reală
-  isPlaceholder: true as const,
-};
+/* ---------- Contact ----------
+   Vine din env (`components/site/contact.ts`). Reexportat sub numele
+   vechi ca paginile să nu-și schimbe importurile. */
+export { VIDEO_CONTACT as CONTACT } from "./contact";
 
 export const NAV = [
   { href: "#sistem", label: "Sistemul" },

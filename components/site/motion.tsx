@@ -9,7 +9,7 @@ import {
 } from "react";
 
 /* ============================================================
-   Primitive de motion pentru LAB.
+   Primitivele de motion ale site-ului.
    Regula: fără librărie de animație. IntersectionObserver +
    CSS transitions. Totul se dezactivează sub
    prefers-reduced-motion, iar conținutul rămâne complet vizibil.

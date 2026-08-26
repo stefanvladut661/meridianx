@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
 import {
   CONSENT_EVENT,
   readConsent,
@@ -36,24 +35,24 @@ export function ConsentPreferences() {
     value ? t("manage.granted") : t("manage.denied");
 
   return (
-    <div className="mt-6 rounded-md border border-line bg-surface p-5">
-      <h3 className="font-mono text-[11px] tracking-[0.22em] text-accent">
+    <div className="mt-6 rounded-panel border border-hair bg-glass p-5">
+      <h3 className="font-md-mono text-[11px] tracking-[0.22em] text-a1">
         {t("manage.title").toUpperCase()}
       </h3>
 
       {/* până la montare nu afirmăm nimic: serverul nu știe alegerea */}
-      <div aria-live="polite" className="mt-4 text-sm text-fg/85">
+      <div aria-live="polite" className="mt-4 text-[14.5px] leading-relaxed text-bone/85">
         {!mounted ? null : consent ? (
           <>
             <p>{t("manage.current")}</p>
             <ul className="mt-2 space-y-1">
-              <li className="font-mono text-xs tracking-wider text-muted">
+              <li className="font-md-mono text-[12px] tracking-wider text-dim">
                 {t("categories.necessary.label")} — {t("alwaysOn").toLowerCase()}
               </li>
-              <li className="font-mono text-xs tracking-wider text-muted">
+              <li className="font-md-mono text-[12px] tracking-wider text-dim">
                 {t("categories.analytics.label")} — {status(consent.analytics)}
               </li>
-              <li className="font-mono text-xs tracking-wider text-muted">
+              <li className="font-md-mono text-[12px] tracking-wider text-dim">
                 {t("categories.marketing.label")} — {status(consent.marketing)}
               </li>
             </ul>
@@ -63,13 +62,13 @@ export function ConsentPreferences() {
         )}
       </div>
 
-      <Button
-        variant="secondary"
-        className="mt-5"
+      <button
+        type="button"
+        className="btn btn-ghost mt-5 !min-h-10 !px-4 !py-2 !text-[13.5px]"
         onClick={() => resetConsent()}
       >
         {t("manage.button")}
-      </Button>
+      </button>
     </div>
   );
 }

@@ -698,7 +698,12 @@ const cookiesEn: LegalDocument = {
 
 export type LegalSlug = "confidentialitate" | "termeni" | "cookies";
 
-const DOCUMENTS: Record<LegalSlug, Record<Locale, LegalDocument>> = {
+/**
+ * Versiunile EN rămân scrise, deși `en` a ieșit temporar din rutare
+ * (vezi `i18n/routing.ts`). Tipul le păstrează explicit, ca să nu le
+ * ștergem din greșeală și să le rescriem când revine engleza.
+ */
+const DOCUMENTS: Record<LegalSlug, Record<"ro" | "en", LegalDocument>> = {
   confidentialitate: { ro: privacyRo, en: privacyEn },
   termeni: { ro: termsRo, en: termsEn },
   cookies: { ro: cookiesRo, en: cookiesEn },

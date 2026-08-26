@@ -1,10 +1,12 @@
 # MERIDIAN — meridianagency.ro
 
-Site-ul agenției MERIDIAN: două divizii (VIDEO și SOFTWARE) într-un singur app Next.js, cu gateway split-screen la rădăcină. **Citește `CLAUDE.md` înainte de orice** — e legea proiectului. Coordonarea între faze se face în `PLAN.md`.
+Site-ul agenției MERIDIAN: două divizii (VIDEO și SOFTWARE) într-un singur app Next.js, cu poarta split-screen la rădăcină. **Citește `CLAUDE.md` înainte de orice** — e legea proiectului. Jurnalul de decizii e în `PLAN.md`.
 
 ## Stack
 
-Next.js 15 (App Router, Turbopack) · TypeScript strict · Tailwind CSS v4 · next-intl (RO default fără prefix, EN cu `/en`) · Supabase · Resend · GSAP + Lenis (doar divizia video) · Vercel.
+Next.js 15 (App Router, Turbopack) · TypeScript strict · Tailwind CSS v4 · next-intl · Supabase · Resend · Vercel.
+
+Fără librărie de animație: tot motion-ul e IntersectionObserver + tranziții CSS (`components/site/motion.tsx`). GSAP și Lenis au rămas în `package.json` din faza anterioară și nu mai sunt importate de nicăieri.
 
 ## Pornire
 
@@ -14,91 +16,92 @@ cp .env.example .env.local   # completează cheile
 npm run dev
 ```
 
+## Rutele publice
+
+Șase, toate în română. Landing-urile sunt **o singură pagină cu ancore**, nu arbori de sub-pagini.
+
+| Rută | Ce e | Calea spre lead |
+|---|---|---|
+| `/` | poarta split-screen | alege divizia; alegerea se ține în cookie-ul `meridian_division` |
+| `/video` | landing video | WhatsApp + telefon + formular scurt, toate trei la aceeași greutate |
+| `/software` | landing software | configuratorul de proiect (5 pași) + telefon |
+| `/legal/confidentialitate`, `/legal/termeni`, `/legal/cookies` | documente legale | — |
+
+Plus `/admin` (dashboard lead-uri, în afara i18n) și `/api/*`.
+
+**Engleza e oprită deocamdată.** Copy-ul de după redesign e scris direct în componente, nu în `messages/`, deci `/en/*` ar fi însemnat titluri englezești peste text românesc. `en` a ieșit din `i18n/routing.ts` și dă 404; `messages/en.json` și versiunile EN ale documentelor legale au rămas în repo, scrise, pentru când adaptăm și restul (CLAUDE.md §4: EN se adaptează, nu se traduce).
+
 ## Harta fișierelor
 
 ```
 app/
-  globals.css               ÎNGHEȚAT — tokens (--v-*, --s-*, semantici) + maparea Tailwind
-  fonts.ts                  ÎNGHEȚAT — Clash Display, Switzer, Satoshi (locale) + mono-uri
-  fonts/                    fișierele woff2 (Fontshare, licența FFL)
-  [locale]/                 TOATE rutele publice trăiesc aici (i18n)
-    layout.tsx              root layout public (html/body, provider next-intl)
-    (gateway)/page.tsx      F1 — gateway split-screen (placeholder F0 momentan)
-    (video)/layout.tsx      scope data-world="video" (F1 integrează shell-ul)
-    (video)/video/...       F2 (home, servicii, portofoliu, proces) · F3 (reclame, contact)
-    (software)/layout.tsx   scope data-world="software" (F1 integrează shell-ul)
-    (software)/software/... F4 (home, servicii, fonduri, proiecte, proces) · F5 (brief)
-    (legal)/                F7
-  (admin)/
-    layout.tsx              root layout admin (fără i18n, paleta software)
-    admin/                  F6 — dashboard lead-uri
-  api/
-    leads/                  contract F0, implementare reală F6
+  globals.css               două sisteme de tokens: cel vechi ([data-world], --v-*/--s-*)
+                            servește DOAR /admin; cel nou ([data-scope], --md-*) e site-ul
+  fonts.ts                  Satoshi + JetBrains Mono + IBM Plex Mono pe public;
+                            Clash și Switzer doar pe /admin (preload: false)
+  [locale]/                 rutele publice (i18n)
+    layout.tsx              html/body, provider next-intl, JSON-LD, banner de cookie-uri
+    (gateway)/page.tsx      poarta + redirectul spre divizia memorată
+    (video)/, (software)/   layout-uri goale: fiecare landing își poartă singur shell-ul
+    (legal)/                shell propriu + cele trei documente
+  (admin)/                  root layout separat, fără i18n
+  api/leads/                intrarea tuturor formularelor
 components/
-  ui/                       ÎNGHEȚAT — Button, Input, Textarea, Select, Label, Field,
-                            Dialog, Toast, Container, Section, Reveal
-  shell/                    F1 — header-e, footer, meniu mobil
-  gateway/                  F1
-  video/                    F2 (+ forms/, cta/ = F3)
-  software/                 F4 (+ forms/, estimator/ = F5)
-content/
-  types.ts                  ÎNGHEȚAT — Service, Project, Testimonial, ProcessStep, FAQItem, TeamMember
-  video/                    F2 umple scheletele
-  software/                 F4 umple scheletele
-i18n/                       routing, navigation, request config (ÎNGHEȚAT)
-messages/                   ro.json, en.json — namespace-uri: common, nav, gateway,
-                            video, software, forms, legal (F2–F6 adaugă chei, F7 finalizează)
+  site/                     TOT site-ul public
+    pages/                  gateway.tsx · video.tsx · software.tsx
+    ui.tsx, motion.tsx      piese și primitive partajate de cele două lumi
+    configurator.tsx        lead magnetul software
+    video-form.tsx          formularul scurt de pe /video
+    lead.ts                 singura cale spre POST /api/leads
+    contact.ts              datele de contact, citite din env
+    *-content.ts            copy-ul, separat de componente
+    meridian.tsx, mark.tsx  arcul de meridian și marca
+    world-switch.tsx        sfertul de cerc din colț, trecerea între lumi
+  consent/, seo/, gateway/  banner de cookie-uri, JSON-LD, ștergerea cookie-ului de divizie
+i18n/, messages/            rutare și chei (folosite acum doar de legal, consent și skip link)
 lib/
-  utils.ts                  ÎNGHEȚAT — cn()
-  division.ts               ÎNGHEȚAT — tip Division, cookie meridian_division
-  utm.ts                    ÎNGHEȚAT — captura UTM first-touch (sessionStorage)
-  validations/lead.ts       ÎNGHEȚAT — contractul Zod al API-ului de lead-uri
-  hooks/                    useReducedMotion, useDivision
-  supabase/                 F6
-  email/                    F6
+  division.ts               tipul Division + cookie-ul meridian_division
+  utm.ts                    captura UTM first-touch (sessionStorage)
+  validations/lead.ts       contractul Zod al API-ului, comun client și server
+  supabase/, email/         persistență și emailuri
 supabase/migrations/        schema leads + lead_events + RLS
 middleware.ts               rutare i18n (exclude /api, /admin)
 ```
 
-## Proprietate pe faze
-
-| Fază | Zona | Model |
-|---|---|---|
-| 0 | fundația (acest commit) — fișierele marcate ÎNGHEȚAT | Opus |
-| 1 | `app/[locale]/(gateway)/`, layout-urile de grup `(video)`/`(software)`, `components/shell/`, `components/gateway/` | Opus |
-| 2 | `app/[locale]/(video)/video/{,servicii,portofoliu,proces}/`, `content/video/`, `components/video/` | Opus |
-| 3 | `app/[locale]/(video)/video/{reclame,contact}/`, `components/video/forms/`, `components/video/cta/` | Sonnet |
-| 4 | `app/[locale]/(software)/software/{,servicii,fonduri,proiecte,proces}/`, `content/software/`, `components/software/` | Opus |
-| 5 | `app/[locale]/(software)/software/brief/`, `components/software/forms/`, `components/software/estimator/` | Sonnet |
-| 6 | `app/api/`, `app/(admin)/`, `lib/supabase/`, `lib/email/`, `emails/` | Sonnet |
-| 7 | `messages/`, `app/[locale]/(legal)/`, sitemap, robots + edituri punctuale | Sonnet |
-
-Fișierele **ÎNGHEȚATE** nu se editează după FAZA 0 — cererile de modificare se scriu în `PLAN.md`.
-
 ## Cum funcționează cele două lumi
 
-Tokens-ii semantici (`--bg`, `--surface`, `--fg`, `--muted`, `--line`, `--accent`, `--accent-2`, `--font-display/body/mono`) sunt remapați de atributul `data-world="video|software"` pus pe layout-urile de grup. Primitivele din `components/ui/` folosesc doar clase semantice (`bg-accent`, `text-fg`, `font-display`...), deci se colorează automat după divizia în care sunt randate. Culorile brute (`text-v-tungsten`, `bg-s-panel`) se folosesc doar în interiorul propriei divizii.
+Un singur atribut: `data-scope="video" | "software" | "gate"` pe rădăcina fiecărei pagini remapează tokens-ii `--md-*` — culoare, raze de colț, familie de mono, temperament de motion. Componentele folosesc doar clase semantice (`text-bone`, `text-dim`, `border-hair`, `bg-glass`, `text-a1`), deci aceeași piesă își schimbă lumea fără nicio ramură în cod.
 
-## SEO, consimțământ și analytics (FAZA 7)
+Video e închis și indigo, software e pe hârtie și verde, poarta e neutră. Firul comun e arcul de meridian din `meridian.tsx`: același traseu SVG în ambele lumi, tratat ca lumină la video și ca geodezică peste grilă la software.
 
-- **Canonical** se generează automat pentru orice rută: root layout-ul are `alternates: { canonical: "./" }`, pe care Next îl rezolvă la calea curentă. O pagină nouă primește canonical corect fără să facă nimic.
-- **hreflang** (ro, en, x-default) se adaugă per pagină prin `pageSeo()` din `lib/seo.ts`. Paginile noi ar trebui să-l folosească — vezi exemplul din docstring.
-- **Imagini Open Graph** generate dinamic la `/og.png?division=video|software&title=…&subtitle=…`, două șabloane, unul per divizie. Ruta se numește cu extensie pentru că middleware-ul i18n prinde orice cale fără punct.
-- **JSON-LD**: Organization + WebSite pe toate rutele publice, Service pe paginile de servicii. Deliberat **fără** `LocalBusiness` și `AggregateRating` — nu emitem structured data pe care n-o putem susține.
-- **Consimțământ**: `lib/consent.ts` + bannerul din `components/consent/`. Scripturile opționale nu se încarcă înainte de accept — `lib/analytics.ts` verifică înainte de a injecta ceva. Retragerea se face din `/legal/cookies`.
-- **Vercel Analytics** se încarcă prin script propriu, nu prin pachetul `@vercel/analytics`, exact ca să poată fi condiționat de consimțământ. Zero dependențe adăugate.
+## Formulare și lead-uri
+
+Ambele formulare trec prin `components/site/lead.ts` → `POST /api/leads`, cu aceeași schemă Zod pe client și pe server, honeypot `website` scos din ecran (nu `display:none`), UTM-uri first-touch din sessionStorage și rate limiting pe IP.
+
+- `/video` → `source: "video-apel"` — trei câmpuri: nume, telefon, ce te interesează.
+- `/software` → `source: "software-configurator"` — alegerile devin `projectType`, `timeline` și un rezumat citibil în `message`, ca dashboard-ul să nu arate doar un nume.
+
+Fără Supabase configurat, în dezvoltare API-ul răspunde 201 cu id sintetic și scrie lead-ul în consola serverului; în **producție** răspunde 503, ca să nu se piardă lead-uri în tăcere.
+
+## SEO, consimțământ și analytics
+
+- **Canonical** automat pe orice rută (root layout: `alternates: { canonical: "./" }`).
+- **Open Graph** generat dinamic la `/og.png?division=video|software&title=…&subtitle=…`. Ruta are extensie pentru că middleware-ul i18n prinde orice cale fără punct.
+- **JSON-LD**: Organization + WebSite. Deliberat **fără** `LocalBusiness` și `AggregateRating` — nu emitem structured data pe care n-o putem susține.
+- **Consimțământ**: `lib/consent.ts` + `components/consent/`. Scripturile opționale nu se încarcă înainte de accept. Retragerea se face din `/legal/cookies`, la fel de simplu ca acordarea.
+- **Vercel Analytics** se încarcă prin script propriu, nu prin pachet, exact ca să poată fi condiționat de consimțământ.
 
 ## Deploy
 
-1. Importă repo-ul în Vercel. Framework-ul e detectat automat (Next.js, Turbopack).
+1. Importă repo-ul în Vercel. Framework-ul e detectat automat.
 2. Setează variabilele de mediu de mai jos în **Project Settings → Environment Variables**, pentru Production și Preview.
 3. Rulează **ambele** migrări din `supabase/migrations/`, în ordinea numerelor, apoi creează contul de admin (Authentication → Users → Add user) și pune aceeași adresă în `ADMIN_EMAILS`.
-4. Conectează domeniul `meridianagency.ro` și verifică `NEXT_PUBLIC_SITE_URL` — din el se construiesc canonical, hreflang, sitemap și robots. Dacă e greșit, tot SEO-ul arată spre domeniul greșit.
+4. Conectează domeniul și verifică `NEXT_PUBLIC_SITE_URL` — din el se construiesc canonical, sitemap și robots.
 5. Verifică după deploy: `/api/health` (trebuie `"ready": true`), `/sitemap.xml`, `/robots.txt`, `/og.png?division=video&title=test`.
 
 ### Verificarea backendului
 
-`GET /api/health` răspunde cu starea fiecărei variabile care contează — public doar cu „configurat / neconfigurat”, fără valori. Autentificat ca admin, adaugă și un diagnostic viu: baza răspunde? sunt ambele migrări aplicate? câte lead-uri sunt?
+`GET /api/health` răspunde cu starea fiecărei variabile care contează — public doar cu „configurat / neconfigurat", fără valori. Autentificat ca admin, adaugă și un diagnostic viu: baza răspunde? sunt ambele migrări aplicate? câte lead-uri sunt?
 
 Contractul HTTP întreg (honeypot, coduri de eroare, plafoane, gărzi de autentificare) se verifică automat:
 
@@ -107,40 +110,37 @@ npm run dev            # într-un terminal
 npm run verify:backend # în altul — sau: npm run verify:backend https://meridianagency.ro
 ```
 
-Scriptul merge și pe producție: e doar `fetch`, nu scrie nimic care să nu fie deja marcat ca test.
-
 ## Variabile de mediu
 
 | Variabilă | Obligatorie | Ce se strică fără ea |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | da | canonical, hreflang, sitemap și robots arată spre domeniul implicit |
-| `NEXT_PUBLIC_SUPABASE_URL` | da (F6) | nu se salvează niciun lead |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | da (F6) | idem |
-| `SUPABASE_SERVICE_ROLE_KEY` | da (F6) | insert-ul de pe server |
-| `ADMIN_EMAILS` | **da în producție** | fără ea, panoul se blochează intenționat — proiectele Supabase acceptă înregistrări implicit, deci fără listă orice cont creat pe proiect ar vedea toate lead-urile |
-| `RESEND_API_KEY` | da (F6) | nu pleacă emailuri de notificare |
-| `LEAD_NOTIFICATION_EMAIL` | da (F6) | nu se știe cui se trimit lead-urile |
-| `RESEND_FROM_EMAIL` | da (F6) | se cade pe `notificari@meridianagency.ro`; dacă domeniul nu e verificat în Resend, nu pleacă nimic |
-| `NEXT_PUBLIC_PHONE` | da | blocul „Sună direct" dispare de pe paginile video |
-| `NEXT_PUBLIC_WHATSAPP_NUMBER` | da | butoanele de WhatsApp dispar (inclusiv cele contextuale) |
-| `NEXT_PUBLIC_INSTAGRAM` | nu | canalul Instagram dispare din panou și din footer |
-| `NEXT_PUBLIC_CAL_VIDEO` | nu | secțiunea de programare de pe `/video/contact` nu se randează |
-| `NEXT_PUBLIC_CAL_SOFTWARE` | nu | discovery call-ul de pe `/software/brief` nu se randează |
+| `NEXT_PUBLIC_SITE_URL` | da | canonical, sitemap și robots arată spre domeniul implicit |
+| `NEXT_PUBLIC_SUPABASE_URL` | da | nu se salvează niciun lead |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | da | idem |
+| `SUPABASE_SERVICE_ROLE_KEY` | da | insert-ul de pe server |
+| `ADMIN_EMAILS` | **da în producție** | fără listă, orice cont creat pe proiectul Supabase ar vedea toate lead-urile — panoul se blochează intenționat |
+| `RESEND_API_KEY` | da | nu pleacă emailuri de notificare |
+| `LEAD_NOTIFICATION_EMAIL` | da | nu se știe cui se trimit lead-urile |
+| `RESEND_FROM_EMAIL` | da | dacă domeniul nu e verificat în Resend, nu pleacă nimic |
+| `NEXT_PUBLIC_PHONE` | **da la lansare** | butoanele de telefon duc la numărul de demonstrație |
+| `NEXT_PUBLIC_WHATSAPP_NUMBER` | **da la lansare** | butoanele de WhatsApp duc la un număr inexistent |
+| `NEXT_PUBLIC_EMAIL_VIDEO` | da la lansare | adresa din subsolul video rămâne cea implicită |
+| `NEXT_PUBLIC_EMAIL_SOFTWARE` | da la lansare | idem, pe software |
+| `NEXT_PUBLIC_INSTAGRAM` | nu | dispare din structured data (`sameAs`) |
 
-Canalele neconfigurate se **ascund**, nu rămân ca link-uri moarte. În dev apare în locul lor un avertisment vizibil.
+Cât timp lipsesc datele de contact, subsolul scrie explicit că sunt placeholder. Completează-le și nota dispare singură — nu e nimic de editat în cod.
 
 ## Ce e placeholder și trebuie înlocuit
 
 | Ce | Unde | Cum se vede că e placeholder |
 |---|---|---|
-| Texte legale | `app/[locale]/(legal)/legal/_content/documents.ts` | Notă vizibilă sus pe fiecare pagină: **nevalidat juridic** |
-| Datele firmei (denumire, CUI, reg. com., sediu, email) | același fișier, `COMPANY_PLACEHOLDER` | `[DENUMIRE SRL]` etc. + badge PLACEHOLDER |
-| Prețurile din estimator | `lib/estimator-config.ts` | comentariu de avertizare în capul fișierului |
-| Ghidul PDF | `public/software/ghid-modernizare-placeholder.pdf` | badge PLACEHOLDER pe card + notă după descărcare |
-| Portofoliu video (8 proiecte) și testimoniale | `content/video/` | `isPlaceholder: true` |
-| Proiecte software și testimoniale | `content/software/` | `isPlaceholder: true` |
-| Postere video | `public/video/posters/*.svg` | SVG-uri generate, nu cadre reale |
-| Bază și program | `app/[locale]/(video)/video/contact/page.tsx`, `STUDIO` | badge PLACEHOLDER lângă bloc |
-| Logo | peste tot (`components/shell/logo.tsx`) | marcaj geometric provizoriu |
+| Texte legale | `app/[locale]/(legal)/legal/_content/documents.ts` | notă vizibilă sus pe fiecare pagină: **nevalidat juridic** |
+| Datele firmei (denumire, CUI, reg. com., sediu) | același fișier, `COMPANY_PLACEHOLDER` | `[DENUMIRE SRL]` + badge PLACEHOLDER |
+| Telefon, WhatsApp, adrese de email | variabilele de mediu de mai sus | notă în subsol până se completează env-ul |
+| Testimoniale | `components/site/video-content.ts`, `software-content.ts` | `isPlaceholder: true` |
+| Cifrele de capabilitate | `CAPABILITY_STATS` | `isPlaceholder: true` |
+| Plăcile media din hero și din secțiunea de servicii | `MediaFrame` în `components/site/ui.tsx` | badge **exemplu** pe placă; butonul de redare e inert până intră materialul real |
+| Afirmații despre programele de finanțare | `software-content.ts` | comentarii `TODO: verificat juridic` |
+| Logo | `components/site/mark.tsx` | marcă redesenată vectorial după `public/brand/meridian-logo.jpeg` |
 
-Lista de lansare completă e în `PLAN.md` § „De verificat înainte de lansare".
+Lista de lansare completă e în `PLAN.md`.

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Container } from "@/components/ui/container";
 import { ConsentPreferences } from "@/components/consent/consent-preferences";
 import type { Locale } from "@/i18n/routing";
 import { alternatesFor } from "@/lib/seo";
@@ -37,9 +36,9 @@ export default async function CookiesPage({
       />
       {/* butonul de retragere stă imediat sub secțiunea „cum îți schimbi
           alegerea”, nu într-un subsol pe care nu-l citește nimeni */}
-      <Container size="narrow" className="pb-16">
+      <div className="mx-auto max-w-3xl px-5 pb-20 sm:px-6">
         <ConsentPreferences />
-      </Container>
+      </div>
     </>
   );
 }
