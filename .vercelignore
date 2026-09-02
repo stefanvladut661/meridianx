@@ -1,0 +1,26 @@
+# Ce NU urcă la Vercel.
+#
+# Atenție: dacă acest fișier există, Vercel îl folosește pe el în locul
+# lui `.gitignore`. Deci tot ce nu vrem sus trebuie scris aici, chiar
+# dacă e deja ignorat de git.
+
+# Materialul brut de montaj: 1,7GB de 4K și fotografii RAW-ish. Versiunile
+# convertite, singurele servite vreodată, stau în `public/video/`.
+/ideas/
+
+# Se instalează și se construiesc pe Vercel.
+/node_modules
+/.next
+/out
+/build
+
+# Secrete și fișiere locale.
+.env
+.env.*
+!.env.example
+
+# Zgomot local.
+.DS_Store
+*.pem
+npm-debug.log*
+/coverage
