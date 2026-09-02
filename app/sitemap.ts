@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getPathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
+import { PHOTOS, VIDEOS } from "@/components/site/portfolio-content";
 
 /**
  * Sitemap.
@@ -25,12 +26,14 @@ const ROUTES = [
   "/",
   "/video",
   "/software",
+  "/video/portofoliu",
   ...LEGAL_LINKS.map((link) => link.href),
 ];
 
 function priorityFor(route: string): number {
   if (route === "/") return 1;
   if (route === "/video" || route === "/software") return 0.9;
+  if (route === "/video/portofoliu") return 0.8;
   return 0.3;
 }
 
@@ -45,12 +48,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
       ])
     );
 
+    /* Portofoliul e singura pagină cu media proprie. Declarând-o aici,
+       Google indexează fiecare clip și fiecare fotografie, nu doar
+       pagina care le conține. */
+    const media =
+      route === "/video/portofoliu"
+        ? {
+            images: PHOTOS.map(
+              (photo) => `${BASE}${photo.base}-${photo.widths[photo.widths.length - 1]}.webp`
+            ),
+            videos: VIDEOS.map((video) => ({
+              title: `${video.title} — ${video.client}`,
+              description: `Material filmat și montat de MERIDIAN pentru ${video.client}.`,
+              thumbnail_loc: `${BASE}${video.poster}`,
+              content_loc: `${BASE}${video.src}`,
+            })),
+          }
+        : {};
+
     return {
       url: `${BASE}${getPathname({ href: route, locale: routing.defaultLocale })}`,
       lastModified,
       changeFrequency: route.startsWith("/legal") ? "yearly" : "monthly",
       priority: priorityFor(route),
       alternates: { languages },
+      ...media,
     };
   });
 }

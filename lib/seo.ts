@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { SOFTWARE_CONTACT, VIDEO_CONTACT } from "@/components/site/contact";
 import type { Division } from "./division";
 
 /**
@@ -96,6 +97,30 @@ export function pageSeo(options: {
   };
 }
 
+/**
+ * Cardul social pentru paginile care nu apartin unei divizii: poarta si
+ * documentele legale. Il declaram explicit, nu ne bazam pe mostenirea
+ * din layout — Next o rezolva diferit dupa cum pagina isi exporta sau
+ * nu propria metadata, iar tagurile astea sunt exact cele pe care nu ne
+ * permitem sa le pierdem: sunt ce vede cineva cand da link pe WhatsApp.
+ */
+export function neutralSocial(title: string, description: string): Metadata {
+  const image = "/og.png?division=gate&title=MERIDIAN";
+  return {
+    openGraph: {
+      type: "website",
+      siteName: "MERIDIAN",
+      locale: "ro_RO",
+      title,
+      description,
+      images: [
+        { url: image, width: 1200, height: 630, alt: "MERIDIAN — video si software" },
+      ],
+    },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
+
 /* ─────────────────────────── JSON-LD ───────────────────────────── */
 
 export function organizationSchema() {
@@ -110,9 +135,133 @@ export function organizationSchema() {
     // NOTĂ: fără `address` și fără LocalBusiness până când avem datele
     // reale ale firmei. Structured data inventată e minciună citită de
     // mașini, nu doar de oameni.
+    //
+    // Telefoanele sunt însă reale și publice (tipărite pe cărțile de
+    // vizită), deci intră ca puncte de contact — câte unul per divizie,
+    // fiindcă exact așa răspunde agenția.
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        name: "MERIDIAN Video",
+        telephone: VIDEO_CONTACT.phoneHref.replace("tel:", ""),
+        availableLanguage: ["ro"],
+        areaServed: "RO",
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        name: "MERIDIAN Software",
+        telephone: SOFTWARE_CONTACT.phoneHref.replace("tel:", ""),
+        availableLanguage: ["ro"],
+        areaServed: "RO",
+      },
+    ],
     sameAs: [process.env.NEXT_PUBLIC_INSTAGRAM].filter(
       (value): value is string => Boolean(value && value.startsWith("http"))
     ),
+  };
+}
+
+/* ---------- materiale de portofoliu ----------
+   Google indexează video și imagini separat de pagină. Fără VideoObject
+   un clip de portofoliu e, pentru un crawler, un `<video>` mut. */
+
+export interface PortfolioVideoSeo {
+  slug: string;
+  client: string;
+  title: string;
+  src: string;
+  poster: string;
+  seconds: number;
+  published: string;
+  w: number;
+  h: number;
+}
+
+/** ISO 8601 pentru durată: 22s → PT22S, 95s → PT1M35S. */
+function isoDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return `PT${m ? `${m}M` : ""}${s || !m ? `${s}S` : ""}`;
+}
+
+export function videoObjectSchema(
+  video: PortfolioVideoSeo,
+  route: string,
+  locale: Locale
+) {
+  const page = `${BASE}${getPathname({ href: route, locale })}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: `${video.title} — ${video.client}`,
+    description: `Material filmat și montat de MERIDIAN pentru ${video.client}.`,
+    thumbnailUrl: [`${BASE}${video.poster}`],
+    contentUrl: `${BASE}${video.src}`,
+    /* `uploadDate` e data la care materialul a apărut pe site (mtime-ul
+       fișierului livrat), nu data filmării — pe aia nu o știm și n-o
+       inventăm. */
+    uploadDate: video.published,
+    duration: isoDuration(video.seconds),
+    width: video.w,
+    height: video.h,
+    isFamilyFriendly: true,
+    inLanguage: "ro",
+    creator: { "@type": "Organization", name: "MERIDIAN", url: BASE },
+    embedUrl: page,
+    mainEntityOfPage: page,
+  };
+}
+
+export interface PortfolioPhotoSeo {
+  slug: string;
+  alt: string;
+  client: string;
+  base: string;
+  widths: number[];
+  w: number;
+  h: number;
+}
+
+export function imageGallerySchema(
+  photos: PortfolioPhotoSeo[],
+  route: string,
+  locale: Locale
+) {
+  const page = `${BASE}${getPathname({ href: route, locale })}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "ImageGallery",
+    name: "Fotografie comercială MERIDIAN",
+    url: page,
+    inLanguage: "ro",
+    associatedMedia: photos.map((photo) => ({
+      "@type": "ImageObject",
+      contentUrl: `${BASE}${photo.base}-${photo.widths[photo.widths.length - 1]}.webp`,
+      thumbnailUrl: `${BASE}${photo.base}-${photo.widths[0]}.webp`,
+      name: photo.alt,
+      caption: `${photo.alt} — ${photo.client}`,
+      width: photo.w,
+      height: photo.h,
+      creditText: "MERIDIAN",
+      creator: { "@type": "Organization", name: "MERIDIAN", url: BASE },
+      copyrightNotice: "MERIDIAN",
+      acquireLicensePage: page,
+    })),
+  };
+}
+
+/** Întrebările frecvente, exact cum sunt pe pagină. */
+export function faqSchema(items: readonly { q: string; a: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
   };
 }
 

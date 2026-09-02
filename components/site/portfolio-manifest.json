@@ -1,0 +1,565 @@
+{
+  "videos": [
+    {
+      "slug": "bonami-sclipici",
+      "client": "Trattoria BonaMi",
+      "title": "Desert cu sclipici",
+      "kind": "HORECA",
+      "featured": 1,
+      "src": "/video/portofoliu/bonami-sclipici.mp4",
+      "poster": "/video/portofoliu/bonami-sclipici.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 16,
+      "bytes": 7391635,
+      "audio": true,
+      "published": "2026-08-28T12:25:05.574Z",
+      "lowRes": false
+    },
+    {
+      "slug": "e45-salata-caesar",
+      "client": "E45 Restobar",
+      "title": "Salată Caesar",
+      "kind": "HORECA",
+      "featured": 2,
+      "src": "/video/portofoliu/e45-salata-caesar.mp4",
+      "poster": "/video/portofoliu/e45-salata-caesar.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 15,
+      "bytes": 5365212,
+      "audio": true,
+      "published": "2026-08-28T12:25:04.592Z",
+      "lowRes": false
+    },
+    {
+      "slug": "tua-vezi-acum",
+      "client": "Tua Club & Lounge",
+      "title": "Vezi acum",
+      "kind": "Club & lounge",
+      "featured": 3,
+      "src": "/video/portofoliu/tua-vezi-acum.mp4",
+      "poster": "/video/portofoliu/tua-vezi-acum.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 42,
+      "bytes": 15625409,
+      "audio": true,
+      "published": "2026-08-28T12:25:16.487Z",
+      "lowRes": false
+    },
+    {
+      "slug": "double-trouble-party",
+      "client": "Double Trouble",
+      "title": "Party event",
+      "kind": "Eveniment",
+      "featured": 4,
+      "src": "/video/portofoliu/double-trouble-party.mp4",
+      "poster": "/video/portofoliu/double-trouble-party.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 53,
+      "bytes": 34111047,
+      "audio": true,
+      "published": "2026-08-28T12:25:39.877Z",
+      "lowRes": false
+    },
+    {
+      "slug": "dr-gupta",
+      "client": "Dr. Gupta",
+      "title": "Prezentare cabinet",
+      "kind": "Medical",
+      "featured": 5,
+      "src": "/video/portofoliu/dr-gupta.mp4",
+      "poster": "/video/portofoliu/dr-gupta.webp",
+      "w": 478,
+      "h": 850,
+      "seconds": 32,
+      "bytes": 3319069,
+      "audio": true,
+      "published": "2026-08-28T12:25:01.113Z",
+      "lowRes": true
+    },
+    {
+      "slug": "allto-passione-gelato",
+      "client": "Allto Passione",
+      "title": "Gelato",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/allto-passione-gelato.mp4",
+      "poster": "/video/portofoliu/allto-passione-gelato.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 25,
+      "bytes": 8994696,
+      "audio": true,
+      "published": "2026-08-28T12:25:19.537Z",
+      "lowRes": false
+    },
+    {
+      "slug": "e45-cappuccino",
+      "client": "E45 Restobar",
+      "title": "Cappuccino",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/e45-cappuccino.mp4",
+      "poster": "/video/portofoliu/e45-cappuccino.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 19,
+      "bytes": 4574204,
+      "audio": true,
+      "published": "2026-08-28T12:25:03.613Z",
+      "lowRes": false
+    },
+    {
+      "slug": "bonami-mana-rotativa",
+      "client": "Trattoria BonaMi",
+      "title": "Plating în mișcare",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/bonami-mana-rotativa.mp4",
+      "poster": "/video/portofoliu/bonami-mana-rotativa.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 19,
+      "bytes": 11986551,
+      "audio": true,
+      "published": "2026-08-28T12:25:07.920Z",
+      "lowRes": false
+    },
+    {
+      "slug": "bonami-pizza",
+      "client": "Trattoria BonaMi",
+      "title": "Pizza",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/bonami-pizza.mp4",
+      "poster": "/video/portofoliu/bonami-pizza.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 34,
+      "bytes": 14997499,
+      "audio": true,
+      "published": "2026-08-28T12:25:11.345Z",
+      "lowRes": false
+    },
+    {
+      "slug": "allto-ecran",
+      "client": "Allto Passione",
+      "title": "Ecranul din locație",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/allto-ecran.mp4",
+      "poster": "/video/portofoliu/allto-ecran.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 87,
+      "bytes": 26712501,
+      "audio": true,
+      "published": "2026-09-02T10:41:12.125Z",
+      "lowRes": false
+    },
+    {
+      "slug": "allto-tiktok-cornete",
+      "client": "Allto Passione",
+      "title": "Clip TikTok — cornete",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/allto-tiktok-cornete.mp4",
+      "poster": "/video/portofoliu/allto-tiktok-cornete.webp",
+      "w": 720,
+      "h": 1280,
+      "seconds": 22,
+      "bytes": 4486518,
+      "audio": true,
+      "published": "2026-09-02T10:30:05.495Z",
+      "lowRes": false
+    },
+    {
+      "slug": "allto-tiktok-cafea",
+      "client": "Allto Passione",
+      "title": "Clip TikTok — colțul de cafea",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/allto-tiktok-cafea.mp4",
+      "poster": "/video/portofoliu/allto-tiktok-cafea.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 21,
+      "bytes": 2077840,
+      "audio": true,
+      "published": "2026-09-02T10:31:13.842Z",
+      "lowRes": false
+    },
+    {
+      "slug": "allto-rosso",
+      "client": "Allto Passione",
+      "title": "Cookie Rosso",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/allto-rosso.mp4",
+      "poster": "/video/portofoliu/allto-rosso.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 50,
+      "bytes": 8765225,
+      "audio": true,
+      "published": "2026-09-02T10:38:23.951Z",
+      "lowRes": false
+    },
+    {
+      "slug": "dr-teo-buze",
+      "client": "Dr. Teo",
+      "title": "Augmentarea buzelor, pe înțeles",
+      "kind": "Medical",
+      "featured": 0,
+      "src": "/video/portofoliu/dr-teo-buze.mp4",
+      "poster": "/video/portofoliu/dr-teo-buze.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 25,
+      "bytes": 7581149,
+      "audio": true,
+      "published": "2026-09-02T10:16:02.237Z",
+      "lowRes": false
+    },
+    {
+      "slug": "dr-teo-tratament",
+      "client": "Dr. Teo",
+      "title": "Tratament în cabinet",
+      "kind": "Medical",
+      "featured": 0,
+      "src": "/video/portofoliu/dr-teo-tratament.mp4",
+      "poster": "/video/portofoliu/dr-teo-tratament.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 22,
+      "bytes": 9265931,
+      "audio": true,
+      "published": "2026-09-02T10:16:27.476Z",
+      "lowRes": false
+    },
+    {
+      "slug": "remediu-shilajit",
+      "client": "Remediu",
+      "title": "Shilajit",
+      "kind": "Retail",
+      "featured": 0,
+      "src": "/video/portofoliu/remediu-shilajit.mp4",
+      "poster": "/video/portofoliu/remediu-shilajit.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 23,
+      "bytes": 11784436,
+      "audio": true,
+      "published": "2026-09-02T10:19:02.654Z",
+      "lowRes": false
+    },
+    {
+      "slug": "remediu-magneziu",
+      "client": "Remediu",
+      "title": "Magneziu glicinat",
+      "kind": "Retail",
+      "featured": 0,
+      "src": "/video/portofoliu/remediu-magneziu.mp4",
+      "poster": "/video/portofoliu/remediu-magneziu.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 17,
+      "bytes": 9530096,
+      "audio": true,
+      "published": "2026-09-02T10:18:40.066Z",
+      "lowRes": false
+    },
+    {
+      "slug": "remediu-ulei-ricin",
+      "client": "Remediu",
+      "title": "Ulei de ricin",
+      "kind": "Retail",
+      "featured": 0,
+      "src": "/video/portofoliu/remediu-ulei-ricin.mp4",
+      "poster": "/video/portofoliu/remediu-ulei-ricin.webp",
+      "w": 1080,
+      "h": 1920,
+      "seconds": 22,
+      "bytes": 9036897,
+      "audio": true,
+      "published": "2026-09-02T10:18:18.739Z",
+      "lowRes": false
+    }
+  ],
+  "photos": [
+    {
+      "slug": "e45-coaste-3",
+      "alt": "Card de meniu — scăricică de porc cu maioneză de casă",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:24:58.000Z",
+      "widths": [
+        640
+      ],
+      "w": 1080,
+      "h": 1350,
+      "base": "/video/portofoliu/foto/e45-coaste-3"
+    },
+    {
+      "slug": "e45-coaste-1",
+      "alt": "Card de meniu — cartofi proaspeți cu usturoi și parmezan",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:24:58.802Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 3202,
+      "h": 4803,
+      "base": "/video/portofoliu/foto/e45-coaste-1"
+    },
+    {
+      "slug": "e45-coaste-2",
+      "alt": "Scăricică de porc cu cartofi, pe lemn",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:24:58.178Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 3385,
+      "h": 4231,
+      "base": "/video/portofoliu/foto/e45-coaste-2"
+    },
+    {
+      "slug": "e45-fettuccine-2",
+      "alt": "Card de meniu — fettuccine cu creveți și sos roșu",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:24:59.940Z",
+      "widths": [
+        640
+      ],
+      "w": 1080,
+      "h": 1350,
+      "base": "/video/portofoliu/foto/e45-fettuccine-2"
+    },
+    {
+      "slug": "e45-fettuccine-1",
+      "alt": "Fettuccine cu parmezan și busuioc",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:25:00.753Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 3648,
+      "h": 4560,
+      "base": "/video/portofoliu/foto/e45-fettuccine-1"
+    },
+    {
+      "slug": "e45-meniu-papanasi",
+      "alt": "Card de meniu — papanași cu smântână și dulceață",
+      "client": "E45 Restobar",
+      "published": "2026-09-02T10:42:32.628Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 4094,
+      "h": 5119,
+      "base": "/video/portofoliu/foto/e45-meniu-papanasi"
+    },
+    {
+      "slug": "e45-camembert-3",
+      "alt": "Card de meniu — salată cu camembert în panko",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:24:57.911Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 3240,
+      "h": 4050,
+      "base": "/video/portofoliu/foto/e45-camembert-3"
+    },
+    {
+      "slug": "e45-camembert-1",
+      "alt": "Salată cu camembert, prosciutto și pere",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:24:57.589Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 3648,
+      "h": 5472,
+      "base": "/video/portofoliu/foto/e45-camembert-1"
+    },
+    {
+      "slug": "e45-camembert-2",
+      "alt": "Salată cu camembert, cadru apropiat",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:24:57.551Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 3648,
+      "h": 5472,
+      "base": "/video/portofoliu/foto/e45-camembert-2"
+    },
+    {
+      "slug": "e45-indian-rose",
+      "alt": "Cocktailul Indian Rose, în lumină caldă",
+      "client": "E45 Restobar",
+      "published": "2026-08-28T12:24:57.464Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 2160,
+      "h": 2700,
+      "base": "/video/portofoliu/foto/e45-indian-rose"
+    },
+    {
+      "slug": "e45-negroni",
+      "alt": "Cocktailul Negroni",
+      "client": "E45 Restobar",
+      "published": "2026-09-02T10:40:05.979Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 2160,
+      "h": 2700,
+      "base": "/video/portofoliu/foto/e45-negroni"
+    },
+    {
+      "slug": "e45-meniu-salata",
+      "alt": "Card de meniu — salată cu legume și vită",
+      "client": "E45 Restobar",
+      "published": "2026-09-02T10:41:56.653Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 3240,
+      "h": 4050,
+      "base": "/video/portofoliu/foto/e45-meniu-salata"
+    },
+    {
+      "slug": "e45-meniu-burger",
+      "alt": "Card de meniu — burger de pui cu cartofi prăjiți",
+      "client": "E45 Restobar",
+      "published": "2026-09-02T10:42:52.585Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 4035,
+      "h": 5044,
+      "base": "/video/portofoliu/foto/e45-meniu-burger"
+    },
+    {
+      "slug": "dr-teo-inainte-dupa-1",
+      "alt": "Colaj înainte și după tratament",
+      "client": "Dr. Teo",
+      "published": "2026-09-02T10:16:56.049Z",
+      "widths": [
+        640,
+        1280
+      ],
+      "w": 1500,
+      "h": 1500,
+      "base": "/video/portofoliu/foto/dr-teo-inainte-dupa-1"
+    },
+    {
+      "slug": "dr-teo-inainte-dupa-2",
+      "alt": "Colaj înainte și după tratament",
+      "client": "Dr. Teo",
+      "published": "2026-09-02T10:16:32.990Z",
+      "widths": [
+        640,
+        1280
+      ],
+      "w": 1500,
+      "h": 1500,
+      "base": "/video/portofoliu/foto/dr-teo-inainte-dupa-2"
+    },
+    {
+      "slug": "dr-teo-inainte-dupa-3",
+      "alt": "Colaj înainte și după tratament",
+      "client": "Dr. Teo",
+      "published": "2026-09-02T10:16:39.014Z",
+      "widths": [
+        640,
+        1280
+      ],
+      "w": 1500,
+      "h": 1500,
+      "base": "/video/portofoliu/foto/dr-teo-inainte-dupa-3"
+    },
+    {
+      "slug": "dr-teo-schema-buze",
+      "alt": "Schema tehnicii de augmentare a buzelor",
+      "client": "Dr. Teo",
+      "published": "2026-09-02T10:16:48.628Z",
+      "widths": [
+        640
+      ],
+      "w": 836,
+      "h": 1045,
+      "base": "/video/portofoliu/foto/dr-teo-schema-buze"
+    },
+    {
+      "slug": "ice-roll-meniu",
+      "alt": "Meniul de înghețată, la geamul de servire",
+      "client": "Ice and Roll",
+      "published": "2026-09-02T10:24:24.204Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 2336,
+      "h": 2920,
+      "base": "/video/portofoliu/foto/ice-roll-meniu"
+    },
+    {
+      "slug": "ice-roll-cornet-ciocolata",
+      "alt": "Cornet cu ciocolată, primit la geam",
+      "client": "Ice and Roll",
+      "published": "2026-09-02T10:24:29.168Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 2336,
+      "h": 2920,
+      "base": "/video/portofoliu/foto/ice-roll-cornet-ciocolata"
+    },
+    {
+      "slug": "ice-roll-cornet-vanilie",
+      "alt": "Cornet de vanilie, la terasă",
+      "client": "Ice and Roll",
+      "published": "2026-09-02T10:24:32.795Z",
+      "widths": [
+        640,
+        1280,
+        1920
+      ],
+      "w": 2308,
+      "h": 2885,
+      "base": "/video/portofoliu/foto/ice-roll-cornet-vanilie"
+    }
+  ]
+}

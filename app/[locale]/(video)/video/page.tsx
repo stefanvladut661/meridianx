@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
-import { pageSeo } from "@/lib/seo";
+import { faqSchema, pageSeo, serviceSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
+import { FAQ } from "@/components/site/video-content";
 import { VideoScreen } from "@/components/site/pages/video";
 
 /**
@@ -45,5 +47,24 @@ export default async function VideoPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <VideoScreen />;
+
+  /* Întrebările de pe pagină, declarate și pentru Google: sunt aceleași
+     texte, nu o listă paralelă care poate rămâne în urmă. */
+  const schema = [
+    serviceSchema({
+      name: "Producție video și campanii",
+      description: DESCRIPTION,
+      division: "video",
+      route: "/video",
+      locale: locale as Locale,
+    }),
+    faqSchema(FAQ),
+  ];
+
+  return (
+    <>
+      <JsonLd schema={schema} />
+      <VideoScreen />
+    </>
+  );
 }

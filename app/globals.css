@@ -467,8 +467,13 @@ body {
 }
 
 /* Vălul circular la apăsare: crește din colț până acoperă ecranul,
-   în culoarea lumii în care intri. */
+   în culoarea lumii în care intri.
+
+   `--ws-cover` e contractul cu world-switch.tsx: la finalul lui ecranul
+   e acoperit, deci acolo pleacă navigarea. Ținut scurt intenționat —
+   vălul explică saltul dintre divizii, nu îl întârzie. */
 .ws-wipe {
+  --ws-cover: 380ms;
   position: fixed;
   z-index: 90;
   width: 220vmax;
@@ -482,7 +487,8 @@ body {
     color-mix(in oklab, var(--md-a1) 70%, var(--md-bg)) 0%,
     var(--md-bg) 62%
   );
-  animation: ws-wipe 620ms cubic-bezier(0.7, 0, 0.3, 1) forwards;
+  will-change: scale;
+  animation: ws-wipe var(--ws-cover) cubic-bezier(0.7, 0, 0.3, 1) forwards;
 }
 @keyframes ws-wipe {
   from {
@@ -493,7 +499,7 @@ body {
   }
 }
 .ws-wipe-label {
-  animation: ws-label 620ms ease-out 180ms both;
+  animation: ws-label 240ms ease-out 90ms both;
 }
 @keyframes ws-label {
   from {
@@ -650,6 +656,33 @@ body.md-body:has(> [data-scope="software"]) {
   backdrop-filter: blur(18px) saturate(1.2);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   border-radius: var(--md-r-lg);
+}
+
+/* Configuratorul trebuie să arate a FORMULAR, nu a secțiune.
+   Pe paleta deschisă, glass-ul e alb 90% peste hârtie #f6f7f5 — adică
+   aproape invizibil, și de-aia se pierdea în pagină. Aici primește o
+   suprafață plină, o muchie declarată și o umbră care îl ridică de pe
+   hârtie: trei semnale că e un obiect în care se completează ceva, nu
+   încă un bloc de conținut. */
+.cfg-panel {
+  background: var(--md-bg-2);
+  border: 1px solid var(--md-line-strong);
+  border-radius: var(--md-r-lg);
+  box-shadow: 0 20px 44px -26px rgb(0 0 0 / 0.4);
+}
+
+/* Banda de sus a formularului: fâșia care îl numește. */
+.cfg-bar {
+  background: color-mix(in oklab, var(--md-a1) 7%, var(--md-bg-2));
+  border-bottom: 1px solid var(--md-line);
+}
+
+/* Fișa de alături primește aceeași muchie ca formularul, ca perechea
+   să se citească drept un singur instrument. Clasă proprie, nu utilitar
+   Tailwind: `.glass` e nelayerizat, deci ar fi bătut orice `border-*`
+   din `@layer utilities`. Aici ordinea din fișier decide, și e corectă. */
+.cfg-aside {
+  border-color: var(--md-line-strong);
 }
 
 /* muchie de lumină pe marginea de sus — trucul care face glass-ul „scump" */

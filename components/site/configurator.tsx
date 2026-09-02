@@ -263,13 +263,27 @@ export function Configurator() {
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_minmax(0,400px)]">
       {/* ---------- panoul de întrebări ---------- */}
-      <div className="glass-2 edge-light relative overflow-hidden p-6 sm:p-8">
+      <div className="cfg-panel relative overflow-hidden">
+        {/* Banda care numește obiectul. Fără ea, omul care derulează vede
+            încă o secțiune de prezentare și trece mai departe — n-are de
+            unde ști că aici se completează ceva. */}
+        <div className="cfg-bar flex items-center justify-between gap-4 px-6 py-3.5 sm:px-8">
+          <p className="font-md-mono text-[11.5px] uppercase tracking-[0.18em] text-a1">
+            Formular · Configurator de proiect
+          </p>
+          <p className="flex shrink-0 items-center gap-1.5 text-[12.5px] text-dim">
+            <Icon name="clock" size={14} />
+            <span className="hidden sm:inline">≈&nbsp;2 minute ·&nbsp;</span>
+            {STEPS.length} pași
+          </p>
+        </div>
+
+        <div className="p-6 sm:p-8">
         <div className="mb-7">
           <div className="flex items-center justify-between gap-4">
             <p className="font-md-mono text-[11.5px] uppercase tracking-[0.18em] text-dim">
               Pasul {Math.min(step + 1, STEPS.length)} din {STEPS.length}
             </p>
-            <p className="text-[12.5px] text-dim">≈ 2 minute</p>
           </div>
           <div
             className="mt-3 h-[3px] w-full overflow-hidden rounded-full bg-glass"
@@ -389,10 +403,11 @@ export function Configurator() {
             )}
           </>
         )}
+        </div>
       </div>
 
       {/* ---------- fișa care se completează în timp real ---------- */}
-      <aside className="glass relative overflow-hidden p-6 sm:p-7 lg:sticky lg:top-24 lg:self-start">
+      <aside className="glass cfg-aside relative overflow-hidden p-6 sm:p-7 lg:sticky lg:top-24 lg:self-start">
         <p className="eyebrow mb-5 flex items-center gap-2">
           <span className="node-dot" aria-hidden />
           Fișa ta de proiect
@@ -647,7 +662,7 @@ function ContactStep({
           className="btn btn-primary !min-h-11 !px-6 !py-2.5 !text-[14px] disabled:cursor-progress disabled:opacity-60"
         >
           <Icon name="calendar" size={16} />
-          {sending ? "Se trimite…" : "Programează consultanța"}
+          {sending ? "Se trimite…" : "Programează consultanța gratuită"}
         </button>
         <span className="text-[12.5px] text-dim">
           Fără obligații. Fără prezentare de agenție.

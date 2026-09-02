@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
-import { pageSeo } from "@/lib/seo";
+import { faqSchema, pageSeo, serviceSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SFAQ } from "@/components/site/software-content";
 import { SoftwareScreen } from "@/components/site/pages/software";
 
 /**
@@ -44,5 +46,22 @@ export default async function SoftwarePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <SoftwareScreen />;
+
+  const schema = [
+    serviceSchema({
+      name: "Dezvoltare software la comanda",
+      description: DESCRIPTION,
+      division: "software",
+      route: "/software",
+      locale: locale as Locale,
+    }),
+    faqSchema(SFAQ),
+  ];
+
+  return (
+    <>
+      <JsonLd schema={schema} />
+      <SoftwareScreen />
+    </>
+  );
 }

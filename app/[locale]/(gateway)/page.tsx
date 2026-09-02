@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { getDivisionFromCookies } from "@/lib/division";
 import { GatewayScreen } from "@/components/site/pages/gateway";
 import { ClearDivision } from "@/components/gateway/clear-division";
+import { alternatesFor, neutralSocial } from "@/lib/seo";
+import type { Locale } from "@/i18n/routing";
 
 /**
  * Gateway-ul MERIDIAN (FAZA 1) — split-screen VIDEO | SOFTWARE.
@@ -18,6 +21,26 @@ import { ClearDivision } from "@/components/gateway/clear-division";
  * - redirectul există DOAR aici, pe `/` — link-urile directe spre
  *   orice altă rută nu sunt atinse.
  */
+
+const TITLE = "MERIDIAN — Video & Software";
+const DESCRIPTION =
+  "Producție video comercială și dezvoltare software la comandă. Două divizii, un singur punct zero.";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    // Titlul portii e si titlul implicit al site-ului: fara `template`,
+    // altfel ar iesi "MERIDIAN — Video & Software — MERIDIAN".
+    title: { absolute: TITLE },
+    description: DESCRIPTION,
+    alternates: alternatesFor("/", locale as Locale),
+    ...neutralSocial(TITLE, DESCRIPTION),
+  };
+}
 
 export default async function GatewayPage({
   params,

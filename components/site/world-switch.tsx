@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Mark } from "./mark";
 
 /* ============================================================
@@ -29,6 +28,9 @@ import { Mark } from "./mark";
    ============================================================ */
 
 type Target = "video" | "software";
+
+/** Cât îi ia vălului să acopere ecranul (ține pas cu `--ws-cover` din CSS). */
+const COVER_MS = 380;
 
 const TARGETS: Record<
   Target,
@@ -92,11 +94,40 @@ export function WorldSwitch({ to }: { to: Target }) {
   const [leaving, setLeaving] = useState(false);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
   const [mounted, setMounted] = useState(false);
+  const warmed = useRef(false);
 
   useEffect(() => setMounted(true), []);
 
+  /* Cealaltă divizie e o rută grea, nu un fragment. O aducem în cache
+     înainte de click, ca apăsarea să nu mai plătească descărcarea: o
+     dată la montare, pe idle, ca să nu concureze cu prima randare, și
+     din nou la hover/focus. */
+  const warm = useCallback(() => {
+    if (warmed.current) return;
+    warmed.current = true;
+    router.prefetch(t.href);
+  }, [router, t.href]);
+
+  useEffect(() => {
+    const w = window as typeof window & {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(warm);
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(warm, 200);
+    return () => window.clearTimeout(id);
+  }, [warm]);
+
   /* Vălul crește din colțul propriu-zis, nu din centrul casetei —
-     altfel pare că pornește din aer. */
+     altfel pare că pornește din aer.
+
+     Navigarea pleacă în clipa în care vălul a acoperit ecranul, nu după
+     ce se termină toată animația: restul creșterii se petrece oricum sub
+     un ecran plin. Mai devreme s-ar vedea tăietura, fiindcă vălul
+     trăiește în pagina care se demontează. */
   const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -104,14 +135,18 @@ export function WorldSwitch({ to }: { to: Target }) {
     const r = e.currentTarget.getBoundingClientRect();
     setOrigin({ x: isLeft ? r.left : r.right, y: r.top });
     setLeaving(true);
-    window.setTimeout(() => router.push(t.href), 560);
+    warm();
+    window.setTimeout(() => router.push(t.href), COVER_MS);
   };
 
   return (
     <>
       <Link
         href={t.href}
+        prefetch
         onClick={onClick}
+        onPointerEnter={warm}
+        onFocus={warm}
         data-scope={to}
         data-side={t.side}
         aria-label={`Treci la divizia ${t.name.toLowerCase()}`}

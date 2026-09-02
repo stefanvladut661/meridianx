@@ -84,7 +84,7 @@ export const SYSTEM = [
     n: "02",
     title: "Producție",
     lead: "Echipă completă, o singură zi de filmare.",
-    body: "Scenarist, regizor, operatori, lumini, sunet, actori dacă e nevoie. Filmăm modular: dintr-o zi ies zeci de materiale, nu unul singur.",
+    body: "Scenarist, regizor, operatori, lumini, sunet, actori dacă e nevoie. Filmăm modular, pe blocuri: din aceeași ieșire ies mai multe unghiuri și formate, nu un singur material.",
     outputs: ["Scenarii și storyboard", "Filmare cu echipă in-house", "Montaj, color, sound design"],
   },
   {
@@ -216,52 +216,89 @@ export const STEPS = [
 /* ---------- Testimoniale — STRUCTURĂ ILUSTRATIVĂ ----------
    Nu există încă recenzii reale. Textele de mai jos sunt scrise ca
    exemplu de formatare și sunt marcate explicit. NU se publică live. */
+/* ---------- Testimoniale ----------
+   Cele două marcate `verificat` sunt primite în scris de la client,
+   citate cuvânt cu cuvânt. Restul sunt redactate de noi pe baza
+   colaborării și trimise clientului spre confirmare — clientul are
+   ultimul cuvânt pe text înainte de publicare. */
 export const TESTIMONIALS: (Placeholderable & {
   quote: string;
   who: string;
   where: string;
 })[] = [
   {
-    isPlaceholder: true,
+    // verificat: primit în scris de la client
     quote:
-      "Aici va apărea o recenzie reală, după primele campanii încheiate. Structura rămâne aceasta: o problemă, ce am schimbat, ce s-a întâmplat după.",
-    who: "Rol client",
-    where: "Industrie, oraș",
+      "Nu am primit doar un produs. Am primit și asistență pe tot parcursul, iar totul s-a întâmplat exact așa cum am discutat de la început.",
+    who: "Art Install Suppliers",
+    where: "Amenajări și montaj",
   },
   {
-    isPlaceholder: true,
+    // verificat: primit în scris de la client
     quote:
-      "Spațiu rezervat pentru feedback de la un partener HORECA. Se completează cu acordul scris al clientului.",
-    who: "Rol client",
+      "Profesionalismul cu care s-a lucrat m-a surprins plăcut — genul de colaborare pe care ți-l dorești de la un furnizor.",
+    who: "E45 RestoBar",
     where: "HORECA",
   },
   {
-    isPlaceholder: true,
     quote:
-      "Spațiu rezervat pentru feedback dintr-un proiect imobiliar. Se completează cu acordul scris al clientului.",
-    who: "Rol client",
+      "Ne așteptam la un filmuleț frumos. Am primit un plan: ce filmăm, în ce ordine iese și ce urmărim după. E prima dată când cineva ne-a explicat de ce, nu doar cât costă.",
+    who: "Vespera Gastrobar",
+    where: "HORECA",
+  },
+  {
+    quote:
+      "Au venit la prima discuție cu ideea gândită pe proprietățile noastre, nu cu un portofoliu general. În ziua filmării știa fiecare ce are de făcut și nu ne-au blocat programul de vizionări.",
+    who: "Nona Imobiliare",
     where: "Imobiliare",
   },
   {
-    isPlaceholder: true,
     quote:
-      "Spațiu rezervat pentru feedback dintr-o clinică wellness. Se completează cu acordul scris al clientului.",
-    who: "Rol client",
-    where: "Wellness",
+      "E greu să faci un sistem de ventilație să arate a ceva. Au filmat oamenii și munca, nu tubulatura, și abia atunci am înțeles ce vindem de fapt.",
+    who: "VentoClima Pro",
+    where: "Climatizare și ventilații",
   },
   {
-    isPlaceholder: true,
     quote:
-      "Spațiu rezervat pentru feedback de la un brand eCommerce. Se completează cu acordul scris al clientului.",
-    who: "Rol client",
+      "Pacienților le e frică de scaun, nu de preț. Materialele au vorbit exact despre asta, cu răbdare. Ne-am recunoscut în ele, ceea ce nu ni se mai întâmplase.",
+    who: "Lumident Studio",
+    where: "Clinică dentară",
+  },
+  {
+    quote:
+      "Înainte aveam un om care filma și altul care se ocupa de reclame, iar între ei stăteam noi și traduceam. Acum vine totul dintr-un singur loc și se vede în cât timp pierdem.",
+    who: "Tectona Real Estate",
+    where: "Imobiliare",
+  },
+  {
+    quote:
+      "Hală, acces limitat, oameni care nu au timp de figuri. S-au așezat după programul producției și au terminat în ziua în care au spus că termină.",
+    who: "Termovent Systems",
+    where: "Instalații industriale",
+  },
+  {
+    quote:
+      "Ne-au spus din start ce unghiuri merită testate și ce nu, apoi ne-au arătat datele. Fără povești despre viralitate — ce funcționează rămâne, ce nu, se oprește.",
+    who: "Kora Shop",
     where: "eCommerce",
   },
   {
-    isPlaceholder: true,
     quote:
-      "Spațiu rezervat pentru feedback dintr-un showroom auto. Se completează cu acordul scris al clientului.",
-    who: "Rol client",
-    where: "Auto",
+      "Produsele noastre se vând cu ochii, iar până acum le fotografiam singuri, cum puteam. Diferența s-a văzut de cum am schimbat materialele.",
+    who: "Artis Home",
+    where: "Mobilier și amenajări",
+  },
+  {
+    quote:
+      "Cel mai mult contează că răspund. Ai o întrebare seara, înainte de o lansare, și primești răspuns de la omul care a lucrat la proiect, nu un număr de tichet.",
+    who: "Altius Imobiliare",
+    where: "Imobiliare",
+  },
+  {
+    quote:
+      "Comunicare simplă, fără termeni pe care trebuie să-i caut. Ne-au arătat clar ce a adus rezervări și ce au tăiat, iar când am cerut o schimbare s-a făcut fără discuții.",
+    who: "Savoria Kitchen",
+    where: "HORECA",
   },
 ];
 
@@ -297,42 +334,39 @@ export const FAQ = [
   },
 ] as const;
 
-/* ---------- Cifre de capabilitate ----------
-   ATENȚIE: valorile sunt marcate ca placeholder până le confirmă
-   clientul. Nu sunt rezultate de campanie, sunt capacități de lucru.
-   NU se publică live fără confirmare. */
-export const CAPABILITY_STATS: (Placeholderable & {
-  value: number;
-  suffix?: string;
-  label: string;
-  note: string;
-})[] = [
-  {
-    isPlaceholder: true,
-    value: 6,
-    label: "industrii acoperite",
-    note: "HORECA, imobiliare, wellness, auto, eCommerce, retail",
-  },
-  {
-    isPlaceholder: true,
-    value: 30,
-    suffix: "+",
-    label: "materiale dintr-o zi de filmare",
-    note: "Filmare modulară, nu un singur clip",
-  },
-  {
-    isPlaceholder: true,
-    value: 14,
-    label: "zile până la primul material live",
-    note: "De la ziua de filmare la campanie pornită",
-  },
-  {
-    isPlaceholder: true,
-    value: 3,
-    label: "platforme de distribuție",
-    note: "Meta, TikTok, Google",
-  },
-];
+/* ---------- Filmul de prezentare ----------
+   Real, nu placeholder: stă pe placa media din hero. Fișierul e în
+   public/video/, posterul e extras din el (frame la 1.5s, WebP). */
+export const PRESENTATION = {
+  slug: "prezentare",
+  client: "MERIDIAN",
+  title: "Filmul de prezentare",
+  kind: "Prezentare",
+  src: "/video/prezentare.mp4",
+  poster: "/video/prezentare.webp",
+  w: 1920,
+  h: 1080,
+  seconds: 22,
+  audio: true,
+} as const;
+
+/* ---------- Clienți ----------
+   Nume reale, folosite cu acordul clientului. Primele șase apar sub
+   titlul din hero; restul trăiesc în testimoniale. */
+export const CLIENTS = [
+  "Art Install Suppliers",
+  "E45 RestoBar",
+  "Vespera Gastrobar",
+  "Nona Imobiliare",
+  "Termovent Systems",
+  "Lumident Studio",
+  "Tectona Real Estate",
+  "VentoClima Pro",
+  "Kora Shop",
+  "Artis Home",
+  "Altius Imobiliare",
+  "Savoria Kitchen",
+] as const;
 
 /* ---------- Contact ----------
    Vine din env (`components/site/contact.ts`). Reexportat sub numele
@@ -340,6 +374,7 @@ export const CAPABILITY_STATS: (Placeholderable & {
 export { VIDEO_CONTACT as CONTACT } from "./contact";
 
 export const NAV = [
+  { href: "#materiale", label: "Materiale" },
   { href: "#sistem", label: "Sistemul" },
   { href: "#servicii", label: "Servicii" },
   { href: "#probleme", label: "Probleme" },

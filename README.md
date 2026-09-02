@@ -122,7 +122,8 @@ npm run verify:backend # în altul — sau: npm run verify:backend https://merid
 | `RESEND_API_KEY` | da | nu pleacă emailuri de notificare |
 | `LEAD_NOTIFICATION_EMAIL` | da | nu se știe cui se trimit lead-urile |
 | `RESEND_FROM_EMAIL` | da | dacă domeniul nu e verificat în Resend, nu pleacă nimic |
-| `NEXT_PUBLIC_PHONE` | **da la lansare** | butoanele de telefon duc la numărul de demonstrație |
+| `NEXT_PUBLIC_PHONE_VIDEO` | nu | butoanele de telefon de pe /video folosesc numărul din `contact.ts` |
+| `NEXT_PUBLIC_PHONE_SOFTWARE` | nu | butoanele de telefon de pe /software folosesc numărul din `contact.ts` |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | **da la lansare** | butoanele de WhatsApp duc la un număr inexistent |
 | `NEXT_PUBLIC_EMAIL_VIDEO` | da la lansare | adresa din subsolul video rămâne cea implicită |
 | `NEXT_PUBLIC_EMAIL_SOFTWARE` | da la lansare | idem, pe software |

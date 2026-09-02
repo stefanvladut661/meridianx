@@ -19,7 +19,6 @@ export type Placeholderable = { isPlaceholder?: true };
 
 /* ---------- Navigație ---------- */
 export const SNAV = [
-  { href: "#probleme", label: "Probleme" },
   { href: "#solutii", label: "Ce construim" },
   { href: "#configurator", label: "Configurator" },
   { href: "#proces", label: "Cum lucrăm" },
@@ -380,3 +379,19 @@ export const CONSULT_OUTPUT = [
    Vine din env (`components/site/contact.ts`). Reexportat sub numele
    vechi ca paginile să nu-și schimbe importurile. */
 export { SOFTWARE_CONTACT as SCONTACT } from "./contact";
+
+/* ---------- Filmul de prezentare ----------
+   Același fișier ca pe divizia video (e filmul agenției), dar declarat
+   aici ca lumile să nu-și importe conținut una alteia. */
+export const SPRESENTATION = {
+  slug: "prezentare",
+  client: "MERIDIAN",
+  title: "Filmul de prezentare",
+  kind: "Prezentare",
+  src: "/video/prezentare.mp4",
+  poster: "/video/prezentare.webp",
+  w: 1920,
+  h: 1080,
+  seconds: 22,
+  audio: true,
+} as const;

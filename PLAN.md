@@ -645,3 +645,48 @@ repo, scrise, pentru când adaptăm restul.
 - testimonialele și cifrele din `CAPABILITY_STATS`
 - afirmațiile despre programele de finanțare marcate `TODO: verificat juridic`
 - versiunea EN, adaptată — nu tradusă
+
+## Pregătirea pentru domeniu (2026-09-02)
+
+Ce s-a făcut acum, peste ce exista din FAZA 7:
+
+- **Identitate vizuală în browser și în Google**: `app/favicon.ico`
+  (16/32/48), `app/icon.png` (512), `app/apple-icon.png` (180) și
+  `public/brand/icon-{192,512}.png`, toate generate din marca MERIDIAN
+  cu `scripts/brand-icons.mjs`. Înainte era faviconul implicit al lui
+  Next. Plus `app/manifest.ts` (nume, culori, icoane).
+- **Card social pe toate rutele publice**: poarta și documentele legale
+  nu aveau niciun `og:` — cine dădea link la `meridianagency.ro` pe
+  WhatsApp nu vedea nimic. Ruta `/og.png` are acum și varianta
+  neutră `?division=gate`, iar paginile fără divizie o declară explicit
+  prin `neutralSocial()` din `lib/seo.ts`. Explicit, nu prin moștenire:
+  Next o rezolvă diferit după cum pagina își exportă sau nu metadata.
+- **Structured data pe materiale**: 18 `VideoObject` (cu durată ISO,
+  poster, `uploadDate` din mtime-ul fișierului livrat — nu data
+  filmării, pe aia n-o știm) și 20 `ImageObject` într-o `ImageGallery`,
+  plus `BreadcrumbList` pe portofoliu și `FAQPage` + `Service` pe cele
+  două landing-uri. Manifestul poartă acum și `published`.
+- **Sitemap**: `/video/portofoliu` lipsea cu totul. Adăugat, împreună cu
+  cele 20 de imagini și 18 clipuri declarate ca `<image:>` și `<video:>`.
+- **Directive de indexare**: `max-image-preview:large`,
+  `max-video-preview:-1`, `max-snippet:-1` — fără ele Google taie
+  previzualizările.
+- **Livrare**: `Cache-Control: immutable` pe un an pentru media din
+  `public/video/**` și `public/brand/**` (implicit Next le servea cu
+  `max-age=0`), antete de securitate pe tot site-ul, `X-Powered-By`
+  scos. Regula folosește `:path+`, ca să nu prindă și pagina
+  `/video/portofoliu` — altfel HTML-ul ar fi rămas în cache un an.
+- **Media**: filmul de prezentare a trecut de la 27,5MB (10 Mbps) la
+  5,0MB (1,9 Mbps), aceeași compresie ca portofoliul. Stă în hero pe
+  ambele divizii, deci era cel mai scump fișier din site.
+- Curățenie: SVG-urile rămase din șablonul Next au fost șterse din
+  `public/`.
+
+Verificat pe `next start`: build fără erori, ESLint curat, toate cele
+cinci rute publice cu `og:` + `twitter:`, sitemap cu media, antete de
+cache corecte pe fișiere și **ne**aplicate pe pagini.
+
+Rămâne, ca înainte: variabilele de mediu din README (mai ales
+`NEXT_PUBLIC_SITE_URL`, Supabase, Resend), validarea juridică a celor
+trei documente și datele reale ale firmei. `ideas/` (1,7GB) e ignorat de
+git; `public/video/` (198MB) NU e — intră în repo și în deploy.

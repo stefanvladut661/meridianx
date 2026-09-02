@@ -12,6 +12,7 @@ import {
   useScrolled,
 } from "@/components/site/motion";
 import { Faq, Icon } from "@/components/site/ui";
+import { VideoCard } from "@/components/site/video-player";
 import { Configurator } from "@/components/site/configurator";
 import {
   WorldSwitch,
@@ -23,11 +24,11 @@ import {
   GUARANTEES,
   INTEGRATIONS,
   SCONTACT,
+  SPRESENTATION,
   SDELIVERABLES,
   SFAQ,
   SNAV,
   SOLUTIONS,
-  SPAINS,
   SPROCESS,
   SSTATS,
   STESTIMONIALS,
@@ -46,6 +47,13 @@ import {
    [data-scope="software"], deci paleta se schimbă dintr-un singur loc.
    ============================================================ */
 
+/**
+ * Recenziile sunt ascunse pana cand clientul aduce citatele reale de la
+ * oamenii cu care a lucrat. Sectiunea ramane intreaga dedesubt: cand vin
+ * textele, se schimba `false` in `true` si se inlocuieste STESTIMONIALS.
+ */
+const SHOW_TESTIMONIALS = false;
+
 export function SoftwareScreen() {
 
   return (
@@ -58,14 +66,13 @@ export function SoftwareScreen() {
       <main id="continut">
         <Hero />
         <AudienceStrip />
-        <Problems />
         <Solutions />
         <LeadMagnet />
         <Process />
         <Guarantees />
         <Handover />
         <Stats />
-        <Voices />
+        {SHOW_TESTIMONIALS && <Voices />}
         <Questions />
         <FinalCta />
       </main>
@@ -100,13 +107,15 @@ function Nav() {
         className="ws-inset-left mx-auto flex h-16 max-w-6xl items-center gap-4 px-5 sm:px-6"
         aria-label="Principal"
       >
-        <Link href="/" className="flex items-center gap-2.5 text-bone">
-          <Mark size={24} />
+        <Link href="/" className="flex shrink-0 items-center gap-2 text-bone sm:gap-2.5">
+          <span className="block origin-left scale-[0.85] sm:scale-100">
+            <Mark size={24} />
+          </span>
           <span className="flex items-baseline gap-1.5">
-            <span className="font-md-display text-[15px] font-bold tracking-tight">
+            <span className="font-md-display text-[14px] font-bold tracking-tight sm:text-[15px]">
               MERIDIAN
             </span>
-            <span className="font-md-mono text-[11px] tracking-widest text-dim">
+            <span className="hidden font-md-mono text-[11px] tracking-widest text-dim sm:inline">
               SOFTWARE
             </span>
           </span>
@@ -134,9 +143,10 @@ function Nav() {
         </a>
         <a
           href="#configurator"
-          className="btn btn-primary ml-auto !min-h-10 !rounded-panel-sm !px-4 !py-2 !text-[13px] md:ml-4"
+          className="btn btn-primary ml-auto shrink-0 whitespace-nowrap !min-h-10 !rounded-panel-sm !px-3.5 !py-2 !text-[12.5px] sm:!px-4 sm:!text-[13px] md:ml-4"
         >
-          Programează consultanța
+          <span className="sm:hidden">Consultanță</span>
+          <span className="hidden sm:inline">Consultanță gratuită</span>
         </a>
 
         <button
@@ -144,7 +154,7 @@ function Nav() {
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-controls="meniu-soft"
-          className="flex size-10 shrink-0 items-center justify-center rounded-panel-sm border border-hair text-bone lg:hidden"
+          className="flex size-10 shrink-0 touch-manipulation items-center justify-center rounded-panel-sm border border-hair bg-white/[0.04] text-bone lg:hidden"
         >
           <span className="sr-only">Meniu</span>
           <span className="relative block h-3 w-4">
@@ -166,37 +176,38 @@ function Nav() {
         </button>
       </nav>
 
-      <div
-        id="meniu-soft"
-        hidden={!open}
-        className="border-t border-hair bg-ink/95 px-5 py-2 backdrop-blur-xl sm:px-6 lg:hidden"
-      >
-        <ul className="mx-auto max-w-6xl">
-          {SNAV.map((n) => (
-            <li key={n.href}>
+      {open && (
+        <div
+          id="meniu-soft"
+          className="border-t border-hair bg-ink px-5 py-2 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.95)] sm:px-6 lg:hidden"
+        >
+          <ul className="mx-auto max-w-6xl">
+            {SNAV.map((n) => (
+              <li key={n.href}>
+                <a
+                  href={n.href}
+                  onClick={() => setOpen(false)}
+                  className="block border-b border-hair py-3.5 text-[15px] text-bone"
+                >
+                  {n.label}
+                </a>
+              </li>
+            ))}
+            <li>
               <a
-                href={n.href}
-                onClick={() => setOpen(false)}
-                className="block border-b border-hair py-3.5 text-[15px] text-bone"
+                href={SCONTACT.phoneHref}
+                className="flex items-center gap-2 py-3.5 text-[15px] text-a2"
               >
-                {n.label}
+                <Icon name="phone" size={16} />
+                {SCONTACT.phone}
               </a>
             </li>
-          ))}
-          <li>
-            <a
-              href={SCONTACT.phoneHref}
-              className="flex items-center gap-2 py-3.5 text-[15px] text-a2"
-            >
-              <Icon name="phone" size={16} />
-              {SCONTACT.phone}
-            </a>
-          </li>
-          <li className="border-t border-hair">
-            <WorldSwitchMobileLink to="video" />
-          </li>
-        </ul>
-      </div>
+            <li className="border-t border-hair">
+              <WorldSwitchMobileLink to="video" />
+            </li>
+          </ul>
+        </div>
+      )}
     </header>
   );
 }
@@ -238,7 +249,7 @@ function Hero() {
 
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-14 px-5 sm:px-6 lg:grid-cols-[1.02fr_1fr] lg:gap-12">
         <div>
-          <R>
+          <R className="hidden sm:block">
             <span className="pill">
               <span className="node-dot" aria-hidden />
               <span className="text-dim">
@@ -260,10 +271,16 @@ function Hero() {
           </R>
 
           <R delay={130}>
-            <p className="mt-6 max-w-lg text-[16.5px] leading-relaxed text-dim">
-              Aplicații de business, dashboard-uri, fidelizare, mecanisme de
-              vânzare, mobil și SaaS — construite pe procesul tău, livrate pe
-              etape scurte, predate integral pe numele firmei tale.
+            <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-dim sm:mt-6 sm:text-[16.5px]">
+              <span className="sm:hidden">
+                Aplicații construite pe procesul tău, livrate pe etape scurte,
+                predate integral pe numele firmei tale.
+              </span>
+              <span className="hidden sm:inline">
+                Aplicații de business, dashboard-uri, fidelizare, mecanisme de
+                vânzare, mobil și SaaS — construite pe procesul tău, livrate pe
+                etape scurte, predate integral pe numele firmei tale.
+              </span>
             </p>
           </R>
 
@@ -274,7 +291,7 @@ function Hero() {
                 className="btn btn-primary !rounded-panel-sm"
               >
                 <Icon name="calendar" size={17} />
-                Programează consultanța
+                Programează consultanța gratuită
               </a>
               <a href="#solutii" className="btn btn-ghost !rounded-panel-sm">
                 Vezi ce construim
@@ -303,9 +320,15 @@ function Hero() {
         </div>
 
         <R delay={110} variant="scale" className="relative">
-          <AppSurface />
+          <VideoCard
+            item={SPRESENTATION}
+            eager
+            className="shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9)]"
+          />
 
-          <div className="glass-2 edge-light float absolute -left-3 bottom-10 w-[196px] p-3.5 sm:-left-7">
+          {/* Cardurile stau sub placă, nu peste film; decalajul mic e intenționat. */}
+          <div className="mt-4 hidden items-start gap-4 sm:flex">
+          <div className="glass-2 edge-light float w-[196px] flex-1 -rotate-[0.6deg] p-3.5">
             <p className="font-md-mono text-[10.5px] uppercase tracking-[0.16em] text-dim">
               Etapa 01
             </p>
@@ -323,7 +346,7 @@ function Hero() {
             </p>
           </div>
 
-          <div className="glass-2 edge-light float-2 absolute -right-2 top-10 w-[172px] p-3.5 sm:-right-6">
+          <div className="glass-2 edge-light float-2 mt-5 w-[172px] flex-1 rotate-[0.8deg] p-3.5">
             <div className="flex items-center gap-2">
               <Icon name="shield" size={15} className="text-a1" />
               <span className="font-md-mono text-[10.5px] uppercase tracking-[0.16em] text-dim">
@@ -335,142 +358,29 @@ function Hero() {
               <span className="text-bone">numele tău</span>.
             </p>
           </div>
+          </div>
         </R>
       </div>
     </section>
   );
 }
 
-/** Mock de interfață — echivalentul software al plăcii media de la video.
- *  Nu e un screenshot furat: e desenat din tokens, deci își schimbă
- *  culoarea odată cu paleta. Marcat vizibil ca exemplu. */
-function AppSurface() {
-  const rows = [
-    { t: "Comandă #2481 · Producție", s: "în lucru", on: true },
-    { t: "Comandă #2480 · Livrare", s: "expediat", on: false },
-    { t: "Comandă #2478 · Facturare", s: "încasat", on: false },
-  ];
-  const bars = [38, 52, 44, 67, 58, 78, 71];
-
-  return (
-    <div className="glass-2 edge-light relative overflow-hidden rounded-panel-lg p-2.5 shadow-[0_36px_100px_-40px_rgba(0,0,0,0.75)]">
-      <div className="rounded-panel border border-hair bg-char">
-        {/* bara de titlu */}
-        <div className="flex items-center gap-3 border-b border-hair px-4 py-3">
-          <span className="flex gap-1.5" aria-hidden>
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="size-2 rounded-full border border-hair-strong"
-              />
-            ))}
-          </span>
-          <span className="font-md-mono text-[11px] tracking-wider text-dim">
-            operatiuni.firma.ro
-          </span>
-          <span className="ml-auto rounded-full border border-hair px-2 py-0.5 font-md-mono text-[9.5px] uppercase tracking-widest text-dim">
-            exemplu
-          </span>
-        </div>
-
-        <div className="grid grid-cols-[44px_1fr] sm:grid-cols-[56px_1fr]">
-          {/* sidebar */}
-          <div
-            className="flex flex-col items-center gap-2.5 border-r border-hair py-4"
-            aria-hidden
-          >
-            {["layers", "chart", "users", "link"].map((n, i) => (
-              <span
-                key={n}
-                className={`flex size-8 items-center justify-center rounded-panel-sm ${
-                  i === 0 ? "bg-a1 text-on-a1" : "text-dim"
-                }`}
-              >
-                <Icon
-                  name={n as "layers" | "chart" | "users" | "link"}
-                  size={16}
-                />
-              </span>
-            ))}
-          </div>
-
-          {/* conținut */}
-          <div className="p-4 sm:p-5">
-            <div className="grid grid-cols-3 gap-2" aria-hidden>
-              {[
-                { k: "În lucru", v: "18" },
-                { k: "Întârziate", v: "2" },
-                { k: "Azi", v: "41" },
-              ].map((t) => (
-                <div
-                  key={t.k}
-                  className="rounded-panel-sm border border-hair px-3 py-2.5"
-                >
-                  <p className="text-[10.5px] text-dim">{t.k}</p>
-                  <p className="display mt-0.5 text-[1.15rem] text-bone">
-                    {t.v}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div
-              className="mt-4 flex h-20 items-end gap-1.5 rounded-panel-sm border border-hair px-3 pb-3 pt-2"
-              aria-hidden
-            >
-              {bars.map((h, i) => (
-                <span
-                  key={i}
-                  className={`flex-1 rounded-t-[3px] ${
-                    i > 4 ? "bg-a1" : "bg-hair-strong"
-                  }`}
-                  style={{ height: `${h}%` }}
-                />
-              ))}
-            </div>
-
-            <ul className="mt-4 grid gap-1.5" aria-hidden>
-              {rows.map((r) => (
-                <li
-                  key={r.t}
-                  className="flex items-center gap-3 rounded-panel-sm border border-hair px-3 py-2.5"
-                >
-                  <span className="min-w-0 flex-1 truncate text-[12px] text-bone">
-                    {r.t}
-                  </span>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10.5px] ${
-                      r.on
-                        ? "bg-a1 text-on-a1"
-                        : "border border-hair text-dim"
-                    }`}
-                  >
-                    {r.s}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ---------------- Cine sunt clienții ---------------- */
 function AudienceStrip() {
   return (
-    <section className="relative border-y border-hair bg-char/50 py-6">
+    <section className="relative border-y border-hair bg-char/50 py-4 sm:py-6">
       <p className="sr-only">Domenii în care lucrăm</p>
       <Marquee duration={46}>
         {AUDIENCE.map((a) => (
           <span
             key={a.label}
-            className="flex items-center gap-3 whitespace-nowrap px-7"
+            className="flex items-center gap-2 whitespace-nowrap px-4 sm:gap-3 sm:px-7"
           >
             <span className="node-dot" aria-hidden />
-            <span className="text-[15px] font-medium text-bone">{a.label}</span>
-            <span className="text-[13.5px] text-dim">{a.short}</span>
+            <span className="text-[14px] font-medium text-bone sm:text-[15px]">
+              {a.label}
+            </span>
+            <span className="hidden text-[13.5px] text-dim sm:inline">{a.short}</span>
           </span>
         ))}
       </Marquee>
@@ -487,7 +397,7 @@ function Head({
 }: {
   eyebrow: string;
   title: React.ReactNode;
-  lead?: string;
+  lead?: React.ReactNode;
   align?: "center" | "left";
 }) {
   const c = align === "center";
@@ -509,63 +419,66 @@ function Head({
   );
 }
 
-/* ---------------- Probleme ---------------- */
-function Problems() {
+/**
+ * Banda de chemare la actiune, pusa la capatul unei sectiuni.
+ * Aceeasi destinatie ca butonul din bara — configuratorul — dar
+ * intalnita in momentul in care sectiunea tocmai a ridicat intrebarea.
+ */
+function CtaBand({ title, body }: { title: string; body: string }) {
   return (
-    <section id="probleme" className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <Head
-        eyebrow="Diagnostic"
-        title={
-          <>
-            Banii de digitalizare se pierd
-            <br />
-            <span className="text-dim">în trei feluri previzibile.</span>
-          </>
-        }
-        lead="Software care nu se potrivește procesului, ecrane pe care nu le deschide nimeni și dependența de un furnizor. Toate se pot evita din faza de scop."
-      />
-
-      <ul className="mx-auto mt-16 grid max-w-6xl gap-3">
-        {SPAINS.map((p, i) => (
-          <R as="li" key={p.symptom} delay={i * 50}>
-            <article className="glass lift grid gap-5 p-6 sm:p-7 lg:grid-cols-[150px_1fr_1fr] lg:items-start lg:gap-9">
-              <p className="eyebrow lg:pt-1">{p.tag}</p>
-              <div>
-                <h3 className="text-[17.5px] font-medium leading-snug text-bone">
-                  {p.symptom}
-                </h3>
-                <p className="mt-3 text-[14.5px] leading-relaxed text-dim">
-                  {p.cause}
-                </p>
-              </div>
-              <p className="flex gap-3 border-t border-hair pt-4 text-[14.5px] leading-relaxed text-a2 lg:border-l lg:border-t-0 lg:pl-9 lg:pt-1">
-                <Icon name="arrow" size={16} className="mt-0.5 shrink-0" />
-                {p.fix}
-              </p>
-            </article>
-          </R>
-        ))}
-      </ul>
-    </section>
+    <R delay={120} className="mx-auto mt-10 max-w-6xl">
+      <div className="glass-2 edge-light flex flex-col items-start gap-6 p-7 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-xl">
+          <h3 className="display text-[clamp(1.3rem,2.6vw,1.7rem)]">{title}</h3>
+          <p className="mt-2.5 text-[15px] leading-relaxed text-dim">{body}</p>
+        </div>
+        <a
+          href="#configurator"
+          className="btn btn-primary shrink-0 !rounded-panel-sm !px-7"
+        >
+          <Icon name="calendar" size={17} />
+          Programează consultanța gratuită
+        </a>
+      </div>
+    </R>
   );
 }
 
 /* ---------------- Ce construim ---------------- */
 function Solutions() {
   return (
-    <section id="solutii" className="relative px-5 py-24 sm:px-6 lg:py-32">
+    <section id="solutii" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-32">
       <Head
         eyebrow="Ce construim"
-        title="Opt tipuri de proiect, o singură echipă"
-        lead="Poți începe cu unul. De obicei, al doilea vine din primul — pentru că datele există deja și se pot folosi."
+        title={
+          <>
+            Construim orice aplicație la comandă.
+            <br />
+            <span className="text-dim">Astea sunt cele mai cerute opt.</span>
+          </>
+        }
+        lead={
+          <>
+            <span className="sm:hidden">
+              Dacă procesul tău nu seamănă cu niciunul, construim exact ce îți
+              trebuie.
+            </span>
+            <span className="hidden sm:inline">
+              Lista de mai jos nu e un meniu din care trebuie să alegi — sunt
+              tipurile care ni se cer cel mai des, puse aici ca să ai de unde
+              porni. Dacă procesul tău nu seamănă cu niciunul, construim exact
+              ce îți trebuie.
+            </span>
+          </>
+        }
       />
 
-      <ul className="mx-auto mt-16 grid max-w-6xl gap-3 md:grid-cols-2 lg:grid-cols-4">
+      <ul className="mx-auto mt-10 grid max-w-6xl gap-3 sm:mt-16 md:grid-cols-2 lg:grid-cols-4">
         {SOLUTIONS.map((s, i) => (
           <R as="li" key={s.key} delay={i * 45}>
-            <article className="glass bleed lift group flex h-full flex-col p-6">
+            <article className="glass bleed lift group flex h-full flex-col p-5 sm:p-6">
               <div className="relative z-10 flex flex-1 flex-col">
-                <span className="mb-5 flex size-10 items-center justify-center rounded-panel-sm border border-hair text-a1">
+                <span className="mb-4 flex size-10 items-center justify-center rounded-panel-sm border border-hair text-a1 sm:mb-5">
                   <Icon
                     name={
                       s.icon as
@@ -587,7 +500,8 @@ function Solutions() {
                 <p className="mt-2.5 flex-1 text-[14px] leading-relaxed text-dim">
                   {s.blurb}
                 </p>
-                <ul className="mt-5 space-y-1.5 border-t border-hair pt-4">
+                {/* specificațiile rămân pe desktop; pe telefon vinde promisiunea */}
+                <ul className="mt-4 hidden space-y-1.5 border-t border-hair pt-4 sm:mt-5 sm:block">
                   {s.bullets.map((b) => (
                     <li
                       key={b}
@@ -606,6 +520,14 @@ function Solutions() {
           </R>
         ))}
       </ul>
+
+      {/* Ultimul cuvant al sectiunii ii apartine celui care nu s-a
+          regasit in cele opt: el e clientul pe care lista tocmai l-ar
+          fi trimis mai departe. */}
+      <CtaBand
+        title="Nu se potrivește niciunul?"
+        body="Cele opt de sus sunt doar exemple. Spune-ne cum lucrezi acum și îți construim sistemul pe procesul tău, nu invers."
+      />
     </section>
   );
 }
@@ -668,8 +590,8 @@ function LeadMagnet() {
 /* ---------------- Proces ---------------- */
 function Process() {
   return (
-    <section id="proces" className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,340px)_1fr] lg:gap-16">
+    <section id="proces" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-32">
+      <div className="mx-auto grid max-w-6xl gap-8 sm:gap-12 lg:grid-cols-[minmax(0,340px)_1fr] lg:gap-16">
         <div className="lg:sticky lg:top-24 lg:self-start">
           <Head
             align="left"
@@ -681,14 +603,24 @@ function Process() {
                 Fiecare cu livrabil.
               </>
             }
-            lead="Nu semnezi pentru un rezultat la final de an. Semnezi pentru etape scurte, fiecare cu ceva ce poți vedea și folosi."
+            lead={
+              <>
+                <span className="sm:hidden">
+                  Etape scurte, fiecare cu ceva ce poți vedea și folosi.
+                </span>
+                <span className="hidden sm:inline">
+                  Nu semnezi pentru un rezultat la final de an. Semnezi pentru
+                  etape scurte, fiecare cu ceva ce poți vedea și folosi.
+                </span>
+              </>
+            }
           />
         </div>
 
         <ol className="relative grid gap-3">
           {SPROCESS.map((p, i) => (
             <R as="li" key={p.n} delay={i * 60}>
-              <article className="glass lift p-6 sm:p-7">
+              <article className="glass lift p-5 sm:p-7">
                 <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                   <span className="font-md-mono text-[13px] text-a1">
                     {p.n}
@@ -699,10 +631,11 @@ function Process() {
                   </span>
                 </div>
                 <p className="mt-3 text-[14.5px] text-a2">{p.lead}</p>
-                <p className="mt-3 max-w-2xl text-[14.5px] leading-relaxed text-dim">
+                {/* proza explicativă rămâne pe desktop; pe telefon contează livrabilele */}
+                <p className="mt-3 hidden max-w-2xl text-[14.5px] leading-relaxed text-dim sm:block">
                   {p.body}
                 </p>
-                <ul className="mt-5 flex flex-wrap gap-2">
+                <ul className="mt-4 flex flex-wrap gap-2 sm:mt-5">
                   {p.out.map((o) => (
                     <li
                       key={o}
@@ -760,6 +693,11 @@ function Guarantees() {
           </R>
         ))}
       </ul>
+
+      <CtaBand
+        title="Le vrei trecute în contractul tău?"
+        body="Le discutăm punct cu punct la consultanță și pleci cu ele scrise, împreună cu fișa de proiect — a ta, chiar dacă alegi alt furnizor."
+      />
     </section>
   );
 }
@@ -956,7 +894,7 @@ function FinalCta() {
                 className="btn btn-primary !rounded-panel-sm !px-7"
               >
                 <Icon name="calendar" size={17} />
-                Programează consultanța
+                Programează consultanța gratuită
               </a>
               <a
                 href={SCONTACT.phoneHref}
@@ -1037,7 +975,7 @@ function Foot() {
                 href="#configurator"
                 className="text-[14px] text-a2 transition-colors hover:text-bone"
               >
-                Programează consultanța
+                Programează consultanța gratuită
               </a>
             </li>
           </ul>
@@ -1047,7 +985,7 @@ function Foot() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-hair px-5 py-6 text-[13px] text-dim sm:px-6">
         <span>
           © 2026 MERIDIAN.
-          {SCONTACT.isPlaceholder && " Datele de contact de pe această pagină sunt placeholder."}
+          {SCONTACT.isPlaceholder && " Adresa de email de pe această pagină e încă provizorie."}
         </span>
         <nav aria-label="Documente legale">
           <ul className="flex flex-wrap gap-x-5 gap-y-1">

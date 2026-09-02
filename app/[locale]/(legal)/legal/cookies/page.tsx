@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ConsentPreferences } from "@/components/consent/consent-preferences";
 import type { Locale } from "@/i18n/routing";
-import { alternatesFor } from "@/lib/seo";
+import { alternatesFor, neutralSocial } from "@/lib/seo";
 import { getDocument } from "../_content/documents";
 import { LegalDocumentView } from "../_content/legal-document";
 
@@ -17,6 +17,7 @@ export async function generateMetadata({
     title: t("title"),
     description: t("lead"),
     alternates: alternatesFor("/legal/cookies", locale as Locale),
+    ...neutralSocial(t("title"), t("lead")),
   };
 }
 

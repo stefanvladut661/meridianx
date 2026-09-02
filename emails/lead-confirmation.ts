@@ -1,4 +1,5 @@
 import type { Lead } from "@/lib/supabase/types";
+import { SOFTWARE_CONTACT, VIDEO_CONTACT } from "@/components/site/contact";
 import {
   PALETTE,
   button,
@@ -54,7 +55,12 @@ function stepList(
 export function leadConfirmationEmail(lead: Lead): EmailContent {
   const firstName = lead.name.trim().split(/\s+/)[0] ?? lead.name;
   const noun = requestNoun(lead);
-  const phone = process.env.NEXT_PUBLIC_PHONE;
+  /* Numarul diviziei careia i-a picat lead-ul: cine a cerut video suna
+     la video. Inainte se citea `NEXT_PUBLIC_PHONE`, o variabila care nu
+     mai exista de cand fiecare divizie are numarul ei — emailul ar fi
+     pierdut tacut butonul de „suna tu", fara sa cada nimic. */
+  const phone =
+    lead.division === "video" ? VIDEO_CONTACT.phone : SOFTWARE_CONTACT.phone;
 
   if (lead.division === "video") {
     const theme = PALETTE.video;

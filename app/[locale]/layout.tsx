@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
@@ -37,6 +37,59 @@ export const metadata: Metadata = {
   // încă nu există. Paginile care au nevoie și de hreflang îl adaugă
   // prin `pageSeo()` din lib/seo.ts și suprascriu linia asta.
   alternates: { canonical: "./" },
+  /* Paginile de divizie isi pun singure cardul prin `pageSeo()`. Astea
+     sunt valorile pentru restul — inclusiv poarta, care e chiar pagina
+     pe care o distribuie cineva cand da link la "meridianagency.ro". */
+  openGraph: {
+    type: "website",
+    siteName: "MERIDIAN",
+    locale: "ro_RO",
+    title: "MERIDIAN — Video & Software",
+    description:
+      "Producție video comercială și dezvoltare software la comandă. Două divizii, un singur punct zero.",
+    images: [
+      {
+        url: "/og.png?division=gate&title=MERIDIAN",
+        width: 1200,
+        height: 630,
+        alt: "MERIDIAN — video și software",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MERIDIAN — Video & Software",
+    description:
+      "Producție video comercială și dezvoltare software la comandă.",
+    images: ["/og.png?division=gate&title=MERIDIAN"],
+  },
+  applicationName: "MERIDIAN",
+  authors: [{ name: "MERIDIAN" }],
+  creator: "MERIDIAN",
+  publisher: "MERIDIAN",
+  category: "business",
+  // Numerele de telefon sunt marcate ca atare de noi (butoane `tel:`);
+  // detecția automată a lui Safari ar rescrie și numere din texte.
+  formatDetection: { telephone: false, address: false, email: false },
+  /* Fără astea, Google taie previzualizările: imaginile apar mici în
+     rezultate, iar clipurile de portofoliu nu primesc preview video. */
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+      "max-snippet": -1,
+    },
+  },
+};
+
+/** Culoarea barei de sistem pe mobil: negrul comun al celor două lumi. */
+export const viewport: Viewport = {
+  themeColor: "#08080F",
+  colorScheme: "dark",
 };
 
 export function generateStaticParams() {

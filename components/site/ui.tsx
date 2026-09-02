@@ -3,6 +3,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { Reveal } from "./motion";
 import { TESTIMONIALS } from "./video-content";
+import { ClientMark } from "@/components/site/client-marks";
 
 /* ============================================================
    Piese de interfață partajate de cele două lumi și de poartă.
@@ -30,7 +31,11 @@ type IconName =
   | "clock"
   | "shield"
   | "users"
-  | "sparkles";
+  | "sparkles"
+  | "pause"
+  | "sound"
+  | "muted"
+  | "expand";
 
 const PATHS: Record<IconName, ReactNode> = {
   play: <path d="M8 5.5v13l11-6.5L8 5.5Z" />,
@@ -111,7 +116,31 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="m16 16 4.5 4.5" />
     </>
   ),
+  /* Controalele playerului. `pause` e plin, ca `play` — perechea trebuie
+     să aibă aceeași greutate optică, altfel butonul pare că își schimbă
+     importanța când îl apeși. */
+  pause: <path d="M8 5h3.1v14H8V5Zm4.9 0H16v14h-3.1V5Z" />,
+  sound: (
+    <>
+      <path d="M4 9.3h3.4L12 5.4v13.2l-4.6-3.9H4V9.3Z" />
+      <path d="M15.4 9.4a3.8 3.8 0 0 1 0 5.2M18 6.9a7.4 7.4 0 0 1 0 10.2" />
+    </>
+  ),
+  muted: (
+    <>
+      <path d="M4 9.3h3.4L12 5.4v13.2l-4.6-3.9H4V9.3Z" />
+      <path d="m16 10 4 4m0-4-4 4" />
+    </>
+  ),
+  expand: (
+    <>
+      <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" />
+    </>
+  ),
 };
+
+/** Iconurile pline: restul setului e desenat în contur de 1.5. */
+const FILLED = new Set<IconName>(["play", "pause"]);
 
 export function Icon({
   name,
@@ -127,8 +156,8 @@ export function Icon({
       viewBox="0 0 24 24"
       width={size}
       height={size}
-      fill={name === "play" ? "currentColor" : "none"}
-      stroke={name === "play" ? "none" : "currentColor"}
+      fill={FILLED.has(name) ? "currentColor" : "none"}
+      stroke={FILLED.has(name) ? "none" : "currentColor"}
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -308,11 +337,7 @@ function TestimonialCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
   return (
     <article className="glass mb-4 p-6">
       <div className="mb-4 flex items-center gap-3">
-        <span
-          className="size-9 rounded-full"
-          style={{ background: "linear-gradient(135deg,#3a3f4d,#171a21)" }}
-          aria-hidden
-        />
+        <ClientMark name={t.who} size={38} />
         <span>
           <span className="block text-sm font-medium text-bone">{t.who}</span>
           <span className="block text-xs text-dim">{t.where}</span>
@@ -329,10 +354,12 @@ function TestimonialCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
 }
 
 export function TestimonialWall() {
+  // Trei coloane egale, oricâte recenzii ar fi în listă.
+  const per = Math.ceil(TESTIMONIALS.length / 3);
   const cols = [
-    TESTIMONIALS.slice(0, 2),
-    TESTIMONIALS.slice(2, 4),
-    TESTIMONIALS.slice(4, 6),
+    TESTIMONIALS.slice(0, per),
+    TESTIMONIALS.slice(per, per * 2),
+    TESTIMONIALS.slice(per * 2),
   ];
   return (
     <div className="fade-y grid max-h-[560px] grid-cols-1 gap-4 overflow-hidden md:grid-cols-2 lg:grid-cols-3">

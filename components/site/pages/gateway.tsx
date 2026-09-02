@@ -413,7 +413,7 @@ function Foot() {
       <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-hair px-5 py-5 text-[12.5px] text-dim sm:px-8">
         <span>
           © 2026 MERIDIAN.
-          {(CONTACT.isPlaceholder || SCONTACT.isPlaceholder) && " Datele de contact de pe această pagină sunt placeholder."}
+          {(CONTACT.isPlaceholder || SCONTACT.isPlaceholder) && " Adresa de email de pe această pagină e încă provizorie."}
         </span>
         <nav aria-label="Documente legale">
           <ul className="flex flex-wrap gap-x-5 gap-y-1">

@@ -35,20 +35,37 @@ const WORLDS = {
     label: "SOFTWARE",
     dim: "rgba(222,229,240,0.55)",
   },
+  /* Poarta: singurul loc unde cele doua lumi se ating, deci fara accentul
+     niciuneia. Aceeasi regula ca in globals.css — accentul e lumina, nu
+     culoarea. Se cere cu ?division=gate. */
+  gate: {
+    bg: "#08080F",
+    fg: "#F2F3F8",
+    accent: "#F2F3F8",
+    accent2: "rgba(242,243,248,0.6)",
+    label: "VIDEO & SOFTWARE",
+    dim: "rgba(242,243,248,0.55)",
+  },
 } as const;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const divisionParam = searchParams.get("division");
   const division: keyof typeof WORLDS =
-    divisionParam === "video" ? "video" : "software";
+    divisionParam === "video"
+      ? "video"
+      : divisionParam === "gate"
+        ? "gate"
+        : "software";
   const world = WORLDS[division];
 
   const title =
     searchParams.get("title")?.slice(0, 110) ??
     (division === "video"
       ? "Producție video care vinde"
-      : "Web și aplicații la comandă");
+      : division === "gate"
+        ? "Video și software, sub același acoperiș"
+        : "Web și aplicații la comandă");
   const subtitle = searchParams.get("subtitle")?.slice(0, 140) ?? "";
 
   return new ImageResponse(
@@ -66,7 +83,7 @@ export async function GET(request: Request) {
         }}
       >
         {/* semnătura lumii: arc cald vs meridian rece cu gradații */}
-        {division === "video" ? (
+        {division === "video" || division === "gate" ? (
           <div
             style={{
               position: "absolute",
