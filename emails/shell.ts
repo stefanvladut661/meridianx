@@ -14,6 +14,7 @@
  */
 
 import type { Division } from "@/lib/division";
+import { SITE_URL } from "@/lib/site-url";
 
 export interface EmailContent {
   subject: string;
@@ -66,10 +67,7 @@ export function esc(value: unknown): string {
 }
 
 export function siteUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    "https://meridianx.ro"
-  );
+  return SITE_URL;
 }
 
 /** Un rând de date în tabelul de detalii. */

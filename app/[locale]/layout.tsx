@@ -9,6 +9,7 @@ import { CookieBanner } from "@/components/consent/cookie-banner";
 import { AnalyticsLoader } from "@/components/consent/analytics-loader";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import "@/app/globals.css";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * Root layout pentru toate rutele publice (FAZA 0).
@@ -29,9 +30,7 @@ export const metadata: Metadata = {
   },
   description:
     "MERIDIAN: producție video comercială și dezvoltare software la comandă. Două divizii, un singur punct zero.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianx.ro"
-  ),
+  metadataBase: new URL(SITE_URL),
   // Canonical relativ: Next îl rezolvă la ruta curentă, deci fiecare
   // pagină primește automat canonical-ul ei — inclusiv paginile care
   // încă nu există. Paginile care au nevoie și de hreflang îl adaugă

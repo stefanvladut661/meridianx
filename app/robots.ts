@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * robots.txt (FAZA 7).
@@ -7,7 +8,7 @@ import type { MetadataRoute } from "next";
  * site-ul e un instrument de vânzare, nu un secret.
  */
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianx.ro";
+const BASE = SITE_URL;
 
 export default function robots(): MetadataRoute.Robots {
   return {

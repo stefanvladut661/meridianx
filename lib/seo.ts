@@ -3,6 +3,7 @@ import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { SOFTWARE_CONTACT, VIDEO_CONTACT } from "@/components/site/contact";
 import type { Division } from "./division";
+import { SITE_URL } from "./site-url";
 
 /**
  * Ajutoare de SEO (FAZA 7).
@@ -23,7 +24,7 @@ import type { Division } from "./division";
  *   }
  */
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianx.ro";
+const BASE = SITE_URL;
 
 /** URL-ul imaginii OG generate pentru o pagină. */
 export function ogImageUrl(options: {

@@ -3,6 +3,7 @@ import { getPathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
 import { PHOTOS, VIDEOS } from "@/components/site/portfolio-content";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * Sitemap.
@@ -20,7 +21,7 @@ import { PHOTOS, VIDEOS } from "@/components/site/portfolio-content";
  * regula „RO fără prefix, EN cu /en” fără să o rescriem local.
  */
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianx.ro";
+const BASE = SITE_URL;
 
 const ROUTES = [
   "/",
