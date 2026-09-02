@@ -23,7 +23,7 @@ import type { Division } from "./division";
  *   }
  */
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianagency.ro";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianx.ro";
 
 /** URL-ul imaginii OG generate pentru o pagină. */
 export function ogImageUrl(options: {

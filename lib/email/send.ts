@@ -18,11 +18,18 @@ import { leadConfirmationEmail } from "@/emails/lead-confirmation";
  */
 
 const FROM =
-  process.env.RESEND_FROM_EMAIL ?? "MERIDIAN <notificari@meridianagency.ro>";
+  process.env.RESEND_FROM_EMAIL ?? "MERIDIAN <notificari@meridianx.ro>";
 
-/** Poate fi o listă separată prin virgulă. */
+/** Unde ajung cererile din formulare dacă nu e setat nimic în env. */
+const LEAD_INBOX = "contact@meridianx.ro";
+
+/**
+ * Poate fi o listă separată prin virgulă. Adresa din cod e cea reală, ca
+ * la numerele de telefon: dacă cineva uită variabila în Vercel, cererile
+ * tot ajung unde trebuie, nu în gol.
+ */
 function notificationRecipients(): string[] {
-  return (process.env.LEAD_NOTIFICATION_EMAIL ?? "")
+  return (process.env.LEAD_NOTIFICATION_EMAIL ?? LEAD_INBOX)
     .split(",")
     .map((address) => address.trim())
     .filter(Boolean);

@@ -206,7 +206,7 @@ export async function GET(request: Request) {
               display: "flex",
             }}
           >
-            meridianagency.ro
+            meridianx.ro
           </div>
           <div
             style={{

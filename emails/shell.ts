@@ -68,7 +68,7 @@ export function esc(value: unknown): string {
 export function siteUrl(): string {
   return (
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    "https://meridianagency.ro"
+    "https://meridianx.ro"
   );
 }
 

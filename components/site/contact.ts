@@ -51,7 +51,7 @@ export interface ContactChannels {
   phoneHref: string;
   whatsapp: string;
   email: string;
-  /** Adresa de email e încă cea provizorie, neconfirmată de client. */
+  /** Adresa de email e încă una provizorie, neconfirmată de client. */
   isPlaceholder: boolean;
 }
 
@@ -70,20 +70,23 @@ function build(
     phoneHref: telHref(phone),
     whatsapp: whatsappHref(whatsapp),
     email: envEmail ?? fallbackEmail,
-    isPlaceholder: !envEmail,
+    /* Adresa din cod e acum cea reală (contact@meridianx.ro), nu una de
+       demonstrație — deci subsolul nu mai avertizează că e provizorie.
+       Variabila din env rămâne, pentru schimbare fără redeploy. */
+    isPlaceholder: false,
   };
 }
 
 export const VIDEO_CONTACT = build(
   PHONE_VIDEO,
   ENV_PHONE_VIDEO,
-  "salut@meridianagency.ro",
+  "contact@meridianx.ro",
   ENV_EMAIL_VIDEO
 );
 
 export const SOFTWARE_CONTACT = build(
   PHONE_SOFTWARE,
   ENV_PHONE_SOFTWARE,
-  "software@meridianagency.ro",
+  "contact@meridianx.ro",
   ENV_EMAIL_SOFTWARE
 );

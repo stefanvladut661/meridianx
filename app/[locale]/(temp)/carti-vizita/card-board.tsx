@@ -57,7 +57,7 @@ const PERSON = {
   name: "Stefan Brinzaru",
   role: "Fondator",
   phone: "0771 738 607",
-  site: "meridianagency.ro",
+  site: "meridianx.ro",
 };
 
 /* Descriptorii vin din poziționarea scrisă în `video-content.ts` și

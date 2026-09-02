@@ -1,4 +1,4 @@
-# MERIDIAN — meridianagency.ro
+# MERIDIAN — meridianx.ro
 
 Site-ul agenției MERIDIAN: două divizii (VIDEO și SOFTWARE) într-un singur app Next.js, cu poarta split-screen la rădăcină. **Citește `CLAUDE.md` înainte de orice** — e legea proiectului. Jurnalul de decizii e în `PLAN.md`.
 
@@ -107,7 +107,7 @@ Contractul HTTP întreg (honeypot, coduri de eroare, plafoane, gărzi de autenti
 
 ```bash
 npm run dev            # într-un terminal
-npm run verify:backend # în altul — sau: npm run verify:backend https://meridianagency.ro
+npm run verify:backend # în altul — sau: npm run verify:backend https://meridianx.ro
 ```
 
 ## Variabile de mediu

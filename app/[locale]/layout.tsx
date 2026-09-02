@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   description:
     "MERIDIAN: producție video comercială și dezvoltare software la comandă. Două divizii, un singur punct zero.",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianagency.ro"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianx.ro"
   ),
   // Canonical relativ: Next îl rezolvă la ruta curentă, deci fiecare
   // pagină primește automat canonical-ul ei — inclusiv paginile care
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "./" },
   /* Paginile de divizie isi pun singure cardul prin `pageSeo()`. Astea
      sunt valorile pentru restul — inclusiv poarta, care e chiar pagina
-     pe care o distribuie cineva cand da link la "meridianagency.ro". */
+     pe care o distribuie cineva cand da link la "meridianx.ro". */
   openGraph: {
     type: "website",
     siteName: "MERIDIAN",

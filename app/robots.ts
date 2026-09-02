@@ -7,7 +7,7 @@ import type { MetadataRoute } from "next";
  * site-ul e un instrument de vânzare, nu un secret.
  */
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianagency.ro";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianx.ro";
 
 export default function robots(): MetadataRoute.Robots {
   return {

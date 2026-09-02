@@ -20,7 +20,7 @@ import { PHOTOS, VIDEOS } from "@/components/site/portfolio-content";
  * regula „RO fără prefix, EN cu /en” fără să o rescriem local.
  */
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianagency.ro";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://meridianx.ro";
 
 const ROUTES = [
   "/",
