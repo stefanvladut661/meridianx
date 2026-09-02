@@ -7,6 +7,7 @@ import { fontVariables } from "@/app/fonts";
 import { JsonLd } from "@/components/seo/json-ld";
 import { CookieBanner } from "@/components/consent/cookie-banner";
 import { AnalyticsLoader } from "@/components/consent/analytics-loader";
+import { MetaPixel } from "@/components/consent/meta-pixel";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import "@/app/globals.css";
 import { SITE_URL } from "@/lib/site-url";
@@ -115,6 +116,7 @@ export default async function LocaleLayout({
           {children}
           <CookieBanner />
           <AnalyticsLoader />
+          <MetaPixel />
         </NextIntlClientProvider>
         <JsonLd
           schema={[organizationSchema(), websiteSchema(locale as Locale)]}

@@ -124,6 +124,7 @@ const privacyRo: LegalDocument = {
         "Supabase — baza de date în care se salvează cererile.",
         "Resend — trimiterea emailurilor tranzacționale.",
         "Vercel — găzduirea site-ului și, dacă ai acceptat, statisticile agregate.",
+        "Meta (Facebook, Instagram) — măsurarea reclamelor, doar dacă ai acceptat categoria de marketing.",
         "Cal.com — programarea call-urilor, dacă alegi să rezervi un interval.",
         "Autoritățile publice, doar când legea ne obligă.",
       ],
@@ -252,6 +253,7 @@ const privacyEn: LegalDocument = {
         "Supabase — the database storing enquiries.",
         "Resend — transactional email delivery.",
         "Vercel — site hosting and, if you consented, aggregate statistics.",
+        "Meta (Facebook, Instagram) — ad measurement, only if you accepted the marketing category.",
         "Cal.com — call scheduling, if you book a slot.",
         "Public authorities, only where the law compels us.",
       ],
@@ -588,9 +590,11 @@ const cookiesRo: LegalDocument = {
     },
     {
       id: "marketing",
-      heading: "Marketing — momentan nefolosit",
+      heading: "Marketing — doar cu acordul tău",
       paragraphs: [
-        "În acest moment nu rulăm niciun script de marketing sau remarketing pe site. Categoria există în banner ca să nu fim nevoiți să te întrebăm din nou dacă vom adăuga unul, iar dacă o refuzi, nu se va încărca nici atunci.",
+        "Folosim Meta Pixel (Facebook și Instagram) ca să măsurăm ce campanii aduc cereri și ca să le arătăm reclame oamenilor care au fost deja pe site. Scriptul nu se încarcă deloc până nu accepți categoria — nu se încarcă și apoi „se dezactivează”.",
+        "Dacă accepți, Meta poate seta cookie-uri pe domeniul propriu și poate lega vizita ta de contul tău de Facebook sau Instagram, dacă ai unul. Asta e prelucrare făcută de Meta, guvernată de politica lor, nu de a noastră.",
+        "Dacă refuzi, sau dacă îți retragi acordul din pagina asta, scriptul e scos din pagină și nu mai pleacă niciun eveniment. Cookie-urile puse deja de Meta nu le putem șterge noi — sunt pe domeniul lor — dar le poți șterge din setările browserului.",
       ],
     },
     {
@@ -672,9 +676,11 @@ const cookiesEn: LegalDocument = {
     },
     {
       id: "marketing",
-      heading: "Marketing — currently unused",
+      heading: "Marketing — only with your consent",
       paragraphs: [
-        "We currently run no marketing or remarketing scripts on this site. The category exists in the banner so we don't have to ask again if we add one — and if you decline it, it won't load then either.",
+        "We use the Meta Pixel (Facebook and Instagram) to measure which campaigns bring requests and to show ads to people who have already visited the site. The script does not load at all until you accept the category — it isn't loaded and then \"disabled\".",
+        "If you accept, Meta may set cookies on its own domain and may link your visit to your Facebook or Instagram account, if you have one. That processing is done by Meta, governed by their policy rather than ours.",
+        "If you decline, or withdraw your consent on this page, the script is removed and no further events are sent. We cannot delete cookies Meta has already set — they live on their domain — but you can clear them from your browser settings.",
       ],
     },
     {
