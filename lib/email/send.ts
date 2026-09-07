@@ -17,8 +17,13 @@ import { leadConfirmationEmail } from "@/emails/lead-confirmation";
  * calea critică a răspunsului HTTP.
  */
 
+/*
+ * `??` prinde doar `undefined`/`null` — o variabilă din Vercel lăsată goală
+ * trece de el ca șir vid, iar Resend refuză un `from: ""` cu „the domain is
+ * invalid" (vezi și `lib/site-url.ts`, unde s-a întâmplat exact asta).
+ */
 const FROM =
-  process.env.RESEND_FROM_EMAIL ?? "MERIDIAN <notificari@meridianx.ro>";
+  process.env.RESEND_FROM_EMAIL?.trim() || "MERIDIAN <notificari@meridianx.ro>";
 
 /** Unde ajung cererile din formulare dacă nu e setat nimic în env. */
 const LEAD_INBOX = "buna.meridian@gmail.com";

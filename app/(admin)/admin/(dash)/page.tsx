@@ -8,6 +8,7 @@ import { Filters } from "../_components/filters";
 import { LeadTable } from "../_components/lead-table";
 import { LeadPanel } from "../_components/lead-panel";
 import { SetupNotice } from "../_components/setup-notice";
+import { LiveRefresh } from "../_components/live-refresh";
 
 export const metadata: Metadata = {
   title: "Lead-uri — MERIDIAN Admin",
@@ -116,6 +117,8 @@ export default async function AdminDashboardPage({
 
   return (
     <main className="px-4 pb-20 pt-6 sm:px-6">
+      <LiveRefresh />
+
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="font-display text-xl font-semibold tracking-tight">
           Lead-uri
