@@ -21,7 +21,7 @@ const FROM =
   process.env.RESEND_FROM_EMAIL ?? "MERIDIAN <notificari@meridianx.ro>";
 
 /** Unde ajung cererile din formulare dacă nu e setat nimic în env. */
-const LEAD_INBOX = "contact@meridianx.ro";
+const LEAD_INBOX = "buna.meridian@gmail.com";
 
 /**
  * Poate fi o listă separată prin virgulă. Adresa din cod e cea reală, ca

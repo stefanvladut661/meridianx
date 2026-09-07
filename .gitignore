@@ -45,3 +45,6 @@ next-env.d.ts
 
 # referințe de design (screenshot-uri de inspirație, nu fac parte din build)
 /ideas/
+
+.vercel
+.env*
