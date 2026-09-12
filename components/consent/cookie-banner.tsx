@@ -20,6 +20,29 @@ import {
  * ca acceptul — un buton „Doar necesare” de aceeași mărime, nu un link
  * gri ascuns în colț.
  *
+ * FORMA e o bandă joasă, lipită de marginea de jos, nu o casetă
+ * centrată. Motivul e măsurabil, nu estetic: în varianta veche
+ * paragraful din banner era cel mai mare dreptunghi de text de pe
+ * ecran, iar Chrome îl alegea drept element LCP — adică Google măsura
+ * încărcarea paginii după caseta de consimțământ, nu după hero.
+ *
+ * De ce mărimea și nu momentul: un candidat LCP e înlocuit doar de
+ * unul mai MARE, niciodată de unul mai târziu, iar fereastra de
+ * măsurare rămâne deschisă până la prima interacțiune — care într-un
+ * test automat nu vine niciodată. Deci amânarea pictării n-ar fi
+ * schimbat nimic. Banda nu amână nimic: doar se face mică.
+ *
+ * Textul rămâne VIZIBIL, nu ascuns sub `sr-only` pe telefon: primul
+ * strat al consimțământului trebuie să informeze înainte de alegere,
+ * iar o explicație pe care doar cititoarele de ecran o primesc nu
+ * informează pe nimeni. Se micșorează, nu se ascunde.
+ *
+ * Fără nepotrivire de hidratare: `visible` pornește `false`, deci și
+ * serverul, și prima randare pe client întorc `null`. Cookie-ul se
+ * citește doar în efecte, care rulează după hidratare.
+ *
+ * `position: fixed` ⇒ nu intră în fluxul documentului, deci CLS rămâne 0.
+ *
  * Se colorează după lumea în care se află vizitatorul (cookie-ul de
  * divizie, citit pe client): pe /video e indigo pe fundal închis, pe
  * /software e verde pe hârtie, pe poartă e neutru. Citirea pe server ar
@@ -29,8 +52,8 @@ import {
  * în subarborele bannerului, care stă în afara oricărui `.md-root`.
  *
  * z-index 70 — peste comutatorul de lumi (55) și peste barele fixe
- * (50). Un banner de consimțământ care intră sub altceva e o problemă
- * juridică, nu una vizuală.
+ * (50). Singurul lucru care trece peste el e vălul de tranziție dintre
+ * lumi (`world-switch.tsx`, z-90/91), intenționat și preexistent.
  */
 
 function readDivision(): Division | null {
@@ -77,7 +100,7 @@ export function CookieBanner() {
   return (
     <div
       data-scope={world ?? "gate"}
-      className="fixed inset-x-0 bottom-0 z-[70] p-3 sm:p-4"
+      className="fixed inset-x-0 bottom-0 z-[70]"
     >
       <div
         ref={ref}
@@ -86,90 +109,98 @@ export function CookieBanner() {
         aria-modal="false"
         aria-labelledby="cookie-banner-title"
         aria-describedby="cookie-banner-body"
-        className="mx-auto max-w-4xl rounded-panel border border-hair bg-char p-5 text-bone shadow-2xl shadow-black/40 outline-none sm:p-6"
+        className="max-h-[86dvh] overflow-y-auto border-t border-hair bg-char text-bone shadow-[0_-14px_38px_-24px_rgb(0_0_0/0.65)] outline-none"
       >
-        <p className="eyebrow">{t("eyebrow")}</p>
-        <h2
-          id="cookie-banner-title"
-          className="display mt-3 text-[clamp(1.15rem,2.6vw,1.5rem)]"
-        >
-          {t("title")}
-        </h2>
-        <p
-          id="cookie-banner-body"
-          className="mt-2 text-[14.5px] leading-relaxed text-dim"
-        >
-          {t("body")}{" "}
-          <Link
-            href="/legal/cookies"
-            className="text-a1 underline-offset-4 hover:underline"
-          >
-            {t("readPolicy")}
-          </Link>
-        </p>
+        <div className="mx-auto max-w-[1500px] px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2.5">
+            <div className="min-w-0 flex-1 basis-full lg:basis-0">
+              <div className="flex flex-wrap items-baseline gap-x-2.5">
+                <p className="eyebrow">{t("eyebrow")}</p>
+                <h2
+                  id="cookie-banner-title"
+                  className="text-[13.5px] font-medium leading-snug text-bone"
+                >
+                  {t("title")}
+                </h2>
+              </div>
+              <p
+                id="cookie-banner-body"
+                className="mt-1 text-[12.5px] leading-snug text-dim"
+              >
+                {t("body")}{" "}
+                <Link
+                  href="/legal/cookies"
+                  className="text-a1 underline-offset-4 hover:underline"
+                >
+                  {t("readPolicy")}
+                </Link>
+              </p>
+            </div>
 
-        {expanded ? (
-          <fieldset className="mt-5 divide-y divide-hair border-y border-hair">
-            <legend className="sr-only">{t("categoriesLegend")}</legend>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-primary !min-h-11 !px-4 !py-2 !text-[13px]"
+                onClick={() => decide({ analytics: true, marketing: true })}
+              >
+                {t("acceptAll")}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost !min-h-11 !px-4 !py-2 !text-[13px]"
+                onClick={() => decide(CONSENT_NONE)}
+              >
+                {t("rejectAll")}
+              </button>
+              {expanded ? (
+                <button
+                  type="button"
+                  className="btn btn-ghost !min-h-11 !px-4 !py-2 !text-[13px]"
+                  onClick={() => decide({ analytics, marketing })}
+                >
+                  {t("saveChoice")}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setExpanded(true)}
+                  className="inline-flex min-h-11 items-center px-1 text-[13px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
+                >
+                  {t("customize")}
+                </button>
+              )}
+            </div>
+          </div>
 
-            <CategoryRow
-              id="cookie-necessary"
-              label={t("categories.necessary.label")}
-              description={t("categories.necessary.description")}
-              checked
-              disabled
-              onChange={() => undefined}
-              lockedLabel={t("alwaysOn")}
-            />
-            <CategoryRow
-              id="cookie-analytics"
-              label={t("categories.analytics.label")}
-              description={t("categories.analytics.description")}
-              checked={analytics}
-              onChange={setAnalytics}
-            />
-            <CategoryRow
-              id="cookie-marketing"
-              label={t("categories.marketing.label")}
-              description={t("categories.marketing.description")}
-              checked={marketing}
-              onChange={setMarketing}
-            />
-          </fieldset>
-        ) : null}
-
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            className="btn btn-primary !min-h-11 !px-5 !py-2.5 !text-[14px]"
-            onClick={() => decide({ analytics: true, marketing: true })}
-          >
-            {t("acceptAll")}
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost !min-h-11 !px-5 !py-2.5 !text-[14px]"
-            onClick={() => decide(CONSENT_NONE)}
-          >
-            {t("rejectAll")}
-          </button>
           {expanded ? (
-            <button
-              type="button"
-              className="btn btn-ghost !min-h-11 !px-5 !py-2.5 !text-[14px]"
-              onClick={() => decide({ analytics, marketing })}
-            >
-              {t("saveChoice")}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="text-[14px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
-            >
-              {t("customize")}
-            </button>
-          )}
+            <fieldset className="mt-3 divide-y divide-hair border-y border-hair">
+              <legend className="sr-only">{t("categoriesLegend")}</legend>
+
+              <CategoryRow
+                id="cookie-necessary"
+                label={t("categories.necessary.label")}
+                description={t("categories.necessary.description")}
+                checked
+                disabled
+                onChange={() => undefined}
+                lockedLabel={t("alwaysOn")}
+              />
+              <CategoryRow
+                id="cookie-analytics"
+                label={t("categories.analytics.label")}
+                description={t("categories.analytics.description")}
+                checked={analytics}
+                onChange={setAnalytics}
+              />
+              <CategoryRow
+                id="cookie-marketing"
+                label={t("categories.marketing.label")}
+                description={t("categories.marketing.description")}
+                checked={marketing}
+                onChange={setMarketing}
+              />
+            </fieldset>
+          ) : null}
         </div>
       </div>
     </div>
@@ -196,7 +227,7 @@ function CategoryRow({
   onChange,
 }: CategoryRowProps) {
   return (
-    <div className="flex items-start gap-4 py-3.5">
+    <div className="flex items-start gap-4 py-3">
       <input
         id={id}
         type="checkbox"
@@ -211,7 +242,7 @@ function CategoryRow({
       <div className="min-w-0">
         <label
           htmlFor={id}
-          className="flex flex-wrap items-center gap-2 text-[14.5px] font-medium text-bone"
+          className="flex flex-wrap items-center gap-2 text-[14px] font-medium text-bone"
         >
           {label}
           {lockedLabel ? (
@@ -220,7 +251,7 @@ function CategoryRow({
             </span>
           ) : null}
         </label>
-        <p className="mt-1 text-[14px] leading-relaxed text-dim">
+        <p className="mt-1 text-[13.5px] leading-relaxed text-dim">
           {description}
         </p>
       </div>

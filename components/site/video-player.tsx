@@ -199,7 +199,13 @@ export function VideoCard({
           src={item.poster}
           alt={`${item.title} — ${item.client}`}
           loading={eager ? "eager" : "lazy"}
+          /* Posterul de hero e candidatul LCP al paginilor de divizie:
+             fără prioritate explicită pleacă în aceeași coadă cu restul
+             imaginilor de sub pliu. */
+          fetchPriority={eager ? "high" : "auto"}
           decoding="async"
+          width={item.w}
+          height={item.h}
           className="absolute inset-0 size-full object-cover"
         />
       )}

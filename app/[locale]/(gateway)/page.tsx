@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
-import { getDivisionFromCookies } from "@/lib/division";
 import { GatewayScreen } from "@/components/site/pages/gateway";
 import { ClearDivision } from "@/components/gateway/clear-division";
 import { alternatesFor, neutralSocial } from "@/lib/seo";
@@ -11,15 +8,26 @@ import type { Locale } from "@/i18n/routing";
 /**
  * Gateway-ul MERIDIAN (FAZA 1) — split-screen VIDEO | SOFTWARE.
  *
- * Memoria diviziei (server, NU în middleware — înghețat):
- * - cookie `meridian_division` prezent și fără `?stay` → redirect
- *   server-side spre divizia salvată, cu locale-ul curent păstrat;
- * - `?stay=1` (link-ul „Vezi ambele divizii" din header-e/footer)
- *   sare peste redirect; <ClearDivision> șterge cookie-ul la mount
- *   și curăță query-ul din URL. Cookie-ul se șterge și la click pe
- *   link, în client — dublă asigurare.
- * - redirectul există DOAR aici, pe `/` — link-urile directe spre
- *   orice altă rută nu sunt atinse.
+ * PAGINA ASTA TREBUIE SĂ RĂMÂNĂ STATICĂ. E rădăcina site-ului, adică
+ * exact adresa pe care cade tot traficul din reclame. Orice API
+ * dinamic folosit aici — `cookies()`, `headers()`, `searchParams` —
+ * o scoate din prerender și o transformă în randare pe funcție la
+ * fiecare cerere, cu tot ce înseamnă asta pentru TTFB. S-a și
+ * întâmplat: până la reparația asta, `/` era singura pagină publică
+ * fără HTML pregătit în build.
+ *
+ * Memoria diviziei (redirect server-side spre divizia salvată) a stat
+ * aici și a fost scoasă din motivul de mai sus. Nu se pierde nimic:
+ * cookie-ul `meridian_division` nu mai e scris de nimeni de la
+ * lansare (`setDivision` din lib/hooks/use-division.ts n-are niciun
+ * apelant — handler-ele au dispărut în commit-ul f578248), deci
+ * redirectul nu s-a declanșat niciodată pentru un vizitator real.
+ *
+ * `?stay` se tratează în <ClearDivision>, pe client. Astăzi niciun
+ * link din site nu îl produce — cheia `seeBothDivisions` din
+ * messages/*.json a rămas fără consumator după ștergerea vechilor
+ * header-e — dar componenta rămâne ca ieșire pentru cine are
+ * cookie-ul setat manual.
  */
 
 const TITLE = "MERIDIAN — Video & Software";
@@ -44,26 +52,15 @@ export async function generateMetadata({
 
 export default async function GatewayPage({
   params,
-  searchParams,
 }: Readonly<{
   params: Promise<{ locale: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>) {
-  const [{ locale }, sp] = await Promise.all([params, searchParams]);
+  const { locale } = await params;
   setRequestLocale(locale);
-
-  const stay = sp.stay !== undefined;
-
-  if (!stay) {
-    const division = getDivisionFromCookies(await cookies());
-    if (division) {
-      redirect({ href: `/${division}`, locale });
-    }
-  }
 
   return (
     <>
-      {stay && <ClearDivision />}
+      <ClearDivision />
       <GatewayScreen />
     </>
   );

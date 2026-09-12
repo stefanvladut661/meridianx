@@ -42,12 +42,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
 
   return ROUTES.map((route) => {
-    const languages = Object.fromEntries(
+    const languages: Record<string, string> = Object.fromEntries(
       routing.locales.map((locale) => [
         locale,
         `${BASE}${getPathname({ href: route, locale })}`,
       ])
     );
+    /* Aceeași pereche ca în HTML (`alternatesFor` din lib/seo.ts): fără
+       rândul ăsta, sitemap-ul și pagina declară seturi hreflang diferite
+       pentru aceeași adresă. `x-default` e cheie validă în tipul
+       `Languages` al lui Next, nu o excepție strecurată. */
+    languages["x-default"] = `${BASE}${getPathname({
+      href: route,
+      locale: routing.defaultLocale,
+    })}`;
 
     /* Portofoliul e singura pagină cu media proprie. Declarând-o aici,
        Google indexează fiecare clip și fiecare fotografie, nu doar

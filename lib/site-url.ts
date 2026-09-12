@@ -13,7 +13,20 @@
  * să spună oricine îl scrie așa.
  */
 
-const FALLBACK = "https://meridianx.ro";
+/**
+ * Host-ul canonic e cel CU `www`.
+ *
+ * Nu e o preferință de stil: `meridianx.ro` răspunde deja cu 308 spre
+ * `www.meridianx.ro`, iar tot ce servește site-ul acum — canonical,
+ * og:url, JSON-LD, robots.txt, sitemap.xml — scrie forma cu www. Dacă
+ * fallback-ul de aici ar rămâne pe apex, orice build fără variabila din
+ * Vercel (local, CI, un preview neconfigurat) ar genera adrese care fac
+ * un salt în plus înainte să răspundă.
+ *
+ * Aceeași alegere trebuie ținută și în Vercel → Domains (www ca Primary
+ * Domain) și în `NEXT_PUBLIC_SITE_URL`.
+ */
+const FALLBACK = "https://www.meridianx.ro";
 
 function normalize(raw: string | undefined): string {
   const value = raw?.trim();

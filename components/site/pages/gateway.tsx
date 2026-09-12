@@ -5,48 +5,87 @@ import { Mark } from "@/components/site/mark";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
 import { MeridianSoftware, MeridianVideo } from "@/components/site/meridian";
 import { Reveal } from "@/components/site/motion";
+import { ObfuscatedEmail } from "@/components/site/obfuscated-email";
 import { Icon } from "@/components/site/ui";
 import { CONTACT } from "@/components/site/video-content";
 import { SCONTACT } from "@/components/site/software-content";
+import { FEATURED, VIDEOS } from "@/components/site/portfolio-content";
+import { useWorldWipe } from "@/components/gateway/world-wipe";
+import s from "./gateway.module.css";
 
 /* ============================================================
-   POARTA — pagina intermediară, rădăcina site-ului.
+   POARTA — pagina intermediară, rădăcina site-ului. „Ecranele”.
 
    Singura pagină în care cele două lumi apar împreună. Regula din
-   CLAUDE.md §2 rămâne: nu se amestecă. Aici se ating, atât — fiecare
-   jumătate poartă propriul [data-scope], deci propria paletă, propriile
-   raze de colț și propriul temperament. Shell-ul (bara, banda de jos,
-   footer-ul) e neutru intenționat, ca să nu concureze cu niciuna.
+   CLAUDE.md §2 rămâne: nu se amestecă. Aici se ating, atât.
 
-   Firul comun e arcul de meridian: același traseu în ambele jumătăți,
-   tratat diferit — lumină care circulă la video, geodezică desenată pe
-   grilă la software. Cele două arcuri se întâlnesc exact la cusătură,
-   unde stă marca.
+   Teza: poarta arată rezultatul pe care îl cumperi, la scara la care
+   trăiește. Clientul de video cumpără ce apare pe telefonul clienților
+   lui — deci stânga e o cameră întunecată cu trei reel-uri reale, din
+   portofoliu. Clientul de software cumpără un instrument pe care echipa
+   îl deschide dimineața — deci dreapta e o foaie de hârtie așezată pe
+   masă, cu aplicația pe ea.
+
+   Nu e un split 50/50 cu două jumătăți simetrice (asta era versiunea
+   dinainte, și așa arată orice agenție cu două divizii): e un spațiu
+   și un obiect în el. Lumile rămân distincte prin material — negru
+   luminat vs. hârtie — și prin propriul [data-scope], deci propria
+   paletă, propriile raze de colț și propriul temperament.
+
+   Firul comun e arcul de meridian: un singur cerc, centrat exact pe
+   cusătură — lumină care circulă în cameră, geodezică desenată pe
+   foaie. Același obiect, două temperamente.
 
    Decizia trebuie luată în trei secunde, deci nu există nimic de citit
    înainte de alegere. Argumentele stau sub fold, pentru cine ezită.
    ============================================================ */
 
 export function GatewayScreen() {
+  const { go, overlay } = useWorldWipe();
 
   return (
     <div data-scope="gate" className="md-root min-h-dvh overflow-clip">
       <TopBar />
 
       <main id="continut">
-        <div className="gate-split flex min-h-dvh flex-col lg:flex-row">
-          <VideoHalf />
-          <Seam />
-          <SoftwareHalf />
-        </div>
+        {/* Poarta n-are titlu vizibil, și e intenționat: un titlu deasupra
+            celor două lumi ar întârzia exact decizia pe care pagina o
+            cere în trei secunde. Titlul rămâne doar pentru cititoarele
+            de ecran și pentru roboți — același text ca <title>-ul
+            paginii (page.tsx). */}
+        <h1 className="sr-only">MERIDIAN — Video &amp; Software</h1>
+
+        <section className={s.gate} aria-label="Alege divizia">
+          <VideoRoom go={go} />
+          <SoftwareSheet go={go} />
+
+          {/* Clientul de video decide repede și preferă vocea (CLAUDE.md
+              §8): telefonul și WhatsApp-ul stau chiar pe primul ecran,
+              nu sub „alte metode de contact”. */}
+          <p className={s.foot}>
+            Nu știi în ce parte s-o iei?{" "}
+            <a href={CONTACT.phoneHref}>Sună · {CONTACT.phone}</a>
+            <span aria-hidden> / </span>
+            <a
+              href={CONTACT.whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WhatsApp
+            </a>
+          </p>
+        </section>
 
         <Band />
       </main>
 
       <Foot />
+      {overlay}
     </div>
   );
 }
+
+type Go = ReturnType<typeof useWorldWipe>["go"];
 
 /* ---------------- Bara de sus ---------------- */
 function TopBar() {
@@ -84,195 +123,220 @@ function TopBar() {
   );
 }
 
-/* ---------------- Cusătura ---------------- */
-function Seam() {
-  return (
-    <div
-      className="relative z-20 h-px w-full shrink-0 lg:h-auto lg:w-px"
-      aria-hidden
-    >
-      <span
-        className="absolute inset-0 block"
-        style={{
-          background:
-            "linear-gradient(to right, transparent, rgb(255 255 255 / 0.22), transparent)",
-        }}
-      />
-      <span
-        className="absolute inset-0 hidden lg:block"
-        style={{
-          background:
-            "linear-gradient(to bottom, transparent, rgb(255 255 255 / 0.22) 20%, rgb(255 255 255 / 0.22) 80%, transparent)",
-        }}
-      />
-      <span className="absolute left-1/2 top-1/2 flex size-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-hair bg-ink text-bone">
-        <Mark size={22} />
-      </span>
-    </div>
-  );
-}
+/* ---------------- Camera: VIDEO ---------------- */
 
-/* ---------------- Jumătatea VIDEO ---------------- */
-function VideoHalf() {
+/* Trei materiale de prima pagină, în ordinea din manifest — postere
+   reale, din clipuri livrate. Dacă se schimbă portofoliul, se schimbă
+   și poarta: e intenționat, poarta e o dovadă, nu un decor. */
+const REELS = FEATURED.slice(0, 3);
+const KINDS = [...new Set(VIDEOS.map((v) => v.kind))];
+
+function VideoRoom({ go }: { go: Go }) {
   return (
     <Link
       href="/video"
       data-scope="video"
-      className="gate-half group relative flex min-h-[46dvh] flex-1 items-center overflow-hidden bg-ink px-5 py-14 text-bone sm:px-8 sm:py-20 lg:min-h-0 lg:py-24"
+      className={s.room}
+      onClick={(e) => go(e, "video", "/video")}
     >
-      <div
-        aria-hidden
-        className="aurora aurora-drift"
-        style={{
-          width: "min(85vw, 620px)",
-          height: "min(85vw, 620px)",
-          right: "-14%",
-          top: "-12%",
-          background:
-            "radial-gradient(circle, color-mix(in oklab, var(--md-a1) 62%, transparent), transparent 62%)",
-          opacity: 0.42,
-        }}
-      />
-      <MeridianVideo
-        className="pointer-events-none absolute top-1/2 right-[-22%] w-[min(78vw,560px)] -translate-y-1/2 text-bone opacity-70 transition-transform duration-700 group-hover:translate-x-[-3%] lg:right-[-16%]"
-      />
-      <div className="grain absolute inset-0" aria-hidden />
+      <span aria-hidden className={s.aurora} />
+      <span aria-hidden className={`grain ${s.grain}`} />
+      <span aria-hidden className={s.ringLeft}>
+        <MeridianVideo className={s.ring} />
+      </span>
 
-      <div className="relative z-10 ml-auto w-full max-w-lg lg:mr-[6%]">
-        <Reveal>
-          <p className="eyebrow flex items-center gap-2.5">
-            <span className="rec-dot" aria-hidden />
-            Divizia 01
-          </p>
-        </Reveal>
+      <div className={s.roomInner}>
+        <div className={s.text}>
+          <Reveal>
+            <h2 className={`display ${s.title}`}>VIDEO</h2>
+          </Reveal>
+          <Reveal delay={70}>
+            <p className={s.lead}>Clipuri care aduc clienți, nu vizualizări.</p>
+          </Reveal>
+          <Reveal delay={140}>
+            <p className={s.body}>
+              Filmăm, montăm și distribuim pe Meta, TikTok și Google. Pentru
+              afaceri care trăiesc din clienți care revin.
+            </p>
+          </Reveal>
+          <Reveal delay={210}>
+            <span className={`btn btn-primary ${s.btn}`}>
+              Intră în video
+              <Icon name="arrowRight" size={17} className="arw" />
+            </span>
+          </Reveal>
+          <Reveal delay={280}>
+            <p className={s.meta}>
+              {VIDEOS.length} materiale livrate · {KINDS.join(" · ")}
+            </p>
+          </Reveal>
+        </div>
 
-        <Reveal delay={80}>
-          <h2 className="display mt-6 text-[clamp(2.4rem,5.6vw,4.2rem)]">
-            VIDEO
-          </h2>
-          <p className="mt-3 text-[clamp(1.05rem,2vw,1.35rem)] leading-snug text-a2">
-            Conținut care aduce clienți, nu vizualizări.
-          </p>
-        </Reveal>
-
-        <Reveal delay={150}>
-          <p className="mt-6 max-w-md text-[15.5px] leading-relaxed text-dim">
-            Filmăm, montăm și distribuim pe Meta, TikTok și Google. Pentru
-            afaceri care trăiesc din clienți care revin.
-          </p>
-        </Reveal>
-
-        <Reveal delay={210}>
-          <ul className="mt-7 hidden flex-wrap gap-2 sm:flex">
-            {["HORECA", "Imobiliare", "Wellness", "Auto", "eCommerce"].map(
-              (t) => (
-                <li
-                  key={t}
-                  className="rounded-full border border-hair px-3 py-1.5 text-[12.5px] text-dim"
-                >
-                  {t}
-                </li>
-              )
-            )}
-          </ul>
-        </Reveal>
-
-        <Reveal delay={270}>
-          <span className="btn btn-primary mt-9">
-            Intră în video
-            <Icon name="arrowRight" size={17} className="arw" />
-          </span>
-          <p className="mt-5 font-md-mono text-[11px] tracking-[0.14em] text-dim">
-            00:00:12:04 · 24 FPS
-          </p>
+        <Reveal variant="scale" delay={120} className={s.fan}>
+          {REELS.map((r, i) => (
+            <figure key={r.slug} className={s.reel}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- poster deja
+                  dimensionat și convertit în WebP de scripts/portfolio-build.mjs,
+                  ca peste tot în site. */}
+              <img
+                src={r.poster}
+                alt={`${r.title} — ${r.client}`}
+                width={r.w}
+                height={r.h}
+                /* Reel-ul din mijloc e cel mai mare element pictat pe
+                   poartă, deci candidatul LCP: pleacă primul. */
+                loading={i === 1 ? "eager" : "lazy"}
+                fetchPriority={i === 1 ? "high" : "auto"}
+                decoding="async"
+              />
+              {i === 1 && (
+                <span aria-hidden className={s.reelPlay}>
+                  <Icon name="play" size={14} />
+                </span>
+              )}
+              <figcaption className={s.reelCap}>
+                <b>{r.client}</b>
+                <span>{r.seconds}s</span>
+              </figcaption>
+            </figure>
+          ))}
         </Reveal>
       </div>
     </Link>
   );
 }
 
-/* ---------------- Jumătatea SOFTWARE ---------------- */
-function SoftwareHalf() {
+/* ---------------- Foaia: SOFTWARE ---------------- */
+
+/* Rândurile din fereastră sunt ilustrative și marcate ca atare în bara
+   ei. Numele sunt meserii din publicul diviziei, nu firme — nu inventăm
+   clienți (CLAUDE.md §5). Când există un caz real de arătat, intră aici. */
+const ORDERS = [
+  {
+    id: "1042",
+    what: "Ferestre PVC · 12 buc.",
+    who: "Atelier tâmplărie",
+    stage: "În producție",
+    tone: "green",
+    due: "18 sep",
+  },
+  {
+    id: "1041",
+    what: "Revizie centrale · 6 locații",
+    who: "Service HVAC",
+    stage: "Programat",
+    tone: "amber",
+    due: "16 sep",
+  },
+  {
+    id: "1039",
+    what: "Piese frezate · lot 3",
+    who: "Atelier CNC",
+    stage: "Livrat",
+    tone: "muted",
+    due: "12 sep",
+  },
+  {
+    id: "1038",
+    what: "Ofertă apartament 3 cam.",
+    who: "Agenție imobiliară",
+    stage: "Ofertă trimisă",
+    tone: "muted",
+    due: "11 sep",
+  },
+] as const;
+
+function SoftwareSheet({ go }: { go: Go }) {
   return (
     <Link
       href="/software"
       data-scope="software"
-      className="gate-half group relative flex min-h-[46dvh] flex-1 items-center overflow-hidden bg-ink px-5 py-14 text-bone sm:px-8 sm:py-20 lg:min-h-0 lg:py-24"
+      className={s.sheet}
+      onClick={(e) => go(e, "software", "/software")}
     >
-      <div
-        aria-hidden
-        className="aurora aurora-drift-2"
-        style={{
-          width: "min(85vw, 620px)",
-          height: "min(85vw, 620px)",
-          left: "-14%",
-          bottom: "-12%",
-          background:
-            "radial-gradient(circle, color-mix(in oklab, var(--md-a1) 55%, transparent), transparent 62%)",
-          opacity: "var(--md-glow-o, 0.4)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="blueprint pointer-events-none absolute inset-0 opacity-80"
-      />
+      <span aria-hidden className={`techgrid ${s.grid}`} />
+      {/* Geodezica se desenează la intrarea în viewport (`draw-line` are
+          nevoie de `.is-in` pe un strămoș — Reveal îl pune). */}
       <Reveal
         variant="scale"
-        className="pointer-events-none absolute top-1/2 left-[-22%] w-[min(78vw,560px)] -translate-y-1/2 text-bone transition-transform duration-700 group-hover:translate-x-[3%] lg:left-[-16%]"
+        delay={200}
+        className={s.ringRight}
+        style={{ pointerEvents: "none" }}
       >
-        <MeridianSoftware className="w-full opacity-80" />
+        <MeridianSoftware className={s.ring} />
       </Reveal>
 
-      <div className="relative z-10 mr-auto w-full max-w-lg lg:ml-[6%]">
-        <Reveal>
-          <p className="eyebrow flex items-center gap-2.5">
-            <span className="node-dot" aria-hidden />
-            Divizia 02
-          </p>
+      <div className={s.sheetInner}>
+        <Reveal delay={60}>
+          <h2 className={`display ${s.title}`}>SOFTWARE</h2>
         </Reveal>
-
-        <Reveal delay={80}>
-          <h2 className="display mt-6 text-[clamp(2.4rem,5.6vw,4.2rem)]">
-            SOFTWARE
-          </h2>
-          <p className="mt-3 text-[clamp(1.05rem,2vw,1.35rem)] leading-snug text-a2">
-            Infrastructură care chiar se folosește.
-          </p>
+        <Reveal delay={130}>
+          <p className={s.lead}>Sisteme pe care echipa chiar le folosește.</p>
         </Reveal>
-
-        <Reveal delay={150}>
-          <p className="mt-6 max-w-md text-[15.5px] leading-relaxed text-dim">
+        <Reveal delay={200}>
+          <p className={s.body}>
             Aplicații la comandă, dashboard-uri, fidelizare, SaaS și mobil.
             Pentru firme care digitalizează cu finanțare și cu termen.
           </p>
         </Reveal>
 
-        <Reveal delay={210}>
-          <ul className="mt-7 hidden flex-wrap gap-2 sm:flex">
-            {[
-              "Aplicații de business",
-              "Dashboard-uri",
-              "Fidelizare",
-              "Mobil",
-              "SaaS",
-            ].map((t) => (
-              <li
-                key={t}
-                className="rounded-panel-sm border border-hair px-3 py-1.5 text-[12.5px] text-dim"
-              >
-                {t}
-              </li>
-            ))}
-          </ul>
+        <Reveal delay={260}>
+          <div
+            className={s.win}
+            role="img"
+            aria-label="Machetă ilustrativă de aplicație: lista de comenzi cu etape și termene"
+          >
+            <div className={s.winBar}>
+              <span className={s.winTitle}>Comenzi · septembrie</span>
+              <span className={s.winTag}>ilustrativ</span>
+            </div>
+            <div className={s.winBody}>
+              <div className={s.winNav}>
+                <span data-on="">Comenzi</span>
+                <span>Producție</span>
+                <span>Facturi</span>
+                <span>Stoc</span>
+                <span>Clienți</span>
+              </div>
+              <table className={s.tbl}>
+                <thead>
+                  <tr>
+                    <th>Nr.</th>
+                    <th>Comandă</th>
+                    <th className={s.tdWho}>Client</th>
+                    <th>Etapă</th>
+                    <th className={s.tdDue}>Termen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ORDERS.map((o) => (
+                    <tr key={o.id}>
+                      <td className={s.num}>#{o.id}</td>
+                      <td>{o.what}</td>
+                      <td className={s.tdWho}>{o.who}</td>
+                      <td>
+                        <span className={s.tag} data-tone={o.tone}>
+                          {o.stage}
+                        </span>
+                      </td>
+                      <td className={`${s.num} ${s.tdDue}`}>{o.due}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </Reveal>
 
-        <Reveal delay={270}>
-          <span className="btn btn-primary mt-9 !rounded-panel-sm">
+        <Reveal delay={320}>
+          <span className={`btn btn-primary !rounded-panel-sm ${s.btn}`}>
             Intră în software
             <Icon name="arrowRight" size={17} className="arw" />
           </span>
-          <p className="mt-5 font-md-mono text-[11px] tracking-[0.14em] text-dim">
-            44°26′N 26°06′E · BUCUREȘTI
+        </Reveal>
+        <Reveal delay={380}>
+          <p className={s.meta}>
+            Ofertă fermă, pe etape · Cod și conturi pe firma ta
           </p>
         </Reveal>
       </div>
@@ -395,18 +459,20 @@ function Foot() {
         </nav>
 
         <span className="ml-auto flex flex-wrap gap-x-6 gap-y-2">
-          <a
-            href={`mailto:${CONTACT.email}`}
+          <ObfuscatedEmail
+            address={CONTACT.email}
+            fallbackHref="#amandoua"
             className="text-[13.5px] text-dim transition-colors hover:text-bone"
-          >
-            {CONTACT.email}
-          </a>
-          <a
-            href={`mailto:${SCONTACT.email}`}
-            className="text-[13.5px] text-dim transition-colors hover:text-bone"
-          >
-            {SCONTACT.email}
-          </a>
+          />
+          {/* Diviziile pot avea adrese diferite (env); azi e una singură,
+              și n-are rost s-o tipărim de două ori. */}
+          {SCONTACT.email !== CONTACT.email && (
+            <ObfuscatedEmail
+              address={SCONTACT.email}
+              fallbackHref="#amandoua"
+              className="text-[13.5px] text-dim transition-colors hover:text-bone"
+            />
+          )}
         </span>
       </div>
 

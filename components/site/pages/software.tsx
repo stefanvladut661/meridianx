@@ -14,6 +14,7 @@ import {
 import { Faq, Icon } from "@/components/site/ui";
 import { VideoCard } from "@/components/site/video-player";
 import { Configurator } from "@/components/site/configurator";
+import { ObfuscatedEmail } from "@/components/site/obfuscated-email";
 import {
   WorldSwitch,
   WorldSwitchMobileLink,
@@ -963,12 +964,12 @@ function Foot() {
               </a>
             </li>
             <li>
-              <a
-                href={`mailto:${SCONTACT.email}`}
+              <ObfuscatedEmail
+                address={SCONTACT.email}
+                fallbackHref="#configurator"
+                fallbackLabel=" — deschide formularul de contact"
                 className="text-[14px] text-dim transition-colors hover:text-bone"
-              >
-                {SCONTACT.email}
-              </a>
+              />
             </li>
             <li>
               <a
