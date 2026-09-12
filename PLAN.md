@@ -690,3 +690,125 @@ Rămâne, ca înainte: variabilele de mediu din README (mai ales
 `NEXT_PUBLIC_SITE_URL`, Supabase, Resend), validarea juridică a celor
 trei documente și datele reale ale firmei. `ideas/` (1,7GB) e ignorat de
 git; `public/video/` (198MB) NU e — intră în repo și în deploy.
+
+---
+
+## LAB — POARTA, trei variante (2026-09-12)
+
+**Rută:** `/poarta` (temporară, `noindex`; folderul `app/[locale]/(temp)/poarta/`
+se șterge integral după decizie — nimic din afară nu importă de aici).
+Comutator 1 · 2 · 3 în bara de sus (tastele 1/2/3 sau săgețile), hash-ul
+ține minte varianta. Fiecare variantă e un prim ecran funcțional: link-uri
+reale spre `/video` și `/software`, vălul de trecere din `world-switch`
+pornit din punctul apăsat, tastatură, `reduced-motion`, 360px.
+
+Punctul de plecare: poarta actuală e un split 50/50 cu hover-expand — exact
+pagina pe care o livrează orice agenție cu două divizii — și nu folosește
+portofoliul real (18 materiale, clienți reali), care există de la lansare.
+
+1. **Ecranele** — rezultatul pe care îl cumperi, la scara la care trăiește:
+   trei reel-uri reale (postere din manifest) într-un evantai pe negrul video;
+   o foaie de hârtie (software) așezată pe masă, cu o machetă de aplicație
+   marcată „ilustrativ". Nu două jumătăți — o cameră și un obiect în ea.
+   Arcul de meridian e un singur cerc centrat pe cusătură: lumină în stânga,
+   geodezică în dreapta.
+2. **Triajul** — „Ce încerci să rezolvi?" + șapte propoziții de client,
+   amestecate intenționat; ruta se dezvăluie la propoziție (etichetă +
+   ac pe linia de meridian, colorate după destinație). Intrările directe
+   stau la vedere pentru cel hotărât. E răspunsul la „Nu știu ce îmi
+   trebuie", pus în locul întregii pagini.
+3. **Tabla** — „poarta" literal: tablă de plecări split-flap care se așază
+   la încărcare (HTML-ul are cuvintele finale, fără JS rămâne întreagă),
+   ceas real, rândul software se aprinde în hârtie la hover, banda de jos
+   listează ultimele livrări reale din manifest.
+
+**Observații:**
+- Culorile lumilor stau explicit doar în v3 (`gate-lab.module.css`): pe
+  tabla întunecată, tokens-ii software (text negru pe hârtie) n-au sens
+  decât în starea aprinsă.
+- Ecranul de 360px s-a putut verifica doar printr-un harness CDP propriu:
+  Edge headless nu acceptă ferestre sub ~500px, iar extensia de Chrome
+  nu deschide `localhost` (permisiuni la nivel de site).
+- În paralel a apărut `app/[locale]/(temp)/probleme/` (alt terminal,
+  în lucru): `lab.tsx` importă module care nu există încă, deci `tsc`
+  pe tot proiectul pică până se termină acolo. Nu e atins de aici.
+
+### Decizie (aceeași zi)
+**Ecranele** a fost aleasă și a intrat în poarta reală; laboratorul
+(`app/[locale]/(temp)/poarta/`) a fost șters cu tot cu variantele 2 și 3.
+
+- Primul ecran nou stă în `components/site/pages/gateway.tsx` +
+  `gateway.module.css` (modul CSS, nu globals.css — fișierul partajat e
+  înghețat cât rulează terminale în paralel). Vălul de trecere pornit din
+  punctul apăsat e în `components/gateway/world-wipe.tsx`.
+- Banda „o agenție, două echipe" și footer-ul au rămas neschimbate sub
+  fold; butonul „Nu știu ce îmi trebuie" din bară duce tot la `#amandoua`.
+- Footer: adresa de email se tipărește o singură dată când cele două
+  divizii au aceeași adresă (azi e cazul).
+- **Cerere către fișier partajat:** regulile `.gate-half` / `.gate-split`
+  din `app/globals.css` (două locuri: definiția și blocul reduced-motion)
+  nu mai au niciun consumator după redesign. De șters la următoarea
+  trecere prin globals.css.
+
+## LAB — PROBLEME (/video), trei variante (2026-09-12)
+
+**Rută:** `/probleme` (temporară, `noindex`; folderul
+`app/[locale]/(temp)/probleme/` se șterge integral după decizie — nimic
+din afară nu importă de aici). Comutator 1 · 2 · 3 în bara de sus (tastele
+1/2/3), hash-ul ține minte varianta. Fiecare variantă e chiar secțiunea
+`#probleme` de pe `/video`, pusă între două „fantome" care marchează
+vecinii ei reali (portofoliul deasupra, lanțul complet dedesubt).
+
+Punctul de plecare: secțiunea „Problema nu e că nu ai conținut" e o grilă
+de șase carduri cu simptom + cauză + soluție — corect ca informație, dar
+prea mult text și nimic care să invite ochiul să citească. Toate trei
+variantele folosesc EXACT același conținut (`PAINS` din `video-content`),
+deci diferă doar felul în care e servit: alegi / scanezi / derulezi.
+
+1. **Diagnosticul** — citești o problemă, nu șase. Listă de industrii în
+   stânga (tablist, săgeți, Home/End), fișă mare în dreapta: simptom în
+   display, cauză, „Ce facem". Curge singură la 7s (bara de sub industrie
+   spune cât mai stă), se oprește la hover/focus, nu curge sub
+   reduced-motion sau când secțiunea nu e pe ecran. Semnătura: harta
+   publicului — tu în centru, cei care te urmăresc deja strânși în jur,
+   cine cumpără în afara cercului; arcul de meridian care ajunge la el
+   e chiar promisiunea secțiunii, desenată.
+2. **Glifele** — toate șase la vedere, dar explicația e înlocuită cu
+   dovada: fiecare simptom are un desen SVG care îl arată (marțea goală
+   lângă sâmbăta plină; 40 de poze și un zero; agenda cu ferestre
+   punctate; lead-urile reci și unul cald; curba reclamei care se
+   stinge sub linia de frecvență; publicat ✓ / distribuit – –). Se
+   desenează la intrarea în ecran (`.is-in` de la `Reveal`). Soluția
+   rămâne la vedere; cauza se deschide la „De ce se întâmplă".
+3. **Firul** — aceleași propoziții în vocea în care sunt spuse: mesaj
+   de la client, răspuns scurt de la noi (soluția), „De ce se întâmplă"
+   în răspuns. Se derulează la scroll (mesaj → trei puncte → răspuns;
+   totul deja acolo sub reduced-motion). Titlul stă sticky în stânga cu
+   butonul real de WhatsApp (`CONTACT.whatsapp`), pe mobil la capăt.
+
+**Observații:**
+- Copy nou (nu placeholder): lead-urile celor trei variante, eticheta
+  „Oricare" pentru tag-ul `Toate`, textele de sub „cine cumpără" pe
+  hartă (`WHO` în `v-diagnostic.tsx`) și captions-urile glifelor
+  (`CAPTION` în `v-glife.tsx`). Dacă se alege v1 sau v2, astea se mută
+  în `video-content.ts` lângă `PAINS`.
+- Glifele desenează situația din simptom, nu cifre de rezultat — singurul
+  număr e „40 de fotografii", care e deja în textul simptomului.
+- `tsc` și `eslint` trec pe tot proiectul (nota din LAB — POARTA despre
+  module lipsă din `probleme/lab.tsx` e depășită).
+- Verificat la 1440 și 360 printr-un harness CDP propriu (scratchpad);
+  extensia de Chrome nu deschide `localhost`.
+
+### Decizie (aceeași zi)
+**Glifele** a fost aleasă și a intrat în pagina reală; laboratorul
+(`app/[locale]/(temp)/probleme/`) a fost șters cu tot cu variantele 1 și 3.
+
+- `Problems()` din `components/site/pages/video.tsx` randează cardurile;
+  desenele stau în `components/site/problem-glyphs.tsx` +
+  `problem-glyphs.module.css` (modul CSS, nu globals.css). Cauza se
+  deschide cu accordion-ul deja existent (`.acc-open` / `.acc-body`).
+- `PAINS` din `video-content.ts` a primit cheia `glyph` (tip `PainGlyph`,
+  verificat cu `satisfies`): fiecare durere e obligată să aibă un desen.
+  Caption-ul desenului stă lângă desen, nu în content — se schimbă doar
+  odată cu el.
+- Copy-ul nou din v1 (harta) și v3 (firul) a dispărut odată cu ele.

@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Mark } from "@/components/site/mark";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
 import { VideoLeadForm } from "@/components/site/video-form";
@@ -25,6 +25,7 @@ import {
   TestimonialWall,
 } from "@/components/site/ui";
 import { VideoCard } from "@/components/site/video-player";
+import { GlyphFrame, PROBLEM_GLYPHS } from "@/components/site/problem-glyphs";
 import { FEATURED } from "@/components/site/portfolio-content";
 import {
   CLIENTS,
@@ -320,42 +321,42 @@ function Hero() {
           {/* Cardurile stau sub placă, nu peste film. Decalajul mic pe
               verticală e intenționat — plutesc, nu sunt aliniate la rigla. */}
           <div className="mt-4 hidden items-start gap-4 sm:flex">
-          <div className="glass-2 edge-light float w-[212px] flex-1 -rotate-[0.6deg] p-3.5">
-            <p className="eyebrow mb-2 !text-[10px]">Campanie live</p>
-            <div className="flex items-end gap-1.5" aria-hidden>
-              {[28, 44, 36, 58, 47, 70, 62].map((h, i) => (
-                <span
-                  key={i}
-                  className="flex-1 rounded-sm"
-                  style={{
-                    height: h,
-                    background:
-                      i > 4
-                        ? "linear-gradient(180deg,var(--md-a1),color-mix(in oklab,var(--md-a1) 20%,transparent))"
-                        : "rgb(255 255 255 / 0.14)",
-                  }}
-                />
-              ))}
+            <div className="glass-2 edge-light float w-[212px] flex-1 -rotate-[0.6deg] p-3.5">
+              <p className="eyebrow mb-2 !text-[10px]">Campanie live</p>
+              <div className="flex items-end gap-1.5" aria-hidden>
+                {[28, 44, 36, 58, 47, 70, 62].map((h, i) => (
+                  <span
+                    key={i}
+                    className="flex-1 rounded-sm"
+                    style={{
+                      height: h,
+                      background:
+                        i > 4
+                          ? "linear-gradient(180deg,var(--md-a1),color-mix(in oklab,var(--md-a1) 20%,transparent))"
+                          : "rgb(255 255 255 / 0.14)",
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="mt-2.5 text-[11px] text-dim">
+                Cereri de ofertă, ultimele 7 zile
+                <span className="ml-1 text-white/30">(exemplu)</span>
+              </p>
             </div>
-            <p className="mt-2.5 text-[11px] text-dim">
-              Cereri de ofertă, ultimele 7 zile
-              <span className="ml-1 text-white/30">(exemplu)</span>
-            </p>
-          </div>
 
-          <div className="glass-2 edge-light float-2 mt-5 w-[176px] flex-1 rotate-[0.8deg] p-3.5">
-            <div className="flex items-center gap-2">
-              <span className="rec-dot" aria-hidden />
-              <span className="font-md-mono text-[11px] tracking-wider text-bone">
-                ZIUA 01 / FILMARE
-              </span>
+            <div className="glass-2 edge-light float-2 mt-5 w-[176px] flex-1 rotate-[0.8deg] p-3.5">
+              <div className="flex items-center gap-2">
+                <span className="rec-dot" aria-hidden />
+                <span className="font-md-mono text-[11px] tracking-wider text-bone">
+                  ZIUA 01 / FILMARE
+                </span>
+              </div>
+              <p className="mt-2 text-[13px] leading-snug text-dim">
+                Dintr-o zi ies{" "}
+                <span className="text-bone">mai multe unghiuri</span>, tăiate
+                pentru trei platforme.
+              </p>
             </div>
-            <p className="mt-2 text-[13px] leading-snug text-dim">
-              Dintr-o zi ies{" "}
-              <span className="text-bone">mai multe unghiuri</span>, tăiate
-              pentru trei platforme.
-            </p>
-          </div>
           </div>
         </Reveal>
       </div>
@@ -443,10 +444,17 @@ function Work() {
   );
 }
 
-/* ---------------- Probleme ---------------- */
+/* ---------------- Probleme ----------------
+   Explicația e înlocuită cu dovada: fiecare simptom are un desen care
+   îl arată (problem-glyphs.tsx). Grila se citește în cinci secunde —
+   desen, propoziție, ce facem — iar cauza se deschide la „De ce se
+   întâmplă”, cu același accordion ca la întrebări. */
 function Problems() {
   return (
-    <section id="probleme" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-32">
+    <section
+      id="probleme"
+      className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-32"
+    >
       <SectionHead
         eyebrow="Ce te costă acum"
         title={
@@ -456,39 +464,13 @@ function Problems() {
             <span className="text-dim">E că nu ajunge la cine cumpără.</span>
           </>
         }
-        lead={
-          <>
-            <span className="sm:hidden">
-              Dacă îți recunoști afacerea în vreunul, știi deja de unde începem.
-            </span>
-            <span className="hidden sm:inline">
-              Am strâns tiparele pe care le vedem cel mai des, pe industrii.
-              Dacă îți recunoști afacerea în vreunul, știi deja de unde începem.
-            </span>
-          </>
-        }
+        lead="Șase tipare pe care le vedem cel mai des. Dacă unul e al tău, îl recunoști din desen."
       />
 
       <ul className="mx-auto mt-10 grid max-w-6xl gap-3 sm:mt-16 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
         {PAINS.map((p, i) => (
-          <Reveal as="li" key={p.symptom} delay={i * 70}>
-            <article className="glass bleed lift group h-full p-5 sm:p-7">
-              <div className="relative z-10">
-                <span className="eyebrow">{p.tag}</span>
-                <h3 className="mt-3 text-[17px] font-medium leading-snug text-bone sm:mt-4 sm:text-[19px]">
-                  „{p.symptom}”
-                </h3>
-                {/* cauza e context — pe telefon rămân doar durerea și ce facem */}
-                <p className="mt-3.5 hidden text-[15px] leading-relaxed text-dim sm:block">
-                  {p.cause}
-                </p>
-                <div className="rule my-3.5 sm:my-5" />
-                <p className="flex gap-2.5 text-[14px] leading-relaxed text-a3">
-                  <Icon name="check" size={16} className="mt-0.5 shrink-0" />
-                  {p.fix}
-                </p>
-              </div>
-            </article>
+          <Reveal as="li" key={p.tag} delay={i * 70}>
+            <ProblemCard pain={p} />
           </Reveal>
         ))}
       </ul>
@@ -496,6 +478,59 @@ function Problems() {
   );
 }
 
+function ProblemCard({ pain }: { pain: (typeof PAINS)[number] }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const { caption, Draw } = PROBLEM_GLYPHS[pain.glyph];
+
+  return (
+    <article
+      className={`glass lift flex h-full flex-col p-5 sm:px-6 sm:pt-6 sm:pb-4 ${
+        open ? "acc-open" : ""
+      }`}
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="eyebrow">{pain.tag}</span>
+        {/* ce arată desenul, în aceeași voce mono ca eyebrow-ul */}
+        <span className="whitespace-nowrap font-md-mono text-[10px] uppercase tracking-[0.14em] text-dim/75">
+          {caption}
+        </span>
+      </div>
+
+      <GlyphFrame>
+        <Draw />
+      </GlyphFrame>
+
+      <h3 className="mt-4 text-[17px] font-medium leading-snug text-bone sm:text-[19px]">
+        „{pain.symptom}”
+      </h3>
+      <p className="mt-3 flex gap-2.5 text-[14px] leading-relaxed text-a3">
+        <Icon name="check" size={16} className="mt-0.5 shrink-0" />
+        {pain.fix}
+      </p>
+
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((o) => !o)}
+        className="mt-auto inline-flex items-center gap-2 self-start pt-4 text-[13px] text-dim transition-colors hover:text-bone"
+      >
+        <span className="acc-sign inline-flex">
+          <Icon name="plus" size={14} />
+        </span>
+        De ce se întâmplă
+      </button>
+      <div id={id} className="acc-body" role="region">
+        <div>
+          <p className="pt-2.5 text-[14px] leading-relaxed text-dim">
+            {pain.cause}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 /* ---------------- Bento ---------------- */
 function Bento() {
@@ -641,8 +676,8 @@ function Bento() {
                 Nu se termină la livrare
               </h3>
               <p className="mt-2.5 text-[14.5px] leading-relaxed text-dim">
-                Vezi ce a adus cereri, în ordinea asta. Ce funcționează intră
-                în următorul set de filmări, ce nu, nu mai primește buget.
+                Vezi ce a adus cereri, în ordinea asta. Ce funcționează intră în
+                următorul set de filmări, ce nu, nu mai primește buget.
               </p>
               <ul className="mt-6 space-y-3" aria-hidden>
                 {[
@@ -717,10 +752,7 @@ function Process() {
               </p>
               <ul className="mt-4 space-y-2 border-t border-hair pt-3.5 sm:mt-5 sm:pt-4">
                 {s.outputs.map((o) => (
-                  <li
-                    key={o}
-                    className="flex gap-2.5 text-[13.5px] text-dim"
-                  >
+                  <li key={o} className="flex gap-2.5 text-[13.5px] text-dim">
                     <Icon
                       name="check"
                       size={15}
@@ -937,7 +969,10 @@ function FinalCta() {
                   </p>
                 </div>
                 <div className="mt-7 flex flex-col gap-2.5">
-                  <a href={CONTACT.whatsapp} className="btn btn-primary !w-full">
+                  <a
+                    href={CONTACT.whatsapp}
+                    className="btn btn-primary !w-full"
+                  >
                     <Icon name="whatsapp" size={17} />
                     WhatsApp
                   </a>
@@ -990,11 +1025,17 @@ function Foot() {
             pe termen lung, nu furnizor de proiect.
           </p>
           <div className="mt-6 flex gap-2">
-            <a href={CONTACT.whatsapp} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[13px]">
+            <a
+              href={CONTACT.whatsapp}
+              className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[13px]"
+            >
               <Icon name="whatsapp" size={15} />
               WhatsApp
             </a>
-            <a href={CONTACT.phoneHref} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[13px]">
+            <a
+              href={CONTACT.phoneHref}
+              className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[13px]"
+            >
               <Icon name="phone" size={15} />
               Sună
             </a>
@@ -1032,7 +1073,8 @@ function Foot() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t border-hair px-5 py-6 text-[13px] text-dim sm:px-6">
         <span>
           © 2026 MERIDIAN.
-          {CONTACT.isPlaceholder && " Adresa de email de pe această pagină e încă provizorie."}
+          {CONTACT.isPlaceholder &&
+            " Adresa de email de pe această pagină e încă provizorie."}
         </span>
         <nav aria-label="Documente legale">
           <ul className="flex flex-wrap gap-x-5 gap-y-1">

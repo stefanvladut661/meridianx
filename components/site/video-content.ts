@@ -25,10 +25,18 @@ export const VERTICALS = [
 
 /* ---------- Durerile reale, pe industrie ----------
    Formulate din simptom (ce vede clientul) → cauză (ce e de fapt).
-   Nu sunt statistici, sunt observații — deci nu inventăm cifre. */
+   Nu sunt statistici, sunt observații — deci nu inventăm cifre.
+
+   `glyph` alege desenul care ARATĂ simptomul (problem-glyphs.tsx):
+   pe pagină, explicația stă după un click, desenul și soluția sunt la
+   vedere. Tipul de mai jos obligă fiecare desen să existe. */
+export type PainGlyph =
+  "saptamana" | "pozele" | "agenda" | "leaduri" | "curba" | "tabloul";
+
 export const PAINS = [
   {
     tag: "HORECA",
+    glyph: "saptamana",
     symptom: "Weekendul e plin. Marți la 19:00 sunt mese goale.",
     cause:
       "Postezi pentru cei care te urmăresc deja. Omul aflat la trei străzi distanță, care caută unde să mănânce diseară, nu te vede niciodată.",
@@ -36,6 +44,7 @@ export const PAINS = [
   },
   {
     tag: "Imobiliare",
+    glyph: "pozele",
     symptom: "Anunțul are 40 de fotografii și zero vizionări serioase.",
     cause:
       "Cumpărătorul decide în câteva secunde dacă merită drumul. Fotografiile făcute pe telefon îl fac să deruleze mai departe.",
@@ -43,6 +52,7 @@ export const PAINS = [
   },
   {
     tag: "Wellness",
+    glyph: "agenda",
     symptom: "Plătești reclame, dar agenda rămâne cu ferestre.",
     cause:
       "Fără dovadă vizuală a rezultatului și a locului, singurul criteriu de comparație rămâne prețul.",
@@ -50,6 +60,7 @@ export const PAINS = [
   },
   {
     tag: "Auto",
+    glyph: "leaduri",
     symptom: "Stocul stă, iar lead-urile care vin sunt reci.",
     cause:
       "Formularul se completează de curioși, nu de cumpărători. Nimic din reclamă nu i-a calificat înainte.",
@@ -57,6 +68,7 @@ export const PAINS = [
   },
   {
     tag: "eCommerce",
+    glyph: "curba",
     symptom: "Reclama care mergea luna trecută s-a stins brusc.",
     cause:
       "Publicul a văzut acel material de prea multe ori. Nu ai nevoie de buget mai mare, ai nevoie de variante noi.",
@@ -64,12 +76,19 @@ export const PAINS = [
   },
   {
     tag: "Toate",
+    glyph: "tabloul",
     symptom: "Ai un videoclip frumos și nu s-a întâmplat nimic.",
     cause:
       "Un material fără buget de distribuție e un tablou ținut în pod. Nimeni nu ajunge la el din întâmplare.",
     fix: "Fiecare producție pleacă din start cu un plan de difuzare și un obiectiv măsurabil.",
   },
-] as const;
+] as const satisfies readonly {
+  tag: string;
+  glyph: PainGlyph;
+  symptom: string;
+  cause: string;
+  fix: string;
+}[];
 
 /* ---------- Sistemul în patru pași ---------- */
 export const SYSTEM = [
@@ -78,28 +97,44 @@ export const SYSTEM = [
     title: "Diagnostic",
     lead: "Ne uităm la cifrele tale, nu la trenduri.",
     body: "Oferta, marja, sezonalitatea, ce te-a costat până acum un client. Ieșim cu un obiectiv pe care îl putem măsura, nu cu un moodboard.",
-    outputs: ["Audit ofertă și public", "Analiza concurenței locale", "Obiectiv și indicatori"],
+    outputs: [
+      "Audit ofertă și public",
+      "Analiza concurenței locale",
+      "Obiectiv și indicatori",
+    ],
   },
   {
     n: "02",
     title: "Producție",
     lead: "Echipă completă, o singură zi de filmare.",
     body: "Scenarist, regizor, operatori, lumini, sunet, actori dacă e nevoie. Filmăm modular, pe blocuri: din aceeași ieșire ies mai multe unghiuri și formate, nu un singur material.",
-    outputs: ["Scenarii și storyboard", "Filmare cu echipă in-house", "Montaj, color, sound design"],
+    outputs: [
+      "Scenarii și storyboard",
+      "Filmare cu echipă in-house",
+      "Montaj, color, sound design",
+    ],
   },
   {
     n: "03",
     title: "Distribuție",
     lead: "Materialul ajunge exact la cine cumpără.",
     body: "Meta, TikTok și Google. Structură de campanie pe etape, targetare construită pe comportament, nu pe ghicit.",
-    outputs: ["Setup conturi și pixel", "Campanii pe obiectiv", "Testare de hook-uri și formate"],
+    outputs: [
+      "Setup conturi și pixel",
+      "Campanii pe obiectiv",
+      "Testare de hook-uri și formate",
+    ],
   },
   {
     n: "04",
     title: "Optimizare",
     lead: "Tăiem ce nu merge. Scalăm ce merge.",
     body: "Ne uităm săptămânal la date, schimbăm creative-urile obosite și îți trimitem lunar un raport pe înțeles: ce a adus cereri și ce nu.",
-    outputs: ["Raport lunar clar", "Creative noi la fiecare ciclu", "Apel de calibrare lunar"],
+    outputs: [
+      "Raport lunar clar",
+      "Creative noi la fiecare ciclu",
+      "Apel de calibrare lunar",
+    ],
   },
 ] as const;
 
@@ -110,21 +145,33 @@ export const SERVICES = [
     title: "Film de brand",
     blurb:
       "Filmul care spune cine ești în 60 de secunde. Pentru pagina de start, pentru prezentări, pentru momentul în care cineva te caută înainte să sune.",
-    bullets: ["Scenariu și concept", "Filmare cinematică", "Variante scurte pentru social"],
+    bullets: [
+      "Scenariu și concept",
+      "Filmare cinematică",
+      "Variante scurte pentru social",
+    ],
   },
   {
     key: "performance",
     title: "Video de performanță",
     blurb:
       "Materiale construite ca să vândă, nu ca să impresioneze. Hook în prima secundă, ofertă clară, apel la acțiune. Livrate în serii, ca să ai ce testa.",
-    bullets: ["Hook-uri multiple", "Formate 9:16 și 1:1", "Variante A/B din același shoot"],
+    bullets: [
+      "Hook-uri multiple",
+      "Formate 9:16 și 1:1",
+      "Variante A/B din același shoot",
+    ],
   },
   {
     key: "ugc",
     title: "UGC și actori",
     blurb:
       "Nu trebuie să apari tu în cadru. Lucrăm cu actori și creatori care sună a om real, nu a reclamă, și care se potrivesc cu publicul tău.",
-    bullets: ["Casting pe profil", "Scenarii conversaționale", "Filmare rapidă, volum mare"],
+    bullets: [
+      "Casting pe profil",
+      "Scenarii conversaționale",
+      "Filmare rapidă, volum mare",
+    ],
   },
   {
     key: "foto",
@@ -145,7 +192,11 @@ export const SERVICES = [
     title: "Google & YouTube",
     blurb:
       "Prindem cererea care există deja: omul care caută activ ce vinzi. Plus YouTube pentru materialele lungi, acolo unde răbdarea e mai mare.",
-    bullets: ["Search și Performance Max", "Campanii video", "Urmărire conversii"],
+    bullets: [
+      "Search și Performance Max",
+      "Campanii video",
+      "Urmărire conversii",
+    ],
   },
 ] as const;
 
