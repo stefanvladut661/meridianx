@@ -132,7 +132,8 @@ export function PortfolioScreen() {
             <p className="mt-6 text-[17px] leading-relaxed text-dim">
               {VIDEOS.length} materiale video și {photoCount} fotografii,
               filmate și montate de noi. Sunt așezate pe client, nu pe tip de
-              material: așa se vede ce iese dintr-o singură zi de filmare.
+              material: așa se vede ce iese dintr-o colaborare, nu dintr-un
+              clip.
             </p>
             <p className="mt-4 text-[14px] text-dim">
               Toate pornesc cu sunet, la apăsare.
@@ -192,11 +193,11 @@ export function PortfolioScreen() {
           <Reveal variant="scale" className="mx-auto max-w-6xl">
             <div className="glass-2 edge-light relative overflow-hidden px-6 py-14 text-center sm:px-12 sm:py-16">
               <h2 className="display mx-auto max-w-2xl text-[clamp(1.7rem,4.4vw,2.7rem)]">
-                Următoarea zi de filmare poate fi a ta.
+                Următoarea ședință de filmare poate fi a ta.
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-dim">
-                Spune-ne ce vinzi și cui. Îți spunem ce se poate filma
-                într-o zi și cum se distribuie după.
+                Spune-ne ce vinzi și cui. Îți spunem ce merită filmat și cum
+                se distribuie după.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <a

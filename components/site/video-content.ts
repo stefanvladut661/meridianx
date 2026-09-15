@@ -106,8 +106,8 @@ export const SYSTEM = [
   {
     n: "02",
     title: "Producție",
-    lead: "Echipă completă, o singură zi de filmare.",
-    body: "Scenarist, regizor, operatori, lumini, sunet, actori dacă e nevoie. Filmăm modular, pe blocuri: din aceeași ieșire ies mai multe unghiuri și formate, nu un singur material.",
+    lead: "Ședințe de filmare bine puse la punct, cu echipă completă.",
+    body: "Scenarist, regizor, operatori, lumini, sunet, actori dacă e nevoie. Fiecare ședință e planificată pe blocuri, ca să iasă mai multe unghiuri și formate — și ca ziua să fie relaxată, nu pe fugă.",
     outputs: [
       "Scenarii și storyboard",
       "Filmare cu echipă in-house",
@@ -138,64 +138,51 @@ export const SYSTEM = [
   },
 ] as const;
 
-/* ---------- Servicii ---------- */
+/* ---------- Servicii ----------
+   Patru direcții, în ordinea în care se construiesc: întâi cine ești
+   (imaginea), apoi materialul (filmările), apoi unde ajunge (campaniile
+   online), apoi extensia în stradă (outdoor). Fiecare cu buton de
+   ofertă: clientul de video decide repede, deci calea spre formular
+   stă lângă fiecare serviciu. */
 export const SERVICES = [
   {
     key: "brand",
-    title: "Film de brand",
+    title: "Imaginea brandului",
     blurb:
-      "Filmul care spune cine ești în 60 de secunde. Pentru pagina de start, pentru prezentări, pentru momentul în care cineva te caută înainte să sune.",
+      "Cum arăți și cum suni, peste tot la fel. Film de prezentare, fotografie comercială, conținut pentru social și identitatea vizuală care le leagă — ca omul să te recunoască înainte să-ți citească numele.",
     bullets: [
-      "Scenariu și concept",
-      "Filmare cinematică",
-      "Variante scurte pentru social",
-    ],
-  },
-  {
-    key: "performance",
-    title: "Video de performanță",
-    blurb:
-      "Materiale construite ca să vândă, nu ca să impresioneze. Hook în prima secundă, ofertă clară, apel la acțiune. Livrate în serii, ca să ai ce testa.",
-    bullets: [
-      "Hook-uri multiple",
-      "Formate 9:16 și 1:1",
-      "Variante A/B din același shoot",
+      "Film de brand",
+      "Fotografie de produs și spațiu",
+      "Conținut social, lună de lună",
     ],
   },
   {
     key: "ugc",
-    title: "UGC și actori",
+    title: "Filmări UGC și cu actori",
     blurb:
-      "Nu trebuie să apari tu în cadru. Lucrăm cu actori și creatori care sună a om real, nu a reclamă, și care se potrivesc cu publicul tău.",
+      "Nu trebuie să apari tu în cadru. Lucrăm cu creatori și actori care sună a om real, nu a reclamă, potriviți cu publicul tău. Ședințe de filmare bine organizate, cu scenarii gata scrise.",
     bullets: [
-      "Casting pe profil",
+      "Casting pe profilul publicului",
       "Scenarii conversaționale",
-      "Filmare rapidă, volum mare",
+      "Serii de variante pentru testare",
     ],
   },
   {
-    key: "foto",
-    title: "Fotografie comercială",
+    key: "performance",
+    title: "Performance marketing",
     blurb:
-      "Preparate, produse, spații, echipă. Setul complet de imagini care îți susține site-ul, meniul, anunțurile și campaniile.",
-    bullets: ["Produs și preparat", "Spații și arhitectură", "Retuș inclus"],
+      "Meta, TikTok și Google, lucrate ca un singur plan. Structură de cont, targetare, bugete, testare de hook-uri și raport lunar pe înțeles. Contul rămâne pe numele tău.",
+    bullets: ["Meta & TikTok Ads", "Google & YouTube", "Raport lunar clar"],
   },
   {
-    key: "ads",
-    title: "Campanii Meta & TikTok",
+    key: "outdoor",
+    title: "Reclamă outdoor",
     blurb:
-      "Structură de cont, targetare, bugete, testare. Contul rămâne pe numele tău — noi lucrăm în el, nu în locul tău.",
-    bullets: ["Setup complet", "Testare continuă", "Raportare lunară"],
-  },
-  {
-    key: "google",
-    title: "Google & YouTube",
-    blurb:
-      "Prindem cererea care există deja: omul care caută activ ce vinzi. Plus YouTube pentru materialele lungi, acolo unde răbdarea e mai mare.",
+      "Panouri în oraș, pe autostradă, la intrarea în cartier sau în magazin. Ne ocupăm de tot lanțul: alegem locațiile, facem designul, tipărim, montăm și legăm panoul de o ofertă online, ca să știi cine a venit de la el.",
     bullets: [
-      "Search și Performance Max",
-      "Campanii video",
-      "Urmărire conversii",
+      "Alegere locații și plasare",
+      "Design și producție",
+      "Funnel de la panou la ofertă",
     ],
   },
 ] as const;
@@ -234,7 +221,7 @@ export const CREW = [
 export const DELIVERABLES = [
   "Materialele master, în rezoluție completă",
   "Variantele verticale pentru Reels, TikTok și Shorts",
-  "Fotografiile din ziua de filmare",
+  "Fotografiile din ședințele de filmare",
   "Drept de utilizare nelimitat pe canalele tale",
   "Conturile de publicitate pe numele firmei tale",
   "Raport lunar de campanie, în limbaj de om",
@@ -245,7 +232,7 @@ export const STEPS = [
   {
     n: "1",
     title: "Apel de 20 de minute",
-    body: "Ne spui unde se blochează vânzările. Punem întrebări incomode.",
+    body: "Ne spui unde se blochează vânzările. Punem întrebări incomode, dar cu zâmbetul pe buze.",
   },
   {
     n: "2",
@@ -255,7 +242,7 @@ export const STEPS = [
   {
     n: "3",
     title: "Filmăm și lansăm",
-    body: "O zi de producție, apoi campaniile intră live și încep să adune date.",
+    body: "Ședințe de filmare planificate pe blocuri, apoi campaniile intră live și încep să adune date.",
   },
   {
     n: "4",
@@ -264,13 +251,10 @@ export const STEPS = [
   },
 ] as const;
 
-/* ---------- Testimoniale — STRUCTURĂ ILUSTRATIVĂ ----------
-   Nu există încă recenzii reale. Textele de mai jos sunt scrise ca
-   exemplu de formatare și sunt marcate explicit. NU se publică live. */
 /* ---------- Testimoniale ----------
-   Cele două marcate `verificat` sunt primite în scris de la client,
-   citate cuvânt cu cuvânt. Restul sunt redactate de noi pe baza
-   colaborării și trimise clientului spre confirmare — clientul are
+   Trei, nu un perete. Primele două sunt primite în scris de la client
+   și citate cuvânt cu cuvânt. Al treilea e redactat de noi pe baza
+   colaborării și trimis clientului spre confirmare — clientul are
    ultimul cuvânt pe text înainte de publicare. */
 export const TESTIMONIALS: (Placeholderable & {
   quote: string;
@@ -297,60 +281,6 @@ export const TESTIMONIALS: (Placeholderable & {
     who: "Vespera Gastrobar",
     where: "HORECA",
   },
-  {
-    quote:
-      "Au venit la prima discuție cu ideea gândită pe proprietățile noastre, nu cu un portofoliu general. În ziua filmării știa fiecare ce are de făcut și nu ne-au blocat programul de vizionări.",
-    who: "Nona Imobiliare",
-    where: "Imobiliare",
-  },
-  {
-    quote:
-      "E greu să faci un sistem de ventilație să arate a ceva. Au filmat oamenii și munca, nu tubulatura, și abia atunci am înțeles ce vindem de fapt.",
-    who: "VentoClima Pro",
-    where: "Climatizare și ventilații",
-  },
-  {
-    quote:
-      "Pacienților le e frică de scaun, nu de preț. Materialele au vorbit exact despre asta, cu răbdare. Ne-am recunoscut în ele, ceea ce nu ni se mai întâmplase.",
-    who: "Lumident Studio",
-    where: "Clinică dentară",
-  },
-  {
-    quote:
-      "Înainte aveam un om care filma și altul care se ocupa de reclame, iar între ei stăteam noi și traduceam. Acum vine totul dintr-un singur loc și se vede în cât timp pierdem.",
-    who: "Tectona Real Estate",
-    where: "Imobiliare",
-  },
-  {
-    quote:
-      "Hală, acces limitat, oameni care nu au timp de figuri. S-au așezat după programul producției și au terminat în ziua în care au spus că termină.",
-    who: "Termovent Systems",
-    where: "Instalații industriale",
-  },
-  {
-    quote:
-      "Ne-au spus din start ce unghiuri merită testate și ce nu, apoi ne-au arătat datele. Fără povești despre viralitate — ce funcționează rămâne, ce nu, se oprește.",
-    who: "Kora Shop",
-    where: "eCommerce",
-  },
-  {
-    quote:
-      "Produsele noastre se vând cu ochii, iar până acum le fotografiam singuri, cum puteam. Diferența s-a văzut de cum am schimbat materialele.",
-    who: "Artis Home",
-    where: "Mobilier și amenajări",
-  },
-  {
-    quote:
-      "Cel mai mult contează că răspund. Ai o întrebare seara, înainte de o lansare, și primești răspuns de la omul care a lucrat la proiect, nu un număr de tichet.",
-    who: "Altius Imobiliare",
-    where: "Imobiliare",
-  },
-  {
-    quote:
-      "Comunicare simplă, fără termeni pe care trebuie să-i caut. Ne-au arătat clar ce a adus rezervări și ce au tăiat, iar când am cerut o schimbare s-a făcut fără discuții.",
-    who: "Savoria Kitchen",
-    where: "HORECA",
-  },
 ];
 
 /* ---------- Întrebări ---------- */
@@ -361,7 +291,7 @@ export const FAQ = [
   },
   {
     q: "În cât timp văd rezultate?",
-    a: "Primele materiale ajung live în aproximativ două săptămâni de la ziua de filmare. Campaniile au nevoie de câteva săptămâni de trafic ca datele să fie de încredere — abia atunci putem spune ce funcționează și ce tăiem. Cine îți promite vânzări din prima săptămână îți vinde noroc, nu sistem.",
+    a: "Primele materiale ajung live în aproximativ două săptămâni de la filmare. Campaniile au nevoie de câteva săptămâni de trafic ca datele să fie de încredere — abia atunci putem spune ce funcționează și ce tăiem. Cine îți promite vânzări din prima săptămână îți vinde noroc, nu sistem.",
   },
   {
     q: "Trebuie să apar eu în cadru?",
@@ -373,7 +303,7 @@ export const FAQ = [
   },
   {
     q: "Ce primesc, concret, la final?",
-    a: "Materialele master, variantele verticale pentru fiecare platformă, fotografiile din ziua de filmare, drept de utilizare nelimitat pe canalele tale și conturile de publicitate pe numele firmei tale. Dacă într-o zi ne despărțim, pleci cu tot.",
+    a: "Materialele master, variantele verticale pentru fiecare platformă, fotografiile din ședințele de filmare, drept de utilizare nelimitat pe canalele tale și conturile de publicitate pe numele firmei tale. Dacă într-o zi ne despărțim, pleci cu tot.",
   },
   {
     q: "Lucrați în toată țara?",

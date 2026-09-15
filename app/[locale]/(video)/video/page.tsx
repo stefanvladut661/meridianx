@@ -16,9 +16,9 @@ import { VideoScreen } from "@/components/site/pages/video";
  * pornește mișcarea.
  */
 
-const TITLE = "Producție video și campanii care aduc clienți";
+const TITLE = "Social Media Marketing & Conținut Video care vinde";
 const DESCRIPTION =
-  "Filmăm, montăm și distribuim pe Meta, TikTok și Google. Pentru afaceri din HORECA, imobiliare, wellness, auto și eCommerce care vor cereri și comenzi, nu vizualizări.";
+  "Gândim strategia, filmăm și edităm materiale video de impact care îți transformă afacerea într-un brand pe care publicul îl recunoaște și îl cumpără.";
 
 export async function generateMetadata({
   params,

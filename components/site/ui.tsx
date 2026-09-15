@@ -332,57 +332,52 @@ export function Faq({
   );
 }
 
-/* ---------- Peretele de testimoniale (coloane care curg lent) ---------- */
-function TestimonialCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
+/* ---------- Testimoniale (trei carduri, statice) ----------
+   Citatul e primul lucru pe care îl vezi; numele stă dedesubt, ca
+   semnătură. Fără coloane care curg — trei voci se citesc, nu se
+   derulează. */
+function TestimonialCard({
+  t,
+  delay = 0,
+}: {
+  t: (typeof TESTIMONIALS)[number];
+  delay?: number;
+}) {
   return (
-    <article className="glass mb-4 p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <ClientMark name={t.who} size={38} />
-        <span>
-          <span className="block text-sm font-medium text-bone">{t.who}</span>
-          <span className="block text-xs text-dim">{t.where}</span>
+    <Reveal as="li" delay={delay}>
+      <article className="glass flex h-full flex-col p-6 sm:p-7">
+        <span className="display text-[2.6rem] leading-none text-a1" aria-hidden>
+          „
         </span>
-        {t.isPlaceholder && (
-          <span className="ml-auto rounded-full border border-hair px-2 py-0.5 font-md-mono text-[10px] uppercase tracking-widest text-dim">
-            exemplu
+        <p className="mt-2 text-[16px] leading-relaxed text-bone sm:text-[17px]">
+          {t.quote}
+        </p>
+        <div className="mt-auto flex items-center gap-3 pt-6">
+          <ClientMark name={t.who} size={38} />
+          <span>
+            <span className="block text-sm font-medium text-bone">
+              {t.who}
+            </span>
+            <span className="block text-xs text-dim">{t.where}</span>
           </span>
-        )}
-      </div>
-      <p className="text-[15px] leading-relaxed text-dim">{t.quote}</p>
-    </article>
+          {t.isPlaceholder && (
+            <span className="ml-auto rounded-full border border-hair px-2 py-0.5 font-md-mono text-[10px] uppercase tracking-widest text-dim">
+              exemplu
+            </span>
+          )}
+        </div>
+      </article>
+    </Reveal>
   );
 }
 
 export function TestimonialWall() {
-  // Trei coloane egale, oricâte recenzii ar fi în listă.
-  const per = Math.ceil(TESTIMONIALS.length / 3);
-  const cols = [
-    TESTIMONIALS.slice(0, per),
-    TESTIMONIALS.slice(per, per * 2),
-    TESTIMONIALS.slice(per * 2),
-  ];
   return (
-    <div className="fade-y grid max-h-[560px] grid-cols-1 gap-4 overflow-hidden md:grid-cols-2 lg:grid-cols-3">
-      {cols.map((col, ci) => (
-        <div key={ci} className={`marquee-col ${ci === 2 ? "hidden lg:block" : ""} ${ci === 1 ? "hidden md:block" : ""}`}>
-          <div
-            className={`marquee-v ${ci === 1 ? "rev" : ""}`}
-            style={{ ["--dur" as string]: `${38 + ci * 9}s` }}
-          >
-            <div>
-              {col.map((t, i) => (
-                <TestimonialCard key={`a${i}`} t={t} />
-              ))}
-            </div>
-            <div aria-hidden>
-              {col.map((t, i) => (
-                <TestimonialCard key={`b${i}`} t={t} />
-              ))}
-            </div>
-          </div>
-        </div>
+    <ul className="grid gap-4 md:grid-cols-3">
+      {TESTIMONIALS.map((t, i) => (
+        <TestimonialCard key={t.who} t={t} delay={i * 90} />
       ))}
-    </div>
+    </ul>
   );
 }
 

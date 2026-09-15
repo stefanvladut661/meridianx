@@ -28,7 +28,6 @@ import { VideoCard } from "@/components/site/video-player";
 import { GlyphFrame, PROBLEM_GLYPHS } from "@/components/site/problem-glyphs";
 import { FEATURED } from "@/components/site/portfolio-content";
 import {
-  CLIENTS,
   CONTACT,
   PRESENTATION,
   CREW,
@@ -42,18 +41,17 @@ import {
   SYSTEM,
   VERTICALS,
 } from "@/components/site/video-content";
-import { ClientMark } from "@/components/site/client-marks";
 
 /* ============================================================
    V4 · HIBRID (AURORA × SIGNAL)
    Capul de la AURORA: bară plutitoare, hero asimetric pe două
    coloane cu placa media și cardurile de date, bandă de industrii,
    grila de probleme.
-   Corpul de la SIGNAL, de la „Filmarea e o zi" în jos: bento,
-   ciclul lunar, servicii, cifre, testimoniale,
-   întrebări, CTA.
-   Paleta e integral cea din SIGNAL — indigo, Satoshi, aceleași
-   tokens. Se schimbă arhitectura, nu lumea cromatică.
+   Corpul de la SIGNAL: procesul în patru pași, servicii, echipa,
+   trei testimoniale, întrebări, CTA. Bento-ul „Lanțul complet” a
+   ieșit (2026-09): spunea același lucru ca procesul, cu grafică în plus.
+   Paleta e cea din SIGNAL cu accentul mutat pe albastru royal,
+   Satoshi, aceleași tokens.
    ============================================================ */
 
 export function VideoScreen() {
@@ -68,7 +66,6 @@ export function VideoScreen() {
         <Work />
         <Problems />
         {/* --- corpul, de la SIGNAL --- */}
-        <Bento />
         <Process />
         <Services />
         <Numbers />
@@ -252,60 +249,44 @@ function Hero() {
             </span>
           </Reveal>
 
-          <Reveal delay={90}>
-            <h1 className="display mt-7 text-[clamp(2.4rem,6.4vw,4.4rem)]">
-              Conținutul frumos nu plătește salarii.
-              <br />
-              <span className="text-dim">Cel care aduce </span>
+          {/* Titlul intră rând cu rând, iar ultimul cuvânt se rotește:
+              „vinde” e promisiunea, celelalte două spun același lucru
+              din alt unghi. Sub reduced-motion rămâne „vinde”. */}
+          <h1 className="display mt-7 text-[clamp(2.3rem,6vw,4.2rem)]">
+            <Reveal as="div" delay={90}>
+              Social Media Marketing
+            </Reveal>
+            <Reveal as="div" delay={170}>
+              <span className="text-dim">&amp; Conținut Video</span>
+            </Reveal>
+            <Reveal as="div" delay={250}>
+              care{" "}
               <RotatingWord
-                words={["clienți", "rezervări", "cereri", "comenzi"]}
-                className="text-a2"
+                words={["vinde", "convinge", "aduce clienți"]}
+                interval={2600}
+                className="text-a1"
               />
-              <span className="text-dim">, da.</span>
-            </h1>
-          </Reveal>
+            </Reveal>
+          </h1>
 
-          <Reveal delay={160}>
-            <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-dim sm:mt-6 sm:text-[17px]">
-              <span className="sm:hidden">
-                Filmăm, montăm și distribuim. Primești oameni care sună și
-                rezervă, nu un folder cu clipuri.
-              </span>
-              <span className="hidden sm:inline">
-                Filmăm, montăm și distribuim pe Meta, TikTok și Google. Tu nu
-                primești un folder cu clipuri — primești un flux constant de
-                oameni care sună, rezervă și cumpără.
-              </span>
+          <Reveal delay={340}>
+            <p className="mt-6 max-w-lg text-[16px] leading-relaxed text-dim sm:text-[17px]">
+              Gândim strategia, filmăm și edităm materiale video de impact
+              care îți transformă afacerea într-un brand pe care publicul îl
+              recunoaște și îl cumpără.
             </p>
           </Reveal>
 
-          <Reveal delay={230}>
+          <Reveal delay={420}>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a href="#contact" className="btn btn-primary">
-                Cere un plan de creștere
+                Cere ofertă
                 <Icon name="arrowRight" size={17} className="arw" />
               </a>
               <Link href="/video/portofoliu" className="btn btn-ghost">
                 <Icon name="play" size={14} />
                 Vezi portofoliul
               </Link>
-            </div>
-          </Reveal>
-
-          <Reveal delay={300}>
-            <div className="mt-12 max-w-lg border-t border-hair pt-7">
-              <p className="eyebrow mb-4">Au trecut prin sistem</p>
-              <ul className="flex flex-wrap gap-x-5 gap-y-3">
-                {CLIENTS.slice(0, 6).map((c) => (
-                  <li
-                    key={c}
-                    className="flex items-center gap-2 text-[13.5px] text-dim"
-                  >
-                    <ClientMark name={c} size={22} />
-                    {c}
-                  </li>
-                ))}
-              </ul>
             </div>
           </Reveal>
         </div>
@@ -348,11 +329,11 @@ function Hero() {
               <div className="flex items-center gap-2">
                 <span className="rec-dot" aria-hidden />
                 <span className="font-md-mono text-[11px] tracking-wider text-bone">
-                  ZIUA 01 / FILMARE
+                  ȘEDINȚA 01 / FILMARE
                 </span>
               </div>
               <p className="mt-2 text-[13px] leading-snug text-dim">
-                Dintr-o zi ies{" "}
+                Din fiecare ședință ies{" "}
                 <span className="text-bone">mai multe unghiuri</span>, tăiate
                 pentru trei platforme.
               </p>
@@ -444,6 +425,37 @@ function Work() {
   );
 }
 
+/* ---------------- Rând de ofertă ----------------
+   Același buton, repetat după secțiunile în care omul tocmai s-a
+   convins de ceva: probleme, proces, servicii, testimoniale. Clientul
+   de video decide repede — nu-l trimitem să caute butonul din bară.
+   Vocabular constant (CLAUDE.md §4): peste tot „Cere ofertă". */
+function OfferRow({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
+  return (
+    <Reveal
+      className={`mx-auto flex max-w-6xl flex-col items-center justify-center gap-3 sm:flex-row sm:gap-5 ${className}`}
+    >
+      <p className="text-center text-[15px] text-dim sm:text-left">{text}</p>
+      <div className="flex flex-col gap-2.5 sm:flex-row">
+        <a href="#contact" className="btn btn-primary">
+          Cere ofertă
+          <Icon name="arrowRight" size={16} className="arw" />
+        </a>
+        <a href={CONTACT.whatsapp} className="btn btn-ghost">
+          <Icon name="whatsapp" size={16} />
+          WhatsApp
+        </a>
+      </div>
+    </Reveal>
+  );
+}
+
 /* ---------------- Probleme ----------------
    Explicația e înlocuită cu dovada: fiecare simptom are un desen care
    îl arată (problem-glyphs.tsx). Grila se citește în cinci secunde —
@@ -469,11 +481,25 @@ function Problems() {
 
       <ul className="mx-auto mt-10 grid max-w-6xl gap-3 sm:mt-16 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
         {PAINS.map((p, i) => (
-          <Reveal as="li" key={p.tag} delay={i * 70}>
+          <Reveal
+            as="li"
+            key={p.tag}
+            delay={i * 70}
+            /* Al șaselea card („Toate”) e concluzia celorlalte cinci. Pe
+               telefon, unde cardurile stau unul sub altul, lista se scurtează
+               fără el; pe tabletă și desktop e nevoie de el ca grila 3×2 să
+               fie plină. */
+            className={p.tag === "Toate" ? "hidden md:block" : ""}
+          >
             <ProblemCard pain={p} />
           </Reveal>
         ))}
       </ul>
+
+      <OfferRow
+        className="mt-10 sm:mt-14"
+        text="Te-ai recunoscut într-unul? Hai să vorbim despre el."
+      />
     </section>
   );
 }
@@ -532,202 +558,29 @@ function ProblemCard({ pain }: { pain: (typeof PAINS)[number] }) {
   );
 }
 
-/* ---------------- Bento ---------------- */
-function Bento() {
-  return (
-    <section id="sistem" className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <SectionHead
-        eyebrow="Lanțul complet"
-        title={
-          <>
-            Filmarea e o zi.
-            <br />
-            <span className="grad-text-soft">Restul e treaba noastră.</span>
-          </>
-        }
-        lead="Camera e partea vizibilă. Înainte de ea stă decizia ce filmăm, după ea stau campaniile care duc materialul la om. Le ținem pe amândouă, ca să nu ajungi tu dispecer între trei furnizori."
-      />
-
-      <div className="mx-auto mt-16 grid max-w-6xl gap-4 lg:grid-cols-3">
-        {/* 1 — unghiul, decis inainte de camera */}
-        <Reveal className="lg:col-span-1">
-          <article className="glass bleed relative flex h-full min-h-[340px] flex-col justify-end overflow-hidden p-7">
-            <div
-              className="absolute inset-x-7 top-7 grid grid-cols-4 gap-1.5 opacity-90"
-              aria-hidden
-            >
-              {Array.from({ length: 12 }).map((_, i) => (
-                <span
-                  key={i}
-                  className="rounded-[3px] border border-hair"
-                  style={{
-                    aspectRatio: "9 / 16",
-                    background:
-                      i === 5
-                        ? "linear-gradient(180deg, color-mix(in oklab, var(--md-a1) 70%, transparent), transparent)"
-                        : "rgb(255 255 255 / 0.05)",
-                  }}
-                />
-              ))}
-            </div>
-            <div className="relative z-10 mt-auto pt-40">
-              <h3 className="text-[19px] font-medium text-bone">
-                Unghiul, înainte de cameră
-              </h3>
-              <p className="mt-2.5 text-[14.5px] leading-relaxed text-dim">
-                Ce obiecție trebuie spartă, ce întrebare pune omul înainte să
-                cumpere. De acolo iese lista de filmat: același produs, mai
-                multe unghiuri.
-              </p>
-            </div>
-          </article>
-        </Reveal>
-
-        {/* 2 — testare hook-uri */}
-        <Reveal delay={90} className="lg:col-span-2">
-          <article className="glass bleed relative h-full overflow-hidden p-7">
-            <div className="relative z-10 max-w-md">
-              <h3 className="text-[19px] font-medium text-bone">
-                Publicul decide, nu ședința
-              </h3>
-              <p className="mt-2.5 text-[14.5px] leading-relaxed text-dim">
-                Punem în aer unghiurile una lângă alta și ne uităm care aduce
-                cereri. Ce nu se ridică se oprește, fără dezbateri.
-              </p>
-            </div>
-            <ul className="relative z-10 mt-7 space-y-2.5" aria-hidden>
-              {[
-                { t: "Hook: problema", w: 88, on: true },
-                { t: "Hook: prețul", w: 34, on: false },
-                { t: "Hook: dovada", w: 71, on: true },
-              ].map((r, i) => (
-                <li
-                  key={r.t}
-                  className={`flex items-center gap-4 rounded-panel-sm border px-4 py-3 ${
-                    r.on
-                      ? "border-a1/40 bg-a1/10"
-                      : "border-hair bg-white/[0.02]"
-                  }`}
-                  style={{ marginLeft: i * 14 }}
-                >
-                  <span className="text-[14px] text-bone">{r.t}</span>
-                  <span className="ml-auto h-1.5 w-24 overflow-hidden rounded-full bg-white/10 sm:w-40">
-                    <span
-                      className="block h-full rounded-full"
-                      style={{
-                        width: `${r.w}%`,
-                        background: r.on
-                          ? "linear-gradient(90deg,var(--md-a1),var(--md-a2))"
-                          : "rgb(255 255 255 / 0.2)",
-                      }}
-                    />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </article>
-        </Reveal>
-
-        {/* 3 — distribuție */}
-        <Reveal delay={60} className="lg:col-span-2">
-          <article className="glass bleed relative h-full overflow-hidden p-7">
-            <div className="relative z-10 grid gap-7 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div className="max-w-sm">
-                <h3 className="text-[19px] font-medium text-bone">
-                  Trei platforme, un singur plan
-                </h3>
-                <p className="mt-2.5 text-[14.5px] leading-relaxed text-dim">
-                  Meta pentru cerere latentă, TikTok pentru atenție, Google
-                  pentru omul care caută deja ce vinzi. Le pornim, le ținem și
-                  le tăiem noi — tu nu intri în managerul de reclame.
-                </p>
-              </div>
-              <ul className="flex gap-2.5" aria-hidden>
-                {["Meta", "TikTok", "Google"].map((p, i) => (
-                  <li
-                    key={p}
-                    className="glass-2 flex w-[86px] flex-col items-center gap-2 rounded-panel px-3 py-4"
-                    style={{ transform: `translateY(${i === 1 ? -10 : 0}px)` }}
-                  >
-                    <span
-                      className="flex size-9 items-center justify-center rounded-full text-a2"
-                      style={{
-                        background:
-                          i === 1
-                            ? "color-mix(in oklab, var(--md-a1) 30%, transparent)"
-                            : "rgb(255 255 255 / 0.06)",
-                      }}
-                    >
-                      <Icon name="megaphone" size={17} />
-                    </span>
-                    <span className="text-[12.5px] text-bone">{p}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </article>
-        </Reveal>
-
-        {/* 4 — dupa livrare */}
-        <Reveal delay={130}>
-          <article className="glass bleed relative h-full overflow-hidden p-7">
-            <div className="relative z-10">
-              <h3 className="text-[19px] font-medium text-bone">
-                Nu se termină la livrare
-              </h3>
-              <p className="mt-2.5 text-[14.5px] leading-relaxed text-dim">
-                Vezi ce a adus cereri, în ordinea asta. Ce funcționează intră în
-                următorul set de filmări, ce nu, nu mai primește buget.
-              </p>
-              <ul className="mt-6 space-y-3" aria-hidden>
-                {[
-                  "Cereri de ofertă",
-                  "Apeluri primite",
-                  "Rezervări online",
-                  "Acoperire",
-                ].map((k, i) => (
-                  <li
-                    key={k}
-                    className="flex items-center justify-between border-b border-hair pb-2.5 text-[13.5px]"
-                  >
-                    <span className={i === 3 ? "text-dim" : "text-bone"}>
-                      {k}
-                    </span>
-                    <span
-                      className="h-1.5 w-16 rounded-full"
-                      style={{
-                        background:
-                          i === 3
-                            ? "rgb(255 255 255 / 0.15)"
-                            : "linear-gradient(90deg,var(--md-a1),var(--md-a2))",
-                      }}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </article>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- Proces ---------------- */
+/* ---------------- Proces ----------------
+   Mesajul e prezența, nu repetiția: nu „aceiași patru pași la
+   nesfârșit”, ci „rămânem lângă tine după livrare”. Poartă id-ul
+   `sistem` fiindcă aici duce linkul din meniu. */
 function Process() {
   return (
-    <section className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-32">
+    <section
+      id="sistem"
+      className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-32"
+    >
       <SectionHead
-        eyebrow="Ciclul lunar"
-        title="Patru pași, repetați la nesfârșit"
+        eyebrow="Alături de tine"
+        title="Nu livrăm și plecăm"
         lead={
           <>
             <span className="sm:hidden">
-              Luna a treia costă la fel și livrează mai mult.
+              Aceeași echipă, de la prima cafea la raportul lunar.
             </span>
             <span className="hidden sm:inline">
-              Fiecare rotire folosește ce a învățat cea dinainte. De asta luna a
-              treia costă la fel și livrează mai mult.
+              Aceeași echipă rămâne lângă tine după filmare: urmărim
+              campaniile, schimbăm ce obosește și îți spunem lunar ce a adus
+              cereri. Ai o întrebare seara? Răspunde omul care a lucrat la
+              proiect, nu un tichet.
             </span>
           </>
         }
@@ -766,6 +619,11 @@ function Process() {
           </Reveal>
         ))}
       </ol>
+
+      <OfferRow
+        className="mt-10 sm:mt-14"
+        text="Vrei să vezi cum ar arăta pentru afacerea ta?"
+      />
     </section>
   );
 }
@@ -780,18 +638,22 @@ function Services() {
             align="left"
             eyebrow="Servicii"
             title="Ce putem lua pe umerii noștri"
-            lead="Poți începe cu o singură piesă. Dar câștigul mare apare când producția și distribuția stau în aceleași mâini."
+            lead="Imagine, campanii, panouri, filmări. Poți începe cu una singură — dar cel mai bine merg împreună, din aceleași mâini."
             className="!max-w-none"
           />
           <Reveal delay={120}>
             <div className="glass mt-8 p-5">
-              <p className="text-[14px] leading-relaxed text-dim">
-                Prețurile se stabilesc pe proiect, în funcție de zile de
+              <p className="text-[15.5px] leading-relaxed text-dim">
+                Prețurile se stabilesc pe proiect, în funcție de ședințele de
                 filmare, locații, actori și bugetul media administrat.
                 <span className="mt-2 block text-bone">
-                  Primești ofertă fermă după apelul de diagnostic.
+                  Primești ofertă fermă după prima discuție.
                 </span>
               </p>
+              <a href="#contact" className="btn btn-primary mt-5 !w-full">
+                Cere ofertă
+                <Icon name="arrowRight" size={16} className="arw" />
+              </a>
             </div>
           </Reveal>
         </div>
@@ -799,21 +661,36 @@ function Services() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {SERVICES.map((s, i) => (
             <Reveal as="li" key={s.key} delay={i * 55}>
-              <article className="glass lift h-full p-6">
-                <h3 className="text-[18px] font-medium text-bone">{s.title}</h3>
-                <p className="mt-3 text-[14.5px] leading-relaxed text-dim">
+              {/* Textele de aici sunt cu o treaptă mai mari decât în restul
+                  cardurilor: pe telefon, serviciile sunt ce citește omul
+                  cel mai atent înainte să apese „Cere ofertă”. */}
+              <article className="glass lift flex h-full flex-col p-6 sm:p-7">
+                <h3 className="text-[21px] font-medium leading-snug text-bone">
+                  {s.title}
+                </h3>
+                <p className="mt-3 text-[16px] leading-relaxed text-dim">
                   {s.blurb}
                 </p>
                 <ul className="mt-5 flex flex-wrap gap-2">
                   {s.bullets.map((b) => (
                     <li
                       key={b}
-                      className="rounded-full border border-hair px-2.5 py-1 text-[12.5px] text-dim"
+                      className="rounded-full border border-hair px-3 py-1.5 text-[13.5px] text-dim"
                     >
                       {b}
                     </li>
                   ))}
                 </ul>
+                {/* Fiecare serviciu are drumul lui spre formular; textul
+                    din link spune pe ce serviciu se cere oferta. */}
+                <a
+                  href="#contact"
+                  className="mt-auto inline-flex min-h-11 items-center gap-1.5 self-start pt-5 text-[15.5px] font-medium text-a2 transition-colors hover:text-bone"
+                >
+                  Cere ofertă
+                  <Icon name="arrowRight" size={15} className="arw" />
+                  <span className="sr-only"> pentru {s.title}</span>
+                </a>
               </article>
             </Reveal>
           ))}
@@ -904,11 +781,15 @@ function Social() {
             <span className="grad-text-soft">Credeți-i pe ei.</span>
           </>
         }
-        lead="HORECA, imobiliare, instalații, retail. Oameni cu afaceri diferite care au trecut prin același proces."
+        lead="Trei clienți, trei domenii diferite, același mod de lucru."
       />
       <div className="mx-auto mt-14 max-w-6xl">
         <TestimonialWall />
       </div>
+      <OfferRow
+        className="mt-10 sm:mt-14"
+        text="Următorul citat poate fi al tău."
+      />
     </section>
   );
 }

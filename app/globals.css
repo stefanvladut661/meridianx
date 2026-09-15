@@ -261,16 +261,18 @@ body {
 
 
 /* ---------- V4 · HIBRID — capul de la AURORA, corpul de la SIGNAL ----------
-   Paleta rămâne integral cea din v2: același indigo, aceleași fonturi.
-   Diferă doar arhitectura paginii, nu lumea cromatică. */
+   Accent: albastru royal. Vechiul indigo (#5b5bf0) stătea pe granița
+   albastru/violet și, amestecat în oklab cu transparent, ieșea mov pe
+   unele ecrane (P3, OLED). Nuanțele de aici au hue-ul ferm în albastru
+   (~225°), deci rămân albastre indiferent de ecran sau de amestec. */
 [data-scope="video"] {
   --md-bg: #050509;
   --md-bg-2: #0a0a14;
   --md-fg: #f2f3f8;
   --md-muted: #9095ad;
-  --md-a1: #5b5bf0;
-  --md-a2: #a9b0ff;
-  --md-a3: #cfd4ff;
+  --md-a1: #2f5bff;
+  --md-a2: #7c9cff;
+  --md-a3: #c3d3ff;
   --md-on-a1: #ffffff;
   --md-font-display: var(--font-satoshi), "Helvetica Neue", system-ui,
     sans-serif;
