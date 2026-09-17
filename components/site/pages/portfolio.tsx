@@ -88,7 +88,7 @@ function Photo({ photo }: { photo: PortfolioPhoto }) {
       <img
         src={photoSrc(photo)}
         srcSet={photoSrcSet(photo)}
-        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+        sizes="(min-width: 1024px) 33vw, 50vw"
         alt={`${photo.alt} — ${photo.client}`}
         loading="lazy"
         decoding="async"
@@ -164,17 +164,37 @@ export function PortfolioScreen() {
 
               {g.videos.length > 0 && (
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {g.videos.map((v, i) => (
-                    <Reveal as="li" key={v.slug} delay={i * 60}>
-                      <VideoCard item={v} eager={gi === 0 && i === 0} />
-                    </Reveal>
-                  ))}
+                  {g.videos.map((v, i) => {
+                    /* Grila e croită pe verticale (9:16). Un material
+                       orizontal pus într-o singură celulă ar fi o fâșie
+                       de un deget: pe telefon și tabletă ia tot rândul,
+                       iar pe desktop trei celule din patru — trei
+                       verticale puse una lângă alta au aproape exact
+                       înălțimea unui 16:9 de aceeași lățime, deci stă
+                       lângă un card vertical fără gol dedesubt.
+                       `h-full` absoarbe restul de ~3% prin decupaj. */
+                    const wide = v.w > v.h;
+                    return (
+                      <Reveal
+                        as="li"
+                        key={v.slug}
+                        delay={i * 60}
+                        className={wide ? "col-span-2 sm:col-span-3" : ""}
+                      >
+                        <VideoCard
+                          item={v}
+                          eager={gi === 0 && i === 0}
+                          className={wide ? "h-full" : ""}
+                        />
+                      </Reveal>
+                    );
+                  })}
                 </ul>
               )}
 
               {g.photos.length > 0 && (
                 <ul
-                  className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 ${
+                  className={`grid grid-cols-2 gap-3 lg:grid-cols-3 ${
                     g.videos.length ? "mt-3" : ""
                   }`}
                 >

@@ -62,6 +62,25 @@ const VIDEOS = [
     kind: "HORECA",
     featured: 1,
   },
+  /* Singurul material orizontal (16:9, 4K la sursă). Stă înaintea
+     celorlalte de la E45 pentru că ordinea de aici e ordinea din grupul
+     clientului pe /video/portofoliu, iar pagina îl întinde pe mai multe
+     coloane când vede că e lat. Nu e „A": pe prima pagină grila e
+     verticală și l-ar strivi. Livrat direct în public/ pe 2026-09-17,
+     mutat aici; pe mașina fără ffmpeg în PATH s-a comprimat cu ffmpeg-ul
+     din CapCut (h264_amf, 1080p, ~5Mbps) — dacă rulezi scriptul cu
+     --force, iese echivalentul cu libx264. */
+  {
+    file: "Video/E45 Restobar/e45 burger film.mp4",
+    slug: "e45-burger-film",
+    client: "E45 Restobar",
+    title: "Burgerul, de la grătar la farfurie",
+    kind: "HORECA",
+    featured: 0,
+    /* Cadrul de la 25% e chifteaua crudă pe grătar; posterul e farfuria
+       de la final, singurul cadru care spune ce vinde clipul. */
+    posterAt: 23.6,
+  },
   {
     file: "Video/E45 Restobar/A2-Copy of Copy of SALATA CEASER.mp4",
     slug: "e45-salata-caesar",
@@ -332,7 +351,7 @@ for (const v of VIDEOS) {
   }
 
   if (FORCE || !existsSync(poster)) {
-    const at = Math.max(0.1, meta.dur * 0.25);
+    const at = v.posterAt ?? Math.max(0.1, meta.dur * 0.25);
     execFileSync(FFMPEG, [
       "-y", "-v", "error",
       "-ss", String(at),

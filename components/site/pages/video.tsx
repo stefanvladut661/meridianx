@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Mark } from "@/components/site/mark";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
 import { VideoLeadForm } from "@/components/site/video-form";
@@ -81,6 +81,35 @@ export function VideoScreen() {
 }
 
 /* ---------------- Navigație ---------------- */
+
+/* Meniul amestecă ancore (secțiuni de pe pagină) cu o rută (portofoliul).
+   Ancorele merg cu <a>; ruta trebuie să treacă prin <Link>-ul de i18n,
+   altfel pierde prefixul de limbă. Ambele primesc aceleași clase. */
+function NavLink({
+  href,
+  className,
+  onClick,
+  children,
+}: {
+  href: string;
+  className: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className={className} onClick={onClick}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className} onClick={onClick}>
+      {children}
+    </Link>
+  );
+}
+
 function Nav() {
   const [open, setOpen] = useState(false);
   const scrolled = useScrolled(20);
@@ -110,12 +139,12 @@ function Nav() {
         <ul className="mx-auto hidden items-center gap-1 lg:flex">
           {NAV.map((n) => (
             <li key={n.href}>
-              <a
+              <NavLink
                 href={n.href}
                 className="rounded-full px-3.5 py-2 text-sm text-dim transition-colors hover:bg-white/5 hover:text-bone"
               >
                 {n.label}
-              </a>
+              </NavLink>
             </li>
           ))}
         </ul>
@@ -172,13 +201,13 @@ function Nav() {
           <ul>
             {NAV.map((n) => (
               <li key={n.href}>
-                <a
+                <NavLink
                   href={n.href}
                   onClick={() => setOpen(false)}
                   className="block rounded-panel-sm px-4 py-3 text-[15px] text-bone hover:bg-white/5"
                 >
                   {n.label}
-                </a>
+                </NavLink>
               </li>
             ))}
             <li>
@@ -928,12 +957,12 @@ function Foot() {
           <ul className="space-y-2.5">
             {NAV.map((n) => (
               <li key={n.href}>
-                <a
+                <NavLink
                   href={n.href}
                   className="text-[14px] text-dim transition-colors hover:text-bone"
                 >
                   {n.label}
-                </a>
+                </NavLink>
               </li>
             ))}
           </ul>

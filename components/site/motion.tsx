@@ -200,7 +200,13 @@ export function RotatingWord({
   );
 }
 
-/** Glow care urmărește cursorul peste un container. */
+/** Glow care urmărește cursorul peste un container.
+
+    Doar pentru cursor real. Pe touch, `pointermove` se declanșează în
+    timpul scroll-ului (degetul trage pagina) și ar rescrie trei
+    proprietăți CSS pe tot containerul la fiecare mișcare — recalcul de
+    stil pe hero-ul întreg, în mijlocul derulării, pe iPhone. Fără cursor
+    nu există ce urmări, deci nici stratul nu se montează. */
 export function PointerGlow({
   children,
   className = "",
@@ -212,10 +218,19 @@ export function PointerGlow({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+  const [fine, setFine] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const apply = () => setFine(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || reduced) return;
+    if (!el || reduced || !fine) return;
     const onMove = (e: PointerEvent) => {
       const r = el.getBoundingClientRect();
       el.style.setProperty("--mx", `${e.clientX - r.left}px`);
@@ -229,11 +244,11 @@ export function PointerGlow({
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerleave", onLeave);
     };
-  }, [reduced]);
+  }, [reduced, fine]);
 
   return (
     <div ref={ref} className={`relative ${className}`}>
-      {!reduced && (
+      {!reduced && fine && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-500"

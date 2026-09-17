@@ -485,3 +485,12 @@
     transform: none;
   }
 }
+
+/* Pe touch, blur(90px) pe două aurore de 640px e cea mai scumpă
+   operație GPU de pe ecran, iar gradientul de sub e deja moale.
+   Același principiu ca blocul „Bugetul de compozitare” din globals.css. */
+@media (hover: none), (max-width: 767px) {
+  .aurora {
+    filter: none;
+  }
+}

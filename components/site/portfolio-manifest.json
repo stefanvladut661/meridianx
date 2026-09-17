@@ -17,6 +17,22 @@
       "lowRes": false
     },
     {
+      "slug": "e45-burger-film",
+      "client": "E45 Restobar",
+      "title": "Burgerul, de la grătar la farfurie",
+      "kind": "HORECA",
+      "featured": 0,
+      "src": "/video/portofoliu/e45-burger-film.mp4",
+      "poster": "/video/portofoliu/e45-burger-film.webp",
+      "w": 1920,
+      "h": 1080,
+      "seconds": 24,
+      "bytes": 15498422,
+      "audio": true,
+      "published": "2026-09-17T20:06:10.931Z",
+      "lowRes": false
+    },
+    {
       "slug": "e45-salata-caesar",
       "client": "E45 Restobar",
       "title": "Salată Caesar",

@@ -354,8 +354,14 @@ export const CLIENTS = [
    vechi ca paginile să nu-și schimbe importurile. */
 export { VIDEO_CONTACT as CONTACT } from "./contact";
 
+/* Ancorele duc în secțiuni de pe pagină; „/video/portofoliu" e singura
+   rută — Nav o randează cu <Link>, ca să nu piardă prefixul de limbă.
+   Portofoliul stă imediat după „Materiale": e pagina la care duce și
+   secțiunea aceea, dar cineva care vine să vadă lucrări n-ar trebui să
+   deruleze până acolo ca s-o găsească. */
 export const NAV = [
   { href: "#materiale", label: "Materiale" },
+  { href: "/video/portofoliu", label: "Portofoliu" },
   { href: "#sistem", label: "Sistemul" },
   { href: "#servicii", label: "Servicii" },
   { href: "#probleme", label: "Probleme" },
