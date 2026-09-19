@@ -867,18 +867,40 @@ function FinalCta() {
                 cine decide acum, formularul pentru cine citește la 23:40.
                 Nu ascundem a doua sub „alte metode de contact". */}
             <div className="mx-auto mt-11 grid max-w-4xl gap-4 text-left md:grid-cols-2">
-              <div className="glass edge-light flex flex-col justify-between p-7">
-                <div>
-                  <p className="eyebrow">Cel mai rapid</p>
-                  <h3 className="display mt-3 text-[clamp(1.2rem,2.6vw,1.5rem)]">
-                    Scrie-ne acum
-                  </h3>
-                  <p className="mt-2 text-[14px] leading-relaxed text-dim">
-                    Pe WhatsApp răspundem în minute, în program. Trimite-ne
-                    linkul paginii tale și îți spunem pe loc ce am schimba.
-                  </p>
-                </div>
-                <div className="mt-7 flex flex-col gap-2.5">
+              <div className="glass edge-light flex flex-col p-7">
+                <p className="eyebrow">Cel mai rapid</p>
+                <h3 className="display mt-3 text-[clamp(1.2rem,2.6vw,1.5rem)]">
+                  Scrie-ne pe WhatsApp
+                </h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-dim">
+                  Răspundem în minute, în programul de lucru.
+                </p>
+
+                {/* Pașii stau AICI, nu sub carduri: cardul are aceeași
+                    înălțime cu formularul, iar golul de sub un singur
+                    paragraf ar fi rămas gol. Așa spațiul răspunde la
+                    întrebarea următoare — „și după ce scriu?”. */}
+                <ol className="order-3 mt-7 flex flex-1 flex-col justify-around gap-4 border-t border-hair pt-6 md:order-2 md:mb-7">
+                  {STEPS.map((s) => (
+                    <li key={s.n} className="grid grid-cols-[2rem_1fr] gap-x-2">
+                      <span className="font-md-mono pt-0.5 text-[12px] text-a2">
+                        {s.n.padStart(2, "0")}
+                      </span>
+                      <div>
+                        <p className="text-[15px] font-medium text-bone">{s.title}</p>
+                        <p className="mt-0.5 text-[13.5px] leading-relaxed text-dim">
+                          {s.body}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+
+                {/* Pe telefon butoanele stau imediat sub titlu — clientul de
+                    video decide repede și preferă vocea (CLAUDE.md §8) —
+                    iar pașii coboară sub ele. Pe desktop, unde cardul are
+                    înălțimea formularului, butoanele închid cardul jos. */}
+                <div className="order-2 mt-6 flex flex-col gap-2.5 md:order-3 md:mt-0">
                   <a
                     href={CONTACT.whatsapp}
                     className="btn btn-primary !w-full"
@@ -895,22 +917,6 @@ function FinalCta() {
 
               <VideoLeadForm />
             </div>
-
-            <ol className="mx-auto mt-14 grid max-w-3xl gap-6 text-left sm:grid-cols-2 lg:grid-cols-4">
-              {STEPS.map((s) => (
-                <li key={s.n} className="border-t border-hair pt-4">
-                  <span className="font-md-mono text-[12px] text-a2">
-                    PASUL {s.n}
-                  </span>
-                  <p className="mt-2 text-[15px] font-medium text-bone">
-                    {s.title}
-                  </p>
-                  <p className="mt-1 text-[13.5px] leading-relaxed text-dim">
-                    {s.body}
-                  </p>
-                </li>
-              ))}
-            </ol>
           </div>
         </div>
       </Reveal>

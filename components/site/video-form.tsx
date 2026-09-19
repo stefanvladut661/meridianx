@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Icon } from "./ui";
 import { submitLead, useUtmCapture } from "./lead";
 import { CONTACT } from "./video-content";
@@ -13,9 +13,11 @@ import { CONTACT } from "./video-content";
    vizuală, nu ascunse sub „alte metode de contact". Formularul e
    pentru cine sună seara, când n-are cine răspunde.
 
-   Trei câmpuri, niciunul în plus: cum îl cheamă, unde îl sunăm și ce
-   vrea. Fiecare câmp în plus e un om care închide pagina — iar restul
-   aflăm în apelul de douăzeci de minute pe care oricum îl facem.
+   Patru câmpuri, trei obligatorii: cum îl cheamă, unde îl sunăm, ce
+   vrea — și firma, dacă vrea să o spună (pe ea o căutăm înainte de
+   apel). „Vreau altceva” deschide un rând de text în loc să-l trimită
+   pe om să explice la telefon ce n-a găsit în listă. Restul aflăm în
+   apelul de douăzeci de minute pe care oricum îl facem.
    ============================================================ */
 
 const NEEDS = [
@@ -23,37 +25,65 @@ const NEEDS = [
   { id: "ads", label: "Reclame care vând" },
   { id: "campanii", label: "Campanii plătite" },
   { id: "foto", label: "Fotografie" },
-  { id: "nustiu", label: "Nu știu încă" },
+  { id: "altceva", label: "Vreau altceva" },
 ] as const;
 
+const OTHER = "altceva";
+
 type Status = "idle" | "sending" | "sent";
+
+const FIELD =
+  "rounded-panel border border-hair bg-glass px-3.5 py-3 text-[15px] text-bone outline-none transition-colors focus:border-a1";
 
 export function VideoLeadForm() {
   const uid = useId();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
   const [need, setNeed] = useState<string>("");
+  const [other, setOther] = useState("");
   const [honeypot, setHoneypot] = useState("");
+  const otherRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
 
   useUtmCapture();
 
+  // Rândul „ce anume?” apare abia după alegere; cursorul merge direct în
+  // el, ca omul să nu mai facă un click pentru ceva ce tocmai a cerut.
+  useEffect(() => {
+    if (need === OTHER) otherRef.current?.focus();
+  }, [need]);
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (status === "sending") return;
 
+    // Chip-urile sunt radio-uri ascunse vizual, deci validarea nativă ar
+    // arăta balonul de eroare în gol. O spunem noi, în cuvinte.
+    if (!need) {
+      setError("Alege ce te interesează — sau „Vreau altceva”.");
+      return;
+    }
+    const otherText = other.trim();
+    if (need === OTHER && !otherText) {
+      setError("Scrie în două vorbe ce ai nevoie.");
+      otherRef.current?.focus();
+      return;
+    }
+
     setStatus("sending");
     setError(null);
 
-    const chosen = NEEDS.find((n) => n.id === need)?.label;
+    const chosen = need === OTHER ? otherText : NEEDS.find((n) => n.id === need)?.label;
     const result = await submitLead({
       division: "video",
       source: "video-apel",
       name: name.trim(),
       phone: phone.trim(),
-      projectType: chosen,
-      message: chosen ? `Cere apel pentru: ${chosen}` : "Cere apel.",
+      company: company.trim() || undefined,
+      projectType: need === OTHER ? "Altceva" : chosen,
+      message: `Cere apel pentru: ${chosen}`,
       isFunded: false,
       website: honeypot,
     });
@@ -101,12 +131,10 @@ export function VideoLeadForm() {
       className="glass edge-light p-7 text-left"
       aria-labelledby={`${uid}-title`}
     >
-      <h3 id={`${uid}-title`} className="display text-[clamp(1.2rem,2.6vw,1.5rem)]">
-        Sau lasă-ne un număr
+      <p className="eyebrow">Completează · 30 sec</p>
+      <h3 id={`${uid}-title`} className="display mt-3 text-[clamp(1.2rem,2.6vw,1.5rem)]">
+        Te sunăm noi
       </h3>
-      <p className="mt-2 text-[14px] leading-relaxed text-dim">
-        Te sunăm noi. Fără email de prezentare, fără ofertă nesolicitată.
-      </p>
 
       <div className="mt-6 grid gap-4">
         <p className="grid gap-1.5">
@@ -121,7 +149,7 @@ export function VideoLeadForm() {
             minLength={2}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-panel border border-hair bg-glass px-3.5 py-3 text-[15px] text-bone outline-none transition-colors focus:border-a1"
+            className={FIELD}
           />
         </p>
 
@@ -138,12 +166,29 @@ export function VideoLeadForm() {
             pattern="\+?[0-9\s().-]{7,20}"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="rounded-panel border border-hair bg-glass px-3.5 py-3 text-[15px] text-bone outline-none transition-colors focus:border-a1"
+            className={FIELD}
+          />
+        </p>
+
+        <p className="grid gap-1.5">
+          <label htmlFor={`${uid}-company`} className="text-[13px] text-dim">
+            Firmă <span className="text-dim/70">(opțional)</span>
+          </label>
+          <input
+            id={`${uid}-company`}
+            type="text"
+            autoComplete="organization"
+            maxLength={160}
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            className={FIELD}
           />
         </p>
 
         <fieldset className="grid gap-2">
-          <legend className="mb-1 text-[13px] text-dim">Ce te interesează</legend>
+          <legend className="mb-1 text-[13px] text-dim">
+            Ce te interesează <span className="text-a2">*</span>
+          </legend>
           <div className="flex flex-wrap gap-2">
             {NEEDS.map((n) => (
               <label
@@ -166,6 +211,23 @@ export function VideoLeadForm() {
               </label>
             ))}
           </div>
+          {need === OTHER && (
+            <p className="mt-1 grid gap-1.5">
+              <label htmlFor={`${uid}-other`} className="text-[13px] text-dim">
+                Ce anume? <span className="text-a2">*</span>
+              </label>
+              <input
+                ref={otherRef}
+                id={`${uid}-other`}
+                type="text"
+                maxLength={160}
+                placeholder="ex. un video de produs, un clip de recrutare"
+                value={other}
+                onChange={(e) => setOther(e.target.value)}
+                className={`${FIELD} placeholder:text-dim/60`}
+              />
+            </p>
+          )}
         </fieldset>
       </div>
 
@@ -201,6 +263,9 @@ export function VideoLeadForm() {
         {status === "sending" ? "Se trimite…" : "Sună-mă"}
         <Icon name="arrowRight" size={17} className="arw" />
       </button>
+      <p className="mt-3 text-center text-[12.5px] text-dim">
+        În următoarea zi lucrătoare. Fără emailuri de prezentare.
+      </p>
 
       <span aria-live="polite" className="sr-only">
         {status === "sending" ? "Se trimite cererea." : ""}
