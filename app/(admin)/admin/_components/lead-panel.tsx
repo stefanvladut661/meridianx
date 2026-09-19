@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { PanelShell } from "./panel-shell";
 import { StatusControl, NotesControl } from "./lead-forms";
 import {
+  CHIP,
   DIVISION_LABEL,
   DIVISION_TONE,
   FUNDED_TONE,
@@ -76,8 +77,8 @@ function Row({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
     <div className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-hair py-3">
-      <dt className="eyebrow !text-[10px] leading-5">{label}</dt>
-      <dd className="break-words text-[14px] leading-5 text-bone/85">{value}</dd>
+      <dt className="eyebrow !text-[11px] leading-6">{label}</dt>
+      <dd className="break-words text-[15px] leading-6 text-bone/90">{value}</dd>
     </div>
   );
 }
@@ -118,34 +119,22 @@ export function LeadPanel({
   const headingId = `lead-panel-${lead.id}`;
   const tone = DIVISION_TONE[lead.division];
   const action =
-    "btn !min-h-10 !px-4 !py-2 !text-[13.5px] !gap-2";
+    "btn !min-h-11 !px-5 !py-2 !text-[14.5px] !gap-2";
 
   return (
     <PanelShell closeHref={closeHref} labelledBy={headingId}>
       {/* Muchia de sus poartă culoarea lumii din care vine lead-ul —
           e primul lucru pe care îl vezi când se deschide fișa. */}
-      <div aria-hidden className={cn("h-0.5 shrink-0", tone.bar)} />
+      <div aria-hidden className={cn("h-1 shrink-0", tone.bar)} />
 
       <div className="flex items-start justify-between gap-4 border-b border-hair px-6 py-5">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1.5 font-md-mono text-[10px] uppercase tracking-[0.18em] text-dim">
-            <span
-              className={cn(
-                "rounded-full border px-2 py-0.5 tracking-[0.14em]",
-                tone.badge
-              )}
-            >
+          <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 font-md-mono text-[11px] uppercase tracking-[0.16em] text-dim">
+            <span className={cn(CHIP, tone.badge)}>
               {DIVISION_LABEL[lead.division]}
             </span>
             {lead.isFunded ? (
-              <span
-                className={cn(
-                  "rounded-full border px-2 py-0.5 tracking-[0.14em]",
-                  FUNDED_TONE
-                )}
-              >
-                Fonduri
-              </span>
+              <span className={cn(CHIP, FUNDED_TONE)}>Fonduri</span>
             ) : null}
             <span>{formatDateTime(lead.createdAt)}</span>
             {lead.updatedAt !== lead.createdAt ? (
@@ -157,12 +146,12 @@ export function LeadPanel({
           </p>
           <h2
             id={headingId}
-            className="display mt-2.5 truncate text-[1.5rem] text-bone"
+            className="display mt-3 truncate text-[1.75rem] text-bone"
           >
             {lead.name}
           </h2>
           {lead.company ? (
-            <p className="mt-1 truncate text-[14px] text-dim">{lead.company}</p>
+            <p className="mt-1 truncate text-[15px] text-dim">{lead.company}</p>
           ) : null}
         </div>
 
@@ -186,7 +175,7 @@ export function LeadPanel({
                 href={`https://wa.me/${whatsappDigits(lead.phone)}?text=${encodeURIComponent(whatsappMessage(lead))}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={cn(action, "btn-ghost", WHATSAPP_TONE)}
+                className={cn(action, "btn-primary", WHATSAPP_TONE)}
               >
                 <WhatsAppIcon />
                 WhatsApp
@@ -234,7 +223,7 @@ export function LeadPanel({
             <p className="eyebrow">Mesaj</p>
             <p
               className={cn(
-                "mt-3 whitespace-pre-wrap rounded-panel border border-hair bg-glass px-4 py-3.5 text-[14px] leading-relaxed text-bone/90",
+                "mt-3 whitespace-pre-wrap rounded-panel border border-hair bg-glass px-4 py-3.5 text-[15px] leading-relaxed text-bone/90",
                 tone.glow
               )}
             >
@@ -250,11 +239,11 @@ export function LeadPanel({
         <div className="mt-8">
           <p className="eyebrow">Istoric</p>
           {events === null ? (
-            <p className="mt-3 text-[14px] text-dim" aria-live="polite">
+            <p className="mt-3 text-[15px] text-dim" aria-live="polite">
               Se încarcă istoricul…
             </p>
           ) : events.length === 0 ? (
-            <p className="mt-3 text-[14px] text-dim">
+            <p className="mt-3 text-[15px] text-dim">
               Încă nu s-a întâmplat nimic în afară de sosirea lead-ului.
             </p>
           ) : (
@@ -266,13 +255,13 @@ export function LeadPanel({
                     key={event.id}
                     className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-hair py-3"
                   >
-                    <span className="font-md-mono text-[10.5px] tabular-nums leading-5 text-dim">
+                    <span className="font-md-mono text-[11.5px] tabular-nums leading-6 text-dim">
                       {formatDateTime(event.createdAt)}
                     </span>
-                    <span className="text-[14px] leading-5 text-bone/85">
+                    <span className="text-[15px] leading-6 text-bone/90">
                       {EVENT_LABELS[event.type] ?? event.type}
                       {detail ? (
-                        <span className="block font-md-mono text-[10.5px] text-dim">
+                        <span className="block font-md-mono text-[11.5px] text-dim">
                           {detail}
                         </span>
                       ) : null}

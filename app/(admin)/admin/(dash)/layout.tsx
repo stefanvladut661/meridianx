@@ -30,7 +30,7 @@ export default async function AdminDashLayout({
   if (!user) redirect("/admin/login");
 
   return (
-    <div className="min-h-dvh">
+    <div className="relative min-h-dvh">
       <SessionKeeper />
 
       <a href="#continut" className="skip-link">
@@ -68,7 +68,18 @@ export default async function AdminDashLayout({
         </div>
       </header>
 
-      <div id="continut">{children}</div>
+      {/* Lumina celor două lumi, în capul paginii: albastru video la
+          stânga, verde software la dreapta — aceleași blob-uri ca pe
+          site, fără să concureze cu tabelul de sub ele. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[30rem] overflow-hidden [mask-image:linear-gradient(to_bottom,#000_30%,transparent)]"
+      >
+        <div className="aurora-drift absolute left-[-30%] top-[-45%] h-[26rem] w-[34rem] rounded-full bg-[radial-gradient(closest-side,rgb(47_91_255/0.42),rgb(47_91_255/0.12)_45%,transparent_72%)] sm:left-[-10%] sm:h-[34rem] sm:w-[52rem]" />
+        <div className="aurora-drift-2 absolute right-[-30%] top-[-50%] h-[24rem] w-[32rem] rounded-full bg-[radial-gradient(closest-side,rgb(31_181_131/0.36),rgb(31_181_131/0.1)_45%,transparent_72%)] sm:right-[-8%] sm:h-[32rem] sm:w-[48rem]" />
+      </div>
+
+      <div id="continut" className="relative">{children}</div>
     </div>
   );
 }

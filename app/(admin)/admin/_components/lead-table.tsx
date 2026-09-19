@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import {
   DIVISION_LABEL,
   DIVISION_TONE,
+  CHIP,
   FUNDED_TONE,
   STATUS_PILL,
   STATUS_TONE,
@@ -70,10 +71,10 @@ export function LeadTable({
     return (
       <div className="mt-4 flex flex-col items-center rounded-panel-lg border border-dashed border-hair-strong px-6 py-20 text-center">
         <Mark size={28} className="text-dim" />
-        <p className="display mt-6 text-[1.375rem] text-bone">
+        <p className="display mt-6 text-[1.625rem] text-bone">
           {emptyState.title}
         </p>
-        <p className="mt-3 max-w-md text-pretty text-[14px] leading-relaxed text-dim">
+        <p className="mt-3 max-w-md text-pretty text-[15px] leading-relaxed text-dim">
           {emptyState.body}
         </p>
       </div>
@@ -103,7 +104,7 @@ export function LeadTable({
                 <th
                   key={header}
                   scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-md-mono text-[10.5px] font-normal uppercase tracking-[0.18em] text-dim first:pl-5 last:pr-5"
+                  className="whitespace-nowrap px-4 py-3.5 font-md-mono text-[11.5px] font-normal uppercase tracking-[0.16em] text-dim first:pl-6 last:pr-6"
                 >
                   {header}
                 </th>
@@ -121,44 +122,34 @@ export function LeadTable({
                   onClick={(event) => onRowClick(event, lead)}
                   className={cn(
                     "group relative cursor-pointer border-b border-hair transition-colors duration-150 last:border-b-0",
-                    selected ? "bg-white/[0.06]" : "hover:bg-glass"
+                    selected ? tone.tint : "hover:bg-white/[0.045]"
                   )}
                 >
-                  <td className="relative whitespace-nowrap py-3 pl-5 pr-4 font-md-mono text-[12px] tabular-nums text-dim">
+                  <td className="relative whitespace-nowrap py-4 pl-6 pr-4 font-md-mono text-[13px] tabular-nums text-bone/60">
                     {/* Muchia colorată a rândului: lumea din care vine. */}
                     <span
                       aria-hidden
                       className={cn(
-                        "absolute inset-y-2 left-0 w-[3px] rounded-r-full transition-opacity duration-150",
+                        "absolute inset-y-2.5 left-0 w-1 rounded-r-full transition-opacity duration-150",
                         tone.bar,
-                        selected ? "opacity-100" : "opacity-80 group-hover:opacity-100"
+                        selected ? "opacity-100" : "opacity-85 group-hover:opacity-100"
                       )}
                     />
                     {formatDate(lead.createdAt)}
                   </td>
 
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full border px-2 py-0.5 font-md-mono text-[10px] uppercase leading-none tracking-[0.14em]",
-                        tone.badge
-                      )}
-                    >
+                  <td className="whitespace-nowrap px-4 py-4">
+                    <span className={cn(CHIP, tone.badge)}>
                       {DIVISION_LABEL[lead.division]}
                     </span>
                     {lead.isFunded ? (
-                      <span
-                        className={cn(
-                          "ml-1.5 inline-flex items-center rounded-full border px-2 py-0.5 font-md-mono text-[10px] uppercase leading-none tracking-[0.14em]",
-                          FUNDED_TONE
-                        )}
-                      >
+                      <span className={cn(CHIP, "ml-1.5", FUNDED_TONE)}>
                         Fonduri
                       </span>
                     ) : null}
                   </td>
 
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
                     <Link
                       href={hrefFor(lead.id)}
                       scroll={false}
@@ -168,18 +159,18 @@ export function LeadTable({
                         event.preventDefault();
                         onOpen(lead);
                       }}
-                      className="text-[14.5px] font-medium text-bone underline-offset-4 group-hover:underline"
+                      className="text-[16px] font-semibold text-bone underline-offset-4 group-hover:underline"
                     >
                       {lead.name}
                     </Link>
                     {lead.company ? (
-                      <span className="block text-[12.5px] text-dim">
+                      <span className="mt-0.5 block text-[13.5px] text-dim">
                         {lead.company}
                       </span>
                     ) : null}
                   </td>
 
-                  <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-bone/75">
+                  <td className="whitespace-nowrap px-4 py-4 text-[14px] text-bone/80">
                     {lead.phone ? (
                       <span className="block font-md-mono tabular-nums">
                         {lead.phone}
@@ -190,15 +181,15 @@ export function LeadTable({
                     ) : null}
                   </td>
 
-                  <td className="px-4 py-3 text-[12.5px] text-bone/80">
+                  <td className="px-4 py-4 text-[14px] text-bone/85">
                     {lead.budgetRange ?? <span className="text-dim">—</span>}
                   </td>
 
-                  <td className="whitespace-nowrap px-4 py-3 font-md-mono text-[11px] tracking-wide text-dim">
+                  <td className="whitespace-nowrap px-4 py-4 font-md-mono text-[12px] tracking-wide text-dim">
                     {lead.source}
                   </td>
 
-                  <td className="whitespace-nowrap py-3 pl-4 pr-5">
+                  <td className="whitespace-nowrap py-4 pl-4 pr-6">
                     <span className={cn(STATUS_PILL, STATUS_TONE[lead.status])}>
                       {STATUS_LABELS[lead.status]}
                     </span>

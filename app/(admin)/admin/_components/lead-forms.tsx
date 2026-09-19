@@ -21,7 +21,7 @@ const initialState: PanelState = { error: null, ok: null };
 
 function Feedback({ state }: { state: PanelState }) {
   return (
-    <p aria-live="polite" className="mt-2 min-h-5 text-[12.5px] leading-5">
+    <p aria-live="polite" className="mt-2.5 min-h-5 text-[13.5px] leading-5">
       {state.error ? <span className="text-[#ff8a8a]">{state.error}</span> : null}
       {state.ok ? <span className="text-dim">{state.ok}</span> : null}
     </p>
@@ -56,11 +56,11 @@ function StatusButtons({
             className={cn(
               STATUS_PILL,
               "!py-1.5 transition-colors duration-150",
-              /* Statusul curent poartă tonul lui din tabel; celelalte sunt
-                 opțiuni: contur discret, se aprind la hover. */
+              /* Statusul curent e plin, cu tonul lui din tabel; celelalte
+                 sunt opțiuni: fundal discret, se aprind la hover. */
               active
                 ? cn("cursor-default", STATUS_TONE[status])
-                : "border-hair text-dim hover:border-hair-strong hover:text-bone",
+                : "bg-white/[0.06] text-bone/75 hover:bg-white/[0.12] hover:text-bone",
               pending && !active && "opacity-60"
             )}
           >

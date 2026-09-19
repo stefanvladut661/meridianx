@@ -24,7 +24,7 @@ export interface FilterValues {
   to?: string;
 }
 
-const control = `${FIELD} mt-2 h-10`;
+const control = `${FIELD} mt-2 h-11`;
 
 export function Filters({
   values,
@@ -42,7 +42,7 @@ export function Filters({
       className="glass mt-4 flex flex-wrap items-end gap-x-3 gap-y-4 p-4 sm:p-5"
     >
       <div className="min-w-0 flex-1 basis-56">
-        <label htmlFor="f-q" className="eyebrow">
+        <label htmlFor="f-q" className="eyebrow !text-[11.5px]">
           Caută
         </label>
         <input
@@ -56,7 +56,7 @@ export function Filters({
       </div>
 
       <div className="min-w-0 grow basis-36 sm:grow-0">
-        <label htmlFor="f-division" className="eyebrow">
+        <label htmlFor="f-division" className="eyebrow !text-[11.5px]">
           Divizie
         </label>
         <select
@@ -75,7 +75,7 @@ export function Filters({
       </div>
 
       <div className="min-w-0 grow basis-40 sm:grow-0">
-        <label htmlFor="f-status" className="eyebrow">
+        <label htmlFor="f-status" className="eyebrow !text-[11.5px]">
           Status
         </label>
         <select
@@ -94,7 +94,7 @@ export function Filters({
       </div>
 
       <div className="min-w-0 grow basis-40 sm:grow-0">
-        <label htmlFor="f-from" className="eyebrow">
+        <label htmlFor="f-from" className="eyebrow !text-[11.5px]">
           De la
         </label>
         <input
@@ -107,7 +107,7 @@ export function Filters({
       </div>
 
       <div className="min-w-0 grow basis-40 sm:grow-0">
-        <label htmlFor="f-to" className="eyebrow">
+        <label htmlFor="f-to" className="eyebrow !text-[11.5px]">
           Până la
         </label>
         <input
@@ -122,7 +122,7 @@ export function Filters({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
-          className="btn btn-light !min-h-10 !px-5 !py-2 !text-[13.5px]"
+          className="btn btn-light !min-h-11 !px-6 !py-2 !text-[14.5px]"
         >
           Filtrează
         </button>
@@ -130,7 +130,7 @@ export function Filters({
         {hasFilters ? (
           <Link
             href="/admin"
-            className="text-[13px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
+            className="text-[14px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
           >
             Șterge filtrele
           </Link>
@@ -139,7 +139,7 @@ export function Filters({
 
       <a
         href={exportHref}
-        className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[12.5px] sm:ml-auto"
+        className="btn btn-ghost !min-h-11 !px-5 !py-2 !text-[14px] sm:ml-auto"
       >
         Export CSV
         <span className="arw" aria-hidden>

@@ -119,13 +119,13 @@ export default async function AdminDashboardPage({
     "btn btn-ghost !min-h-9 !px-4 !py-2 !text-[12.5px]";
 
   return (
-    <main className="mx-auto max-w-[1400px] px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
+    <main className="relative mx-auto max-w-[1400px] px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
       <LiveRefresh />
 
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div>
           <p className="eyebrow">Panou</p>
-          <h1 className="display mt-2 text-[2rem] text-bone sm:text-[2.5rem]">
+          <h1 className="display mt-2 text-[2.5rem] text-bone sm:text-[3rem]">
             Lead-uri
           </h1>
         </div>
@@ -133,11 +133,11 @@ export default async function AdminDashboardPage({
         <div className="flex flex-wrap items-center gap-3">
           {/* Punctul pulsează cât timp lista se reîmprospătează singură
               (LiveRefresh, la 20 s) — e o citire, nu un ornament. */}
-          <span className="pill !py-1.5 !text-[12px] text-dim">
+          <span className="pill !py-2 !text-[13px] text-bone/80">
             <span className="rec-dot" aria-hidden />
             Live · la 20 s
           </span>
-          <p className="font-md-mono text-[11px] tabular-nums tracking-[0.16em] text-dim">
+          <p className="font-md-mono text-[12.5px] tabular-nums tracking-[0.12em] text-dim">
             {total === 0
               ? "niciun rezultat"
               : `${(page - 1) * perPage + 1}–${Math.min(page * perPage, total)} din ${total}`}

@@ -6,14 +6,24 @@ import { DIVISION_TONE } from "./tone";
 /**
  * Indicatorii din capul dashboard-ului (FAZA 6).
  *
- * Intenționat NU sunt carduri separate cu iconiță și gradient: e o
- * unealtă pe care omul o deschide de zece ori pe zi. O singură bandă
- * împărțită de hairline-uri — aceeași grilă tehnică de pe site — se
- * scanează dintr-o privire și nu fură spațiu de la tabel.
+ * O singură bandă împărțită de hairline-uri — nu cinci carduri cu
+ * iconiță — dar fiecare citire are propria pată de lumină: albă pentru
+ * săptămâna curentă (cea la care te uiți primul), albastru → verde
+ * pentru împărțirea pe divizii, chihlimbar pentru fonduri. Culoarea
+ * spune ce e cifra înainte să citești eticheta.
  *
  * Delta față de săptămâna trecută e informație, nu decor: fără ea, „7
  * lead-uri" nu spune dacă e bine sau rău.
  */
+
+type Tone = "week" | "split" | "funded";
+
+const TONE_BG: Record<Tone, string> = {
+  week: "bg-[radial-gradient(120%_140%_at_0%_0%,rgb(255_255_255/0.16),transparent_60%)]",
+  split:
+    "bg-[linear-gradient(110deg,rgb(47_91_255/0.28),rgb(47_91_255/0.06)_45%,rgb(31_181_131/0.06)_55%,rgb(31_181_131/0.28))]",
+  funded: "bg-[radial-gradient(120%_140%_at_0%_0%,rgb(240_180_41/0.28),transparent_60%)]",
+};
 
 function Reading({
   label,
@@ -25,24 +35,28 @@ function Reading({
   label: string;
   value: ReactNode;
   hint?: string;
-  tone?: "bright" | "funded";
+  tone?: Tone;
   className?: string;
 }) {
   return (
-    <div className={cn("min-w-0 bg-char px-5 py-4", className)}>
-      <p className="eyebrow">{label}</p>
+    <div
+      className={cn(
+        "min-w-0 bg-char px-5 py-5",
+        tone && TONE_BG[tone],
+        className
+      )}
+    >
+      <p className="eyebrow !text-[11.5px]">{label}</p>
       <p
         className={cn(
-          "mt-2 font-md-display text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums",
-          tone === "bright" && "text-bone",
-          tone === "funded" && "text-[#f0c060]",
-          !tone && "text-bone/85"
+          "mt-2.5 font-md-display text-[2.25rem] font-semibold leading-none tracking-tight tabular-nums",
+          tone === "funded" ? "text-[#f0b429]" : "text-bone"
         )}
       >
         {value}
       </p>
       {hint ? (
-        <p className="mt-2 text-[12px] leading-snug text-dim">{hint}</p>
+        <p className="mt-2.5 text-[13.5px] leading-snug text-bone/60">{hint}</p>
       ) : null}
     </div>
   );
@@ -69,7 +83,7 @@ export function StatsStrip({ stats }: { stats: LeadStats }) {
         label="Săptămâna asta"
         value={String(stats.thisWeek)}
         hint={deltaLabel}
-        tone="bright"
+        tone="week"
         /* Pe telefon, citirea săptămânii ia un rând întreg: e cea la
            care te uiți primul, iar celelalte patru cad exact 2×2. */
         className="col-span-2 md:col-span-1"
@@ -84,11 +98,12 @@ export function StatsStrip({ stats }: { stats: LeadStats }) {
         value={
           <>
             <span className={DIVISION_TONE.video.text}>{stats.video}</span>
-            <span className="mx-1.5 text-dim">/</span>
+            <span className="mx-2 text-bone/30">/</span>
             <span className={DIVISION_TONE.software.text}>{stats.software}</span>
           </>
         }
         hint="albastru video · verde software"
+        tone="split"
       />
       <Reading
         label="Fonduri"
