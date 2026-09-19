@@ -23,6 +23,25 @@ export const CHIP_TONE = {
   pending: "bg-[#f0b429] text-[#2a1a00]",
 } as const;
 
+/** Butoanele mici din liste și fișe (faza 3): aceeași pilulă ca în
+    antet, la scara rândului. `disabled` nu prinde hover și se estompează. */
+export const BTN_SM =
+  "btn btn-ghost !min-h-8 !px-3.5 !py-1.5 !text-[12.5px] disabled:pointer-events-none disabled:opacity-60";
+export const BTN_SM_LIGHT =
+  "btn btn-light !min-h-8 !px-3.5 !py-1.5 !text-[12.5px] disabled:pointer-events-none disabled:opacity-60";
+
+/** Eticheta mono a tipului unei intrări — nu chip plin: tipul e o
+    coordonată, nu o stare. */
+export const KIND_TAG = "font-md-mono text-[10.5px] uppercase tracking-[0.18em] text-dim";
+
+/** `3` + `intrare`/`intrări` → „3 intrări"; de la 20 în sus româna cere
+    „de": „20 de intrări". */
+export function countNoun(count: number, singular: string, plural: string): string {
+  if (count === 1) return `1 ${singular}`;
+  if (count < 20) return `${count} ${plural}`;
+  return `${count} de ${plural}`;
+}
+
 /** Fișa centrală: aceeași ca la login-ul de admin — un singur obiect pe
     ecran, marca sus, restul dedesubt. `wide` pentru codul de recuperare,
     care are nevoie de loc pentru 8 grupuri. */

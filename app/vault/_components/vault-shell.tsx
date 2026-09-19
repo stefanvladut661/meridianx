@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { Mark } from "@/components/site/mark";
 import { useVault } from "./vault-provider";
+import { useVaultData } from "./use-vault-data";
 import { MembersPanel } from "./members-panel";
+import { EntriesWorkspace } from "./entries-workspace";
 import { formatCountdown } from "./ui";
 
 /**
- * Vault-ul deblocat (feat/vault, faza 2).
+ * Vault-ul deblocat (feat/vault, fazele 2–3).
  *
  * Aceeași bară ca în admin: marcă, eticheta mono a locului, acțiunile la
  * dreapta. În plus, un singur lucru pe care admin-ul nu-l are și vault-ul
@@ -15,11 +17,21 @@ import { formatCountdown } from "./ui";
  * reală — cheile stau în memorie exact atâta timp — și se resetează la
  * orice atingere.
  *
- * Conținutul fazei 2 e administrarea membrilor. Lista intrărilor (faza
- * 3) intră sub același antet.
+ * Două vederi, comutate din antet: intrările (faza 3, vederea de zi cu
+ * zi) și membrii (faza 2). Cererile de aprobare în așteptare se văd pe
+ * comutator, ca fondatorul să le observe fără să deschidă vederea.
+ * Datele vin dintr-un singur loc (`useVaultData`), ca cele două vederi
+ * să nu se contrazică.
  */
+
+type View = "entries" | "members";
+
 export function VaultShell() {
   const vault = useVault();
+  const data = useVaultData();
+  const [view, setView] = useState<View>("entries");
+
+  const pendingCount = data.members?.filter((row) => !row.wrappedDek).length ?? 0;
 
   return (
     <div className="relative min-h-dvh">
@@ -28,8 +40,8 @@ export function VaultShell() {
       </a>
 
       <header className="sticky top-0 z-30 border-b border-hair bg-ink/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-4 px-5 sm:px-8">
-          <span className="flex items-center gap-2.5 text-bone">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-3 px-5 sm:h-16 sm:flex-nowrap sm:gap-x-4 sm:px-8">
+          <span className="flex h-16 items-center gap-2.5 text-bone">
             <Mark size={22} />
             <span className="font-md-display text-[15px] font-semibold tracking-[0.2em]">
               MERIDIAN
@@ -39,8 +51,30 @@ export function VaultShell() {
           <span aria-hidden className="hidden h-4 w-px bg-hair-strong sm:block" />
           <span className="eyebrow hidden sm:inline">Vault</span>
 
-          <div className="ml-auto flex items-center gap-4">
-            <span className="hidden font-md-mono text-[11px] tracking-wide text-dim md:inline">
+          {/* Pe telefon, comutatorul coboară pe rândul al doilea — la 360 nu
+              încap marca, două vederi, ceasul și „Blochează” pe un singur rând. */}
+          <nav
+            aria-label="Vederi"
+            className="order-last flex basis-full items-center gap-1 pb-2.5 sm:order-none sm:ml-2 sm:basis-auto sm:pb-0"
+          >
+            <ViewButton active={view === "entries"} onClick={() => setView("entries")}>
+              Intrări
+            </ViewButton>
+            <ViewButton active={view === "members"} onClick={() => setView("members")}>
+              Membri
+              {pendingCount > 0 ? (
+                <span
+                  className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[#f0b429] px-1.5 py-0.5 font-md-mono text-[10.5px] font-semibold leading-none text-[#2a1a00]"
+                  aria-label={`${pendingCount} în așteptare`}
+                >
+                  {pendingCount}
+                </span>
+              ) : null}
+            </ViewButton>
+          </nav>
+
+          <div className="ml-auto flex h-16 items-center gap-3 sm:gap-4">
+            <span className="hidden font-md-mono text-[11px] tracking-wide text-dim lg:inline">
               {vault.member?.email}
             </span>
             <AutoLockClock />
@@ -65,20 +99,61 @@ export function VaultShell() {
       </div>
 
       <main id="continut" className="relative mx-auto max-w-[1200px] px-5 py-10 sm:px-8 sm:py-12">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="eyebrow !text-[11.5px]">Deblocat · cheile stau doar în fila asta</p>
-            <h1 className="display mt-2 text-[2.25rem] text-bone sm:text-[2.75rem]">Membri și recuperare</h1>
-          </div>
-          <p className="max-w-[26rem] text-[14.5px] leading-relaxed text-dim">
-            Lista intrărilor vine în faza 3. Până atunci, de aici se aprobă cererile noi și se
-            ține în viață codul de recuperare.
-          </p>
-        </div>
-
-        <MembersPanel />
+        {view === "entries" ? (
+          <EntriesWorkspace
+            snapshot={data.snapshot}
+            members={data.members}
+            loading={data.loading}
+            error={data.error}
+            onReload={() => void data.reload()}
+          />
+        ) : (
+          <>
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="eyebrow !text-[11.5px]">Deblocat · cheile stau doar în fila asta</p>
+                <h1 className="display mt-2 text-[2.25rem] text-bone sm:text-[2.75rem]">
+                  Membri și recuperare
+                </h1>
+              </div>
+              <p className="max-w-[26rem] text-[14.5px] leading-relaxed text-dim">
+                De aici se aprobă cererile noi și se ține în viață codul de recuperare. Un membru
+                aprobat vede tot ce e în vault, de la următoarea deblocare.
+              </p>
+            </div>
+            <MembersPanel
+              members={data.members}
+              meta={data.meta}
+              loadError={data.error}
+              reload={data.reload}
+            />
+          </>
+        )}
       </main>
     </div>
+  );
+}
+
+function ViewButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={`inline-flex min-h-9 items-center rounded-full px-3.5 text-[13px] font-medium transition-colors duration-150 ${
+        active ? "bg-bone text-ink" : "text-dim hover:bg-white/[0.06] hover:text-bone"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

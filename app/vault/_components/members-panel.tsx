@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   approveMember,
-  fetchMeta,
-  listMembers,
   removeMember,
   rotateRecoveryCode,
   VaultDataError,
@@ -35,32 +33,28 @@ function describe(error: unknown): string {
   return "Operația a eșuat dintr-un motiv necunoscut. Reîncarcă lista și încearcă din nou.";
 }
 
-export function MembersPanel() {
+export function MembersPanel({
+  members,
+  meta,
+  loadError,
+  reload,
+}: {
+  /** Din `useVaultData`, în shell — aceeași listă ca eticheta din antet. */
+  members: VaultMember[] | null;
+  meta: VaultMeta | null;
+  loadError: string | null;
+  reload: () => Promise<void>;
+}) {
   const vault = useVault();
   const { supabase, keys, member: self } = vault;
 
-  const [members, setMembers] = useState<VaultMember[] | null>(null);
-  const [meta, setMeta] = useState<VaultMeta | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [freshCode, setFreshCode] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
-    if (!supabase) return;
-    try {
-      const [rows, metaRow] = await Promise.all([listMembers(supabase), fetchMeta(supabase)]);
-      setMembers(rows);
-      setMeta(metaRow);
-      setError(null);
-    } catch (cause) {
-      setError(describe(cause));
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
+  const error = actionError ?? loadError;
+  const setError = setActionError;
 
   async function approve(target: VaultMember) {
     if (!supabase || !keys) return;
