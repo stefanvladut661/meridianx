@@ -3,12 +3,12 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { signIn, type LoginState } from "../login/actions";
+import { FIELD } from "./tone";
 
 /**
  * Formularul de autentificare (FAZA 6).
- * Nu folosește primitivele din `components/ui/` pentru câmpuri complexe —
- * are nevoie doar de un input și un buton, iar zona de admin e o unealtă,
- * nu o pagină de marketing. Focus vizibil vine din `:focus-visible` global.
+ * Doar un input și un buton, în gramatica site-ului (`.btn`, câmpuri cu
+ * hairline). Focus vizibil vine din `:focus-visible` global.
  */
 
 const initialState: LoginState = { error: null };
@@ -19,16 +19,17 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-md bg-s-signal px-5 font-body font-semibold text-s-ink transition-colors duration-150 hover:bg-[#6b93ff] disabled:pointer-events-none disabled:opacity-60"
+      className="btn btn-light mt-7 w-full !text-[14px] disabled:pointer-events-none disabled:opacity-60"
     >
       {pending ? "Se verifică…" : "Intră în panou"}
+      {!pending ? (
+        <span className="arw" aria-hidden>
+          →
+        </span>
+      ) : null}
     </button>
   );
 }
-
-const fieldClasses =
-  "mt-1.5 block h-11 w-full rounded-md border border-line bg-bg px-3 text-fg " +
-  "placeholder:text-muted focus:border-accent focus:outline-none";
 
 export function LoginForm() {
   const [state, formAction] = useActionState(signIn, initialState);
@@ -36,10 +37,7 @@ export function LoginForm() {
   return (
     <form action={formAction} className="mt-8" noValidate>
       <div>
-        <label
-          htmlFor="admin-email"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted"
-        >
+        <label htmlFor="admin-email" className="eyebrow">
           Email
         </label>
         <input
@@ -48,15 +46,12 @@ export function LoginForm() {
           type="email"
           autoComplete="username"
           required
-          className={fieldClasses}
+          className={`${FIELD} mt-2 h-11`}
         />
       </div>
 
       <div className="mt-4">
-        <label
-          htmlFor="admin-password"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted"
-        >
+        <label htmlFor="admin-password" className="eyebrow">
           Parolă
         </label>
         <input
@@ -65,14 +60,14 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
-          className={fieldClasses}
+          className={`${FIELD} mt-2 h-11`}
         />
       </div>
 
       {/* aria-live: eroarea apare fără reîncărcare, deci trebuie anunțată. */}
       <div aria-live="polite">
         {state.error ? (
-          <p className="mt-4 border-l-2 border-accent-2 py-1 pl-3 text-sm leading-relaxed text-fg">
+          <p className="mt-4 border-l-2 border-bone/60 py-1 pl-3 text-[14px] leading-relaxed text-bone">
             {state.error}
           </p>
         ) : null}

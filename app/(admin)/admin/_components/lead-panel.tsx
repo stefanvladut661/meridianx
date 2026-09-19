@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Lead, LeadEvent } from "@/lib/supabase/types";
+import { cn } from "@/lib/utils";
 import { PanelShell } from "./panel-shell";
 import { StatusControl, NotesControl } from "./lead-forms";
+import { FUNDED_TONE } from "./tone";
 
 /**
  * Panoul de detaliu (FAZA 6). Se deschide lateral, prin `?lead=<id>`.
@@ -45,11 +47,9 @@ function relativeDays(iso: string): string {
 function Row({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
-    <div className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-line py-2.5">
-      <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
-        {label}
-      </dt>
-      <dd className="break-words text-sm text-fg/85">{value}</dd>
+    <div className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-hair py-3">
+      <dt className="eyebrow !text-[10px] leading-5">{label}</dt>
+      <dd className="break-words text-[14px] leading-5 text-bone/85">{value}</dd>
     </div>
   );
 }
@@ -90,9 +90,9 @@ export function LeadPanel({
 
   return (
     <PanelShell closeHref={closeHref} labelledBy={headingId}>
-      <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+      <div className="flex items-start justify-between gap-4 border-b border-hair px-6 py-5">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+          <p className="eyebrow flex flex-wrap items-center gap-x-2 gap-y-1 !text-[10px]">
             <span>{lead.division === "video" ? "Video" : "Software"}</span>
             <span aria-hidden="true">·</span>
             <span>{formatDateTime(lead.createdAt)}</span>
@@ -103,39 +103,44 @@ export function LeadPanel({
               </>
             ) : null}
             {lead.isFunded ? (
-              <span className="rounded-xs border border-accent-2/50 px-1.5 py-0.5 text-accent-2">
+              <span
+                className={cn(
+                  "rounded-full border px-2 py-0.5 tracking-[0.14em]",
+                  FUNDED_TONE
+                )}
+              >
                 Fonduri
               </span>
             ) : null}
           </p>
           <h2
             id={headingId}
-            className="mt-1.5 truncate font-display text-xl font-semibold tracking-tight"
+            className="display mt-2 truncate text-[1.5rem] text-bone"
           >
             {lead.name}
           </h2>
           {lead.company ? (
-            <p className="truncate text-sm text-muted">{lead.company}</p>
+            <p className="mt-1 truncate text-[14px] text-dim">{lead.company}</p>
           ) : null}
         </div>
 
         <Link
           href={closeHref}
           scroll={false}
-          className="shrink-0 rounded-sm border border-line px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-fg/70 hover:border-muted hover:text-fg"
+          className="btn btn-ghost shrink-0 !min-h-9 !px-4 !py-2 !text-[12.5px]"
         >
           Închide
         </Link>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-5">
+      <div className="flex-1 overflow-y-auto px-6 py-6">
         {/* Acțiunea rapidă stă sus: de obicei deschizi panoul ca să suni. */}
         {lead.phone || lead.email ? (
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div className="mb-7 flex flex-wrap gap-2.5">
             {lead.phone ? (
               <a
                 href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
-                className="inline-flex h-9 items-center rounded-sm bg-s-signal px-4 text-sm font-semibold text-s-ink transition-colors duration-150 hover:bg-[#6b93ff]"
+                className="btn btn-light !min-h-10 !px-5 !py-2 !text-[13.5px]"
               >
                 Sună {lead.phone}
               </a>
@@ -143,7 +148,7 @@ export function LeadPanel({
             {lead.email ? (
               <a
                 href={`mailto:${lead.email}`}
-                className="inline-flex h-9 items-center rounded-sm border border-line px-4 text-sm text-fg transition-colors duration-150 hover:border-muted"
+                className="btn btn-ghost !min-h-10 !px-5 !py-2 !text-[13.5px]"
               >
                 Scrie email
               </a>
@@ -153,7 +158,7 @@ export function LeadPanel({
 
         <StatusControl leadId={lead.id} current={lead.status} />
 
-        <dl className="mt-8 border-t border-line">
+        <dl className="mt-8 border-t border-hair">
           <Row label="Telefon" value={lead.phone} />
           <Row label="Email" value={lead.email} />
           <Row label="Tip proiect" value={lead.projectType} />
@@ -168,11 +173,9 @@ export function LeadPanel({
         </dl>
 
         {lead.message ? (
-          <div className="mt-6">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-              Mesaj
-            </p>
-            <p className="mt-2 whitespace-pre-wrap border-l-2 border-accent pl-4 text-sm leading-relaxed text-fg/85">
+          <div className="mt-7">
+            <p className="eyebrow">Mesaj</p>
+            <p className="mt-3 whitespace-pre-wrap rounded-panel border border-hair bg-glass px-4 py-3.5 text-[14px] leading-relaxed text-bone/90">
               {lead.message}
             </p>
           </div>
@@ -183,29 +186,27 @@ export function LeadPanel({
         </div>
 
         <div className="mt-8">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-            Istoric
-          </p>
+          <p className="eyebrow">Istoric</p>
           {events.length === 0 ? (
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-3 text-[14px] text-dim">
               Încă nu s-a întâmplat nimic în afară de sosirea lead-ului.
             </p>
           ) : (
-            <ol className="mt-3 border-t border-line">
+            <ol className="mt-3 border-t border-hair">
               {events.map((event) => {
                 const detail = describeEvent(event);
                 return (
                   <li
                     key={event.id}
-                    className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-line py-2.5"
+                    className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-hair py-3"
                   >
-                    <span className="font-mono text-[10px] tabular-nums leading-5 text-muted">
+                    <span className="font-md-mono text-[10.5px] tabular-nums leading-5 text-dim">
                       {formatDateTime(event.createdAt)}
                     </span>
-                    <span className="text-sm leading-5 text-fg/85">
+                    <span className="text-[14px] leading-5 text-bone/85">
                       {EVENT_LABELS[event.type] ?? event.type}
                       {detail ? (
-                        <span className="block font-mono text-[10px] text-muted">
+                        <span className="block font-md-mono text-[10.5px] text-dim">
                           {detail}
                         </span>
                       ) : null}

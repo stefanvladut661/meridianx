@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 /**
@@ -10,9 +11,13 @@ import { useRouter } from "next/navigation";
  * se reîncarcă corect). Componenta asta adaugă doar ce nu se poate face pe
  * server, dar e obligatoriu la un panou care acoperă pagina:
  * - Escape închide,
+ * - clic pe vălul din spate închide,
  * - focusul intră în panou la deschidere,
  * - focusul e capturat înăuntru cât e deschis,
  * - la închidere focusul se întoarce unde era (quality floor §7).
+ *
+ * Pe ecrane mari panoul e o fișă desprinsă de margine, cu raza site-ului;
+ * pe telefon acoperă tot, ca o pagină.
  */
 
 const FOCUSABLE =
@@ -75,14 +80,27 @@ export function PanelShell({
   }, [router, closeHref]);
 
   return (
-    <div
-      ref={panelRef}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={labelledBy}
-      className="fixed inset-y-0 right-0 z-(--z-modal) flex w-full max-w-xl flex-col border-l border-line bg-bg shadow-overlay"
-    >
-      {children}
+    <div className="fixed inset-0 z-50">
+      {/* Vălul: un link real, ca închiderea prin clic în afară să meargă
+          și fără JavaScript. Tastatura nu ajunge la el (tabIndex -1) —
+          are Escape și butonul „Închide". */}
+      <Link
+        href={closeHref}
+        scroll={false}
+        tabIndex={-1}
+        aria-hidden
+        className="absolute inset-0 bg-ink/70"
+      />
+
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={labelledBy}
+        className="absolute inset-y-0 right-0 flex w-full max-w-xl flex-col border-l border-hair bg-char shadow-[0_24px_80px_-20px_rgb(0_0_0/0.8)] sm:inset-y-3 sm:right-3 sm:rounded-panel-lg sm:border"
+      >
+        {children}
+      </div>
     </div>
   );
 }

@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 /**
  * Indicatorii din capul dashboard-ului (FAZA 6).
  *
- * Intenționat NU sunt patru carduri mari cu gradient: e o unealtă pe care
- * omul o deschide de zece ori pe zi, nu o pagină de prezentare. O bandă de
- * citiri, densă, în mono — se scanează dintr-o privire și nu fură spațiu
- * de la tabel, care e lucrul important.
+ * Intenționat NU sunt carduri separate cu iconiță și gradient: e o
+ * unealtă pe care omul o deschide de zece ori pe zi. O singură bandă
+ * împărțită de hairline-uri — aceeași grilă tehnică de pe site — se
+ * scanează dintr-o privire și nu fură spațiu de la tabel.
  *
  * Delta față de săptămâna trecută e informație, nu decor: fără ea, „7
  * lead-uri" nu spune dacă e bine sau rău.
@@ -17,32 +17,30 @@ function Reading({
   label,
   value,
   hint,
-  accent,
+  tone,
+  className,
 }: {
   label: string;
   value: string;
   hint?: string;
-  accent?: "signal" | "data";
+  tone?: "bright" | "funded";
+  className?: string;
 }) {
   return (
-    <div className="min-w-0 border-l border-line px-4 py-3 first:border-l-0 first:pl-0">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-        {label}
-      </p>
+    <div className={cn("min-w-0 bg-char px-5 py-4", className)}>
+      <p className="eyebrow">{label}</p>
       <p
         className={cn(
-          "mt-1.5 font-mono text-2xl font-medium leading-none tabular-nums",
-          accent === "signal" && "text-accent",
-          accent === "data" && "text-accent-2",
-          !accent && "text-fg"
+          "mt-2 font-md-display text-[1.75rem] font-semibold leading-none tracking-tight tabular-nums",
+          tone === "bright" && "text-bone",
+          tone === "funded" && "text-[#f0c060]",
+          !tone && "text-bone/85"
         )}
       >
         {value}
       </p>
       {hint ? (
-        <p className="mt-1.5 truncate font-mono text-[10px] tracking-wide text-muted">
-          {hint}
-        </p>
+        <p className="mt-2 text-[12px] leading-snug text-dim">{hint}</p>
       ) : null}
     </div>
   );
@@ -61,12 +59,18 @@ export function StatsStrip({ stats }: { stats: LeadStats }) {
       : `${Math.round(stats.qualificationRate * 100)}%`;
 
   return (
-    <div className="grid grid-cols-2 gap-y-1 border-y border-line sm:grid-cols-3 lg:grid-cols-5">
+    <section
+      aria-label="Indicatori"
+      className="grid grid-cols-2 gap-px overflow-hidden rounded-panel-lg border border-hair bg-hair md:grid-cols-3 lg:grid-cols-5"
+    >
       <Reading
         label="Săptămâna asta"
         value={String(stats.thisWeek)}
         hint={deltaLabel}
-        accent="signal"
+        tone="bright"
+        /* Pe telefon, citirea săptămânii ia un rând întreg: e cea la
+           care te uiți primul, iar celelalte patru cad exact 2×2. */
+        className="col-span-2 md:col-span-1"
       />
       <Reading
         label="Total"
@@ -76,19 +80,22 @@ export function StatsStrip({ stats }: { stats: LeadStats }) {
       <Reading
         label="Video / Software"
         value={`${stats.video} / ${stats.software}`}
-        hint="split pe divizii"
+        hint="împărțirea pe divizii"
       />
       <Reading
         label="Fonduri"
         value={String(stats.funded)}
         hint="cele mai valoroase"
-        accent="data"
+        tone="funded"
       />
       <Reading
         label="Rată de calificare"
         value={rate}
         hint="contactat sau mai departe"
+        /* La 768 rămân cinci citiri pe trei coloane: ultima ia două,
+           ca banda să se închidă fără o celulă goală. */
+        className="md:col-span-2 lg:col-span-1"
       />
-    </div>
+    </section>
   );
 }

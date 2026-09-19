@@ -6,6 +6,7 @@ import { LEAD_STATUSES, type LeadStatus } from "@/lib/validations/lead";
 import { STATUS_LABELS } from "@/lib/supabase/types";
 import { changeStatus, saveNotes, type PanelState } from "../(dash)/actions";
 import { cn } from "@/lib/utils";
+import { FIELD, STATUS_PILL, STATUS_TONE } from "./tone";
 
 /**
  * Controalele de lucru din panou (FAZA 6): schimbarea statusului și notele.
@@ -20,9 +21,9 @@ const initialState: PanelState = { error: null, ok: null };
 
 function Feedback({ state }: { state: PanelState }) {
   return (
-    <p aria-live="polite" className="min-h-5 text-xs leading-5">
-      {state.error ? <span className="text-accent-2">{state.error}</span> : null}
-      {state.ok ? <span className="text-muted">{state.ok}</span> : null}
+    <p aria-live="polite" className="mt-2 min-h-5 text-[12.5px] leading-5">
+      {state.error ? <span className="text-bone">{state.error}</span> : null}
+      {state.ok ? <span className="text-dim">{state.ok}</span> : null}
     </p>
   );
 }
@@ -34,7 +35,7 @@ function StatusButtons({ current }: { current: LeadStatus }) {
   const { pending } = useFormStatus();
 
   return (
-    <div className="mt-2.5 flex flex-wrap gap-1.5">
+    <div className="mt-3 flex flex-wrap gap-2">
       {LEAD_STATUSES.map((status) => {
         const active = status === current;
         return (
@@ -46,10 +47,13 @@ function StatusButtons({ current }: { current: LeadStatus }) {
             disabled={pending || active}
             aria-current={active ? "true" : undefined}
             className={cn(
-              "rounded-sm border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors duration-150",
+              STATUS_PILL,
+              "!py-1.5 transition-colors duration-150",
+              /* Statusul curent poartă tonul lui din tabel; celelalte sunt
+                 opțiuni: contur discret, se aprind la hover. */
               active
-                ? "cursor-default border-accent bg-s-signal text-s-ink"
-                : "border-line text-fg/70 hover:border-muted hover:text-fg",
+                ? cn("cursor-default", STATUS_TONE[status])
+                : "border-hair text-dim hover:border-hair-strong hover:text-bone",
               pending && !active && "opacity-60"
             )}
           >
@@ -73,9 +77,7 @@ export function StatusControl({
   return (
     <form action={formAction}>
       <input type="hidden" name="id" value={leadId} />
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-        Status
-      </p>
+      <p className="eyebrow">Status</p>
       <StatusButtons current={current} />
       <Feedback state={state} />
     </form>
@@ -88,7 +90,7 @@ function SaveNotesButton() {
     <button
       type="submit"
       disabled={pending}
-      className="mt-2 h-9 rounded-sm bg-s-signal px-4 text-sm font-semibold text-s-ink transition-colors duration-150 hover:bg-[#6b93ff] disabled:pointer-events-none disabled:opacity-60"
+      className="btn btn-light mt-3 !min-h-10 !px-5 !py-2 !text-[13.5px] disabled:pointer-events-none disabled:opacity-60"
     >
       {pending ? "Se salvează…" : "Salvează notele"}
     </button>
@@ -107,10 +109,7 @@ export function NotesControl({
   return (
     <form action={formAction}>
       <input type="hidden" name="id" value={leadId} />
-      <label
-        htmlFor={`notes-${leadId}`}
-        className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted"
-      >
+      <label htmlFor={`notes-${leadId}`} className="eyebrow">
         Note interne
       </label>
       <textarea
@@ -119,7 +118,7 @@ export function NotesControl({
         rows={5}
         defaultValue={notes ?? ""}
         placeholder="Ce s-a discutat, ce urmează, cine preia."
-        className="mt-2 block w-full resize-y rounded-md border border-line bg-surface p-3 text-sm leading-relaxed text-fg placeholder:text-muted focus:border-accent focus:outline-none"
+        className={`${FIELD} mt-3 resize-y !rounded-[var(--md-r)] py-3 leading-relaxed`}
       />
       <SaveNotesButton />
       <Feedback state={state} />

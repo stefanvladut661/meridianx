@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DIVISIONS } from "@/lib/division";
 import { LEAD_STATUSES } from "@/lib/validations/lead";
 import { STATUS_LABELS } from "@/lib/supabase/types";
+import { FIELD } from "./tone";
 
 /**
  * Bara de filtre (FAZA 6).
@@ -15,10 +16,6 @@ import { STATUS_LABELS } from "@/lib/supabase/types";
  * exact ce vezi, nu tot tabelul.
  */
 
-const controlClasses =
-  "h-9 rounded-sm border border-line bg-bg px-2.5 text-sm text-fg " +
-  "focus:border-accent focus:outline-none";
-
 export interface FilterValues {
   q?: string;
   division?: string;
@@ -26,6 +23,8 @@ export interface FilterValues {
   from?: string;
   to?: string;
 }
+
+const control = `${FIELD} mt-2 h-10`;
 
 export function Filters({
   values,
@@ -40,13 +39,10 @@ export function Filters({
     <form
       method="get"
       action="/admin"
-      className="flex flex-wrap items-end gap-x-3 gap-y-3 py-4"
+      className="glass mt-4 flex flex-wrap items-end gap-x-3 gap-y-4 p-4 sm:p-5"
     >
       <div className="min-w-0 flex-1 basis-56">
-        <label
-          htmlFor="f-q"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted"
-        >
+        <label htmlFor="f-q" className="eyebrow">
           Caută
         </label>
         <input
@@ -54,23 +50,20 @@ export function Filters({
           name="q"
           type="search"
           defaultValue={values.q ?? ""}
-          placeholder="nume, email sau companie"
-          className={`${controlClasses} mt-1 block w-full`}
+          placeholder="nume, email sau firmă"
+          className={control}
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="f-division"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted"
-        >
+      <div className="min-w-0 grow basis-36 sm:grow-0">
+        <label htmlFor="f-division" className="eyebrow">
           Divizie
         </label>
         <select
           id="f-division"
           name="division"
           defaultValue={values.division ?? ""}
-          className={`${controlClasses} mt-1 block`}
+          className={control}
         >
           <option value="">Toate</option>
           {DIVISIONS.map((division) => (
@@ -81,18 +74,15 @@ export function Filters({
         </select>
       </div>
 
-      <div>
-        <label
-          htmlFor="f-status"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted"
-        >
+      <div className="min-w-0 grow basis-40 sm:grow-0">
+        <label htmlFor="f-status" className="eyebrow">
           Status
         </label>
         <select
           id="f-status"
           name="status"
           defaultValue={values.status ?? ""}
-          className={`${controlClasses} mt-1 block`}
+          className={control}
         >
           <option value="">Toate</option>
           {LEAD_STATUSES.map((status) => (
@@ -103,11 +93,8 @@ export function Filters({
         </select>
       </div>
 
-      <div>
-        <label
-          htmlFor="f-from"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted"
-        >
+      <div className="min-w-0 grow basis-40 sm:grow-0">
+        <label htmlFor="f-from" className="eyebrow">
           De la
         </label>
         <input
@@ -115,15 +102,12 @@ export function Filters({
           name="from"
           type="date"
           defaultValue={values.from ?? ""}
-          className={`${controlClasses} mt-1 block`}
+          className={control}
         />
       </div>
 
-      <div>
-        <label
-          htmlFor="f-to"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted"
-        >
+      <div className="min-w-0 grow basis-40 sm:grow-0">
+        <label htmlFor="f-to" className="eyebrow">
           Până la
         </label>
         <input
@@ -131,31 +115,36 @@ export function Filters({
           name="to"
           type="date"
           defaultValue={values.to ?? ""}
-          className={`${controlClasses} mt-1 block`}
+          className={control}
         />
       </div>
 
-      <button
-        type="submit"
-        className="h-9 rounded-sm bg-s-signal px-4 text-sm font-semibold text-s-ink transition-colors duration-150 hover:bg-[#6b93ff]"
-      >
-        Filtrează
-      </button>
-
-      {hasFilters ? (
-        <Link
-          href="/admin"
-          className="h-9 self-end px-1 font-mono text-[11px] uppercase leading-9 tracking-[0.16em] text-muted underline-offset-4 hover:text-fg hover:underline"
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          className="btn btn-light !min-h-10 !px-5 !py-2 !text-[13.5px]"
         >
-          Șterge filtrele
-        </Link>
-      ) : null}
+          Filtrează
+        </button>
+
+        {hasFilters ? (
+          <Link
+            href="/admin"
+            className="text-[13px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
+          >
+            Șterge filtrele
+          </Link>
+        ) : null}
+      </div>
 
       <a
         href={exportHref}
-        className="ml-auto h-9 self-end rounded-sm border border-line px-3 font-mono text-[11px] uppercase leading-[calc(2.25rem-2px)] tracking-[0.16em] text-fg/80 transition-colors duration-150 hover:border-muted hover:text-fg"
+        className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[12.5px] sm:ml-auto"
       >
         Export CSV
+        <span className="arw" aria-hidden>
+          ↓
+        </span>
       </a>
     </form>
   );

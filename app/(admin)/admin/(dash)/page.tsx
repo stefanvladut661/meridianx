@@ -90,11 +90,12 @@ export default async function AdminDashboardPage({
 
   if (!listResult.ok) {
     return (
-      <main className="px-4 py-16 sm:px-6">
-        <h1 className="font-display text-xl font-semibold tracking-tight">
+      <main className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8">
+        <p className="eyebrow">Eroare de conexiune</p>
+        <h1 className="display mt-3 text-[2rem] text-bone">
           Nu putem citi lead-urile
         </h1>
-        <p className="mt-2 max-w-lg text-sm leading-relaxed text-fg/70">
+        <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-dim">
           Conexiunea la Supabase a eșuat. Verifică variabilele de mediu și
           starea proiectului în consola Supabase, apoi reîncarcă pagina.
         </p>
@@ -115,23 +116,38 @@ export default async function AdminDashboardPage({
   if (isoRange.from) exportSearch.set("from", isoRange.from);
   if (isoRange.to) exportSearch.set("to", isoRange.to);
 
+  const pageLink =
+    "btn btn-ghost !min-h-9 !px-4 !py-2 !text-[12.5px]";
+
   return (
-    <main className="px-4 pb-20 pt-6 sm:px-6">
+    <main className="mx-auto max-w-[1400px] px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
       <LiveRefresh />
 
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="font-display text-xl font-semibold tracking-tight">
-          Lead-uri
-        </h1>
-        <p className="font-mono text-[11px] tabular-nums tracking-[0.16em] text-muted">
-          {total === 0
-            ? "niciun rezultat"
-            : `${(page - 1) * perPage + 1}–${Math.min(page * perPage, total)} din ${total}`}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <div>
+          <p className="eyebrow">Panou</p>
+          <h1 className="display mt-2 text-[2rem] text-bone sm:text-[2.5rem]">
+            Lead-uri
+          </h1>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Punctul pulsează cât timp lista se reîmprospătează singură
+              (LiveRefresh, la 20 s) — e o citire, nu un ornament. */}
+          <span className="pill !py-1.5 !text-[12px] text-dim">
+            <span className="rec-dot" aria-hidden />
+            Live · la 20 s
+          </span>
+          <p className="font-md-mono text-[11px] tabular-nums tracking-[0.16em] text-dim">
+            {total === 0
+              ? "niciun rezultat"
+              : `${(page - 1) * perPage + 1}–${Math.min(page * perPage, total)} din ${total}`}
+          </p>
+        </div>
       </div>
 
       {statsResult.ok ? (
-        <div className="mt-5">
+        <div className="mt-8">
           <StatsStrip stats={statsResult.data} />
         </div>
       ) : null}
@@ -167,22 +183,22 @@ export default async function AdminDashboardPage({
           {page > 1 ? (
             <Link
               href={buildHref({ ...filterParams, page: String(page - 1) })}
-              className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg/80 underline-offset-4 hover:underline"
+              className={pageLink}
             >
-              ← Pagina anterioară
+              ← Anterioară
             </Link>
           ) : (
             <span />
           )}
-          <span className="font-mono text-[11px] tabular-nums tracking-[0.16em] text-muted">
+          <span className="font-md-mono text-[11px] tabular-nums tracking-[0.16em] text-dim">
             {page} / {totalPages}
           </span>
           {page < totalPages ? (
             <Link
               href={buildHref({ ...filterParams, page: String(page + 1) })}
-              className="font-mono text-[11px] uppercase tracking-[0.16em] text-fg/80 underline-offset-4 hover:underline"
+              className={pageLink}
             >
-              Pagina următoare →
+              Următoarea →
             </Link>
           ) : (
             <span />
