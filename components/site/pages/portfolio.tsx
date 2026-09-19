@@ -3,7 +3,7 @@
 import { Link } from "@/i18n/navigation";
 import { Mark } from "@/components/site/mark";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
-import { Reveal, ScrollProgress } from "@/components/site/motion";
+import { Reveal } from "@/components/site/motion";
 import { Icon } from "@/components/site/ui";
 import { VideoCard } from "@/components/site/video-player";
 import {
@@ -106,7 +106,6 @@ export function PortfolioScreen() {
 
   return (
     <div data-scope="video" className="md-root min-h-dvh overflow-clip">
-      <ScrollProgress />
       <Nav />
 
       <main id="continut">

@@ -8,7 +8,6 @@ import {
   CountUp,
   Marquee,
   Reveal,
-  ScrollProgress,
   useScrolled,
 } from "@/components/site/motion";
 import { Faq, Icon } from "@/components/site/ui";
@@ -62,7 +61,6 @@ export function SoftwareScreen() {
       data-scope="software"
       className="md-root min-h-dvh overflow-clip"
     >
-      <ScrollProgress />
       <Nav />
       <main id="continut">
         <Hero />

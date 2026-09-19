@@ -14,7 +14,6 @@ import {
   PointerGlow,
   Reveal,
   RotatingWord,
-  ScrollProgress,
   useScrolled,
 } from "@/components/site/motion";
 import {
@@ -57,7 +56,6 @@ import {
 export function VideoScreen() {
   return (
     <div data-scope="video" className="md-root min-h-dvh overflow-clip">
-      <ScrollProgress />
       <Nav />
       <main id="continut">
         {/* --- capul, de la AURORA --- */}
@@ -836,6 +834,53 @@ function Questions() {
 }
 
 /* ---------------- CTA final ---------------- */
+
+/**
+ * Grafică decorativă pentru cardul de contact: primele două minute ale
+ * unei conversații pe WhatsApp, cu orele la vedere. Cardul are înălțimea
+ * formularului de lângă el, iar golul de sub un singur rând de text nu se
+ * umple cu încă un paragraf — se umple cu imaginea promisiunii din
+ * rândul ăla: „răspundem în minute”. Pe telefon nu există gol, deci nici
+ * grafica; butoanele vin imediat sub titlu.
+ */
+function ChatPreview() {
+  const bubble =
+    "max-w-[85%] rounded-panel px-3.5 py-2.5 text-[13.5px] leading-snug";
+  const stamp = "mt-1 font-md-mono text-[10.5px] tracking-wider text-dim/75";
+  return (
+    <div aria-hidden className="relative my-auto hidden py-8 md:block">
+      <div
+        className="pointer-events-none absolute inset-x-8 top-1/2 h-40 -translate-y-1/2 rounded-full opacity-40 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, color-mix(in oklab, var(--md-a1) 45%, transparent), transparent)",
+        }}
+      />
+      <div className="relative flex flex-col">
+        <div className={`${bubble} self-end rounded-br-sm bg-a1 text-on-a1`}>
+          Salut! Vrem un video pentru showroom.
+        </div>
+        <span className={`${stamp} self-end`}>14:02</span>
+
+        <div className={`${bubble} mt-3 self-start rounded-bl-sm border border-hair bg-ink/60 text-bone`}>
+          Trimite-ne linkul paginii — ne uităm acum.
+        </div>
+        <span className={stamp}>14:04</span>
+
+        <div className="mt-3 flex items-center gap-1 self-start rounded-panel rounded-bl-sm border border-hair bg-ink/60 px-3.5 py-3">
+          {[0, 150, 300].map((delay) => (
+            <span
+              key={delay}
+              className="size-1.5 animate-pulse rounded-full bg-dim motion-reduce:animate-none"
+              style={{ animationDelay: `${delay}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FinalCta() {
   return (
     <section id="contact" className="relative px-5 pb-24 pt-8 sm:px-6">
@@ -870,37 +915,15 @@ function FinalCta() {
               <div className="glass edge-light flex flex-col p-7">
                 <p className="eyebrow">Cel mai rapid</p>
                 <h3 className="display mt-3 text-[clamp(1.2rem,2.6vw,1.5rem)]">
-                  Scrie-ne pe WhatsApp
+                  Contactează-ne
                 </h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-dim">
-                  Răspundem în minute, în programul de lucru.
+                  Pe WhatsApp răspundem în minute, în program.
                 </p>
 
-                {/* Pașii stau AICI, nu sub carduri: cardul are aceeași
-                    înălțime cu formularul, iar golul de sub un singur
-                    paragraf ar fi rămas gol. Așa spațiul răspunde la
-                    întrebarea următoare — „și după ce scriu?”. */}
-                <ol className="order-3 mt-7 flex flex-1 flex-col justify-around gap-4 border-t border-hair pt-6 md:order-2 md:mb-7">
-                  {STEPS.map((s) => (
-                    <li key={s.n} className="grid grid-cols-[2rem_1fr] gap-x-2">
-                      <span className="font-md-mono pt-0.5 text-[12px] text-a2">
-                        {s.n.padStart(2, "0")}
-                      </span>
-                      <div>
-                        <p className="text-[15px] font-medium text-bone">{s.title}</p>
-                        <p className="mt-0.5 text-[13.5px] leading-relaxed text-dim">
-                          {s.body}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+                <ChatPreview />
 
-                {/* Pe telefon butoanele stau imediat sub titlu — clientul de
-                    video decide repede și preferă vocea (CLAUDE.md §8) —
-                    iar pașii coboară sub ele. Pe desktop, unde cardul are
-                    înălțimea formularului, butoanele închid cardul jos. */}
-                <div className="order-2 mt-6 flex flex-col gap-2.5 md:order-3 md:mt-0">
+                <div className="mt-6 flex flex-col gap-2.5">
                   <a
                     href={CONTACT.whatsapp}
                     className="btn btn-primary !w-full"
@@ -917,6 +940,22 @@ function FinalCta() {
 
               <VideoLeadForm />
             </div>
+
+            <ol className="mx-auto mt-14 grid max-w-3xl gap-6 text-left sm:grid-cols-2 lg:grid-cols-4">
+              {STEPS.map((s) => (
+                <li key={s.n} className="border-t border-hair pt-4">
+                  <span className="font-md-mono text-[12px] text-a2">
+                    PASUL {s.n}
+                  </span>
+                  <p className="mt-2 text-[15px] font-medium text-bone">
+                    {s.title}
+                  </p>
+                  <p className="mt-1 text-[13.5px] leading-relaxed text-dim">
+                    {s.body}
+                  </p>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </Reveal>
