@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import {
   leadInputSchema,
   leadListQuerySchema,
@@ -73,10 +73,15 @@ export async function POST(request: NextRequest) {
   //    utilizatorul nu are de ce să aștepte după Resend.
   //    Pe un duplicat (dublu-click, refresh) nu se retrimit: omul a primit
   //    deja confirmarea, iar noi am primit deja notificarea.
+  //
+  //    `after`, nu `void`: pe Vercel funcția e înghețată în clipa în care
+  //    răspunsul a plecat, iar o promisiune lăsată în aer nu se mai
+  //    termină. Lead-urile ajungeau în bază, notificarea nu ajungea la
+  //    nimeni. `after` ține funcția în viață până se termină trimiterea.
   if (result.data.duplicate) {
     console.info(`[leads] trimitere duplicată în fereastra de 5 min — lead ${result.data.id}`);
   } else {
-    void sendLeadEmails(result.data);
+    after(() => sendLeadEmails(result.data));
   }
 
   const response: LeadCreatedResponse = { ok: true, id: result.data.id };
