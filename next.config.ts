@@ -23,13 +23,15 @@ const IMMUTABLE = [
 
    Lista e completă, nu ghicită: am numărat originile externe din tot
    HTML-ul prerandat. În afară de domeniul propriu și de schema.org (care
-   apare doar ca text în JSON-LD, nu ca cerere), există exact trei:
-   connect.facebook.net, www.facebook.com și wa.me.
+   apare doar ca text în JSON-LD, nu ca cerere), există exact patru:
+   connect.facebook.net, www.facebook.com, analytics.tiktok.com și wa.me.
 
    Regula de întreținere: fiecare linie de aici are un motiv scris. Dacă
    dispare motivul, dispare și linia. */
 const META_SCRIPT = "https://connect.facebook.net"; // fbevents.js
 const META_PIXEL = "https://www.facebook.com"; // /tr, inclusiv <noscript>
+// events.js + modulele pe care le încarcă după, și evenimentele (fetch/img).
+const TIKTOK = "https://analytics.tiktok.com";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -87,6 +89,7 @@ function contentSecurityPolicy(): string {
       "'self'",
       "'unsafe-inline'",
       META_SCRIPT,
+      TIKTOK,
       // `next dev` compilează modulele cu eval; producția nu — verificat
       // în `.next/static/chunks`, zero apeluri de eval.
       ...(isProduction ? [] : ["'unsafe-eval'"]),
@@ -96,7 +99,7 @@ function contentSecurityPolicy(): string {
     "style-src": ["'self'", "'unsafe-inline'"],
 
     // `data:` — CSS-ul construit conține un data:image/svg+xml.
-    "img-src": ["'self'", "data:", "blob:", META_PIXEL],
+    "img-src": ["'self'", "data:", "blob:", META_PIXEL, TIKTOK],
 
     // next/font auto-găzduiește totul în /_next/static/media.
     "font-src": ["'self'"],
@@ -105,6 +108,7 @@ function contentSecurityPolicy(): string {
       "'self'", // /api/leads, /api/admin/session, /_vercel/insights
       META_SCRIPT,
       META_PIXEL,
+      TIKTOK,
       ...supabaseOrigins(),
       // HMR-ul lui `next dev` merge pe websocket.
       ...(isProduction ? [] : ["ws:"]),
