@@ -55,6 +55,12 @@ export const PALETTE: Record<
   },
 };
 
+/**
+ * Forma unei palete. Emailurile care nu aparțin niciunei divizii (sonda
+ * automată, alertele) își definesc local o paletă cu aceeași formă.
+ */
+export type EmailTheme = (typeof PALETTE)[keyof typeof PALETTE];
+
 /** Escape obligatoriu: tot ce intră aici vine dintr-un formular public. */
 export function esc(value: unknown): string {
   if (value === null || value === undefined) return "";
@@ -74,7 +80,7 @@ export function siteUrl(): string {
 export function row(
   label: string,
   value: string | null | undefined,
-  theme: (typeof PALETTE)[keyof typeof PALETTE],
+  theme: EmailTheme,
   options: { highlight?: boolean } = {}
 ): string {
   if (!value) return "";
@@ -88,7 +94,7 @@ export function row(
 export function button(
   label: string,
   href: string,
-  theme: (typeof PALETTE)[keyof typeof PALETTE]
+  theme: EmailTheme
 ): string {
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 0">
@@ -102,6 +108,10 @@ export function button(
  * Învelișul complet. `preheader` e textul care apare în inbox lângă
  * subiect — dacă nu îl setezi, clientul de email ia primele cuvinte din
  * corp, ceea ce arată neîngrijit.
+ *
+ * `banner` e o bandă plină, deasupra titlului, pentru emailurile care NU
+ * sunt lead-uri (sonda automată, alerte): trebuie să se vadă că e altceva
+ * înainte să citești un rând.
  */
 export function shell({
   theme,
@@ -110,14 +120,19 @@ export function shell({
   preheader,
   body,
   footer,
+  banner,
 }: {
-  theme: (typeof PALETTE)[keyof typeof PALETTE];
+  theme: EmailTheme;
   eyebrow: string;
   title: string;
   preheader: string;
   body: string;
   footer: string;
+  banner?: string;
 }): string {
+  const bannerRow = banner
+    ? `<tr><td style="padding:12px 32px;border-radius:12px 12px 0 0;background:${theme.accent};font:700 12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:3px;text-transform:uppercase;color:${theme.onAccent}">${esc(banner)}</td></tr>`
+    : "";
   return `<!doctype html>
 <html lang="ro">
 <head>
@@ -130,7 +145,7 @@ export function shell({
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preheader)}</div>
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${theme.bg};padding:32px 16px">
   <tr><td align="center">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px;background:${theme.panel};border:1px solid ${theme.line};border-radius:12px">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px;background:${theme.panel};border:1px solid ${theme.line};border-radius:12px">${bannerRow}
       <tr><td style="padding:32px 32px 0">
         <p style="margin:0;font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:2.4px;text-transform:uppercase;color:${theme.accent}">${esc(eyebrow)}</p>
         <h1 style="margin:14px 0 0;font:600 25px/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:${theme.fg}">${esc(title)}</h1>

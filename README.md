@@ -110,6 +110,21 @@ npm run dev            # într-un terminal
 npm run verify:backend # în altul — sau: npm run verify:backend https://meridianx.ro
 ```
 
+### Supabase ținut treaz
+
+Planul gratuit Supabase pune pe pauză proiectele fără „suficientă activitate în bază în ultima săptămână" — pragul din [documentație](https://supabase.com/docs/guides/platform/free-project-pausing) e „câteva cereri pe zi". Agenția primește oferte rar, deci baza ar adormi, iar formularele ar răspunde cu eroare exact când vine un client.
+
+`vercel.json` programează o sondă (`app/api/_lib/keepalive.ts`) care face patru cereri reale prin Data API — scrie un rând de test, îl citește, îl șterge, numără lead-urile — deci dovedește în trecere și că scrierea chiar merge:
+
+| Rută | Când (UTC) | Email |
+|---|---|---|
+| `/api/cron/keepalive` | zilnic, 04:00 (±59 min pe Hobby) | doar dacă a picat — alertă roșie |
+| `/api/cron/keepalive/report` | luni, 05:00 | mereu — raportul verde „🧪 [TEST AUTOMAT]" |
+
+Emailurile de sistem vin de la „MERIDIAN · test automat" / „MERIDIAN · alertă", pe fond deschis, cu bandă sus — nu se confundă cu un lead nici din lista de inbox. Rândul de test se șterge în aceeași rulare și nu intră în panou sau statistici.
+
+Declanșare de mână: logat în `/admin`, deschide `/api/cron/keepalive/report` — primești raportul pe loc. Util după ce repornești un proiect pus pe pauză. Invocările automate se văd în Vercel → Settings → Cron Jobs.
+
 ## Variabile de mediu
 
 | Variabilă | Obligatorie | Ce se strică fără ea |
@@ -122,6 +137,7 @@ npm run verify:backend # în altul — sau: npm run verify:backend https://merid
 | `RESEND_API_KEY` | da | nu pleacă emailuri de notificare |
 | `LEAD_NOTIFICATION_EMAIL` | da | nu se știe cui se trimit lead-urile |
 | `RESEND_FROM_EMAIL` | da | dacă domeniul nu e verificat în Resend, nu pleacă nimic |
+| `CRON_SECRET` | **da în producție** | sonda zilnică refuză apelurile cron-ului, Supabase adoarme după o săptămână |
 | `NEXT_PUBLIC_PHONE_VIDEO` | nu | butoanele de telefon de pe /video folosesc numărul din `contact.ts` |
 | `NEXT_PUBLIC_PHONE_SOFTWARE` | nu | butoanele de telefon de pe /software folosesc numărul din `contact.ts` |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | **da la lansare** | butoanele de WhatsApp duc la un număr inexistent |

@@ -812,3 +812,21 @@ deci diferă doar felul în care e servit: alegi / scanezi / derulezi.
   Caption-ul desenului stă lângă desen, nu în content — se schimbă doar
   odată cu el.
 - Copy-ul nou din v1 (harta) și v3 (firul) a dispărut odată cu ele.
+
+---
+
+## Supabase ținut treaz — sonda de cron (2026-09-19)
+
+**Problema:** proiectul Supabase (Free) a fost pus pe pauză — hostul `atzgeoueupixzbqxmybg.supabase.co` nu se mai rezolva DNS, deci formularele răspundeau 503 și niciun lead nu se salva. Cauza: [regula oficială](https://supabase.com/docs/guides/platform/free-project-pausing) nu e „7 zile de la ultima cerere", ci „suficientă activitate în ultima săptămână — de regulă câteva cereri pe zi". Agenția primește oferte rar.
+
+**Ce s-a construit** (`app/api/_lib/keepalive.ts`, `lib/supabase/leads.ts#probeDatabase`, `emails/keepalive.ts`, `vercel.json`):
+
+- Sonda face **patru cereri reale** prin Data API — insert rând de test, select, delete, count — și șterge rândul în aceeași rulare. Nu se acumulează nimic în panou sau statistici. Verifică în trecere și lanțul unui lead real (cheie service role, schemă, scriere).
+- **Zilnic** (`0 4 * * *` UTC) rulează în liniște: email doar dacă a picat — alertă roșie, cu link direct spre proiect și pașii de repornire, repetată zilnic până se rezolvă.
+- **Lunea** (`0 5 * * 1`) trimite și raportul verde „🧪 [TEST AUTOMAT] … nu e ofertă", de la „MERIDIAN · test automat", pe fond deschis cu bandă sus — trei semnale distincte față de un lead, vizibile din lista de inbox.
+- Gardă: `CRON_SECRET` (Bearer, trimis de Vercel) SAU sesiune de admin — ca sonda să se poată declanșa de mână din browser după o repornire: `/api/cron/keepalive/report`.
+- `emails/shell.ts` a primit un `banner` opțional (bandă plină deasupra titlului) și aliasul `EmailTheme`; lead-urile nu-l folosesc, nimic nu s-a schimbat la ele.
+
+**Limite cunoscute:** pe Vercel Hobby cron-urile rulează cel mult o dată pe zi, cu ±59 min — suficient. Dacă proiectul trece pe Supabase Pro, pauza dispare și sonda poate rămâne doar ca monitor (raportul de luni + alerta).
+
+**Decizie de discutat:** ziua raportului e luni dimineață (≈08:00 România). Se schimbă din `vercel.json`, fără cod.

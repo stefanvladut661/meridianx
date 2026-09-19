@@ -3,6 +3,7 @@ import type { Lead } from "@/lib/supabase/types";
 import { recordEmailEvent } from "@/lib/supabase/leads";
 import { leadNotificationEmail } from "@/emails/lead-notification";
 import { leadConfirmationEmail } from "@/emails/lead-confirmation";
+import { keepaliveEmail, type KeepaliveReport } from "@/emails/keepalive";
 
 /**
  * Trimiterea emailurilor tranzacționale (FAZA 6).
@@ -24,6 +25,18 @@ import { leadConfirmationEmail } from "@/emails/lead-confirmation";
  */
 const FROM =
   process.env.RESEND_FROM_EMAIL?.trim() || "MERIDIAN <notificari@meridianx.ro>";
+
+/**
+ * Aceeași adresă verificată, alt nume afișat.
+ *
+ * Inbox-ul arată numele expeditorului înaintea subiectului, cu bold. Un
+ * email de sistem care vine tot de la „MERIDIAN” arată ca un lead până
+ * îl deschizi; „MERIDIAN · test automat” se vede din listă.
+ */
+function fromAs(displayName: string): string {
+  const address = FROM.match(/<([^>]+)>/)?.[1]?.trim() || FROM;
+  return `${displayName} <${address}>`;
+}
 
 /** Unde ajung cererile din formulare dacă nu e setat nimic în env. */
 const LEAD_INBOX = "buna.meridian@gmail.com";
@@ -123,4 +136,44 @@ export async function sendLeadEmails(lead: Lead): Promise<SendOutcome> {
   });
 
   return outcome;
+}
+
+export type SendStatus = "sent" | "skipped" | "failed";
+
+/**
+ * Raportul sondei sau alerta — către aceeași cutie ca lead-urile, ca să
+ * se vadă în același loc în care se așteaptă ofertele. Distincția o face
+ * emailul (nume de expeditor, subiect, fond), nu adresa.
+ */
+export async function sendKeepaliveEmail(report: KeepaliveReport): Promise<SendStatus> {
+  const resend = client();
+  if (!resend) {
+    console.error("[email] RESEND_API_KEY lipsește — raportul sondei nu a plecat.");
+    return "skipped";
+  }
+
+  const recipients = notificationRecipients();
+  if (recipients.length === 0) {
+    console.error("[email] LEAD_NOTIFICATION_EMAIL nu e setat — raportul sondei nu are destinatar.");
+    return "skipped";
+  }
+
+  try {
+    const message = keepaliveEmail(report);
+    const { error } = await resend.emails.send({
+      from: fromAs(report.kind === "alert" ? "MERIDIAN · alertă" : "MERIDIAN · test automat"),
+      to: recipients,
+      subject: message.subject,
+      html: message.html,
+      text: message.text,
+    });
+    if (error) {
+      console.error("[email] raportul sondei a eșuat:", error.message);
+      return "failed";
+    }
+    return "sent";
+  } catch (error) {
+    console.error("[email] raportul sondei a aruncat:", error);
+    return "failed";
+  }
 }

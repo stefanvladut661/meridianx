@@ -163,3 +163,27 @@ export function isHoneypotTripped(body: unknown): boolean {
   const value = (body as Record<string, unknown>).website;
   return typeof value === "string" && value.trim() !== "";
 }
+
+// ---------------------------------------------------------------------------
+// Cron
+// ---------------------------------------------------------------------------
+
+/**
+ * Cererea vine de la cron-ul Vercel?
+ *
+ * Vercel trimite `Authorization: Bearer <CRON_SECRET>` la fiecare
+ * invocare, dacă variabila există în proiect. Fără ea, în producție
+ * refuzăm tot: o rută de cron deschisă e un buton public de „trimite-mi
+ * un email" și de „scrie în bază”. În dezvoltare, unde nu există cron,
+ * lipsa secretului lasă ruta apelabilă din browser ca să se poată testa.
+ */
+export function isCronRequest(request: NextRequest): boolean {
+  const secret = process.env.CRON_SECRET?.trim();
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[cron] CRON_SECRET lipsește în producție — invocarea a fost refuzată.");
+    }
+    return process.env.NODE_ENV !== "production";
+  }
+  return request.headers.get("authorization") === `Bearer ${secret}`;
+}

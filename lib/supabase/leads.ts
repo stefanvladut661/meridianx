@@ -512,6 +512,146 @@ export async function pingDatabase(): Promise<DatabasePing> {
   return { reachable: true, schemaCurrent: true, leadCount: count ?? 0 };
 }
 
+export type ProbeStep = "ok" | "failed" | "skipped";
+
+export interface DatabaseProbe {
+  /** Toți pașii au reușit. */
+  ok: boolean;
+  steps: {
+    /** Rândul de test a fost scris cu service role. */
+    insert: ProbeStep;
+    /** Același rând, citit înapoi după id. */
+    read: ProbeStep;
+    /** Rândul de test a fost șters. */
+    delete: ProbeStep;
+    /** Numărătoarea lead-urilor reale. */
+    count: ProbeStep;
+  };
+  /** Lead-uri reale în bază (rândul de test nu intră). */
+  leadCount: number | null;
+  durationMs: number;
+  /** Mesajul primei erori — pentru log și pentru emailul de alertă. */
+  detail?: string;
+  /** Id-ul rândului de test dacă ștergerea a picat — ca să se poată curăța. */
+  leftoverId?: string;
+}
+
+/**
+ * Rândul de test scris de sondă. Sursa `keepalive` și numele îl fac
+ * imposibil de confundat cu un lead real dacă, printr-o eroare de
+ * ștergere, rămâne în panou.
+ */
+const PROBE_LEAD = {
+  division: "software",
+  source: "keepalive",
+  locale: "ro",
+  name: "TEST AUTOMAT — rând de sondă, șterge-l",
+  email: "keepalive@meridianx.ro",
+  message:
+    "Rând scris de sonda zilnică (/api/cron/keepalive) ca să țină proiectul Supabase activ. Se șterge imediat după ce e citit înapoi.",
+  is_funded: false,
+} as const;
+
+/**
+ * Activitate REALĂ în bază, nu doar o verificare de conexiune.
+ *
+ * DE CE EXISTĂ: Supabase pune pe pauză proiectele din planul gratuit care
+ * nu au „suficiente cereri de la utilizatori către bază în ultima
+ * săptămână” — documentația spune că „de regulă câteva cereri pe zi” ajung.
+ * Un `count` singur, o dată pe săptămână, nu e „chiar sub prag”: e sub el.
+ * Sonda face patru cereri distincte prin Data API — insert, select,
+ * delete, count — și, în trecere, dovedește tot lanțul de care depinde un
+ * lead real: cheia de service role e valabilă, schema e la zi, scrierea
+ * chiar merge.
+ *
+ * Rândul de test se șterge în aceeași rulare, ca panoul și statisticile
+ * să nu vadă niciodată un lead care nu există. Dacă ștergerea pică, id-ul
+ * pleacă în raport ca să se poată curăța de mână.
+ */
+export async function probeDatabase(): Promise<DatabaseProbe> {
+  const started = Date.now();
+  const probe: DatabaseProbe = {
+    ok: false,
+    steps: { insert: "skipped", read: "skipped", delete: "skipped", count: "skipped" },
+    leadCount: null,
+    durationMs: 0,
+  };
+  const finish = () => {
+    probe.durationMs = Date.now() - started;
+    probe.ok = Object.values(probe.steps).every((step) => step === "ok");
+    return probe;
+  };
+
+  const supabase = createAdminClient();
+  if (!supabase) {
+    probe.detail = "Supabase neconfigurat — lipsesc NEXT_PUBLIC_SUPABASE_URL sau SUPABASE_SERVICE_ROLE_KEY.";
+    probe.steps.insert = "failed";
+    return finish();
+  }
+
+  // Clientul întoarce erorile de rețea ca `error`, dar un proiect pus pe
+  // pauză nu mai are nici DNS, iar `fetch` poate arunca înainte să ajungă
+  // la client. Prindem ambele forme.
+  try {
+    const { data: inserted, error: insertError } = await supabase
+      .from("leads")
+      .insert(PROBE_LEAD)
+      .select("id")
+      .single();
+
+    if (insertError || !inserted) {
+      probe.steps.insert = "failed";
+      probe.detail = insertError?.message ?? "insert fără rând întors";
+      return finish();
+    }
+    probe.steps.insert = "ok";
+    const id = inserted.id as string;
+
+    const { data: read, error: readError } = await supabase
+      .from("leads")
+      .select("id, source")
+      .eq("id", id)
+      .maybeSingle();
+    probe.steps.read = !readError && read?.source === PROBE_LEAD.source ? "ok" : "failed";
+    if (probe.steps.read === "failed") {
+      probe.detail ??= readError?.message ?? "rândul de test nu s-a citit înapoi";
+    }
+
+    // `select("id")` după delete confirmă că s-a șters CHIAR un rând;
+    // fără el, un delete care nu potrivește nimic e tot „fără eroare”.
+    const { data: deleted, error: deleteError } = await supabase
+      .from("leads")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    probe.steps.delete = !deleteError && (deleted?.length ?? 0) === 1 ? "ok" : "failed";
+    if (probe.steps.delete === "failed") {
+      probe.leftoverId = id;
+      probe.detail ??= deleteError?.message ?? "ștergerea nu a atins niciun rând";
+    }
+
+    const { count, error: countError } = await supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .neq("source", PROBE_LEAD.source);
+    probe.steps.count = countError ? "failed" : "ok";
+    probe.leadCount = countError ? null : (count ?? 0);
+    if (countError) probe.detail ??= countError.message;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    probe.detail ??= message;
+    // Primul pas neînceput e cel care a aruncat.
+    for (const key of ["insert", "read", "delete", "count"] as const) {
+      if (probe.steps[key] === "skipped") {
+        probe.steps[key] = "failed";
+        break;
+      }
+    }
+  }
+
+  return finish();
+}
+
 /** Marchează trimiterea emailurilor, ca să se vadă în istoric. */
 export async function recordEmailEvent(
   leadId: string,
