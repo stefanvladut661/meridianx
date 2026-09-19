@@ -19,7 +19,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="btn btn-light mt-7 w-full !text-[14px] disabled:pointer-events-none disabled:opacity-60"
+      className="btn btn-light mt-7 w-full !min-h-12 !text-[15.5px] disabled:pointer-events-none disabled:opacity-60"
     >
       {pending ? "Se verifică…" : "Intră în panou"}
       {!pending ? (
@@ -37,7 +37,7 @@ export function LoginForm() {
   return (
     <form action={formAction} className="mt-8" noValidate>
       <div>
-        <label htmlFor="admin-email" className="eyebrow">
+        <label htmlFor="admin-email" className="eyebrow !text-[11.5px]">
           Email
         </label>
         <input
@@ -46,12 +46,12 @@ export function LoginForm() {
           type="email"
           autoComplete="username"
           required
-          className={`${FIELD} mt-2 h-11`}
+          className={`${FIELD} mt-2 h-12`}
         />
       </div>
 
       <div className="mt-4">
-        <label htmlFor="admin-password" className="eyebrow">
+        <label htmlFor="admin-password" className="eyebrow !text-[11.5px]">
           Parolă
         </label>
         <input
@@ -60,14 +60,14 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
-          className={`${FIELD} mt-2 h-11`}
+          className={`${FIELD} mt-2 h-12`}
         />
       </div>
 
       {/* aria-live: eroarea apare fără reîncărcare, deci trebuie anunțată. */}
       <div aria-live="polite">
         {state.error ? (
-          <p className="mt-4 border-l-2 border-bone/60 py-1 pl-3 text-[14px] leading-relaxed text-bone">
+          <p className="mt-4 rounded-panel-sm border-l-[3px] border-[#ef4444] bg-[#ef4444]/10 px-3.5 py-2.5 text-[14.5px] leading-relaxed text-bone">
             {state.error}
           </p>
         ) : null}

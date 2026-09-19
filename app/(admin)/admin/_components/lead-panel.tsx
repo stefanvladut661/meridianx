@@ -3,6 +3,7 @@ import type { Lead, LeadEvent } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 import { PanelShell } from "./panel-shell";
 import { StatusControl, NotesControl } from "./lead-forms";
+import { formatLeadDateTime } from "./format-date";
 import {
   CHIP,
   DIVISION_LABEL,
@@ -31,16 +32,6 @@ const EVENT_LABELS: Record<string, string> = {
   download: "Descărcare",
   call_booked: "Call programat",
 };
-
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("ro-RO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 /**
  * „Neatins de 6 zile” spune mai mult decât o dată calendaristică: panoul e
@@ -136,7 +127,7 @@ export function LeadPanel({
             {lead.isFunded ? (
               <span className={cn(CHIP, FUNDED_TONE)}>Fonduri</span>
             ) : null}
-            <span>{formatDateTime(lead.createdAt)}</span>
+            <span>{formatLeadDateTime(lead.createdAt)}</span>
             {lead.updatedAt !== lead.createdAt ? (
               <>
                 <span aria-hidden="true">·</span>
@@ -256,7 +247,7 @@ export function LeadPanel({
                     className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-hair py-3"
                   >
                     <span className="font-md-mono text-[11.5px] tabular-nums leading-6 text-dim">
-                      {formatDateTime(event.createdAt)}
+                      {formatLeadDateTime(event.createdAt)}
                     </span>
                     <span className="text-[15px] leading-6 text-bone/90">
                       {EVENT_LABELS[event.type] ?? event.type}

@@ -6,6 +6,7 @@ import type { Lead } from "@/lib/supabase/types";
 import { STATUS_LABELS } from "@/lib/supabase/types";
 import { Mark } from "@/components/site/mark";
 import { cn } from "@/lib/utils";
+import { formatLeadDate } from "./format-date";
 import {
   DIVISION_LABEL,
   DIVISION_TONE,
@@ -35,19 +36,6 @@ import {
 export interface EmptyState {
   title: string;
   body: string;
-}
-
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  const today = new Date();
-  const sameDay = date.toDateString() === today.toDateString();
-  return sameDay
-    ? `azi ${date.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}`
-    : date.toLocaleDateString("ro-RO", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-      });
 }
 
 const HEADERS = ["Data", "Divizie", "Nume", "Contact", "Buget", "Formular", "Status"];
@@ -135,7 +123,7 @@ export function LeadTable({
                         selected ? "opacity-100" : "opacity-85 group-hover:opacity-100"
                       )}
                     />
-                    {formatDate(lead.createdAt)}
+                    {formatLeadDate(lead.createdAt)}
                   </td>
 
                   <td className="whitespace-nowrap px-4 py-4">

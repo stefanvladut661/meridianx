@@ -26,8 +26,10 @@ export function MeridianRing({ className = "" }: { className?: string }) {
         strokeOpacity="0.16"
         strokeWidth="1"
       />
-      <path d={ARC_LEFT} stroke="currentColor" strokeOpacity="0.28" strokeWidth="1" />
-      <path d={ARC_RIGHT} stroke="currentColor" strokeOpacity="0.28" strokeWidth="1" />
+      {/* Cele două geodezice poartă culorile lumilor: video la stânga,
+          software la dreapta — la fel ca pe poartă. */}
+      <path d={ARC_LEFT} stroke="#2f5bff" strokeOpacity="0.85" strokeWidth="1.5" />
+      <path d={ARC_RIGHT} stroke="#1fb583" strokeOpacity="0.85" strokeWidth="1.5" />
       <line
         x1="10"
         y1="160"
@@ -37,8 +39,8 @@ export function MeridianRing({ className = "" }: { className?: string }) {
         strokeOpacity="0.1"
         strokeWidth="1"
       />
-      <circle cx="160" cy="10" r="2.5" fill="currentColor" fillOpacity="0.6" />
-      <circle cx="160" cy="310" r="2.5" fill="currentColor" fillOpacity="0.6" />
+      <circle cx="160" cy="10" r="3" fill="currentColor" fillOpacity="0.9" />
+      <circle cx="160" cy="310" r="3" fill="currentColor" fillOpacity="0.9" />
     </svg>
   );
 }
