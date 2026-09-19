@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
 import type { LeadStats } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
+import { DIVISION_TONE } from "./tone";
 
 /**
  * Indicatorii din capul dashboard-ului (FAZA 6).
@@ -21,7 +23,7 @@ function Reading({
   className,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   hint?: string;
   tone?: "bright" | "funded";
   className?: string;
@@ -79,8 +81,14 @@ export function StatsStrip({ stats }: { stats: LeadStats }) {
       />
       <Reading
         label="Video / Software"
-        value={`${stats.video} / ${stats.software}`}
-        hint="împărțirea pe divizii"
+        value={
+          <>
+            <span className={DIVISION_TONE.video.text}>{stats.video}</span>
+            <span className="mx-1.5 text-dim">/</span>
+            <span className={DIVISION_TONE.software.text}>{stats.software}</span>
+          </>
+        }
+        hint="albastru video · verde software"
       />
       <Reading
         label="Fonduri"

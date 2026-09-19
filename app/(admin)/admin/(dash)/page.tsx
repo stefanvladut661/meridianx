@@ -5,8 +5,7 @@ import { getLead, getLeadStats, listLeads } from "@/lib/supabase/leads";
 import { isWriteConfigured } from "@/lib/supabase/clients";
 import { StatsStrip } from "../_components/stats-strip";
 import { Filters } from "../_components/filters";
-import { LeadTable } from "../_components/lead-table";
-import { LeadPanel } from "../_components/lead-panel";
+import { LeadWorkspace } from "../_components/lead-workspace";
 import { SetupNotice } from "../_components/setup-notice";
 import { LiveRefresh } from "../_components/live-refresh";
 
@@ -158,10 +157,11 @@ export default async function AdminDashboardPage({
         hasFilters={hasFilters}
       />
 
-      <LeadTable
+      <LeadWorkspace
         leads={items}
         selectedId={openLeadId ?? null}
-        hrefFor={(leadId) => buildHref(filterParams, leadId)}
+        detail={detail?.ok ? detail.data : null}
+        listHref={buildHref(filterParams)}
         emptyState={
           hasFilters
             ? {
@@ -204,14 +204,6 @@ export default async function AdminDashboardPage({
             <span />
           )}
         </nav>
-      ) : null}
-
-      {detail?.ok ? (
-        <LeadPanel
-          lead={detail.data.lead}
-          events={detail.data.events}
-          closeHref={buildHref(filterParams)}
-        />
       ) : null}
     </main>
   );

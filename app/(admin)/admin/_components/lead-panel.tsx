@@ -3,13 +3,21 @@ import type { Lead, LeadEvent } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 import { PanelShell } from "./panel-shell";
 import { StatusControl, NotesControl } from "./lead-forms";
-import { FUNDED_TONE } from "./tone";
+import {
+  DIVISION_LABEL,
+  DIVISION_TONE,
+  FUNDED_TONE,
+  WHATSAPP_TONE,
+} from "./tone";
 
 /**
  * Panoul de detaliu (FAZA 6). Se deschide lateral, prin `?lead=<id>`.
  *
- * Conținutul e randat pe server: se poate trimite pe chat unui coleg și
- * se deschide direct pe lead-ul respectiv, cu filtrele păstrate.
+ * Conținutul vine de pe server (deep-linkabil, cu filtrele păstrate),
+ * dar componenta e pură: `LeadWorkspace` o randează și pe client, cu
+ * lead-ul din rând, în secunda în care dai clic — istoricul (`events`)
+ * e singurul lucru pe care îl așteaptă de la server, deci `null`
+ * înseamnă „se încarcă”, nu „gol”.
  */
 
 const EVENT_LABELS: Record<string, string> = {
@@ -42,6 +50,26 @@ function relativeDays(iso: string): string {
   if (days <= 0) return "azi";
   if (days === 1) return "ieri";
   return `acum ${days} zile`;
+}
+
+/**
+ * Numărul în formatul pe care îl cere wa.me: doar cifre, cu prefix de
+ * țară. „07xx” e România — cazul de departe cel mai des pe formularele
+ * noastre; un „+40” sau „0040” trece deja curat.
+ */
+function whatsappDigits(phone: string): string {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  else if (digits.startsWith("0")) digits = `40${digits.slice(1)}`;
+  return digits;
+}
+
+/** Primul mesaj — scurt, cu numele și divizia, ca omul să știe cine scrie. */
+function whatsappMessage(lead: Lead): string {
+  const firstName = lead.name.trim().split(/\s+/)[0] ?? lead.name;
+  const what =
+    lead.division === "video" ? "proiectul video" : "proiectul de software";
+  return `Bună, ${firstName}! Sunt de la MERIDIAN — am primit cererea ta de pe site pentru ${what}. Când ai 10 minute să vorbim?`;
 }
 
 function Row({ label, value }: { label: string; value: string | null }) {
@@ -83,25 +111,32 @@ export function LeadPanel({
   closeHref,
 }: {
   lead: Lead;
-  events: LeadEvent[];
+  /** `null` = încă nu a venit de pe server. */
+  events: LeadEvent[] | null;
   closeHref: string;
 }) {
   const headingId = `lead-panel-${lead.id}`;
+  const tone = DIVISION_TONE[lead.division];
+  const action =
+    "btn !min-h-10 !px-4 !py-2 !text-[13.5px] !gap-2";
 
   return (
     <PanelShell closeHref={closeHref} labelledBy={headingId}>
+      {/* Muchia de sus poartă culoarea lumii din care vine lead-ul —
+          e primul lucru pe care îl vezi când se deschide fișa. */}
+      <div aria-hidden className={cn("h-0.5 shrink-0", tone.bar)} />
+
       <div className="flex items-start justify-between gap-4 border-b border-hair px-6 py-5">
         <div className="min-w-0">
-          <p className="eyebrow flex flex-wrap items-center gap-x-2 gap-y-1 !text-[10px]">
-            <span>{lead.division === "video" ? "Video" : "Software"}</span>
-            <span aria-hidden="true">·</span>
-            <span>{formatDateTime(lead.createdAt)}</span>
-            {lead.updatedAt !== lead.createdAt ? (
-              <>
-                <span aria-hidden="true">·</span>
-                <span>atins {relativeDays(lead.updatedAt)}</span>
-              </>
-            ) : null}
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1.5 font-md-mono text-[10px] uppercase tracking-[0.18em] text-dim">
+            <span
+              className={cn(
+                "rounded-full border px-2 py-0.5 tracking-[0.14em]",
+                tone.badge
+              )}
+            >
+              {DIVISION_LABEL[lead.division]}
+            </span>
             {lead.isFunded ? (
               <span
                 className={cn(
@@ -112,10 +147,17 @@ export function LeadPanel({
                 Fonduri
               </span>
             ) : null}
+            <span>{formatDateTime(lead.createdAt)}</span>
+            {lead.updatedAt !== lead.createdAt ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>atins {relativeDays(lead.updatedAt)}</span>
+              </>
+            ) : null}
           </p>
           <h2
             id={headingId}
-            className="display mt-2 truncate text-[1.5rem] text-bone"
+            className="display mt-2.5 truncate text-[1.5rem] text-bone"
           >
             {lead.name}
           </h2>
@@ -134,23 +176,38 @@ export function LeadPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        {/* Acțiunea rapidă stă sus: de obicei deschizi panoul ca să suni. */}
+        {/* Acțiunile rapide stau sus: de obicei deschizi fișa ca să
+            contactezi omul. Trei căi, în ordinea în care răspund
+            clienții: WhatsApp, telefon, email. */}
         {lead.phone || lead.email ? (
           <div className="mb-7 flex flex-wrap gap-2.5">
             {lead.phone ? (
               <a
-                href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
-                className="btn btn-light !min-h-10 !px-5 !py-2 !text-[13.5px]"
+                href={`https://wa.me/${whatsappDigits(lead.phone)}?text=${encodeURIComponent(whatsappMessage(lead))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(action, "btn-ghost", WHATSAPP_TONE)}
               >
-                Sună {lead.phone}
+                <WhatsAppIcon />
+                WhatsApp
+              </a>
+            ) : null}
+            {lead.phone ? (
+              <a
+                href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
+                className={cn(action, "btn-light")}
+              >
+                <PhoneIcon />
+                Sună
               </a>
             ) : null}
             {lead.email ? (
               <a
                 href={`mailto:${lead.email}`}
-                className="btn btn-ghost !min-h-10 !px-5 !py-2 !text-[13.5px]"
+                className={cn(action, "btn-ghost")}
               >
-                Scrie email
+                <MailIcon />
+                Email
               </a>
             ) : null}
           </div>
@@ -175,7 +232,12 @@ export function LeadPanel({
         {lead.message ? (
           <div className="mt-7">
             <p className="eyebrow">Mesaj</p>
-            <p className="mt-3 whitespace-pre-wrap rounded-panel border border-hair bg-glass px-4 py-3.5 text-[14px] leading-relaxed text-bone/90">
+            <p
+              className={cn(
+                "mt-3 whitespace-pre-wrap rounded-panel border border-hair bg-glass px-4 py-3.5 text-[14px] leading-relaxed text-bone/90",
+                tone.glow
+              )}
+            >
               {lead.message}
             </p>
           </div>
@@ -187,7 +249,11 @@ export function LeadPanel({
 
         <div className="mt-8">
           <p className="eyebrow">Istoric</p>
-          {events.length === 0 ? (
+          {events === null ? (
+            <p className="mt-3 text-[14px] text-dim" aria-live="polite">
+              Se încarcă istoricul…
+            </p>
+          ) : events.length === 0 ? (
             <p className="mt-3 text-[14px] text-dim">
               Încă nu s-a întâmplat nimic în afară de sosirea lead-ului.
             </p>
@@ -219,5 +285,46 @@ export function LeadPanel({
         </div>
       </div>
     </PanelShell>
+  );
+}
+
+/* Iconuri de 1.5px, aceeași gramatică ca `components/site/ui.tsx`;
+   copiate aici fiindcă admin-ul nu importă din zona site-ului decât
+   marca. */
+const icon = {
+  width: 16,
+  height: 16,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+function WhatsAppIcon() {
+  return (
+    <svg {...icon}>
+      <path d="M3.5 20.5 5 16.4A8 8 0 1 1 8 19.3l-4.5 1.2Z" />
+      <path d="M9 9.2c.3 2.2 2.4 4.4 4.8 4.9.5.1 1-.2 1.2-.7l.2-.6-2-1-.7.8a5.4 5.4 0 0 1-2-2l.9-.6-.9-2h-.7c-.5.2-.9.6-.8 1.2Z" />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg {...icon}>
+      <path d="M6 3h3l2 5-2.2 1.4a12 12 0 0 0 5.8 5.8L16 13l5 2v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4 6.2 2 2 0 0 1 6 3Z" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg {...icon}>
+      <rect x="3" y="5.5" width="18" height="13" rx="2.5" />
+      <path d="m4 7.5 8 5.5 8-5.5" />
+    </svg>
   );
 }

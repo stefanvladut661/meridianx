@@ -1,20 +1,40 @@
+"use client";
+
 import Link from "next/link";
+import type { MouseEvent } from "react";
 import type { Lead } from "@/lib/supabase/types";
 import { STATUS_LABELS } from "@/lib/supabase/types";
 import { Mark } from "@/components/site/mark";
 import { cn } from "@/lib/utils";
-import { FUNDED_TONE, STATUS_PILL, STATUS_TONE } from "./tone";
+import {
+  DIVISION_LABEL,
+  DIVISION_TONE,
+  FUNDED_TONE,
+  STATUS_PILL,
+  STATUS_TONE,
+} from "./tone";
 
 /**
  * Tabelul de lead-uri (FAZA 6). Dens, scanabil, cele mai noi primele.
  *
- * Lead-urile din segmentul „fonduri" au marcaj propriu — brief-ul le
- * numește cele mai valoroase, deci trebuie să sară în ochi într-o listă
- * de cincizeci de rânduri, nu să fie descoperite deschizându-le pe rând.
+ * Tot rândul e clicabil — un lead se deschide de oriunde ai apăsa. Dar
+ * un <tr> nu poate primi focus, deci numele rămâne o ancoră reală:
+ * tastatura și cititoarele de ecran au un link adevărat, iar clicul pe
+ * el nu deschide fișa de două ori (`closest("a")`).
+ *
+ * Culoarea spune lumea: muchia din stânga și eticheta de divizie poartă
+ * albastrul video sau verdele software. Lead-urile din segmentul
+ * „fonduri" au marcaj propriu — brief-ul le numește cele mai valoroase,
+ * deci trebuie să sară în ochi într-o listă de cincizeci de rânduri.
  *
  * `next/link`, nu `@/i18n/navigation`: zona de admin e în afara i18n-ului
  * (middleware-ul o exclude explicit).
  */
+
+export interface EmptyState {
+  title: string;
+  body: string;
+}
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -35,13 +55,16 @@ export function LeadTable({
   leads,
   selectedId,
   hrefFor,
+  onOpen,
   emptyState,
 }: {
   leads: Lead[];
   selectedId: string | null;
   /** Construiește URL-ul rândului păstrând filtrele curente. */
   hrefFor: (leadId: string) => string;
-  emptyState: { title: string; body: string };
+  /** Deschide fișa imediat, cu datele din rând. */
+  onOpen: (lead: Lead) => void;
+  emptyState: EmptyState;
 }) {
   if (leads.length === 0) {
     return (
@@ -57,13 +80,22 @@ export function LeadTable({
     );
   }
 
+  const onRowClick = (event: MouseEvent<HTMLTableRowElement>, lead: Lead) => {
+    const target = event.target as HTMLElement;
+    // Linkul de pe nume navighează singur; nu-l dublăm.
+    if (target.closest("a, button")) return;
+    // Selecția de text nu e un clic.
+    if (window.getSelection()?.toString()) return;
+    onOpen(lead);
+  };
+
   return (
     <div className="mt-4 overflow-hidden rounded-panel-lg border border-hair bg-char">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[58rem] border-collapse text-left">
           <caption className="sr-only">
-            Lead-uri, cele mai recente primele. Fiecare rând deschide panoul
-            de detaliu.
+            Lead-uri, cele mai recente primele. Fiecare rând deschide fișa
+            lead-ului.
           </caption>
           <thead>
             <tr className="border-b border-hair bg-glass">
@@ -81,27 +113,43 @@ export function LeadTable({
           <tbody>
             {leads.map((lead) => {
               const selected = lead.id === selectedId;
+              const tone = DIVISION_TONE[lead.division];
               return (
                 <tr
                   key={lead.id}
                   aria-current={selected ? "true" : undefined}
+                  onClick={(event) => onRowClick(event, lead)}
                   className={cn(
-                    "group border-b border-hair transition-colors duration-150 last:border-b-0",
+                    "group relative cursor-pointer border-b border-hair transition-colors duration-150 last:border-b-0",
                     selected ? "bg-white/[0.06]" : "hover:bg-glass"
                   )}
                 >
-                  <td className="whitespace-nowrap py-3 pl-5 pr-4 font-md-mono text-[12px] tabular-nums text-dim">
+                  <td className="relative whitespace-nowrap py-3 pl-5 pr-4 font-md-mono text-[12px] tabular-nums text-dim">
+                    {/* Muchia colorată a rândului: lumea din care vine. */}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute inset-y-2 left-0 w-[3px] rounded-r-full transition-opacity duration-150",
+                        tone.bar,
+                        selected ? "opacity-100" : "opacity-80 group-hover:opacity-100"
+                      )}
+                    />
                     {formatDate(lead.createdAt)}
                   </td>
 
                   <td className="whitespace-nowrap px-4 py-3">
-                    <span className="font-md-mono text-[10.5px] uppercase tracking-[0.16em] text-bone/70">
-                      {lead.division === "video" ? "Video" : "Software"}
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-2 py-0.5 font-md-mono text-[10px] uppercase leading-none tracking-[0.14em]",
+                        tone.badge
+                      )}
+                    >
+                      {DIVISION_LABEL[lead.division]}
                     </span>
                     {lead.isFunded ? (
                       <span
                         className={cn(
-                          "ml-2 rounded-full border px-2 py-0.5 font-md-mono text-[9.5px] uppercase tracking-[0.14em]",
+                          "ml-1.5 inline-flex items-center rounded-full border px-2 py-0.5 font-md-mono text-[10px] uppercase leading-none tracking-[0.14em]",
                           FUNDED_TONE
                         )}
                       >
@@ -111,11 +159,15 @@ export function LeadTable({
                   </td>
 
                   <td className="px-4 py-3">
-                    {/* Linkul e pe nume, nu pe rând: un <tr> clicabil nu poate fi
-                        focalizat cu tastatura fără trucuri. Aici e o ancoră reală. */}
                     <Link
                       href={hrefFor(lead.id)}
                       scroll={false}
+                      onClick={(event) => {
+                        // Ctrl/⌘-clic rămâne al browserului (filă nouă).
+                        if (event.metaKey || event.ctrlKey || event.button !== 0) return;
+                        event.preventDefault();
+                        onOpen(lead);
+                      }}
                       className="text-[14.5px] font-medium text-bone underline-offset-4 group-hover:underline"
                     >
                       {lead.name}

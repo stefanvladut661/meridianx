@@ -30,7 +30,12 @@ export async function changeStatus(
   if (!user) return { error: "Sesiunea a expirat. Reautentifică-te.", ok: null };
 
   const id = String(formData.get("id") ?? "");
-  const status = formData.get("status");
+  /* Statusul vine pe două căi: câmpul ascuns pe care îl setează clicul
+     (cu JavaScript) și butonul apăsat (name/value, când browserul îl
+     trimite ca submitter). Ultimul câștigă — fără JavaScript, butonul
+     e cel care spune ce a ales omul. Așa nu mai depindem de faptul că
+     runtime-ul pune sau nu submitter-ul în FormData. */
+  const status = formData.getAll("status").at(-1);
 
   if (!id || !isStatus(status)) {
     return { error: "Status invalid.", ok: null };

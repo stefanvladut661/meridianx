@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { LEAD_STATUSES, type LeadStatus } from "@/lib/validations/lead";
 import { STATUS_LABELS } from "@/lib/supabase/types";
@@ -22,7 +22,7 @@ const initialState: PanelState = { error: null, ok: null };
 function Feedback({ state }: { state: PanelState }) {
   return (
     <p aria-live="polite" className="mt-2 min-h-5 text-[12.5px] leading-5">
-      {state.error ? <span className="text-bone">{state.error}</span> : null}
+      {state.error ? <span className="text-[#ff8a8a]">{state.error}</span> : null}
       {state.ok ? <span className="text-dim">{state.ok}</span> : null}
     </p>
   );
@@ -31,7 +31,13 @@ function Feedback({ state }: { state: PanelState }) {
 /** Butoanele stau într-un copil al formularului: `useFormStatus` citește
  *  contextul formularului părinte, deci în componenta care randează
  *  <form> ar raporta mereu `pending: false`. */
-function StatusButtons({ current }: { current: LeadStatus }) {
+function StatusButtons({
+  current,
+  onPick,
+}: {
+  current: LeadStatus;
+  onPick: (status: LeadStatus) => void;
+}) {
   const { pending } = useFormStatus();
 
   return (
@@ -46,6 +52,7 @@ function StatusButtons({ current }: { current: LeadStatus }) {
             value={status}
             disabled={pending || active}
             aria-current={active ? "true" : undefined}
+            onClick={() => onPick(status)}
             className={cn(
               STATUS_PILL,
               "!py-1.5 transition-colors duration-150",
@@ -73,12 +80,28 @@ export function StatusControl({
   current: LeadStatus;
 }) {
   const [state, formAction] = useActionState(changeStatus, initialState);
+  const chosenRef = useRef<HTMLInputElement>(null);
 
   return (
     <form action={formAction}>
       <input type="hidden" name="id" value={leadId} />
+      {/* Clicul scrie alegerea aici, înainte ca formularul să plece —
+          serverul nu mai depinde de submitter-ul din FormData. Fără
+          JavaScript rămâne statusul curent, iar butonul apăsat (name +
+          value) e cel care contează; acțiunea ia ultima valoare. */}
+      <input
+        ref={chosenRef}
+        type="hidden"
+        name="status"
+        defaultValue={current}
+      />
       <p className="eyebrow">Status</p>
-      <StatusButtons current={current} />
+      <StatusButtons
+        current={current}
+        onPick={(status) => {
+          if (chosenRef.current) chosenRef.current.value = status;
+        }}
+      />
       <Feedback state={state} />
     </form>
   );
