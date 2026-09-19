@@ -568,6 +568,23 @@ const PROBE_LEAD = {
  * să nu vadă niciodată un lead care nu există. Dacă ștergerea pică, id-ul
  * pleacă în raport ca să se poată curăța de mână.
  */
+/**
+ * Un proiect pe pauză sau în curs de repornire răspunde cu HTML (521 de la
+ * Cloudflare), iar clientul întoarce atunci un `error` cu `message`
+ * undefined. Fără codul HTTP, alerta ar spune doar „fără rând întors”.
+ */
+function describeFailure(
+  error: { message?: string; code?: string } | null,
+  status: number,
+  fallback: string
+): string {
+  if (error?.message) return error.code ? `${error.message} (${error.code})` : error.message;
+  if (status === 0 || status >= 500) {
+    return `HTTP ${status} — Supabase nu răspunde (proiect pe pauză sau în curs de repornire)`;
+  }
+  return `${fallback} (HTTP ${status})`;
+}
+
 export async function probeDatabase(): Promise<DatabaseProbe> {
   const started = Date.now();
   const probe: DatabaseProbe = {
@@ -593,50 +610,54 @@ export async function probeDatabase(): Promise<DatabaseProbe> {
   // pauză nu mai are nici DNS, iar `fetch` poate arunca înainte să ajungă
   // la client. Prindem ambele forme.
   try {
-    const { data: inserted, error: insertError } = await supabase
-      .from("leads")
-      .insert(PROBE_LEAD)
-      .select("id")
-      .single();
+    const {
+      data: inserted,
+      error: insertError,
+      status: insertStatus,
+    } = await supabase.from("leads").insert(PROBE_LEAD).select("id").single();
 
     if (insertError || !inserted) {
       probe.steps.insert = "failed";
-      probe.detail = insertError?.message ?? "insert fără rând întors";
+      probe.detail = describeFailure(insertError, insertStatus, "insert fără rând întors");
       return finish();
     }
     probe.steps.insert = "ok";
     const id = inserted.id as string;
 
-    const { data: read, error: readError } = await supabase
-      .from("leads")
-      .select("id, source")
-      .eq("id", id)
-      .maybeSingle();
+    const {
+      data: read,
+      error: readError,
+      status: readStatus,
+    } = await supabase.from("leads").select("id, source").eq("id", id).maybeSingle();
     probe.steps.read = !readError && read?.source === PROBE_LEAD.source ? "ok" : "failed";
     if (probe.steps.read === "failed") {
-      probe.detail ??= readError?.message ?? "rândul de test nu s-a citit înapoi";
+      probe.detail ??= describeFailure(readError, readStatus, "rândul de test nu s-a citit înapoi");
     }
 
     // `select("id")` după delete confirmă că s-a șters CHIAR un rând;
     // fără el, un delete care nu potrivește nimic e tot „fără eroare”.
-    const { data: deleted, error: deleteError } = await supabase
-      .from("leads")
-      .delete()
-      .eq("id", id)
-      .select("id");
+    const {
+      data: deleted,
+      error: deleteError,
+      status: deleteStatus,
+    } = await supabase.from("leads").delete().eq("id", id).select("id");
     probe.steps.delete = !deleteError && (deleted?.length ?? 0) === 1 ? "ok" : "failed";
     if (probe.steps.delete === "failed") {
       probe.leftoverId = id;
-      probe.detail ??= deleteError?.message ?? "ștergerea nu a atins niciun rând";
+      probe.detail ??= describeFailure(deleteError, deleteStatus, "ștergerea nu a atins niciun rând");
     }
 
-    const { count, error: countError } = await supabase
+    const {
+      count,
+      error: countError,
+      status: countStatus,
+    } = await supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
       .neq("source", PROBE_LEAD.source);
     probe.steps.count = countError ? "failed" : "ok";
     probe.leadCount = countError ? null : (count ?? 0);
-    if (countError) probe.detail ??= countError.message;
+    if (countError) probe.detail ??= describeFailure(countError, countStatus, "numărătoarea a picat");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     probe.detail ??= message;

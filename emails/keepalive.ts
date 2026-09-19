@@ -178,8 +178,9 @@ function alert(report: KeepaliveReport): EmailContent {
   const when = `${DATE_LONG.format(report.at)}, ${TIME.format(report.at)}`;
   const detail = probe.detail ?? "fără detaliu";
 
-  // Un proiect pus pe pauză nu mai are DNS: eroarea e de rețea, nu de SQL.
-  const looksPaused = /fetch failed|ENOTFOUND|getaddrinfo|ECONNREFUSED/i.test(detail);
+  // Un proiect pus pe pauză nu mai are DNS (eroare de rețea), iar unul în
+  // curs de repornire răspunde 5xx de la gateway — niciuna nu e eroare SQL.
+  const looksPaused = /fetch failed|ENOTFOUND|getaddrinfo|ECONNREFUSED|HTTP (0|5\d\d)/i.test(detail);
 
   const subject = `⛔ [ALERTĂ] Supabase nu răspunde · lead-urile nu se salvează · ${DATE_SHORT.format(report.at)}`;
 
