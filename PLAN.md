@@ -837,7 +837,7 @@ deci diferă doar felul în care e servit: alegi / scanezi / derulezi.
 
 ## VAULT — parole zero-knowledge, `feat/vault` (2026-09-19)
 
-Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare → (3) listă + căutare → (4) adăugare + editare → (5) import + duplicare → (6) istoric + `app/vault/CLAUDE.md`**. Commit separat per fază, confirmare de la om între ele.
+Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare ✅ → (3) listă + căutare → (4) adăugare + editare → (5) import + duplicare → (6) istoric + `app/vault/CLAUDE.md`**. Commit separat per fază, confirmare de la om între ele.
 
 **Repo-ul e public.** Securitatea vine din criptare, nu din obscuritate: niciun secret în cod, teste sau commit-uri; valorile de test sunt evident false.
 
@@ -855,14 +855,37 @@ Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-
 
 Alte decizii, nesupuse întrebării: codul de recuperare are 25 bytes (200 biți) ca să dea exact 8 grupuri de 5, nu 32; parola se normalizează NFC înainte de derivare (același „ă" pe macOS și Windows); sesiunea Supabase a vault-ului va fi în memorie (`persistSession: false`), nu în localStorage — moare cu fila.
 
-### De făcut de către om (înainte de faza 2)
+### Faza 2 — terminat (deblocare + inițializare)
+
+Tot în `app/vault/` și `lib/vault/`; niciun fișier partajat atins, nicio dependență nouă.
+
+- **`lib/vault/kdf.worker.ts` + `kdf.ts`** — Argon2id rulează într-un Web Worker de unică folosință (terminat după răspuns, ca cele 256 MiB wasm să fie eliberate); KEK-ul vine prin transfer de buffer, nu copie. Rezervă pe firul principal dacă worker-ul nu pornește. Turbopack recunoaște `new Worker(new URL("./kdf.worker.ts", import.meta.url))` în dev și în build.
+- **`lib/vault/supabase.ts`** — client de browser, `persistSession: false` (sesiunea moare cu fila), `detectSessionInUrl: false`. **`bytea.ts`** — hex `\x…` ⇄ bytes pentru PostgREST. **`members.ts`** — singurul loc care vorbește cu `vault_members`/`vault_meta` și cu funcțiile `vault_*`; erorile SQLSTATE devin mesaje pentru om (`42P01`/`PGRST202` → „aplică migrarea 3").
+- **`app/vault/_components/vault-provider.tsx`** — mașina de stări: `locked → busy → keys-missing → recovery-code | pending → unlocked`. Secretele stau în ref-uri, nu în state. KEK-ul se șterge la deblocare (după ce cheile s-au deschis) și la blocare; rămâne cât membrul e „în așteptare". **Contract pentru fazele 3–6:** `useVault()` → `{ phase, member, supabase, keys, lock }`; `keys.dek` și `supabase` sunt non-null doar în `unlocked`.
+- **Ecrane:** deblocare (email + parolă master) și **activarea contului** (parolă temporară → parolă master), în aceeași fișă; „chei lipsă" → serverul decide atomic fondator/solicitant; codul de recuperare afișat o singură dată (grilă 4×2, mono, cu bifă obligatorie); „în așteptare" cu „Verifică din nou"; shell deblocat cu **membri** (aprobă = re-sigilează DEK-ul către cheia publică a solicitantului; elimină/respinge cu confirmare inline) și **regenerarea codului de recuperare**.
+- **Auto-blocare** după 15 minute fără mouse/tastatură (`AUTO_LOCK_MS`), cu contor real în antet; blocarea șterge buffer-ele și închide sesiunea cu `scope: "local"`. Și la `pagehide`.
+- **Semnătura:** inelul de meridian (aceeași geometrie ca pe poartă și în admin) cu punctul polar care descrie cercul cât rulează Argon2id, sub el parametrii reali în mono: `Argon2id · 256 MiB · 4 pași · 2,8 s`. Așteptarea e demonstrația, nu un spinner.
+- **Verificat** în Chrome headless (CDP, script în afara repo-ului) cu un backend Supabase fals în memorie care reproduce semantica migrării 3: activare cu parolă temporară greșită → mesaj; activare → bootstrap → cod cu 8×5 → deblocat; regenerare cod (`recovery_rotations` 0 → 1); al doilea cont → `vault_join` → în așteptare; primul deblochează cu parola master (KEK → cheie privată → DEK, roundtrip prin hex) și aprobă (80 bytes sigilate); al doilea deblochează cu DEK-ul sigilat de primul; parolă greșită → același mesaj + sugestie; auto-blocare cu ceasul avansat; tastatură (ordine + focus vizibil); reduced-motion (inel static, contor viu); 360 fără scroll orizontal. Build de producție verde, worker-ul rulează și acolo. KDF: ~4 s în Chrome headless pe laptopul de dezvoltare.
+
+### Decizii luate în faza 2 (de confirmat de om)
+
+1. **Contul de vault e SEPARAT de contul de admin.** Activarea înlocuiește parola Supabase cu `authHash` (44 de caractere derivate), deci contul nu mai poate intra nicăieri cu o parolă tastată — inclusiv în `/admin/login`. Aceeași adresă nu poate fi și admin de lead-uri, și membru de vault. Pentru cine are nevoie de ambele: o a doua adresă (ex. `nume+vault@…`). Alternativa (admin-ul să derive și el hash-ul pe server) ar contrazice zero-knowledge — respinsă.
+2. **Activarea prin parolă temporară, nu prin link de invitație.** Contul se creează din dashboard (Authentication → Users → Add user → „Create new user", cu parolă și auto-confirm), parola temporară se dă omului pe alt canal, iar el o schimbă din UI la prima intrare. Fără dependență de Site URL / redirect allow-list / șabloane de email. Linkul de invitație se poate adăuga ulterior ca a doua cale.
+3. **Nu există RPC „e inițializat?".** Un cont fără rând nu poate citi nimic (RLS), așa că browserul încearcă `vault_bootstrap`; la `23505` („deja inițializat") trece pe `vault_join` cu aceleași chei. Serverul e arbitrul, atomic — fără cursă între două browsere și fără migrare nouă.
+4. **Parola master: minimum 12 caractere**, verificat doar în client (serverul nu o vede niciodată). Fără zxcvbn — nu adăugăm dependențe.
+
+### De făcut de către om (înainte de a folosi vault-ul)
 
 - [ ] Aplică migrarea 3 în SQL editor (nu există CLI/Docker local; `db push` ar reîncerca și migrările 1–2, aplicate manual).
 - [ ] Supabase → Authentication: **oprește „Allow new users to sign up"**; membrii se invită de acolo.
 - [ ] Aceeași bază ca lead-urile — vezi observația despre politicile `leads` din tabel.
+- [ ] Creează primul cont de vault (Authentication → Users → Add user → „Create new user", parolă temporară, auto-confirm), **pe altă adresă decât cea din `ADMIN_EMAILS`** (decizia 1 din faza 2). Apoi `/vault` → „Prima intrare? Activează contul". Primul cont activat devine fondator și primește codul de recuperare.
 
 ### Observații
 
+- **Nu există încă UI de recuperare** (parolă master pierdută → cod → chei noi prin `vault_rekey_self`) și nici schimbare de parolă master pentru un membru activ. Datele pentru ambele există (blob-ul de recuperare, funcția SQL); UI-ul vine după faza 6. Până atunci, un membru care își pierde parola e eliminat și reinvitat de un membru activ — iar dacă e SINGURUL activ, rămâne codul de recuperare + o intervenție manuală.
+- Un membru afișat fără „aprobat de" e unul al cărui aprobator a fost eliminat (`approved_by` → `null` prin `on delete set null`). Corect, nu bug.
+- În dev, `NEXT_PUBLIC_SUPABASE_URL` gol în `.env.local` → `/vault` arată ecranul „Lipsește Supabase", ca admin-ul. Pentru testele fazei 2 am pornit dev-ul cu variabilele date inline și un backend fals interceptat prin CDP; nimic din asta nu e în repo.
 - Argon2id la parametrii ceruți durează **~3 s** pe laptopul de dezvoltare (wasm, Node) — peste cele 1–2 s din brief. Faza 2 îl rulează într-un **Web Worker**, ca UI-ul să rămână viu; parametrii nu se slăbesc.
 - `NEXT_PUBLIC_SUPABASE_URL` nu e citit la evaluarea `next.config.ts` în dev, deci `connect-src` cade pe `https://*.supabase.co` local. Pe Vercel e prezent la build. Comportament preexistent, valabil și pentru profilul site-ului.
 - Eliminarea unui membru ACTIV nu rotește DEK-ul (ce a apucat să vadă a văzut). Rotația = re-criptarea tuturor intrărilor; iterație viitoare.

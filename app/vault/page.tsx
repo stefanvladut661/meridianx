@@ -1,34 +1,45 @@
-import { Mark } from "@/components/site/mark";
+import { isVaultConfigured } from "@/lib/vault/supabase";
+import { VaultApp } from "./_components/vault-app";
+import { Card } from "./_components/ui";
 
 /**
- * /vault — ecranul principal (feat/vault).
+ * /vault (feat/vault, faza 2).
  *
- * FAZA 1 livrează doar stratul criptografic, schema și izolarea rutei;
- * pagina de aici există ca ruta să fie verificabilă (middleware, CSP,
- * noindex). Faza 2 o înlocuiește cu deblocarea și inițializarea.
+ * Pagina e o componentă de server doar ca să decidă un lucru: există
+ * Supabase pe mediul ăsta? Fără el, un formular de deblocare ar fi un
+ * drum înfundat cu un câmp de parolă — mai rău decât o explicație.
+ * Restul e în browser: cheile nu ating serverul nici la randare.
  */
 export default function VaultPage() {
+  if (!isVaultConfigured()) return <SetupNotice />;
+  return <VaultApp />;
+}
+
+function SetupNotice() {
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-5 py-16">
       <div aria-hidden className="techgrid pointer-events-none absolute inset-0" />
-
-      <div className="glass-2 edge-light relative w-full max-w-[26rem] !bg-[rgb(12_13_17/0.9)] p-7 sm:p-9">
-        <div className="flex items-center gap-2.5 text-bone">
-          <Mark size={22} />
-          <span className="font-md-display text-[14px] font-semibold tracking-[0.2em]">
-            MERIDIAN
-          </span>
-        </div>
-
-        <p className="eyebrow mt-8 !text-[11.5px]">Vault · faza 1 din 6</p>
-        <h1 className="display mt-3 text-[2.125rem] text-bone">
-          Se construiește
-        </h1>
+      <Card>
+        <p className="eyebrow mt-8 !text-[11.5px]">Vault · nu e configurat</p>
+        <h1 className="display mt-3 text-[2.125rem] text-bone">Lipsește Supabase</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-dim">
-          Stratul criptografic și schema există. Deblocarea vine în faza
-          următoare.
+          Vault-ul vorbește direct cu Supabase din browser. Completează în
+          <Code>.env.local</Code>
+          variabilele
+          <Code>NEXT_PUBLIC_SUPABASE_URL</Code>
+          și
+          <Code>NEXT_PUBLIC_SUPABASE_ANON_KEY</Code>
+          , apoi repornește serverul. Apoi aplică migrarea 3 în SQL editor.
         </p>
-      </div>
+      </Card>
     </main>
+  );
+}
+
+function Code({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="mx-1 rounded-[4px] bg-glass px-1.5 py-0.5 font-md-mono text-[12px] text-bone">
+      {children}
+    </code>
   );
 }
