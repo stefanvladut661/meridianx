@@ -123,10 +123,24 @@ export function loadTikTokPixel(): void {
   window.ttq.page?.();
 }
 
-/** Scoate pixelul dacă omul își retrage consimțământul. */
+/**
+ * Scoate pixelul dacă omul își retrage consimțământul — dar doar pe cel
+ * pus de `loadTikTokPixel`, nu pe cel pornit de codul static din `<head>`.
+ *
+ * Fără condiția asta, la fiecare vizitator fără consimțământ salvat (prima
+ * vizită, banner ignorat) `apply()` din `<TikTokPixel />` ștergea `window.ttq`
+ * imediat după hidratare. `page`-ul plecase deja din `<head>`, deci
+ * LandingPageView ajungea, dar `SubmitForm` de la trimiterea formularului
+ * găsea `ttq` undefined și nu pleca niciodată. Iar după „Accept", o coadă
+ * `ttq` nouă nu mai e consumată de SDK-ul deja inițializat din `<head>`.
+ * Scriptul din `<head>` e proprietarul pixelului pentru toți — aici nu ne
+ * atingem de el.
+ */
 export function unloadTikTokPixel(): void {
   if (typeof window === "undefined") return;
-  document.getElementById(SCRIPT_ID)?.remove();
+  const own = document.getElementById(SCRIPT_ID);
+  if (!own) return;
+  own.remove();
   delete window.ttq;
   delete window.TiktokAnalyticsObject;
 }
