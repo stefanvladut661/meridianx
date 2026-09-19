@@ -286,6 +286,7 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 | 0 | @supabase/supabase-js, @supabase/ssr | client DB + auth admin (F6) |
 | 0 | resend | email transacțional (F6) |
 | 0 | clsx, tailwind-merge | `cn()` din lib/utils.ts |
+| vault | libsodium-wrappers-sumo | singura dependență criptografică a vault-ului (Argon2id, XChaCha20-Poly1305, crypto_box_seal, KDF). Import DOAR din `lib/vault/crypto.ts`. Fără `@types/*` — pachetul își aduce tipurile. |
 
 ---
 
@@ -300,6 +301,7 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 | F6 | `main` (integrare) | F4 și F6 merge-uite în `main` (`c36d77c`, `39eb8e0`). Prima construcție cu F4+F5+F6 împreună: **build verde**, 13 rute publice × 2 limbi + `/admin` + 5 rute API. Zero coliziuni de fișiere între F4 și F5 în `components/software/`. Verificat la runtime că payload-ul brief-ului F5 trece validarea serverului F6 (răspunde 503 „fără bază de date", nu 400 „date invalide"), și că honeypot-ul dă 200 cu id gol pe ambele divizii. Singurele conflicte la merge au fost în `PLAN.md`, rezolvate păstrând ambele părți |
 | F3 | `components/shell/footer.tsx` | Footerul construiește `tel:` cu `phone.replace(/\s/g,"")`, deci păstrează `+` doar dacă env-ul îl are. `components/video/cta/channels.ts` normalizează la `tel:+<cifre>`, ca linkul să meargă și dacă numărul e scris fără prefix. De unificat la F7 — nu am atins footerul. |
 | F7 | `i18n/routing.ts` (FAZA 0) | **Modificat, cu acord explicit de la om.** Am adăugat `localeDetection: false`. Fără el, next-intl citea `Accept-Language` și cookie-ul `NEXT_LOCALE` și redirecta `/` spre `/en` pentru orice browser setat pe engleză — deci gateway-ul în română nu se vedea niciodată pe o instalare de Windows în engleză, iar cu cookie-ul de divizie setat drumul era `/` → `/en` → `/en/video`. Româna e limba sursă (CLAUDE.md §4); engleza se alege manual din comutatorul de limbă. Efect secundar așteptat: comutatorul de pe paginile EN trimite spre `/ro/video`, pe care middleware-ul îl normalizează 307 spre `/video` — un hop în plus, corect funcțional. |
+| vault | `supabase/migrations/00000000000001_leads.sql` (F0, înghețat) | Politicile pe `leads`/`lead_events` sunt `to authenticated using (true)`: ORICE cont Supabase Auth de pe proiect — nu doar adresele din `ADMIN_EMAILS` — poate citi toate lead-urile prin REST, cu cheia anon și un JWT de sesiune. Lista de admini e verificată doar în aplicație, nu în bază. Vault-ul adaugă conturi pe același proiect (membrii, tot invitați din dashboard), deci expunerea nu crește — dar merită închisă: o tabelă `admin_emails` sau un claim în JWT, verificat în politici. Nu ating migrarea înghețată. **Verifică și că înregistrarea publică e OPRITĂ: Supabase → Authentication → Sign In / Providers → „Allow new users to sign up".** |
 
 ---
 
@@ -830,3 +832,37 @@ deci diferă doar felul în care e servit: alegi / scanezi / derulezi.
 **Limite cunoscute:** pe Vercel Hobby cron-urile rulează cel mult o dată pe zi, cu ±59 min — suficient. Dacă proiectul trece pe Supabase Pro, pauza dispare și sonda poate rămâne doar ca monitor (raportul de luni + alerta).
 
 **Decizie de discutat:** ziua raportului e luni dimineață (≈08:00 România). Se schimbă din `vercel.json`, fără cod.
+
+---
+
+## VAULT — parole zero-knowledge, `feat/vault` (2026-09-19)
+
+Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare → (3) listă + căutare → (4) adăugare + editare → (5) import + duplicare → (6) istoric + `app/vault/CLAUDE.md`**. Commit separat per fază, confirmare de la om între ele.
+
+**Repo-ul e public.** Securitatea vine din criptare, nu din obscuritate: niciun secret în cod, teste sau commit-uri; valorile de test sunt evident false.
+
+### Faza 1 — terminat
+
+- **`lib/vault/crypto.ts`** — pur, fără I/O. Argon2id (ops 4, 256 MiB) → masterKey → `crypto_kdf_derive_from_key` → `authHash` (parola trimisă la Supabase Auth) și `KEK` (nu părăsește browserul). X25519 per membru, privata împachetată cu KEK; DEK unic, sigilat per membru cu `crypto_box_seal`; intrări XChaCha20-Poly1305 cu nonce aleator și **date adiționale** legate de rândul lor (`vault_entries:<id>`), ca un payload mutat pe alt rând să nu se decripteze. Cod de recuperare Crockford base32, 8×5. Zeroizare cu `sodium.memzero`. 35 de verificări de roundtrip trecute în Node (valori false, script în afara repo-ului).
+- **`supabase/migrations/00000000000003_vault.sql`** — 5 tabele (`vault_members`, `vault_meta`, `vault_clients`, `vault_entries`, `vault_entry_versions`), RLS pe toate, nicio politică `using (true)`, nimic pentru `anon`. Versionare prin trigger (rândul vechi se copiază în istoric, `version + 1`; istoricul e scris DOAR de trigger, clientul nu are insert). Ștergere soft. Membrii intră prin funcții `security definer` (`vault_bootstrap` o singură dată, `vault_join`, `vault_approve_member`, `vault_rekey_self`, `vault_remove_member`); `wrapped_dek` e păzit și de trigger.
+- **Izolare:** `/vault` exclus din matcher-ul i18n (`middleware.ts`), profil CSP propriu cu `'wasm-unsafe-eval'` și fără pixeli (`next.config.ts`, intrare DUPĂ cea globală — Next păstrează ultima), `noindex` în layout + `disallow` în `robots.ts` + absent din sitemap. Root layout propriu (`app/vault/layout.tsx`, scope neutru al porții, ca admin-ul), pagină placeholder până la faza 2. Verificat la runtime: antetele, 404 fără redirect pe `/vault/x`, `/video` neafectat. Build verde.
+
+### Decizii luate (confirmate de om)
+
+1. **Salt din email**, nu aleator stocat: salt-ul trebuie cunoscut înainte de login, iar baza nu se citește fără sesiune. `BLAKE2b("meridian-vault-salt-v1:" + email)`. Modelul Bitwarden.
+2. **`crypto_kdf_derive_from_key` în loc de HKDF-SHA256**: wrapper-ul libsodium 0.8.4 nu expune funcțiile HKDF (doar constantele); alternativa era pointeri manuali.
+3. **Conturile se invită din Supabase**, fără sign-up public — ca la admin. Al doilea membru e „în așteptare" până primul îi sigilează DEK-ul.
+
+Alte decizii, nesupuse întrebării: codul de recuperare are 25 bytes (200 biți) ca să dea exact 8 grupuri de 5, nu 32; parola se normalizează NFC înainte de derivare (același „ă" pe macOS și Windows); sesiunea Supabase a vault-ului va fi în memorie (`persistSession: false`), nu în localStorage — moare cu fila.
+
+### De făcut de către om (înainte de faza 2)
+
+- [ ] Aplică migrarea 3 în SQL editor (nu există CLI/Docker local; `db push` ar reîncerca și migrările 1–2, aplicate manual).
+- [ ] Supabase → Authentication: **oprește „Allow new users to sign up"**; membrii se invită de acolo.
+- [ ] Aceeași bază ca lead-urile — vezi observația despre politicile `leads` din tabel.
+
+### Observații
+
+- Argon2id la parametrii ceruți durează **~3 s** pe laptopul de dezvoltare (wasm, Node) — peste cele 1–2 s din brief. Faza 2 îl rulează într-un **Web Worker**, ca UI-ul să rămână viu; parametrii nu se slăbesc.
+- `NEXT_PUBLIC_SUPABASE_URL` nu e citit la evaluarea `next.config.ts` în dev, deci `connect-src` cade pe `https://*.supabase.co` local. Pe Vercel e prezent la build. Comportament preexistent, valabil și pentru profilul site-ului.
+- Eliminarea unui membru ACTIV nu rotește DEK-ul (ce a apucat să vadă a văzut). Rotația = re-criptarea tuturor intrărilor; iterație viitoare.
