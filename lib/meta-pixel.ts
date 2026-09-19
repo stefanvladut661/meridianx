@@ -42,6 +42,11 @@ export function loadMetaPixel(): void {
   if (typeof window === "undefined") return;
   if (!hasConsent("marketing")) return;
   if (document.getElementById(SCRIPT_ID)) return;
+  /* Codul static din <head> a pornit deja pixelul (fbevents.js + init +
+     PageView) și a lăsat `fbq`. Un al doilea init pe același ID dă
+     „Duplicate Pixel ID" în consolă. Când `fbq` lipsește — după
+     retragerea consimțământului — pornim noi, ca până acum. */
+  if (window.fbq) return;
 
   if (!window.fbq) {
     /* Coada oficială Meta: apelurile de dinainte de load nu se pierd.

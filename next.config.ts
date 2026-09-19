@@ -32,6 +32,10 @@ const META_SCRIPT = "https://connect.facebook.net"; // fbevents.js
 const META_PIXEL = "https://www.facebook.com"; // /tr, inclusiv <noscript>
 // events.js + modulele pe care le încarcă după, și evenimentele (fetch/img).
 const TIKTOK = "https://analytics.tiktok.com";
+// Lista din Events Manager → Pixel → „Content Security Policy": main.*.js
+// vine de pe CDN, iar evenimentele pleacă spre *.tiktokw.us.
+const TIKTOK_CDN = "https://*.tiktokcdn.com";
+const TIKTOK_EVENTS = "https://*.tiktokw.us";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -90,9 +94,11 @@ function contentSecurityPolicy(): string {
       "'unsafe-inline'",
       META_SCRIPT,
       TIKTOK,
-      // `next dev` compilează modulele cu eval; producția nu — verificat
-      // în `.next/static/chunks`, zero apeluri de eval.
-      ...(isProduction ? [] : ["'unsafe-eval'"]),
+      TIKTOK_CDN,
+      // Codul nostru nu face eval (verificat în `.next/static/chunks`), dar
+      // SDK-ul TikTok (main.*.js) îl cere — fără el pixelul raportează
+      // violări și pierde evenimente. În dev îl cere și Turbopack.
+      "'unsafe-eval'",
     ],
 
     // Tailwind v4 și next/font ajung în atribute `style=` inline.
@@ -109,6 +115,8 @@ function contentSecurityPolicy(): string {
       META_SCRIPT,
       META_PIXEL,
       TIKTOK,
+      TIKTOK_CDN,
+      TIKTOK_EVENTS,
       ...supabaseOrigins(),
       // HMR-ul lui `next dev` merge pe websocket.
       ...(isProduction ? [] : ["ws:"]),

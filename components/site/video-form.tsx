@@ -163,7 +163,7 @@ export function VideoLeadForm() {
             inputMode="tel"
             autoComplete="tel"
             required
-            pattern="\+?[0-9\s().-]{7,20}"
+            pattern="\+?[0-9\s\(\)\-.]{7,20}"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className={FIELD}
