@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { pixelTrack } from "@/lib/meta-pixel";
 import { captureUTM, getStoredUTM } from "@/lib/utm";
 import { leadInputSchema, type LeadInput } from "@/lib/validations/lead";
 
@@ -90,5 +91,19 @@ export async function submitLead(fields: LeadFields): Promise<LeadResult> {
 
   // Honeypot declanșat: serverul răspunde 200 cu id gol, ca botul să
   // creadă că a reușit. Pentru un om real e imposibil să ajungă aici.
-  return { ok: true, id: body?.id ?? "" };
+  const id = body?.id ?? "";
+
+  /* Conversia pentru Meta, abia acum: după ce serverul a confirmat că
+     lead-ul e în bază, nu la click pe buton. Fără asta pixelul ghicește
+     din textul butonului și raportează `SubmitApplication`/`Subscribe`,
+     evenimente pe care campania optimizată pe `Lead` nu le vede. Botul
+     din honeypot nu e conversie — id-ul gol îl ține afară. */
+  if (id) {
+    pixelTrack("Lead", {
+      content_category: fields.division,
+      content_name: fields.source,
+    });
+  }
+
+  return { ok: true, id };
 }

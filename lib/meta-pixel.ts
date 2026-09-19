@@ -70,6 +70,13 @@ export function loadMetaPixel(): void {
   script.async = true;
   document.head.appendChild(script);
 
+  /* Fără „configurare automată": altfel pixelul ghicește evenimente din
+     textul butoanelor și raportează formularele noastre ca
+     `SubmitApplication` sau `Subscribe`, iar campaniile optimizate pe
+     `Lead` nu văd nicio conversie. Evenimentele le trimitem noi, explicit,
+     din `submitLead`. Trebuie setat înainte de `init`. */
+  window.fbq("set", "autoConfig", false, PIXEL_ID);
+
   /* `init` doar configurează pixelul; vizualizarea e un eveniment
      separat. Codul oficial Meta le are pe amândouă, una sub alta — dacă
      lipsește a doua, Events Manager rămâne gol și nu se poate construi
@@ -104,11 +111,19 @@ export function pixelPageView(): void {
  */
 export type PixelEvent = "Lead" | "Contact" | "Schedule" | "ViewContent";
 
+/**
+ * Pleacă oriunde există `fbq` — poarta e cine a încărcat pixelul, nu
+ * funcția asta. Codul static din `<head>` îl pornește pentru toți, deci
+ * un `Lead` condiționat de consimțământ ar lipsi din Events Manager
+ * exact la vizitatorii pentru care Meta deja a numărat `PageView`-ul, iar
+ * campania ar raporta o fracțiune din conversiile reale. Dacă pixelul se
+ * întoarce vreodată doar în spatele porții, `fbq` există doar după „da"
+ * și evenimentul se oprește singur acolo.
+ */
 export function pixelTrack(
   event: PixelEvent,
   properties: Record<string, string | number | boolean> = {}
 ): void {
   if (typeof window === "undefined") return;
-  if (!hasConsent("marketing")) return;
   window.fbq?.("track", event, properties);
 }
