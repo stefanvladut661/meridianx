@@ -125,6 +125,7 @@ const privacyRo: LegalDocument = {
         "Resend — trimiterea emailurilor tranzacționale.",
         "Vercel — găzduirea site-ului și, dacă ai acceptat, statisticile agregate.",
         "Meta (Facebook, Instagram) — măsurarea reclamelor, doar dacă ai acceptat categoria de marketing.",
+        "TikTok — măsurarea reclamelor, doar dacă ai acceptat categoria de marketing.",
         "Cal.com — programarea call-urilor, dacă alegi să rezervi un interval.",
         "Autoritățile publice, doar când legea ne obligă.",
       ],
@@ -254,6 +255,7 @@ const privacyEn: LegalDocument = {
         "Resend — transactional email delivery.",
         "Vercel — site hosting and, if you consented, aggregate statistics.",
         "Meta (Facebook, Instagram) — ad measurement, only if you accepted the marketing category.",
+        "TikTok — ad measurement, only if you accepted the marketing category.",
         "Cal.com — call scheduling, if you book a slot.",
         "Public authorities, only where the law compels us.",
       ],
@@ -592,9 +594,9 @@ const cookiesRo: LegalDocument = {
       id: "marketing",
       heading: "Marketing — doar cu acordul tău",
       paragraphs: [
-        "Folosim Meta Pixel (Facebook și Instagram) ca să măsurăm ce campanii aduc cereri și ca să le arătăm reclame oamenilor care au fost deja pe site. Scriptul nu se încarcă deloc până nu accepți categoria — nu se încarcă și apoi „se dezactivează”.",
-        "Dacă accepți, Meta poate seta cookie-uri pe domeniul propriu și poate lega vizita ta de contul tău de Facebook sau Instagram, dacă ai unul. Asta e prelucrare făcută de Meta, guvernată de politica lor, nu de a noastră.",
-        "Dacă refuzi, sau dacă îți retragi acordul din pagina asta, scriptul e scos din pagină și nu mai pleacă niciun eveniment. Cookie-urile puse deja de Meta nu le putem șterge noi — sunt pe domeniul lor — dar le poți șterge din setările browserului.",
+        "Folosim Meta Pixel (Facebook și Instagram) și TikTok Pixel ca să măsurăm ce campanii aduc cereri și ca să le arătăm reclame oamenilor care au fost deja pe site. Scripturile nu se încarcă deloc până nu accepți categoria — nu se încarcă și apoi „se dezactivează”.",
+        "Dacă accepți, Meta și TikTok pot seta cookie-uri pe domeniile proprii și pot lega vizita ta de contul tău de Facebook, Instagram sau TikTok, dacă ai unul. Asta e prelucrare făcută de ei, guvernată de politicile lor, nu de a noastră.",
+        "Dacă refuzi, sau dacă îți retragi acordul din pagina asta, scripturile sunt scoase din pagină și nu mai pleacă niciun eveniment. Cookie-urile puse deja de Meta sau TikTok nu le putem șterge noi — sunt pe domeniile lor — dar le poți șterge din setările browserului.",
       ],
     },
     {
@@ -678,9 +680,9 @@ const cookiesEn: LegalDocument = {
       id: "marketing",
       heading: "Marketing — only with your consent",
       paragraphs: [
-        "We use the Meta Pixel (Facebook and Instagram) to measure which campaigns bring requests and to show ads to people who have already visited the site. The script does not load at all until you accept the category — it isn't loaded and then \"disabled\".",
-        "If you accept, Meta may set cookies on its own domain and may link your visit to your Facebook or Instagram account, if you have one. That processing is done by Meta, governed by their policy rather than ours.",
-        "If you decline, or withdraw your consent on this page, the script is removed and no further events are sent. We cannot delete cookies Meta has already set — they live on their domain — but you can clear them from your browser settings.",
+        "We use the Meta Pixel (Facebook and Instagram) and the TikTok Pixel to measure which campaigns bring requests and to show ads to people who have already visited the site. The scripts do not load at all until you accept the category — they aren't loaded and then \"disabled\".",
+        "If you accept, Meta and TikTok may set cookies on their own domains and may link your visit to your Facebook, Instagram or TikTok account, if you have one. That processing is done by them, governed by their policies rather than ours.",
+        "If you decline, or withdraw your consent on this page, the scripts are removed and no further events are sent. We cannot delete cookies Meta or TikTok have already set — they live on their domains — but you can clear them from your browser settings.",
       ],
     },
     {

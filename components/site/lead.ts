@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { pixelTrack } from "@/lib/meta-pixel";
+import { tiktokTrack } from "@/lib/tiktok-pixel";
 import { captureUTM, getStoredUTM } from "@/lib/utm";
 import { leadInputSchema, type LeadInput } from "@/lib/validations/lead";
 
@@ -100,6 +101,12 @@ export async function submitLead(fields: LeadFields): Promise<LeadResult> {
      din honeypot nu e conversie — id-ul gol îl ține afară. */
   if (id) {
     pixelTrack("Lead", {
+      content_category: fields.division,
+      content_name: fields.source,
+    });
+    /* Același moment, vocabularul TikTok: `SubmitForm` e evenimentul pe
+       care se optimizează campaniile de lead-uri acolo. */
+    tiktokTrack("SubmitForm", {
       content_category: fields.division,
       content_name: fields.source,
     });
