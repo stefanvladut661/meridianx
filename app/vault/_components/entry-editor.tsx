@@ -81,6 +81,7 @@ export function EntryEditor({
   entry,
   clients,
   initialClientId,
+  template,
   headingId,
   discardPrompt,
   onDirtyChange,
@@ -93,6 +94,8 @@ export function EntryEditor({
   entry?: Extract<VaultEntry, { status: "ok" }>;
   clients: VaultClient[];
   initialClientId?: string;
+  /** Duplicare (faza 5): intrarea nouă pornește cu acest payload. */
+  template?: EntryPayload;
   headingId: string;
   /** Spațiul de lucru a cerut închiderea peste modificări nesalvate. */
   discardPrompt: boolean;
@@ -118,6 +121,17 @@ export function EntryEditor({
       };
     }
     const firstClient = initialClientId ?? clients[0]?.id ?? NEW_CLIENT;
+    if (template) {
+      return {
+        title: template.title,
+        kind: template.kind,
+        clientChoice: firstClient,
+        newClientName: "",
+        fields: withKeys(template.fields),
+        tagsText: template.tags.join(", "),
+        notes: template.notes,
+      };
+    }
     return {
       title: "",
       kind: "login",
@@ -132,7 +146,7 @@ export function EntryEditor({
   }, []);
 
   const [draft, setDraft] = useState<Draft>(initial);
-  const [fieldsTouched, setFieldsTouched] = useState(mode === "edit");
+  const [fieldsTouched, setFieldsTouched] = useState(mode === "edit" || Boolean(template));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatorFor, setGeneratorFor] = useState<number | null>(null);
@@ -262,7 +276,7 @@ export function EntryEditor({
       <div className="flex items-start justify-between gap-4 border-b border-hair px-5 py-5 sm:px-6">
         <div className="min-w-0">
           <p className="font-md-mono text-[10.5px] uppercase tracking-[0.18em] text-dim">
-            {mode === "edit" ? "Editezi" : "Intrare nouă"} · {clientName}
+            {mode === "edit" ? "Editezi" : template ? "Copie" : "Intrare nouă"} · {clientName}
           </p>
           <h2 id={headingId} className="display mt-2 break-words text-[1.5rem] text-bone sm:text-[1.625rem]">
             {draft.title.trim() || (mode === "edit" ? entry?.payload.title : "Fără titlu încă")}

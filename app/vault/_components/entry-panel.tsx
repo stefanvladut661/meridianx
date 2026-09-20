@@ -8,7 +8,7 @@ import { EntryFieldRow } from "./entry-field";
 import { BTN_SM, KIND_TAG, Note, formatDate } from "./ui";
 
 /**
- * Fișa unei intrări (feat/vault, fazele 3–4).
+ * Fișa unei intrări (feat/vault, fazele 3–5).
  *
  * Citire, cu două acțiuni: „Editează" (deschide editorul în aceeași
  * ramă) și „Șterge" (soft, cu confirmare inline care spune exact ce
@@ -28,6 +28,7 @@ export function EntryPanel({
   headingId,
   onClose,
   onEdit,
+  onDuplicate,
   onDeleted,
 }: {
   entry: VaultEntry;
@@ -38,6 +39,8 @@ export function EntryPanel({
   headingId: string;
   onClose: () => void;
   onEdit: () => void;
+  /** Faza 5: editorul pornește cu o copie a intrării, în același client. */
+  onDuplicate?: () => void;
   onDeleted: () => Promise<void>;
 }) {
   const { supabase } = useVault();
@@ -143,7 +146,8 @@ export function EntryPanel({
           </>
         )}
 
-        {/* Ștergerea — jos, departe de „Copiază", cu confirmare inline. */}
+        {/* Acțiunile secundare — jos, departe de „Copiază": duplicarea și
+            ștergerea (cu confirmare inline). */}
         <div className="mt-8 border-t border-hair pt-4">
           {confirming ? (
             <div className="rounded-panel-sm border-l-[3px] border-[#ef4444] bg-[#ef4444]/10 px-3.5 py-3 text-[14px] leading-relaxed text-bone">
@@ -166,13 +170,24 @@ export function EntryPanel({
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="text-[13px] text-dim underline-offset-4 transition-colors hover:text-[#ff8a8a] hover:underline"
-            >
-              Șterge intrarea
-            </button>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {entry.status === "ok" && onDuplicate ? (
+                <button
+                  type="button"
+                  onClick={onDuplicate}
+                  className="text-[13px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
+                >
+                  Duplică intrarea
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="text-[13px] text-dim underline-offset-4 transition-colors hover:text-[#ff8a8a] hover:underline"
+              >
+                Șterge intrarea
+              </button>
+            </div>
           )}
         </div>
       </div>

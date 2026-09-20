@@ -451,6 +451,77 @@ export async function createEntry(
   return id;
 }
 
+/** Cât trimitem într-un singur POST la import. PostgREST acceptă liste
+    mari, dar un lot mic ține progresul vizibil și eroarea localizată. */
+export const IMPORT_BATCH = 50;
+
+/**
+ * Import (faza 5): multe intrări, în loturi. Fiecare are id și nonce
+ * propriu, criptată individual — exact ca una creată de mână. Întoarce
+ * câte au intrat; la eroare, aruncă după loturile deja salvate (apelantul
+ * raportează „N din M", nu reia de la zero — rândurile salvate ar deveni
+ * duplicate).
+ */
+export async function createEntries(
+  supabase: SupabaseClient,
+  dek: Uint8Array,
+  items: Array<{ clientId: string; payload: EntryPayload }>,
+  onProgress?: (done: number) => void
+): Promise<number> {
+  let done = 0;
+  for (let start = 0; start < items.length; start += IMPORT_BATCH) {
+    const batch = items.slice(start, start + IMPORT_BATCH).map(({ clientId, payload }) => {
+      const id = newId();
+      const box = encryptJson(dek, payload, AD.entry(id));
+      return {
+        id,
+        client_id: clientId,
+        encrypted_payload: toBytea(box.ciphertext),
+        nonce: toBytea(box.nonce),
+      };
+    });
+    const { error } = await supabase.from("vault_entries").insert(batch);
+    if (error) throw describeDbError(error);
+    done += batch.length;
+    onProgress?.(done);
+  }
+  return done;
+}
+
+/**
+ * Clienți după nume, pentru import: cei existenți se refolosesc (după
+ * nume normalizat — „Băcănia Verde" și „bacania verde" sunt același
+ * client), cei lipsă se creează. Întoarce numele → id.
+ */
+export async function ensureClients(
+  supabase: SupabaseClient,
+  dek: Uint8Array,
+  names: string[],
+  existing: VaultClient[]
+): Promise<Map<string, string>> {
+  const byKey = new Map(existing.map((client) => [clientKey(client.name), client.id]));
+  const result = new Map<string, string>();
+  for (const name of names) {
+    const key = clientKey(name);
+    let id = byKey.get(key);
+    if (!id) {
+      id = await createClient(supabase, dek, name);
+      byKey.set(key, id);
+    }
+    result.set(name, id);
+  }
+  return result;
+}
+
+function clientKey(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function updateEntry(
   supabase: SupabaseClient,
   dek: Uint8Array,

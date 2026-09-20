@@ -10,13 +10,14 @@ import {
   useSyncExternalStore,
   type KeyboardEvent,
 } from "react";
-import { renameClient, type VaultEntry, type VaultSnapshot } from "@/lib/vault/entries";
+import { renameClient, type EntryPayload, type VaultEntry, type VaultSnapshot } from "@/lib/vault/entries";
 import type { VaultMember } from "@/lib/vault/members";
 import { buildIndex, search } from "@/lib/vault/search";
 import { useVault } from "./vault-provider";
 import { EntryList } from "./entry-list";
 import { EntryPanel } from "./entry-panel";
 import { EntryEditor } from "./entry-editor";
+import { ImportPanel } from "./import-panel";
 import { clearClipboardNow } from "./clipboard";
 import { BTN_SM, BTN_SM_LIGHT, FIELD, Note, countNoun } from "./ui";
 
@@ -56,7 +57,9 @@ function useIsDesktop(): boolean {
 type Panel =
   | { kind: "view"; id: string }
   | { kind: "edit"; id: string }
-  | { kind: "create"; clientId?: string }
+  /** `template`: o copie (Duplică) — editorul pornește cu payload-ul ei. */
+  | { kind: "create"; clientId?: string; template?: EntryPayload }
+  | { kind: "import" }
   | null;
 
 export function EntriesWorkspace({
@@ -92,7 +95,7 @@ export function EntriesWorkspace({
   );
   const result = useMemo(() => (index ? search(index, query) : null), [index, query]);
 
-  const panelId = panel && panel.kind !== "create" ? panel.id : null;
+  const panelId = panel && (panel.kind === "view" || panel.kind === "edit") ? panel.id : null;
   const selected = useMemo(
     () => (panelId ? (snapshot?.entries.find((entry) => entry.id === panelId) ?? null) : null),
     [snapshot, panelId]
@@ -265,11 +268,12 @@ export function EntriesWorkspace({
   const panelContent =
     panel?.kind === "create" || (panel?.kind === "edit" && selected?.status === "ok") ? (
       <EntryEditor
-        key={panel.kind === "edit" ? `edit:${panel.id}:${selected?.version}` : `create:${panel.clientId ?? ""}`}
+        key={panel.kind === "edit" ? `edit:${panel.id}:${selected?.version}` : `create:${panel.clientId ?? ""}:${panel.template?.title ?? ""}`}
         mode={panel.kind}
         entry={panel.kind === "edit" && selected?.status === "ok" ? selected : undefined}
         clients={snapshot?.clients ?? []}
         initialClientId={panel.kind === "create" ? panel.clientId : undefined}
+        template={panel.kind === "create" ? panel.template : undefined}
         headingId={headingId}
         discardPrompt={discardPrompt}
         onDirtyChange={onDirtyChange}
@@ -277,6 +281,14 @@ export function EntriesWorkspace({
         onDiscard={discard}
         onKeepEditing={() => setDiscardPrompt(false)}
         onSaved={onSaved}
+      />
+    ) : panel?.kind === "import" ? (
+      <ImportPanel
+        clients={snapshot?.clients ?? []}
+        entries={snapshot?.entries ?? []}
+        headingId={headingId}
+        onClose={close}
+        onImported={reload}
       />
     ) : selected ? (
       <EntryPanel
@@ -287,6 +299,16 @@ export function EntriesWorkspace({
         headingId={headingId}
         onClose={close}
         onEdit={() => go({ kind: "edit", id: selected.id })}
+        onDuplicate={
+          selected.status === "ok"
+            ? () =>
+                go({
+                  kind: "create",
+                  clientId: selected.clientId,
+                  template: { ...selected.payload, title: `${selected.payload.title} (copie)` },
+                })
+            : undefined
+        }
         onDeleted={onDeleted}
       />
     ) : null;
@@ -304,6 +326,9 @@ export function EntriesWorkspace({
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => void reload()} disabled={loading} className={BTN_SM}>
               {loading ? "Se reîncarcă…" : "Reîncarcă"}
+            </button>
+            <button type="button" onClick={() => go({ kind: "import" })} disabled={!snapshot} className={BTN_SM}>
+              Importă CSV
             </button>
             <button
               type="button"
