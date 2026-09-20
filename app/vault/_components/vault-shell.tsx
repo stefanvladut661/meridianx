@@ -105,7 +105,7 @@ export function VaultShell() {
             members={data.members}
             loading={data.loading}
             error={data.error}
-            onReload={() => void data.reload()}
+            reload={data.reload}
           />
         ) : (
           <>

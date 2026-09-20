@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fromBytea } from "./bytea";
-import { AD, decryptJson, VaultCryptoError } from "./crypto";
-import { describeDbError } from "./members";
+import { fromBytea, toBytea } from "./bytea";
+import { AD, decryptJson, encryptJson, VaultCryptoError } from "./crypto";
+import { describeDbError, VaultDataError } from "./members";
 
 /**
- * Stratul de date al intrărilor (feat/vault, faza 3).
+ * Stratul de date al intrărilor (feat/vault, fazele 3–4).
  *
  * Singurul loc care vorbește cu `vault_clients` / `vault_entries`.
  * Primește un client Supabase cu sesiune și DEK-ul din memorie; întoarce
@@ -313,4 +313,186 @@ export async function loadVault(supabase: SupabaseClient, dek: Uint8Array): Prom
 export function entrySummary(payload: EntryPayload): string | null {
   const field = payload.fields.find((f) => !f.secret && f.kind !== "multiline" && f.value.trim());
   return field ? field.value : null;
+}
+
+// ---------------------------------------------------------------------------
+// Șabloane — ce câmpuri PROPUNE un tip la adăugare (faza 4)
+// ---------------------------------------------------------------------------
+
+/** Câmpurile cu care pornește o intrare nouă de un anumit tip. Sunt o
+    propunere, nu o formă fixă: omul le poate șterge, redenumi sau
+    completa cu altele (decizia 2 din faza 3). Ordinea e cea afișată. */
+export function templateFields(kind: EntryKind): EntryField[] {
+  const f = (label: string, secret = false, fieldKind: FieldKind = "text"): EntryField => ({
+    label,
+    value: "",
+    secret,
+    kind: fieldKind,
+  });
+  switch (kind) {
+    case "login":
+      return [f("URL", false, "url"), f("Utilizator"), f("Parolă", true)];
+    case "server":
+      return [f("Host"), f("Port"), f("Utilizator"), f("Parolă", true)];
+    case "api":
+      return [f("Cheie", true), f("Cont"), f("URL", false, "url")];
+    case "database":
+      return [f("Host"), f("Bază de date"), f("Utilizator"), f("Parolă", true)];
+    case "card":
+      return [f("Titular"), f("Număr", true), f("Expiră"), f("CVV", true)];
+    case "note":
+    case "other":
+      return [];
+  }
+}
+
+/** Etichete: tăiate, fără duplicate (după normalizarea la litere mici),
+    fără `#` în față — se pune la afișare. */
+export function normalizeTags(input: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of input.split(/[,\n]/)) {
+    const tag = raw.trim().replace(/^#+/, "");
+    if (!tag) continue;
+    const key = tag.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(tag);
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Scriere — id-ul se generează AICI, înainte de criptare
+// ---------------------------------------------------------------------------
+// Datele adiționale leagă ciphertextul de rândul lui (`vault_entries:<id>`),
+// deci id-ul trebuie cunoscut înainte de insert: îl generează browserul
+// (`crypto.randomUUID`) și îl trimite explicit. Postgres acceptă un id
+// dat; `default gen_random_uuid()` rămâne pentru orice alt client.
+//
+// Concurența e optimistă: update-ul cere `version` = cea văzută de om;
+// zero rânduri afectate = altcineva a salvat între timp → `conflict`.
+// Triggerul copiază rândul vechi în istoric și crește versiunea singur.
+
+export function newId(): string {
+  return crypto.randomUUID();
+}
+
+function conflict(): VaultDataError {
+  return new VaultDataError(
+    "conflict",
+    "Altcineva a modificat intrarea între timp. Reîncarcă, apoi aplică din nou ce ai schimbat."
+  );
+}
+
+export async function createClient(
+  supabase: SupabaseClient,
+  dek: Uint8Array,
+  name: string
+): Promise<string> {
+  const id = newId();
+  const payload: ClientPayload = { v: ENTRY_SCHEMA_VERSION, name: name.trim() };
+  const box = encryptJson(dek, payload, AD.client(id));
+  const { error } = await supabase.from("vault_clients").insert({
+    id,
+    encrypted_name: toBytea(box.ciphertext),
+    nonce: toBytea(box.nonce),
+  });
+  if (error) throw describeDbError(error);
+  return id;
+}
+
+export async function renameClient(
+  supabase: SupabaseClient,
+  dek: Uint8Array,
+  clientId: string,
+  name: string
+): Promise<void> {
+  const payload: ClientPayload = { v: ENTRY_SCHEMA_VERSION, name: name.trim() };
+  const box = encryptJson(dek, payload, AD.client(clientId));
+  const { data, error } = await supabase
+    .from("vault_clients")
+    .update({ encrypted_name: toBytea(box.ciphertext), nonce: toBytea(box.nonce) })
+    .eq("id", clientId)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) throw describeDbError(error);
+  if (!data || data.length === 0) {
+    throw new VaultDataError("not_found", "Clientul nu mai există. Reîncarcă lista.");
+  }
+}
+
+/** Ștergere soft. Se cheamă DOAR când clientul nu mai are intrări vii
+    (`deleteEntry` o face singură pentru ultima intrare). */
+export async function deleteClient(supabase: SupabaseClient, clientId: string): Promise<void> {
+  const { error } = await supabase
+    .from("vault_clients")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", clientId)
+    .is("deleted_at", null);
+  if (error) throw describeDbError(error);
+}
+
+export async function createEntry(
+  supabase: SupabaseClient,
+  dek: Uint8Array,
+  clientId: string,
+  payload: EntryPayload
+): Promise<string> {
+  const id = newId();
+  const box = encryptJson(dek, payload, AD.entry(id));
+  const { error } = await supabase.from("vault_entries").insert({
+    id,
+    client_id: clientId,
+    encrypted_payload: toBytea(box.ciphertext),
+    nonce: toBytea(box.nonce),
+  });
+  if (error) throw describeDbError(error);
+  return id;
+}
+
+export async function updateEntry(
+  supabase: SupabaseClient,
+  dek: Uint8Array,
+  target: { id: string; version: number },
+  clientId: string,
+  payload: EntryPayload
+): Promise<void> {
+  const box = encryptJson(dek, payload, AD.entry(target.id));
+  const { data, error } = await supabase
+    .from("vault_entries")
+    .update({
+      client_id: clientId,
+      encrypted_payload: toBytea(box.ciphertext),
+      nonce: toBytea(box.nonce),
+    })
+    .eq("id", target.id)
+    .eq("version", target.version)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) throw describeDbError(error);
+  if (!data || data.length === 0) throw conflict();
+}
+
+/**
+ * Ștergere soft, cu aceeași verificare de versiune — o intrare pe care
+ * altcineva tocmai a rescris-o nu se șterge orbește. `lastOfClient`:
+ * apelantul știe din snapshot dacă era ultima intrare vie a clientului;
+ * atunci dispare și clientul, ca lista de clienți să nu adune goale.
+ */
+export async function deleteEntry(
+  supabase: SupabaseClient,
+  target: { id: string; version: number; clientId: string },
+  lastOfClient: boolean
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("vault_entries")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", target.id)
+    .eq("version", target.version)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) throw describeDbError(error);
+  if (!data || data.length === 0) throw conflict();
+  if (lastOfClient) await deleteClient(supabase, target.clientId);
 }

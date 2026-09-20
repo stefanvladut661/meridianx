@@ -10,17 +10,20 @@ import {
   useSyncExternalStore,
   type KeyboardEvent,
 } from "react";
-import type { VaultEntry, VaultSnapshot } from "@/lib/vault/entries";
+import { renameClient, type VaultEntry, type VaultSnapshot } from "@/lib/vault/entries";
 import type { VaultMember } from "@/lib/vault/members";
 import { buildIndex, search } from "@/lib/vault/search";
+import { useVault } from "./vault-provider";
 import { EntryList } from "./entry-list";
 import { EntryPanel } from "./entry-panel";
+import { EntryEditor } from "./entry-editor";
 import { clearClipboardNow } from "./clipboard";
-import { BTN_SM, FIELD, Note, countNoun } from "./ui";
+import { BTN_SM, BTN_SM_LIGHT, FIELD, Note, countNoun } from "./ui";
 
 /**
- * Spațiul de lucru al intrărilor (feat/vault, faza 3): căutarea, lista
- * grupată pe client și fișa intrării alese.
+ * Spațiul de lucru al intrărilor (feat/vault, fazele 3–4): căutarea,
+ * lista grupată pe client și panoul din dreapta — fișa intrării alese
+ * SAU editorul (intrare nouă / editare), în aceeași ramă.
  *
  * Căutarea e instrumentul principal — se deschide cu `/` de oriunde,
  * ca în orice unealtă de zi cu zi — și rulează peste ce e deja
@@ -28,9 +31,10 @@ import { BTN_SM, FIELD, Note, countNoun } from "./ui";
  * clienți, în cât timp s-au deschis local. Nu e statistică decorativă;
  * e afirmația modelului zero-knowledge, cu cifre.
  *
- * Fișa: pe ecran lat stă alături de listă, lipită de sus; pe telefon
- * acoperă lista ca un dialog cu focus captiv, Escape o închide și
- * focusul se întoarce pe rândul de unde a plecat.
+ * Panoul: pe ecran lat stă alături de listă, lipit de sus; pe telefon
+ * acoperă lista ca un dialog cu focus captiv, Escape îl închide și
+ * focusul se întoarce pe rândul de unde a plecat. Un editor cu
+ * modificări nesalvate nu se închide fără să întrebe.
  */
 
 const DESKTOP = "(min-width: 1024px)";
@@ -49,23 +53,35 @@ function useIsDesktop(): boolean {
   );
 }
 
+type Panel =
+  | { kind: "view"; id: string }
+  | { kind: "edit"; id: string }
+  | { kind: "create"; clientId?: string }
+  | null;
+
 export function EntriesWorkspace({
   snapshot,
   members,
   loading,
   error,
-  onReload,
+  reload,
 }: {
   snapshot: VaultSnapshot | null;
   members: VaultMember[] | null;
   loading: boolean;
   error: string | null;
-  onReload: () => void;
+  reload: () => Promise<void>;
 }) {
+  const { supabase, keys } = useVault();
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [discardPrompt, setDiscardPrompt] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const dirtyRef = useRef(false);
+  /** Ce voia omul să facă atunci când l-am oprit cu „modificări nesalvate". */
+  const pendingRef = useRef<Panel | "close">("close");
   const isDesktop = useIsDesktop();
   const searchId = useId();
   const headingId = useId();
@@ -76,18 +92,28 @@ export function EntriesWorkspace({
   );
   const result = useMemo(() => (index ? search(index, query) : null), [index, query]);
 
+  const panelId = panel && panel.kind !== "create" ? panel.id : null;
   const selected = useMemo(
-    () => snapshot?.entries.find((entry) => entry.id === selectedId) ?? null,
-    [snapshot, selectedId]
+    () => (panelId ? (snapshot?.entries.find((entry) => entry.id === panelId) ?? null) : null),
+    [snapshot, panelId]
   );
   const selectedClient = selected ? (index?.clientsById.get(selected.clientId) ?? null) : null;
+  const siblings = selected
+    ? (snapshot?.entries.filter((entry) => entry.clientId === selected.clientId).length ?? 1)
+    : 0;
 
   // `/` deschide căutarea de oriunde din pagină — nu și din alt câmp.
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
         return;
       }
       event.preventDefault();
@@ -101,22 +127,110 @@ export function EntriesWorkspace({
   // La blocare (shell-ul se demontează), clipboard-ul nu rămâne cu o parolă.
   useEffect(() => () => clearClipboardNow(), []);
 
-  const select = useCallback((entry: VaultEntry) => {
-    returnFocusRef.current = document.activeElement as HTMLElement | null;
-    setSelectedId(entry.id);
-  }, []);
+  const editing = panel?.kind === "edit" || panel?.kind === "create";
+
+  /** Schimbă panoul, dar nu peste un editor cu modificări nesalvate:
+      atunci întreabă întâi, și ține minte unde voia să ajungă omul. */
+  const go = useCallback(
+    (next: Panel | "close") => {
+      if (dirtyRef.current && editing) {
+        pendingRef.current = next;
+        setDiscardPrompt(true);
+        return;
+      }
+      setDiscardPrompt(false);
+      setPanel(next === "close" ? null : next);
+    },
+    [editing]
+  );
+
+  const select = useCallback(
+    (entry: VaultEntry) => {
+      returnFocusRef.current = document.activeElement as HTMLElement | null;
+      go({ kind: "view", id: entry.id });
+    },
+    [go]
+  );
 
   /** La închidere, focusul se întoarce pe rândul intrării — de acolo a
       plecat, acolo continuă navigarea. Dacă rândul nu mai e (căutarea
-      l-a filtrat între timp), pe elementul activ dinainte. */
-  const close = useCallback(() => {
+      l-a filtrat între timp), pe elementul activ dinainte; altfel, în
+      căutare. */
+  const restoreFocus = useCallback(() => {
     const row = document.querySelector<HTMLElement>('[data-entry-row][aria-current="true"]');
     const back = returnFocusRef.current;
     returnFocusRef.current = null;
-    setSelectedId(null);
     if (row) row.focus();
     else if (back && back !== document.body && document.contains(back)) back.focus();
+    else searchRef.current?.focus();
   }, []);
+
+  const close = useCallback(() => {
+    if (dirtyRef.current && editing) {
+      pendingRef.current = "close";
+      setDiscardPrompt(true);
+      return;
+    }
+    setDiscardPrompt(false);
+    setPanel(null);
+    restoreFocus();
+  }, [editing, restoreFocus]);
+
+  const discard = useCallback(() => {
+    dirtyRef.current = false;
+    setDiscardPrompt(false);
+    const next = pendingRef.current;
+    pendingRef.current = "close";
+    if (next === "close") {
+      setPanel(null);
+      restoreFocus();
+    } else {
+      setPanel(next);
+    }
+  }, [restoreFocus]);
+
+  const onDirtyChange = useCallback((dirty: boolean) => {
+    dirtyRef.current = dirty;
+  }, []);
+
+  const onSaved = useCallback(
+    async (entryId: string) => {
+      dirtyRef.current = false;
+      setDiscardPrompt(false);
+      await reload();
+      // O intrare nouă trebuie văzută: căutarea activă ar putea-o ascunde.
+      if (panel?.kind === "create") setQuery("");
+      setPanel({ kind: "view", id: entryId });
+      // Rândul salvat intră în ecran — un client nou ajunge la coada listei.
+      requestAnimationFrame(() => {
+        document
+          .querySelector('[data-entry-row][aria-current="true"]')
+          ?.scrollIntoView({ block: "nearest" });
+      });
+    },
+    [reload, panel]
+  );
+
+  const onDeleted = useCallback(async () => {
+    setPanel(null);
+    await reload();
+    searchRef.current?.focus();
+  }, [reload]);
+
+  const onRenameClient = useCallback(
+    async (clientId: string, name: string) => {
+      if (!supabase || !keys) return;
+      setActionError(null);
+      try {
+        await renameClient(supabase, keys.dek, clientId, name);
+        await reload();
+      } catch (cause) {
+        setActionError(cause instanceof Error ? cause.message : "Redenumirea a eșuat.");
+        throw cause;
+      }
+    },
+    [supabase, keys, reload]
+  );
 
   function onSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "ArrowDown") {
@@ -140,12 +254,42 @@ export function EntriesWorkspace({
     entriesCount === 0
       ? {
           title: "Vault-ul e gol",
-          body: "Adăugarea intrărilor vine în faza următoare. Până atunci, aici se vede doar cine are cheia — sub „Membri”.",
+          body: "Prima intrare: un client, un titlu, câmpurile pe care le are. Totul se criptează aici, înainte să plece.",
+          action: { label: "Adaugă prima intrare", onClick: () => go({ kind: "create" }) },
         }
       : {
           title: `Nimic pentru „${trimmedQuery}”`,
           body: "Caută după titlu, client, #etichetă, utilizator sau notițe. Secretele nu se caută niciodată.",
         };
+
+  const panelContent =
+    panel?.kind === "create" || (panel?.kind === "edit" && selected?.status === "ok") ? (
+      <EntryEditor
+        key={panel.kind === "edit" ? `edit:${panel.id}:${selected?.version}` : `create:${panel.clientId ?? ""}`}
+        mode={panel.kind}
+        entry={panel.kind === "edit" && selected?.status === "ok" ? selected : undefined}
+        clients={snapshot?.clients ?? []}
+        initialClientId={panel.kind === "create" ? panel.clientId : undefined}
+        headingId={headingId}
+        discardPrompt={discardPrompt}
+        onDirtyChange={onDirtyChange}
+        onRequestClose={close}
+        onDiscard={discard}
+        onKeepEditing={() => setDiscardPrompt(false)}
+        onSaved={onSaved}
+      />
+    ) : selected ? (
+      <EntryPanel
+        entry={selected}
+        client={selectedClient}
+        members={members}
+        siblings={siblings}
+        headingId={headingId}
+        onClose={close}
+        onEdit={() => go({ kind: "edit", id: selected.id })}
+        onDeleted={onDeleted}
+      />
+    ) : null;
 
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start lg:gap-6">
@@ -157,9 +301,19 @@ export function EntriesWorkspace({
               Parolele echipei
             </h1>
           </div>
-          <button type="button" onClick={onReload} disabled={loading} className={BTN_SM}>
-            {loading ? "Se reîncarcă…" : "Reîncarcă"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => void reload()} disabled={loading} className={BTN_SM}>
+              {loading ? "Se reîncarcă…" : "Reîncarcă"}
+            </button>
+            <button
+              type="button"
+              onClick={() => go({ kind: "create" })}
+              disabled={!snapshot}
+              className={BTN_SM_LIGHT}
+            >
+              Adaugă intrare
+            </button>
+          </div>
         </div>
 
         <p className="mt-3 font-md-mono text-[11.5px] tracking-[0.08em] text-dim" aria-live="polite">
@@ -177,6 +331,7 @@ export function EntriesWorkspace({
 
         <div aria-live="polite">
           {error ? <Note tone="error">{error}</Note> : null}
+          {actionError ? <Note tone="error">{actionError}</Note> : null}
           {unreadable > 0 ? (
             <Note tone="error">
               {countNoun(unreadable, "intrare nu s-a putut decripta", "intrări nu s-au putut decripta")} — rândurile
@@ -220,8 +375,10 @@ export function EntriesWorkspace({
           <EntryList
             groups={result.groups}
             total={result.total}
-            selectedId={selectedId}
+            selectedId={panelId}
             onSelect={select}
+            onAddForClient={(clientId) => go({ kind: "create", clientId })}
+            onRenameClient={onRenameClient}
             empty={empty}
           />
         ) : !error ? (
@@ -231,35 +388,27 @@ export function EntriesWorkspace({
         ) : null}
       </section>
 
-      {!selected ? (
-        <aside
-          aria-label="Fișa intrării"
-          className="hidden lg:sticky lg:top-[5.5rem] lg:block"
-        >
+      {!panelContent ? (
+        <aside aria-label="Fișa intrării" className="hidden lg:sticky lg:top-[5.5rem] lg:block">
           <PanelPlaceholder hasEntries={entriesCount > 0} />
         </aside>
       ) : isDesktop ? (
         <aside
           aria-labelledby={headingId}
+          onKeyDown={(event) => {
+            // Escape închide și coloana de pe desktop, nu doar dialogul.
+            if (event.key === "Escape") {
+              event.preventDefault();
+              close();
+            }
+          }}
           className="sticky top-[5.5rem] max-h-[calc(100dvh-6.5rem)] overflow-hidden rounded-panel-lg border border-hair bg-char"
         >
-          <EntryPanel
-            entry={selected}
-            client={selectedClient}
-            members={members}
-            headingId={headingId}
-            onClose={close}
-          />
+          {panelContent}
         </aside>
       ) : (
         <EntryDialog headingId={headingId} onClose={close}>
-          <EntryPanel
-            entry={selected}
-            client={selectedClient}
-            members={members}
-            headingId={headingId}
-            onClose={close}
-          />
+          {panelContent}
         </EntryDialog>
       )}
     </div>
@@ -275,6 +424,7 @@ function PanelPlaceholder({ hasEntries }: { hasEntries: boolean }) {
     ["↑ ↓", "umblă prin listă"],
     ["Enter", "deschide fișa"],
     ["Esc", "închide fișa · golește căutarea"],
+    ["Ctrl ⏎", "salvează în editor"],
   ];
   return (
     <div className="rounded-panel-lg border border-dashed border-hair-strong px-6 py-8">
@@ -318,15 +468,20 @@ function EntryDialog({
   children: React.ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const panel = panelRef.current;
-    panel?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    // Editorul își pune singur focusul pe titlu; altfel, primul element.
+    if (panel && !panel.contains(document.activeElement)) {
+      panel.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    }
 
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== "Tab" || !panel) return;
@@ -349,7 +504,7 @@ function EntryDialog({
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50">
@@ -357,7 +512,7 @@ function EntryDialog({
         type="button"
         tabIndex={-1}
         aria-hidden
-        onClick={onClose}
+        onClick={() => onCloseRef.current()}
         className="absolute inset-0 bg-ink/70"
       />
       <div
