@@ -35,12 +35,12 @@ Repo-ul e public. Securitatea vine din criptare, nu din obscuritate: **niciun se
 
 ```ts
 EntryPayload  = { v: 1, kind, title, fields: EntryField[], tags: string[], notes: string }
-EntryField    = { label, value, secret: boolean, kind: "text" | "url" | "multiline" }
+EntryField    = { label, value, secret: boolean, kind: "text" | "url" | "multiline" | "totp" }
 kind          ∈ login | server | api | database | card | note | other
 ClientPayload = { v: 1, name }
 ```
 
-Câmpurile sunt o listă LIBERĂ; `kind` doar propune un șablon (`templateFields`). O schimbare de formă cere `v: 2` și un cititor care înțelege ambele (`parseEntryPayload` e deja defensiv). Rândurile vechi rămân criptate cu forma veche.
+Câmpurile sunt o listă LIBERĂ; `kind` doar propune un șablon (`templateFields`). Un câmp `totp` (faza 8) ține seed-ul (base32 sau `otpauth://`), e MEREU secret (parserul forțează), iar fișa arată codul viu; un cititor mai vechi îl tratează ca text. O schimbare de formă cere `v: 2` și un cititor care înțelege ambele (`parseEntryPayload` e deja defensiv). Rândurile vechi rămân criptate cu forma veche.
 
 ### Schema Supabase — migrarea 3
 
@@ -70,13 +70,14 @@ Contul de vault e SEPARAT de contul de admin (activarea înlocuiește parola Sup
 | `lib/vault/import.ts` | Parser CSV RFC 4180, detectarea rolurilor coloanelor, planul de import cu duplicate. PUR. |
 | `lib/vault/generate.ts` | Generator de parole pe WebCrypto, entropie afișată. |
 | `lib/vault/diff.ts` | Diferența dintre două payload-uri, pentru istoric. PUR. |
+| `lib/vault/totp.ts` | TOTP (RFC 6238) pe WebCrypto HMAC; base32 RFC 4648; `otpauth://`. PUR, verificat pe vectorii din RFC. |
 | `app/vault/layout.tsx`, `page.tsx` | Root layout separat; pagina decide doar dacă există Supabase. |
 | `_components/vault-provider.tsx` | Mașina de stări, secretele în ref-uri, auto-blocare. |
 | `_components/vault-app.tsx` | Providerul + ecranul fazei curente. |
 | `_components/unlock-screen.tsx`, `onboarding-screen.tsx`, `recovery-code.tsx`, `key-ring.tsx` | Deblocare / activare / chei / codul de recuperare afișat o dată / **recuperarea cu codul** (faza 7) / semnătura (inelul de meridian). |
 | `_components/vault-shell.tsx` | Antetul (vederi Intrări / Membri, contorul de auto-blocare), `useVaultData`. |
 | `_components/entries-workspace.tsx` | Căutare + listă + panoul din dreapta (fișă / editor / import / coș), gardă la modificări nesalvate, dialog cu focus captiv pe telefon. |
-| `_components/entry-list.tsx`, `entry-panel.tsx`, `entry-field.tsx`, `entry-history.tsx` | Lista grupată pe client; fișa; un câmp (mască, Arată, Copiază); istoricul cu diff și restaurare. |
+| `_components/entry-list.tsx`, `entry-panel.tsx`, `entry-field.tsx`, `entry-history.tsx`, `totp-code.tsx` | Lista grupată pe client; fișa; un câmp (mască, Arată, Copiază); istoricul cu diff și restaurare; codul 2FA viu. |
 | `_components/entry-editor.tsx`, `password-generator.tsx` | Adăugare / editare / duplicare; generatorul inline. |
 | `_components/import-panel.tsx`, `trash-panel.tsx` | Import CSV în trei pași; coșul. |
 | `_components/members-panel.tsx` | Membri (aprobă / elimină) + codul de recuperare. |
@@ -99,11 +100,10 @@ Nu există Supabase local, CLI sau Docker pe mașina de dezvoltare, și extensia
 
 ## 6. Ce nu există încă (și de ce)
 
-Recuperarea cu codul și schimbarea parolei master EXISTĂ (faza 7): parola pierdută → parolă temporară setată de echipă din Supabase → „Activează contul" → ecranul de recuperare → codul de pe hârtie. Fără cod: eliminare + reinvitare de un membru activ. Nu se șterge și recrează contul (cascade pe `vault_members`).
+TOTP EXISTĂ (faza 8): câmp de fel `totp`, HMAC prin WebCrypto, codul viu în fișă. Recuperarea cu codul și schimbarea parolei master EXISTĂ (faza 7): parola pierdută → parolă temporară setată de echipă din Supabase → „Activează contul" → ecranul de recuperare → codul de pe hârtie. Fără cod: eliminare + reinvitare de un membru activ. Nu se șterge și recrează contul (cascade pe `vault_members`).
 
 - **Rotația DEK-ului** la eliminarea unui membru activ (= re-criptarea tuturor intrărilor). Ce a apucat să vadă a văzut.
 - **Export.** Un export în clar contrazice `crypto.ts`; varianta corectă e un fișier criptat cu o parolă de export (Argon2id + XChaCha20, același strat). Decizie de securitate de luat cu omul.
-- **TOTP.** Cere HMAC-SHA1 (WebCrypto îl are, libsodium nu). Se poate adăuga ca fel de câmp, fără schimbare de schemă.
 - **Import JSON** (Bitwarden). CSV-ul acoperă toate managerele; JSON-ul ar aduce câmpurile personalizate, cu un al doilea parser.
 
 Orice adaugi din lista asta: fază proprie, commit propriu, notă în `PLAN.md`, verificare completă. Și, înainte de a scrie o linie: **ar ieși la fel dacă brief-ul ar fi fost pentru orice alt manager de parole?** Dacă da, refă.

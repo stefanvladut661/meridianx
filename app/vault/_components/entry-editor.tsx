@@ -19,6 +19,7 @@ import {
 } from "@/lib/vault/entries";
 import { VaultDataError } from "@/lib/vault/members";
 import { VaultCryptoError } from "@/lib/vault/crypto";
+import { parseTotp } from "@/lib/vault/totp";
 import { useVault } from "./vault-provider";
 import { BTN_SM, BTN_SM_LIGHT, FIELD, Note } from "./ui";
 import { PasswordGenerator } from "./password-generator";
@@ -202,6 +203,14 @@ export function EntryEditor({
     }));
   }
 
+  function addTotpField() {
+    setFieldsTouched(true);
+    setDraft((current) => ({
+      ...current,
+      fields: [...current.fields, { key: keySeed++, label: "Cod 2FA", value: "", secret: true, kind: "totp", shown: false }],
+    }));
+  }
+
   async function submit(event?: FormEvent) {
     event?.preventDefault();
     if (!supabase || !keys || saving) return;
@@ -226,7 +235,11 @@ export function EntryEditor({
         setError(`Câmpul ${index + 1} are valoare, dar nu are etichetă.`);
         return;
       }
-      fields.push({ label, value, secret: field.secret, kind: field.kind });
+      if (field.kind === "totp" && value.trim() && !parseTotp(value)) {
+        setError(`„${label}”: seed-ul 2FA nu e valid — aștept base32 (ca JBSW Y3DP…) sau un link otpauth://totp/….`);
+        return;
+      }
+      fields.push({ label, value, secret: field.secret || field.kind === "totp", kind: field.kind });
     }
 
     const payload: EntryPayload = {
@@ -400,6 +413,9 @@ export function EntryEditor({
           <button type="button" onClick={() => addField(true)} className={BTN_SM}>
             + Câmp secret
           </button>
+          <button type="button" onClick={() => addTotpField()} className={BTN_SM}>
+            + Cod 2FA
+          </button>
         </div>
 
         <div className="mt-6">
@@ -474,6 +490,7 @@ const FIELD_KINDS: Array<[FieldKind, string]> = [
   ["text", "text"],
   ["url", "URL"],
   ["multiline", "text lung"],
+  ["totp", "cod 2FA"],
 ];
 
 function FieldEditor({
@@ -526,7 +543,10 @@ function FieldEditor({
             <select
               id={ids.kind}
               value={field.kind}
-              onChange={(event) => onChange({ kind: event.target.value as FieldKind })}
+              onChange={(event) => {
+              const kind = event.target.value as FieldKind;
+              onChange(kind === "totp" ? { kind, secret: true, shown: false } : { kind });
+            }}
               className={`${FIELD} h-10 appearance-none !px-3 !pr-8 !text-[13px]`}
             >
               {FIELD_KINDS.map(([kind, label]) => (
@@ -560,7 +580,7 @@ function FieldEditor({
               type={field.secret && !field.shown ? "password" : "text"}
               value={field.value}
               onChange={(event) => onChange({ value: event.target.value })}
-              placeholder={field.secret ? "Secret" : "Valoare"}
+              placeholder={field.kind === "totp" ? "Seed base32 sau otpauth://totp/…" : field.secret ? "Secret" : "Valoare"}
               autoComplete={field.secret ? "new-password" : "off"}
               spellCheck={false}
               className={valueClass}
@@ -585,13 +605,14 @@ function FieldEditor({
             id={ids.secret}
             type="checkbox"
             checked={field.secret}
+            disabled={field.kind === "totp"}
             onChange={(event) => onChange({ secret: event.target.checked, shown: false })}
-            className="h-4 w-4 accent-[#edeef2]"
+            className="h-4 w-4 accent-[#edeef2] disabled:opacity-50"
           />
-          secret
+          {field.kind === "totp" ? "secret (seed 2FA)" : "secret"}
         </label>
         <div className="flex items-center gap-1 font-md-mono text-[12px]">
-          {field.secret ? (
+          {field.secret && field.kind !== "totp" ? (
             <button
               type="button"
               onClick={onToggleGenerator}

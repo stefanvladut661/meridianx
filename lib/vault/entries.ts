@@ -53,8 +53,10 @@ export const KIND_LABEL: Record<EntryKind, string> = {
 };
 
 /** Cum se randează un câmp. `secret` e separat: un URL poate fi secret
-    (un webhook), o parolă e întotdeauna. */
-export type FieldKind = "text" | "url" | "multiline";
+    (un webhook), o parolă e întotdeauna. `totp` (faza 8): valoarea e
+    seed-ul (base32 sau `otpauth://`), MEREU secret; fișa arată codul viu.
+    Un cititor mai vechi îl tratează ca text — extensie aditivă. */
+export type FieldKind = "text" | "url" | "multiline" | "totp";
 
 export interface EntryField {
   label: string;
@@ -131,17 +133,19 @@ function isKind(value: unknown): value is EntryKind {
 }
 
 function isFieldKind(value: unknown): value is FieldKind {
-  return value === "text" || value === "url" || value === "multiline";
+  return value === "text" || value === "url" || value === "multiline" || value === "totp";
 }
 
 function parseField(value: unknown): EntryField | null {
   if (!isRecord(value)) return null;
   if (typeof value.label !== "string" || typeof value.value !== "string") return null;
+  const kind = isFieldKind(value.kind) ? value.kind : "text";
   return {
     label: value.label,
     value: value.value,
-    secret: value.secret === true,
-    kind: isFieldKind(value.kind) ? value.kind : "text",
+    // Seed-ul TOTP e secret prin definiție, orice ar spune payload-ul.
+    secret: value.secret === true || kind === "totp",
+    kind,
   };
 }
 
@@ -341,7 +345,7 @@ function decryptEntryRow(dek: Uint8Array, row: EntryRow): VaultEntry {
     (de regulă utilizatorul sau URL-ul). Secretele nu apar niciodată în
     listă, nici mascate — lista e scanată de la distanță. */
 export function entrySummary(payload: EntryPayload): string | null {
-  const field = payload.fields.find((f) => !f.secret && f.kind !== "multiline" && f.value.trim());
+  const field = payload.fields.find((f) => !f.secret && f.kind !== "multiline" && f.kind !== "totp" && f.value.trim());
   return field ? field.value : null;
 }
 

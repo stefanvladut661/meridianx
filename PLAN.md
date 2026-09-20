@@ -837,7 +837,7 @@ deci diferă doar felul în care e servit: alegi / scanezi / derulezi.
 
 ## VAULT — parole zero-knowledge, `feat/vault` (2026-09-19)
 
-Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare ✅ → (3) listă + căutare ✅ → (4) adăugare + editare ✅ → (5) import + duplicare ✅ → (6) istoric + `app/vault/CLAUDE.md` ✅**. Toate cele șase faze sunt livrate (2026-09-20). **Faza 7 (recuperare + schimbarea parolei master) ✅**, 2026-09-20. Commit separat per fază, confirmare de la om între ele.
+Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare ✅ → (3) listă + căutare ✅ → (4) adăugare + editare ✅ → (5) import + duplicare ✅ → (6) istoric + `app/vault/CLAUDE.md` ✅**. Toate cele șase faze sunt livrate (2026-09-20). **Faza 7 (recuperare + schimbarea parolei master) ✅ · Faza 8 (coduri 2FA / TOTP) ✅**, 2026-09-20. Commit separat per fază, confirmare de la om între ele.
 
 **Repo-ul e public.** Securitatea vine din criptare, nu din obscuritate: niciun secret în cod, teste sau commit-uri; valorile de test sunt evident false.
 
@@ -957,6 +957,22 @@ Tot în `app/vault/` și `lib/vault/`; `crypto.ts` și migrarea 3 neatinse — a
 2. **Parola actuală se cere la schimbare**, deși vault-ul e deja deblocat — sesiunea deschisă nu e dovadă că omul de la tastatură e proprietarul.
 3. **Ordinea la schimbare: întâi cheile, apoi parola Supabase, cu întoarcere din drum.** Oricare ordine lasă o fereastră; asta e cea în care fereastra se poate închide cu ce avem în memorie (KEK-ul vechi și cheile vechi).
 4. **DEK-ul și codul de recuperare NU se rotesc** la niciunul dintre fluxuri — nu e nevoie (nu s-a compromis nimic) și rotația DEK-ului rămâne operația mare, separată.
+
+### Faza 8 — terminat (coduri 2FA / TOTP)
+
+Tot în `app/vault/` și `lib/vault/`; `crypto.ts` neatins (HMAC-ul e prin WebCrypto — SHA-1 ca HMAC e standardul TOTP, nu un hash de integritate), migrarea neatinsă, **fără schimbare de schemă**: `totp` e un fel nou de câmp, extensie aditivă a payload-ului `v: 1` (un cititor vechi îl tratează ca text).
+
+- **`lib/vault/totp.ts`** — pur: base32 RFC 4648 tolerant (spații, liniuțe, `=`, litere mici), `otpauth://totp/…` (secret, digits 6/7/8, period, algorithm SHA-1/256/512, issuer, cont), HOTP/TOTP prin `crypto.subtle` HMAC. **27 de verificări în Node pe vectorii din RFC 4226 (Appendix D) și RFC 6238 (Appendix B)** — SHA-1, SHA-256, SHA-512, toate exact.
+- **Contract**: `FieldKind` primește `"totp"`; `parseField` forțează `secret: true` pentru el (seed-ul e secret prin definiție); `entrySummary` îl exclude din listă; importul pune `login_totp` (Bitwarden/LastPass) direct ca `totp`.
+- **Fișa** (`totp-code.tsx`, în `entry-field.tsx`): ce se vede e CODUL — „728 742" în mono mare, arcul care se consumă, secundele (chihlimbar sub 5 s), „Copiază codul"; sub el, issuer · cont din URI și, doar dacă diferă de standard, algoritmul/cifrele/perioada. Seed-ul stă mascat, cu „Arată seed-ul" (30 s, contor), fără „Copiază" pe seed. Codul se recalculează singur la fiecare pas de 30 s.
+- **Editor**: felul „cod 2FA" în select (forțează secret, blochează bifa, fără generator), „+ Cod 2FA" cu eticheta propusă, placeholder „Seed base32 sau otpauth://totp/…", **validare la salvare** (seed neparsabil → mesaj, nimic salvat).
+- **Verificat** în Chrome headless (32 de verificări; seed-ul RFC în Meta Business Suite, referință HOTP independentă în Node cu `node:crypto`): codul afișat e cel din RFC pentru pasul curent, se reînnoiește singur după 30 s; seed mascat / descoperit cu contor; editor: felul, bifa blocată, seed invalid respins, URI cu issuer și cont salvat → același cod; „+ Cod 2FA"; generatorul doar pe parolă; import cu `login_totp` → cod viu; 360 fără scroll orizontal. Regresie fazele 3–5 verde (o singură bătaie de clipboard în headless: „Document is not focused" — calea de eșec a arătat corect „Nu s-a copiat"). Build de producție verde.
+
+### Decizii luate în faza 8 (alese de asistent)
+
+1. **Seed-ul se stochează cum a fost tastat** (base32 sau URI întreg) și se interpretează la afișare — nimic nu se pierde din URI (issuer, cont, parametri), iar un cititor viitor poate reinterpreta.
+2. **Fără „Copiază" pe seed** — un seed se scanează sau se tastează o dată, la înrolare; a-l copia e un obicei periculos. „Arată seed-ul" rămâne, pentru migrare.
+3. **Ceasul e al browserului**, fără corecție de derivă față de server: serviciile acceptă ±1 pas, iar un laptop cu ceasul dat peste cap oricum nu se poate autentifica nicăieri.
 
 ### De făcut de către om (înainte de a folosi vault-ul)
 

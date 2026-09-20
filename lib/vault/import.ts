@@ -252,7 +252,7 @@ export function planImport(
     if (url) fields.push({ label: "URL", value: url, secret: false, kind: "url" });
     if (username) fields.push({ label: "Utilizator", value: username, secret: false, kind: "text" });
     if (password) fields.push({ label: "Parolă", value: password, secret: true, kind: "text" });
-    if (totp) fields.push({ label: "TOTP (secret)", value: totp, secret: true, kind: "text" });
+    if (totp) fields.push({ label: "Cod 2FA", value: totp, secret: true, kind: "totp" });
     // Coloanele nerecunoscute, cu valoare, devin câmpuri — cu numele coloanei.
     cells.forEach((value, index) => {
       if (roleByIndex.has(index)) return;
