@@ -48,7 +48,7 @@ Câmpurile sunt o listă LIBERĂ; `kind` doar propune un șablon (`templateField
 
 ### Providerul — `_components/vault-provider.tsx`
 
-`useVault()` → `{ phase, member, supabase, keys, lock, … }`. `keys.dek` și `supabase` sunt non-null DOAR când `phase.kind === "unlocked"`. Fazele: `locked → busy → keys-missing → recovery-code | pending → unlocked`. Datele deblocate vin dintr-un singur loc: `useVaultData()` (`snapshot` + `members` + `meta`, `reload`) — cele două vederi nu trebuie să se contrazică.
+`useVault()` → `{ phase, member, supabase, keys, lock, changeMasterPassword, recoverWithCode, … }`. `keys.dek` și `supabase` sunt non-null DOAR când `phase.kind === "unlocked"`. Fazele: `locked → busy → keys-missing → recovery-code | pending → unlocked`, plus `recovery` (membru activ cu chei sub parola veche — KEK-ul nou rămâne în memorie până se refac cheile). Datele deblocate vin dintr-un singur loc: `useVaultData()` (`snapshot` + `members` + `meta`, `reload`) — cele două vederi nu trebuie să se contrazică.
 
 ### Conturi
 
@@ -64,7 +64,7 @@ Contul de vault e SEPARAT de contul de admin (activarea înlocuiește parola Sup
 | `lib/vault/kdf.ts`, `kdf.worker.ts` | Argon2id în Web Worker de unică folosință; rezervă pe firul principal. |
 | `lib/vault/supabase.ts` | Client de browser, sesiune în memorie. |
 | `lib/vault/bytea.ts` | `\x…` hex ⇄ bytes pentru PostgREST. |
-| `lib/vault/members.ts` | `vault_members` / `vault_meta` / funcțiile `vault_*`; erorile SQLSTATE → mesaje. `describeDbError` e folosit de tot stratul de date. |
+| `lib/vault/members.ts` | `vault_members` / `vault_meta` / funcțiile `vault_*`; erorile SQLSTATE → mesaje. `describeDbError` e folosit de tot stratul de date. `rekeySelf` / `rewrapSelf` / `openDekWithRecoveryCode` (faza 7). |
 | `lib/vault/entries.ts` | Contractul payload-ului; citire/decriptare (`loadVault`), scrieri (client/intrare, loturi de import), istoric (`listVersions`, `restoreVersion`), coș (`loadDeleted`, `restoreEntry`). |
 | `lib/vault/search.ts` | Căutare pură, fără diacritice, ȘI pe tokeni, `#etichetă`; secretele NU intră în index. |
 | `lib/vault/import.ts` | Parser CSV RFC 4180, detectarea rolurilor coloanelor, planul de import cu duplicate. PUR. |
@@ -73,13 +73,14 @@ Contul de vault e SEPARAT de contul de admin (activarea înlocuiește parola Sup
 | `app/vault/layout.tsx`, `page.tsx` | Root layout separat; pagina decide doar dacă există Supabase. |
 | `_components/vault-provider.tsx` | Mașina de stări, secretele în ref-uri, auto-blocare. |
 | `_components/vault-app.tsx` | Providerul + ecranul fazei curente. |
-| `_components/unlock-screen.tsx`, `onboarding-screen.tsx`, `recovery-code.tsx`, `key-ring.tsx` | Deblocare / activare / chei / codul de recuperare / semnătura (inelul de meridian). |
+| `_components/unlock-screen.tsx`, `onboarding-screen.tsx`, `recovery-code.tsx`, `key-ring.tsx` | Deblocare / activare / chei / codul de recuperare afișat o dată / **recuperarea cu codul** (faza 7) / semnătura (inelul de meridian). |
 | `_components/vault-shell.tsx` | Antetul (vederi Intrări / Membri, contorul de auto-blocare), `useVaultData`. |
 | `_components/entries-workspace.tsx` | Căutare + listă + panoul din dreapta (fișă / editor / import / coș), gardă la modificări nesalvate, dialog cu focus captiv pe telefon. |
 | `_components/entry-list.tsx`, `entry-panel.tsx`, `entry-field.tsx`, `entry-history.tsx` | Lista grupată pe client; fișa; un câmp (mască, Arată, Copiază); istoricul cu diff și restaurare. |
 | `_components/entry-editor.tsx`, `password-generator.tsx` | Adăugare / editare / duplicare; generatorul inline. |
 | `_components/import-panel.tsx`, `trash-panel.tsx` | Import CSV în trei pași; coșul. |
 | `_components/members-panel.tsx` | Membri (aprobă / elimină) + codul de recuperare. |
+| `_components/account-panel.tsx` | Contul tău: schimbarea parolei master (faza 7). |
 | `_components/clipboard.ts`, `use-vault-data.ts`, `ui.tsx` | Clipboard cu expirare; datele deblocate; vocabularul vizual local. |
 
 ---
@@ -98,7 +99,8 @@ Nu există Supabase local, CLI sau Docker pe mașina de dezvoltare, și extensia
 
 ## 6. Ce nu există încă (și de ce)
 
-- **Recuperare cu codul** (parolă master pierdută → cod → chei noi prin `vault_rekey_self`) și **schimbarea parolei master**. Datele și funcția SQL există; UI-ul e următorul pas. Până atunci: un membru activ elimină și reinvită; dacă e singurul activ — codul + intervenție manuală.
+Recuperarea cu codul și schimbarea parolei master EXISTĂ (faza 7): parola pierdută → parolă temporară setată de echipă din Supabase → „Activează contul" → ecranul de recuperare → codul de pe hârtie. Fără cod: eliminare + reinvitare de un membru activ. Nu se șterge și recrează contul (cascade pe `vault_members`).
+
 - **Rotația DEK-ului** la eliminarea unui membru activ (= re-criptarea tuturor intrărilor). Ce a apucat să vadă a văzut.
 - **Export.** Un export în clar contrazice `crypto.ts`; varianta corectă e un fișier criptat cu o parolă de export (Argon2id + XChaCha20, același strat). Decizie de securitate de luat cu omul.
 - **TOTP.** Cere HMAC-SHA1 (WebCrypto îl are, libsodium nu). Se poate adăuga ca fel de câmp, fără schimbare de schemă.

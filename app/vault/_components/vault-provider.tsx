@@ -16,14 +16,17 @@ import { deriveMasterMaterialAsync } from "@/lib/vault/kdf";
 import { getVaultClient } from "@/lib/vault/supabase";
 import {
   fetchOwnMember,
+  openDekWithRecoveryCode,
   openKeys,
   registerKeys,
+  rekeySelf,
+  rewrapSelf,
   VaultDataError,
   type KeyMaterial,
 } from "@/lib/vault/members";
 
 /**
- * Mașina de stări a vault-ului (feat/vault, faza 2).
+ * Mașina de stări a vault-ului (feat/vault, fazele 2 și 7).
  *
  * Tot ce e secret stă în ref-uri, nu în state: KEK-ul (cât e nevoie de
  * el), cheile membrului și DEK-ul (după deblocare). State-ul React
@@ -34,7 +37,8 @@ import {
  *
  *   locked ──unlock/activate──▶ busy ──▶ keys-missing ──registerKeys──▶ busy ─┬─▶ recovery-code ──▶ unlocked
  *                                  │                                          └─▶ pending ──recheck──▶ unlocked
- *                                  └─▶ pending / unlocked (cont care are deja chei)
+ *                                  ├─▶ pending / unlocked (cont care are deja chei)
+ *                                  └─▶ recovery ──recoverWithCode──▶ unlocked   (chei împachetate cu parola veche)
  *
  * KEK-ul se șterge în clipa în care nu mai e nevoie de el: la deblocare
  * (cheile sunt deschise) și la blocare. Rămâne în memorie cât un membru
@@ -55,7 +59,9 @@ export type BusyStep =
   | "signing-in"
   | "updating-password"
   | "opening"
-  | "registering";
+  | "registering"
+  | "recovering"
+  | "rekeying";
 
 export type VaultPhase =
   | { kind: "locked" }
@@ -68,6 +74,10 @@ export type VaultPhase =
   | { kind: "keys-missing"; replacing: boolean }
   | { kind: "recovery-code"; code: string }
   | { kind: "pending" }
+  /** Membru activ care tocmai și-a schimbat parola Supabase (activare cu
+      parolă temporară): cheile lui sunt împachetate cu parola master
+      veche. Codul de recuperare deschide DEK-ul și refă cheile. */
+  | { kind: "recovery" }
   | { kind: "unlocked" };
 
 export interface VaultMemberIdentity {
@@ -93,7 +103,17 @@ export interface VaultContextValue {
   registerKeys: () => Promise<void>;
   acknowledgeRecoveryCode: () => void;
   recheckPending: () => Promise<void>;
+  /** Faza 7: din `recovery`, cu codul de pe hârtie → chei noi → deblocat. */
+  recoverWithCode: (code: string) => Promise<void>;
+  /** Faza 7: membru deblocat, parola actuală + cea nouă. Aruncă la eșec
+      (mesaj pentru om). `onStep` primește pașii, pentru progres. */
+  changeMasterPassword: (
+    currentPassword: string,
+    nextPassword: string,
+    onStep?: (step: BusyStep) => void
+  ) => Promise<void>;
   lock: (notice?: string) => Promise<void>;
+  dismissNotice: () => void;
   /** Milisecunde până la auto-blocare, sau `null` când nu curge. */
   remainingUntilAutoLock: () => number | null;
 }
@@ -235,11 +255,16 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         keysRef.current = openKeys(row, kek);
       } catch (cause) {
         if (cause instanceof VaultCryptoError && cause.code === "decrypt_failed") {
+          if (replacing) {
+            // Parola Supabase e cea nouă (tocmai am pus-o), cheile sunt cu
+            // cea veche: singura cale e codul de recuperare. KEK-ul rămâne
+            // în memorie — cu el se împachetează cheile noi.
+            setPhase({ kind: "recovery" });
+            return;
+          }
           throw new VaultCryptoError(
             "decrypt_failed",
-            replacing
-              ? "Cheile tale sunt împachetate cu parola master veche. Recuperarea cu codul vine într-o fază următoare — până atunci, un membru activ te poate elimina și reinvita."
-              : "Sesiunea e validă, dar cheile nu s-au putut deschide cu parola asta. Rândul tău din vault pare alterat — spune-i echipei."
+            "Sesiunea e validă, dar cheile nu s-au putut deschide cu parola asta. Rândul tău din vault pare alterat — spune-i echipei."
           );
         }
         throw cause;
@@ -373,6 +398,96 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase, resolveMember]);
 
+  const recoverWithCode = useCallback(
+    async (code: string) => {
+      const identity = memberRef.current;
+      const kek = kekRef.current;
+      if (!supabase || !identity || !kek) return;
+      setError(null);
+      try {
+        setPhase({ kind: "busy", step: "recovering", startedAt: Date.now(), from: "onboarding" });
+        const dek = await openDekWithRecoveryCode(supabase, code);
+        setPhase({ kind: "busy", step: "rekeying", startedAt: Date.now(), from: "onboarding" });
+        keysRef.current = await rekeySelf(supabase, identity.id, kek, dek);
+        wipe(kek);
+        kekRef.current = null;
+        setNotice(
+          "Acces recuperat: cheile tale au fost refăcute cu parola master de acum. Codul de recuperare rămâne valabil — dacă l-a văzut cineva, regenerează-l din Membri."
+        );
+        setPhase({ kind: "unlocked" });
+      } catch (cause) {
+        setPhase({ kind: "recovery" });
+        setError(describeError(cause));
+      }
+    },
+    [supabase]
+  );
+
+  /**
+   * Parola master nouă = KEK nou + authHash nou. Cheile membrului se refac
+   * (perechea nouă, împachetată cu KEK-ul nou, DEK-ul re-sigilat), apoi se
+   * schimbă parola Supabase. Dacă al doilea pas pică, primul se întoarce
+   * din drum cu cheile vechi sub KEK-ul vechi — altfel contul ar rămâne cu
+   * chei pe care parola lui nu le mai deschide. DEK-ul și codul de
+   * recuperare nu se schimbă.
+   */
+  const changeMasterPassword = useCallback(
+    async (currentPassword: string, nextPassword: string, onStep?: (step: BusyStep) => void) => {
+      const identity = memberRef.current;
+      const keys = keysRef.current;
+      if (!supabase || !identity || !keys || phaseRef.current.kind !== "unlocked") {
+        throw new VaultCryptoError("invalid_input", "Vault-ul nu e deblocat.");
+      }
+
+      onStep?.("deriving");
+      const current = await deriveMasterMaterialAsync(identity.email, currentPassword);
+      try {
+        onStep?.("signing-in");
+        const check = await supabase.auth.signInWithPassword({
+          email: identity.email,
+          password: current.authHash,
+        });
+        if (check.error) {
+          throw new AuthFailure(
+            check.error.status === 400 || check.error.code === "invalid_credentials"
+              ? "Parola master actuală e greșită."
+              : describeAuthError(check.error, "unlock")
+          );
+        }
+
+        onStep?.("deriving");
+        const next = await deriveMasterMaterialAsync(identity.email, nextPassword);
+        try {
+          onStep?.("rekeying");
+          const fresh = await rekeySelf(supabase, identity.id, next.kek, keys.dek);
+
+          onStep?.("updating-password");
+          const { error: updateError } = await supabase.auth.updateUser({ password: next.authHash });
+          if (updateError) {
+            // Întoarcerea din drum: cheile vechi, sub KEK-ul vechi.
+            wipe(fresh.privateKey);
+            try {
+              await rewrapSelf(supabase, identity.id, current.kek, keys);
+            } catch {
+              throw new AuthFailure(
+                "Parola Supabase nu s-a putut schimba, iar cheile n-au putut fi întoarse la loc. Nu închide fila: cere unei colege să-ți seteze o parolă temporară din Supabase, apoi activează contul din nou, cu codul de recuperare."
+              );
+            }
+            throw new AuthFailure(describeAuthError(updateError, "update"));
+          }
+
+          wipe(keys.privateKey);
+          keysRef.current = fresh;
+        } finally {
+          wipe(next.kek);
+        }
+      } finally {
+        wipe(current.kek);
+      }
+    },
+    [supabase]
+  );
+
   // ---------------------------------------------------------------------
   // Auto-blocare: cât timp există ceva de protejat în memorie.
   // ---------------------------------------------------------------------
@@ -381,7 +496,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     phase.kind === "unlocked" ||
     phase.kind === "pending" ||
     phase.kind === "keys-missing" ||
-    phase.kind === "recovery-code";
+    phase.kind === "recovery-code" ||
+    phase.kind === "recovery";
 
   useEffect(() => {
     if (!armed) return;
@@ -432,7 +548,10 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       registerKeys: registerKeysAction,
       acknowledgeRecoveryCode,
       recheckPending,
+      recoverWithCode,
+      changeMasterPassword,
       lock,
+      dismissNotice: () => setNotice(null),
       remainingUntilAutoLock,
     }),
     [
@@ -447,6 +566,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       registerKeysAction,
       acknowledgeRecoveryCode,
       recheckPending,
+      recoverWithCode,
+      changeMasterPassword,
       lock,
       remainingUntilAutoLock,
     ]

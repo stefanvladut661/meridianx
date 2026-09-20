@@ -5,15 +5,18 @@ import {
   generateMemberKeyPair,
   generateRecoveryCode,
   openDek,
+  recoveryKeyFromCode,
   sealDek,
+  unwrapDekFromRecovery,
   unwrapPrivateKey,
+  VaultCryptoError,
   wipe,
   wrapDekForRecovery,
   wrapPrivateKey,
 } from "./crypto";
 
 /**
- * Stratul de date al membrilor (feat/vault, faza 2).
+ * Stratul de date al membrilor (feat/vault, fazele 2 și 7).
  *
  * Singurul loc care vorbește cu `vault_members` / `vault_meta` și cu
  * funcțiile `vault_*` din migrarea 3. Primește un client Supabase cu
@@ -338,4 +341,97 @@ export async function rotateRecoveryCode(
     .eq("id", true);
   if (error) throw describeDbError(error);
   return recovery.code;
+}
+
+// ---------------------------------------------------------------------------
+// Chei noi pentru un membru activ (faza 7): schimbarea parolei master și
+// recuperarea cu codul trec amândouă pe aici. DEK-ul NU se schimbă —
+// doar perechea membrului și ambalajele ei.
+// ---------------------------------------------------------------------------
+
+/**
+ * Pereche X25519 nouă, privata împachetată cu `kek` (de regulă unul
+ * derivat dintr-o parolă nouă), DEK-ul re-sigilat către noua publică,
+ * totul depus atomic prin `vault_rekey_self`. Întoarce noile chei, gata
+ * de pus în memorie. Cheile vechi rămân ale apelantului — el decide
+ * când le zeroizează (după ce știe că și parola Supabase s-a schimbat).
+ */
+export async function rekeySelf(
+  supabase: SupabaseClient,
+  memberId: string,
+  kek: Uint8Array,
+  dek: Uint8Array
+): Promise<KeyMaterial> {
+  const pair = generateMemberKeyPair();
+  const wrappedPrivate = wrapPrivateKey(kek, pair.privateKey, memberId);
+  const sealed = sealDek(dek, pair.publicKey);
+  const { error } = await supabase.rpc("vault_rekey_self", {
+    p_public_key: toBytea(pair.publicKey),
+    p_encrypted_private_key: toBytea(wrappedPrivate.ciphertext),
+    p_private_key_nonce: toBytea(wrappedPrivate.nonce),
+    p_wrapped_dek: toBytea(sealed),
+  });
+  if (error) {
+    wipe(pair.privateKey);
+    throw describeDbError(error);
+  }
+  return { dek, publicKey: pair.publicKey, privateKey: pair.privateKey };
+}
+
+/**
+ * Cheile EXISTENTE, re-depuse sub un alt KEK — pentru întoarcerea din
+ * drum când parola Supabase nu s-a putut schimba după `rekeySelf`:
+ * cheile noi ar fi împachetate cu o parolă pe care contul n-o are.
+ */
+export async function rewrapSelf(
+  supabase: SupabaseClient,
+  memberId: string,
+  kek: Uint8Array,
+  keys: KeyMaterial
+): Promise<void> {
+  const wrappedPrivate = wrapPrivateKey(kek, keys.privateKey, memberId);
+  const sealed = sealDek(keys.dek, keys.publicKey);
+  const { error } = await supabase.rpc("vault_rekey_self", {
+    p_public_key: toBytea(keys.publicKey),
+    p_encrypted_private_key: toBytea(wrappedPrivate.ciphertext),
+    p_private_key_nonce: toBytea(wrappedPrivate.nonce),
+    p_wrapped_dek: toBytea(sealed),
+  });
+  if (error) throw describeDbError(error);
+}
+
+/**
+ * DEK-ul din blob-ul de recuperare, cu codul de pe hârtie. Cere sesiune
+ * de membru ACTIV (RLS pe `vault_meta`) — exact situația „am parolă
+ * temporară nouă, dar cheile mele sunt împachetate cu parola veche".
+ * Codul greșit și codul cu formă greșită dau mesaje diferite: al doilea
+ * se vede fără să atingem serverul.
+ */
+export async function openDekWithRecoveryCode(
+  supabase: SupabaseClient,
+  code: string
+): Promise<Uint8Array> {
+  const recoveryKey = recoveryKeyFromCode(code);
+  if (!recoveryKey) {
+    throw new VaultCryptoError(
+      "invalid_input",
+      "Codul are 8 grupuri de 5 caractere (litere și cifre). Verifică ce ai tastat — liniuțele și spațiile nu contează."
+    );
+  }
+  try {
+    const meta = await fetchMeta(supabase);
+    try {
+      return unwrapDekFromRecovery(recoveryKey, {
+        ciphertext: meta.recoveryWrappedDek,
+        nonce: meta.recoveryNonce,
+      });
+    } catch {
+      throw new VaultCryptoError(
+        "decrypt_failed",
+        "Codul nu deschide vault-ul. Ori e tastat greșit, ori a fost regenerat între timp — codul vechi nu mai e valabil."
+      );
+    }
+  } finally {
+    wipe(recoveryKey);
+  }
 }

@@ -31,6 +31,8 @@ const STEP_LABEL: Record<BusyStep, string> = {
   "updating-password": "Se înlocuiește parola temporară",
   opening: "Se deschid cheile",
   registering: "Se generează cheile",
+  recovering: "Se deschide vault-ul cu codul",
+  rekeying: "Se refac cheile",
 };
 
 export function UnlockScreen() {
@@ -109,7 +111,7 @@ export function UnlockScreen() {
           <p className="mt-3 text-[15px] leading-relaxed text-dim">
             {mode === "unlock"
               ? "Parola master nu pleacă din browser. Din ea ies două chei: una te autentifică, cealaltă descuie datele — serverul o vede doar pe prima."
-              : "Ai primit de la echipă o parolă temporară. Alege acum parola master: nu pleacă din browser și nu se poate reseta prin email."}
+              : "Ai primit de la echipă o parolă temporară — la prima intrare sau după ce ai pierdut parola master. Alege acum parola master: nu pleacă din browser și nu se poate reseta prin email."}
           </p>
 
           <div aria-live="polite">
@@ -178,7 +180,7 @@ export function UnlockScreen() {
             }}
             className="mt-5 text-[14px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
           >
-            {mode === "unlock" ? "Prima intrare? Activează contul" : "← Am deja parola master"}
+            {mode === "unlock" ? "Prima intrare sau parolă pierdută? Activează contul" : "← Am deja parola master"}
           </button>
         </>
       )}

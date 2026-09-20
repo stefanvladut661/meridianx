@@ -837,7 +837,7 @@ deci diferă doar felul în care e servit: alegi / scanezi / derulezi.
 
 ## VAULT — parole zero-knowledge, `feat/vault` (2026-09-19)
 
-Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare ✅ → (3) listă + căutare ✅ → (4) adăugare + editare ✅ → (5) import + duplicare ✅ → (6) istoric + `app/vault/CLAUDE.md` ✅**. Toate cele șase faze sunt livrate (2026-09-20). Commit separat per fază, confirmare de la om între ele.
+Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare ✅ → (3) listă + căutare ✅ → (4) adăugare + editare ✅ → (5) import + duplicare ✅ → (6) istoric + `app/vault/CLAUDE.md` ✅**. Toate cele șase faze sunt livrate (2026-09-20). **Faza 7 (recuperare + schimbarea parolei master) ✅**, 2026-09-20. Commit separat per fază, confirmare de la om între ele.
 
 **Repo-ul e public.** Securitatea vine din criptare, nu din obscuritate: niciun secret în cod, teste sau commit-uri; valorile de test sunt evident false.
 
@@ -942,6 +942,22 @@ Tot în `app/vault/` și `lib/vault/`; niciun fișier partajat atins, nicio depe
 3. **Fără ștergere definitivă în UI** — intenționat, nu din lipsă de timp. O parolă ștearsă din greșeală se recuperează; una ștearsă rău-intenționat lasă urmă. Curățenia se face în SQL, de un om.
 4. **Coșul se încarcă la cerere**, nu odată cu lista: e rar folosit și n-are de ce să coste la fiecare deblocare; doar numărul intră în snapshot.
 
+### Faza 7 — terminat (recuperare cu codul + schimbarea parolei master)
+
+Tot în `app/vault/` și `lib/vault/`; `crypto.ts` și migrarea 3 neatinse — ambele fluxuri folosesc funcția SQL existentă `vault_rekey_self` și primitivele din faza 1.
+
+- **`lib/vault/members.ts`**: `rekeySelf` (pereche X25519 nouă, privata împachetată cu un KEK dat, DEK-ul re-sigilat → `vault_rekey_self`), `rewrapSelf` (cheile EXISTENTE re-depuse sub alt KEK — întoarcerea din drum), `openDekWithRecoveryCode` (codul tastat → cheia de recuperare → DEK-ul din `vault_meta`; forma greșită se spune fără server, codul greșit după). DEK-ul nu se schimbă în niciun flux — datele și codul de recuperare rămân aceleași.
+- **Schimbarea parolei master** (`_components/account-panel.tsx`, în vederea Membri, „Contul tău"; `changeMasterPassword` în provider). Pași: Argon2id pe parola actuală → `signInWithPassword` cu authHash-ul ei (**dovada**: un laptop lăsat deblocat nu ajunge ca să preiei contul) → Argon2id pe parola nouă → `rekeySelf` cu KEK-ul nou → `updateUser({ password: authHash nou })`. **Dacă ultimul pas pică, cheile se întorc la loc** (`rewrapSelf` cu KEK-ul vechi, încă în memorie) — altfel contul ar rămâne cu chei pe care parola lui nu le deschide; dacă nici întoarcerea nu reușește, mesajul spune exact ce să facă (parolă temporară + cod). Inelul și pașii la vedere, ca la deblocare (~6 s, două derivări). Cheile vechi se zeroizează abia după succes.
+- **Recuperarea cu codul** (faza `recovery` în provider; `RecoveryScreen` în `onboarding-screen.tsx`). Drumul: echipa setează contului o **parolă temporară** din Supabase → omul face „Activează contul" (parolă temporară → parolă master nouă; textul spune acum „prima intrare sau parolă pierdută") → parola Supabase devine authHash-ul nou, dar cheile din `vault_members` sunt împachetate cu KEK-ul vechi → `resolveMember` cu `replacing` nu le poate deschide → **ecranul de recuperare** (în loc de mesajul de „vine într-o fază următoare"). Codul de pe hârtie (orice formă: litere mici, spații, fără liniuțe — Crockford canonicalizează I/L→1, O→0) deschide DEK-ul; cu KEK-ul nou (păstrat în memorie exact pentru asta) se refac cheile → deblocat, cu notă („Acces recuperat… regenerează codul dacă l-a văzut cineva", cu „Am înțeles"). „N-am codul" explică singura alternativă: eliminare + reinvitare de un membru activ.
+- **Verificat** în Chrome headless (29 de verificări; backend-ul fals ține parola Supabase per cont, implementează `PUT /auth/v1/user` și `vault_rekey_self`): validări; parola actuală greșită → mesaj, cheile neatinse; schimbare reușită → cheie publică și DEK sigilat noi în backend, parola Supabase = authHash nou (44 de caractere), vault-ul rămâne deblocat și funcțional; blocare → parola veche refuzată, cea nouă deblochează și decriptează; parolă temporară setată „de echipă" → activare → ecranul de recuperare; cod cu formă greșită (fără server), cod bine format dar greșit (nimic schimbat), codul corect tastat neglijent → acces recuperat, 16 intrări decriptate, chei noi în backend; „Am înțeles"; blocare → parola recuperată deblochează; 360 fără scroll orizontal. Regresie faza 6 verde. Consolă curată, build de producție verde.
+
+### Decizii luate în faza 7 (alese de asistent)
+
+1. **Recuperarea trece prin „parolă temporară de la echipă" + „Activează contul"**, nu prin emailul de resetare al Supabase. Motiv: același ca la activare (decizia 2 din faza 2) — fără dependență de Site URL, redirect allow-list și șabloane de email; și e exact fluxul pe care omul îl știe deja. Parola temporară se setează din Supabase → Authentication → Users → utilizator → *Reset password* (dashboard-ul nou permite setarea directă); dacă dashboard-ul tău n-are opțiunea, `auth.admin.updateUserById` cu cheia de service role — un script de o linie, nu o rută în site. **Nu șterge și recrea contul**: rândul din `vault_members` are `on delete cascade`, iar dacă era singurul membru activ, vault-ul rămâne fără nimeni care să aprobe.
+2. **Parola actuală se cere la schimbare**, deși vault-ul e deja deblocat — sesiunea deschisă nu e dovadă că omul de la tastatură e proprietarul.
+3. **Ordinea la schimbare: întâi cheile, apoi parola Supabase, cu întoarcere din drum.** Oricare ordine lasă o fereastră; asta e cea în care fereastra se poate închide cu ce avem în memorie (KEK-ul vechi și cheile vechi).
+4. **DEK-ul și codul de recuperare NU se rotesc** la niciunul dintre fluxuri — nu e nevoie (nu s-a compromis nimic) și rotația DEK-ului rămâne operația mare, separată.
+
 ### De făcut de către om (înainte de a folosi vault-ul)
 
 - [ ] Aplică migrarea 3 în SQL editor (nu există CLI/Docker local; `db push` ar reîncerca și migrările 1–2, aplicate manual).
@@ -951,7 +967,7 @@ Tot în `app/vault/` și `lib/vault/`; niciun fișier partajat atins, nicio depe
 
 ### Observații
 
-- **Nu există încă UI de recuperare** (parolă master pierdută → cod → chei noi prin `vault_rekey_self`) și nici schimbare de parolă master pentru un membru activ. Datele pentru ambele există (blob-ul de recuperare, funcția SQL); **e primul pas de după cele șase faze** — vezi și „Ce nu există încă" din `app/vault/CLAUDE.md`. Până atunci, un membru care își pierde parola e eliminat și reinvitat de un membru activ — iar dacă e SINGURUL activ, rămâne codul de recuperare + o intervenție manuală.
+- ~~Nu există încă UI de recuperare și nici schimbare de parolă master~~ — **livrate în faza 7** (vezi mai jos). Rămâne adevărat: dacă singurul membru activ pierde ȘI parola, ȘI codul, vault-ul e închis definitiv. Până atunci, un membru care își pierde parola e eliminat și reinvitat de un membru activ — iar dacă e SINGURUL activ, rămâne codul de recuperare + o intervenție manuală.
 - Un membru afișat fără „aprobat de" e unul al cărui aprobator a fost eliminat (`approved_by` → `null` prin `on delete set null`). Corect, nu bug.
 - În dev, `NEXT_PUBLIC_SUPABASE_URL` gol în `.env.local` → `/vault` arată ecranul „Lipsește Supabase", ca admin-ul. Pentru testele fazei 2 am pornit dev-ul cu variabilele date inline și un backend fals interceptat prin CDP; nimic din asta nu e în repo.
 - Argon2id la parametrii ceruți durează **~3 s** pe laptopul de dezvoltare (wasm, Node) — peste cele 1–2 s din brief. Faza 2 îl rulează într-un **Web Worker**, ca UI-ul să rămână viu; parametrii nu se slăbesc.

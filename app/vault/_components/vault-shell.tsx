@@ -5,8 +5,9 @@ import { Mark } from "@/components/site/mark";
 import { useVault } from "./vault-provider";
 import { useVaultData } from "./use-vault-data";
 import { MembersPanel } from "./members-panel";
+import { AccountPanel } from "./account-panel";
 import { EntriesWorkspace } from "./entries-workspace";
-import { formatCountdown } from "./ui";
+import { Note, formatCountdown } from "./ui";
 
 /**
  * Vault-ul deblocat (feat/vault, fazele 2–3).
@@ -99,6 +100,16 @@ export function VaultShell() {
       </div>
 
       <main id="continut" className="relative mx-auto max-w-[1200px] px-5 py-10 sm:px-8 sm:py-12">
+        {vault.notice ? (
+          <div className="mb-6 flex flex-wrap items-start gap-3" aria-live="polite">
+            <div className="min-w-0 flex-1">
+              <Note tone="info">{vault.notice}</Note>
+            </div>
+            <button type="button" onClick={vault.dismissNotice} className="btn btn-ghost mt-4 !min-h-9 !px-4 !py-2 !text-[12.5px]">
+              Am înțeles
+            </button>
+          </div>
+        ) : null}
         {view === "entries" ? (
           <EntriesWorkspace
             snapshot={data.snapshot}
@@ -127,6 +138,7 @@ export function VaultShell() {
               loadError={data.error}
               reload={data.reload}
             />
+            <AccountPanel />
           </>
         )}
       </main>
