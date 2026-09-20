@@ -995,12 +995,23 @@ Tot în `app/vault/` și `lib/vault/`; `crypto.ts` neatins (HMAC-ul e prin WebCr
 5. **Exportul nu conține istoricul și coșul** — e o copie a ce e viu, nu o clonă a bazei; pentru clonă există backup-ul Supabase.
 6. **Parola de export nu e parola master** — un fișier care se deschide cu parola master ar face parola master să circule prin alte canale.
 
+### CE MAI E DE FĂCUT — starea la 2026-09-21 (citește întâi asta)
+
+Codul e COMPLET (11 faze) și comis pe `feat/vault`, împins pe GitHub. **Nimic din vault n-a rulat vreodată pe Supabase-ul real** — toate cele 343 de verificări au fost pe un backend fals în memorie (`.env.local` are variabilele Supabase goale). Ce urmează, în ordine:
+
+1. **Om — pune vault-ul pe Supabase-ul real** (lista bifabilă de mai jos): migrările 3 și 4, sign-up oprit, primul cont, activare, codul pe hârtie.
+2. **Om — prima deblocare reală.** Dacă apare o eroare, cel mai probabil e în SQL-ul din migrarea 4 (plpgsql netestat pe Postgres adevărat) sau o diferență PostgREST față de backend-ul fals (`Prefer: return=representation`, `or=(…)`, `not.is.null`, `bytea` ca `\x…`). Trimite textul exact al erorii; mesajele din UI spun deja ce lipsește („aplică migrarea 3/4").
+3. **Asistent (sesiune viitoare) — după ce prima deblocare reală merge:** testul manual al rotației cheii cu doi membri reali (singurul flux care atinge toate cele patru funcții noi din migrarea 4), apoi **merge `feat/vault` → `main`** și deploy. Nu face merge înainte de pasul 2.
+4. **Opțional, după merge:** închiderea găurii din politicile `leads` (`to authenticated using (true)` — orice cont de pe proiect, inclusiv membrii de vault, poate citi lead-urile prin REST; vezi tabelul de observații), printr-o migrare 5 cu o tabelă `admin_emails` verificată în politici. E o problemă a admin-ului, nu a vault-ului, dar vault-ul adaugă conturi pe același proiect.
+5. **Cunoscut, acceptat, nu e de rezolvat acum:** scenariile de test (seed criptat în Node + Chrome headless + backend fals) au trăit în scratchpad-ul sesiunii și s-au pierdut; tiparul e descris în `app/vault/CLAUDE.md` §5 și în memoria asistentului. Dacă e nevoie de o regresie, se rescriu după tipar (~o oră).
+
 ### De făcut de către om (înainte de a folosi vault-ul)
 
 - [ ] Aplică migrarea 3 ȘI migrarea 4 în SQL editor, în ordine (nu există CLI/Docker local; `db push` ar reîncerca și migrările 1–2, aplicate manual). Fără migrarea 4, deblocarea se oprește cu „Inelul de chei lipsește… aplică migrarea 4".
-- [ ] Supabase → Authentication: **oprește „Allow new users to sign up"**; membrii se invită de acolo.
+- [ ] Supabase → Authentication → Providers → Email: **oprește „Allow new users to sign up"**; membrii se invită de acolo.
 - [ ] Aceeași bază ca lead-urile — vezi observația despre politicile `leads` din tabel.
-- [ ] Creează primul cont de vault (Authentication → Users → Add user → „Create new user", parolă temporară, auto-confirm), **pe altă adresă decât cea din `ADMIN_EMAILS`** (decizia 1 din faza 2). Apoi `/vault` → „Prima intrare? Activează contul". Primul cont activat devine fondator și primește codul de recuperare.
+- [ ] Creează primul cont de vault (Authentication → Users → Add user → „Create new user", parolă temporară, auto-confirm), **pe altă adresă decât cea din `ADMIN_EMAILS`** (decizia 1 din faza 2). Apoi `/vault` → „Prima intrare sau parolă pierdută? Activează contul". Primul cont activat devine fondator și primește codul de recuperare — **pe hârtie**.
+- [ ] Local, dacă vrei să rulezi `/vault` pe calculatorul tău: `NEXT_PUBLIC_SUPABASE_URL` și `NEXT_PUBLIC_SUPABASE_ANON_KEY` în `.env.local` (pe Vercel există deja, pentru admin).
 
 ### Observații
 
