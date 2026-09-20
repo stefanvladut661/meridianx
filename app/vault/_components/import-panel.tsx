@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useMemo, useState, type ChangeEvent } from "react";
 import {
   createEntries,
   ensureClients,
@@ -10,20 +10,28 @@ import {
 import {
   ROLES,
   ROLE_LABEL,
+  classifyJson,
   detectColumns,
+  finishPlan,
+  itemsFromExport,
   parseCsv,
   planImport,
   type ColumnMapping,
   type ColumnRole,
   type CsvTable,
+  type RawItem,
 } from "@/lib/vault/import";
+import { decryptExport, isExportFile, type ExportFile } from "@/lib/vault/export";
+import { KeyRing } from "./key-ring";
 import { VaultDataError } from "@/lib/vault/members";
 import { VaultCryptoError } from "@/lib/vault/crypto";
 import { useVault } from "./vault-provider";
-import { BTN_SM, BTN_SM_LIGHT, FIELD, Note, countNoun } from "./ui";
+import { BTN_SM, BTN_SM_LIGHT, FIELD, Note, countNoun, formatDate, formatSeconds } from "./ui";
 
 /**
- * Importul din CSV (feat/vault, faza 5), în aceeași ramă ca fișa.
+ * Importul (feat/vault, fazele 5, 9 și 11), în aceeași ramă ca fișa:
+ * CSV (orice manager), JSON Bitwarden (cu câmpuri personalizate) și
+ * fișierul propriu de export (cu parola lui de export).
  *
  * Trei pași, unul sub altul, fără „wizard": (1) fișierul sau textul
  * lipit — citit în browser, nu urcat nicăieri; (2) revizuirea: ce
@@ -41,6 +49,12 @@ const PREVIEW_ROWS = 8;
 const FALLBACK_CLIENT = "Import fără folder";
 
 type ClientMode = "column" | "single";
+
+/** Sursa citită: un tabel CSV (cu coloane de mapat) sau intrări gata
+    (JSON Bitwarden, exportul nostru). */
+type Source =
+  | { kind: "csv"; table: CsvTable }
+  | { kind: "items"; label: string; items: RawItem[]; groupLabel: string };
 
 interface Outcome {
   imported: number;
@@ -72,8 +86,11 @@ export function ImportPanel({
   const [fileName, setFileName] = useState<string | null>(null);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasted, setPasted] = useState("");
-  const [table, setTable] = useState<CsvTable | null>(null);
+  const [source, setSource] = useState<Source | null>(null);
+  const [pendingExport, setPendingExport] = useState<{ file: ExportFile; name: string | null } | null>(null);
+  const [decrypting, setDecrypting] = useState<number | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping>({});
+  const table = source?.kind === "csv" ? source.table : null;
   const [clientMode, setClientMode] = useState<ClientMode>("single");
   const [singleClient, setSingleClient] = useState<string>(clients[0]?.id ?? NEW_CLIENT);
   const [newClientName, setNewClientName] = useState("");
@@ -85,21 +102,70 @@ export function ImportPanel({
   function load(text: string, name: string | null) {
     setError(null);
     setOutcome(null);
+    setPendingExport(null);
+
+    if (/^\s*[{[]/.test(text)) {
+      const json = classifyJson(text);
+      if (json.kind === "meridian-export" && isExportFile(json.file)) {
+        setPendingExport({ file: json.file, name });
+        setFileName(name);
+        return;
+      }
+      if (json.kind === "bitwarden-encrypted") {
+        setError("E un export Bitwarden CRIPTAT — nu se poate citi. Exportă din Bitwarden varianta „.json (necriptat)”, importă, apoi șterge fișierul.");
+        return;
+      }
+      if (json.kind === "bitwarden") {
+        adoptItems({ kind: "items", label: "Bitwarden (JSON)", items: json.items, groupLabel: "folderele din Bitwarden" }, name);
+        return;
+      }
+      setError("JSON-ul nu e nici export Bitwarden, nici fișier de export MERIDIAN. Pentru alte managere, folosește CSV.");
+      return;
+    }
+
     const parsed = parseCsv(text);
     if (parsed.headers.length < 2 || parsed.rows.length === 0) {
-      setTable(null);
+      setSource(null);
       setError(
         parsed.headers.length < 2
-          ? "Fișierul nu arată a CSV: am găsit o singură coloană. Exportul din managerul de parole trebuie să fie CSV, nu JSON sau XML."
+          ? "Fișierul nu arată a CSV: am găsit o singură coloană. Exportul din managerul de parole trebuie să fie CSV sau JSON (Bitwarden)."
           : "Fișierul are doar antetul — niciun rând de date."
       );
       return;
     }
     const detected = detectColumns(parsed.headers);
-    setTable(parsed);
+    setSource({ kind: "csv", table: parsed });
     setMapping(detected);
     setFileName(name);
     setClientMode(detected.group !== undefined ? "column" : "single");
+  }
+
+  function adoptItems(next: Extract<Source, { kind: "items" }>, name: string | null) {
+    setSource(next);
+    setFileName(name);
+    setClientMode(next.items.some((item) => item.group) ? "column" : "single");
+  }
+
+  async function unlockExport(passphrase: string) {
+    if (!pendingExport) return;
+    setError(null);
+    setDecrypting(Date.now());
+    try {
+      const plain = await decryptExport(pendingExport.file, passphrase);
+      adoptItems(
+        { kind: "items", label: "export MERIDIAN", items: itemsFromExport(plain), groupLabel: "clienții din export" },
+        pendingExport.name
+      );
+      setPendingExport(null);
+    } catch (cause) {
+      setError(
+        cause instanceof VaultCryptoError
+          ? "Parola de export nu deschide fișierul — e greșită sau fișierul a fost modificat."
+          : describe(cause)
+      );
+    } finally {
+      setDecrypting(null);
+    }
   }
 
   async function onFile(event: ChangeEvent<HTMLInputElement>) {
@@ -121,11 +187,15 @@ export function ImportPanel({
       : (clients.find((client) => client.id === singleClient)?.name ?? "");
 
   const plan = useMemo(() => {
-    if (!table) return null;
-    return planImport(table, mapping, { entries, clients }, (group) =>
-      clientMode === "column" ? (group ?? FALLBACK_CLIENT) : singleClientName
-    );
-  }, [table, mapping, entries, clients, clientMode, singleClientName]);
+    if (!source) return null;
+    const clientNameFor = (group: string | null) =>
+      clientMode === "column" ? (group ?? FALLBACK_CLIENT) : singleClientName;
+    if (source.kind === "csv") return planImport(source.table, mapping, { entries, clients }, clientNameFor);
+    return finishPlan(source.items, { entries, clients }, clientNameFor);
+  }, [source, mapping, entries, clients, clientMode, singleClientName]);
+
+  const hasGroupColumn = source?.kind === "csv" ? mapping.group !== undefined : Boolean(source?.items.some((item) => item.group));
+  const groupLabel = source?.kind === "csv" && table ? `coloana „${table.headers[mapping.group ?? 0]}”` : (source?.kind === "items" ? source.groupLabel : "");
 
   const toImport = useMemo(
     () => plan?.items.filter((item) => !item.empty && (includeDuplicates || !item.duplicate)) ?? [],
@@ -159,12 +229,12 @@ export function ImportPanel({
         clientMode === "column"
           ? Array.from(new Set(toImport.map((item) => item.group ?? FALLBACK_CLIENT)))
           : [singleClientName];
-      const idByName = await ensureClients(supabase, keys.dek, names, clients);
+      const idByName = await ensureClients(supabase, keys, names, clients);
       const items = toImport.map((item) => ({
         clientId: idByName.get(clientMode === "column" ? (item.group ?? FALLBACK_CLIENT) : singleClientName)!,
         payload: item.payload,
       }));
-      const imported = await createEntries(supabase, keys.dek, items, (done) =>
+      const imported = await createEntries(supabase, keys, items, (done) =>
         setProgress({ done, total: items.length })
       );
       const clientsCreated = names.filter(
@@ -181,17 +251,23 @@ export function ImportPanel({
     }
   }
 
-  const step = outcome ? 3 : table ? 2 : 1;
+  const step = outcome ? 3 : source ? 2 : 1;
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-start justify-between gap-4 border-b border-hair px-5 py-5 sm:px-6">
         <div className="min-w-0">
           <p className="font-md-mono text-[10.5px] uppercase tracking-[0.18em] text-dim">
-            Import CSV · pasul {step} din 3
+            Import · pasul {step} din 3
           </p>
           <h2 id={headingId} className="display mt-2 text-[1.5rem] text-bone sm:text-[1.625rem]">
-            {outcome ? "Import terminat" : table ? "Verifică înainte de import" : "Adu parolele din altă parte"}
+            {outcome
+              ? "Import terminat"
+              : source
+                ? "Verifică înainte de import"
+                : pendingExport
+                  ? "Fișier de export MERIDIAN"
+                  : "Adu parolele din altă parte"}
           </h2>
         </div>
         <button type="button" onClick={onClose} disabled={progress !== null} className={`${BTN_SM} shrink-0`}>
@@ -213,23 +289,38 @@ export function ImportPanel({
               .
             </p>
             <p className="mt-3 text-[14px] leading-relaxed text-dim">
-              Fiecare intrare a fost criptată aici, cu cheia vault-ului, înainte să plece. Fișierul
-              CSV rămâne pe calculatorul tău — șterge-l: e în clar.
+              Fiecare intrare a fost criptată aici, cu cheia vault-ului, înainte să plece.
+              {source?.kind === "items" && source.label === "export MERIDIAN"
+                ? " Fișierul de export rămâne criptat — poți să-l păstrezi."
+                : " Fișierul importat rămâne pe calculatorul tău, în clar — șterge-l."}
             </p>
             <button type="button" onClick={onClose} className={`${BTN_SM_LIGHT} mt-5`}>
               Înapoi la listă
             </button>
           </div>
-        ) : !table ? (
+        ) : pendingExport ? (
+          <ExportUnlock
+            fileName={pendingExport.name}
+            counts={pendingExport.file.counts}
+            exportedAt={pendingExport.file.exportedAt}
+            busySince={decrypting}
+            onSubmit={(passphrase) => void unlockExport(passphrase)}
+            onCancel={() => {
+              setPendingExport(null);
+              setFileName(null);
+            }}
+          />
+        ) : !source ? (
           <div>
             <p className="text-[14.5px] leading-relaxed text-dim">
-              Exportă din Chrome, Bitwarden, 1Password, LastPass sau KeePass ca <strong className="font-semibold text-bone">CSV</strong>.
-              Fișierul se citește aici, în browser — nu se urcă nicăieri; ce importezi pleacă doar criptat.
+              Exportă din Chrome, 1Password, LastPass sau KeePass ca <strong className="font-semibold text-bone">CSV</strong>,
+              din Bitwarden ca <strong className="font-semibold text-bone">JSON (necriptat)</strong> — sau adu un fișier de
+              export MERIDIAN. Se citește aici, în browser — nu se urcă nicăieri; ce importezi pleacă doar criptat.
             </p>
 
-            <input id={ids.file} type="file" accept=".csv,text/csv,text/plain" onChange={onFile} className="sr-only" />
+            <input id={ids.file} type="file" accept=".csv,.json,text/csv,application/json,text/plain" onChange={onFile} className="sr-only" />
             <label htmlFor={ids.file} className={`${BTN_SM_LIGHT} mt-5 cursor-pointer`}>
-              Alege fișierul CSV
+              Alege fișierul
             </label>
 
             <button
@@ -238,7 +329,7 @@ export function ImportPanel({
               aria-expanded={pasteOpen}
               className="ml-2 mt-5 text-[13.5px] text-dim underline-offset-4 transition-colors hover:text-bone hover:underline"
             >
-              {pasteOpen ? "Ascunde câmpul de lipit" : "sau lipește textul CSV"}
+              {pasteOpen ? "Ascunde câmpul de lipit" : "sau lipește textul (CSV / JSON)"}
             </button>
 
             {pasteOpen ? (
@@ -269,12 +360,16 @@ export function ImportPanel({
         ) : (
           <div>
             <p className="font-md-mono text-[11.5px] tracking-[0.06em] text-dim">
-              {fileName ?? "text lipit"} · {countNoun(table.rows.length, "rând", "rânduri")} ·{" "}
-              {countNoun(table.headers.length, "coloană", "coloane")}
+              {fileName ?? "text lipit"} ·{" "}
+              {table
+                ? `${countNoun(table.rows.length, "rând", "rânduri")} · ${countNoun(table.headers.length, "coloană", "coloane")}`
+                : source.kind === "items"
+                  ? `${source.label} · ${countNoun(source.items.length, "intrare", "intrări")}`
+                  : ""}
               <button
                 type="button"
                 onClick={() => {
-                  setTable(null);
+                  setSource(null);
                   setFileName(null);
                 }}
                 className="ml-3 text-bone underline-offset-4 hover:underline"
@@ -283,27 +378,31 @@ export function ImportPanel({
               </button>
             </p>
 
-            {/* Coloane ---------------------------------------------- */}
-            <p className="eyebrow mt-6 !text-[11px]">Ce coloană e ce</p>
-            <div className="mt-2 grid grid-cols-2 gap-2.5">
-              {ROLES.map((role) => (
-                <RoleSelect
-                  key={role}
-                  role={role}
-                  headers={table.headers}
-                  value={mapping[role]}
-                  onChange={(value) => setRole(role, value)}
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-[12.5px] leading-relaxed text-dim">
-              Coloanele nerecunoscute devin câmpuri cu numele lor — nu se pierde nimic.
-            </p>
+            {/* Coloane (doar CSV) ------------------------------------- */}
+            {table ? (
+              <>
+                <p className="eyebrow mt-6 !text-[11px]">Ce coloană e ce</p>
+                <div className="mt-2 grid grid-cols-2 gap-2.5">
+                  {ROLES.map((role) => (
+                    <RoleSelect
+                      key={role}
+                      role={role}
+                      headers={table.headers}
+                      value={mapping[role]}
+                      onChange={(value) => setRole(role, value)}
+                    />
+                  ))}
+                </div>
+                <p className="mt-2 text-[12.5px] leading-relaxed text-dim">
+                  Coloanele nerecunoscute devin câmpuri cu numele lor — nu se pierde nimic.
+                </p>
+              </>
+            ) : null}
 
             {/* Client ------------------------------------------------ */}
             <p className="eyebrow mt-6 !text-[11px]">În ce client ajung</p>
             <div className="mt-2 space-y-2">
-              {mapping.group !== undefined ? (
+              {hasGroupColumn ? (
                 <label className="flex cursor-pointer items-start gap-2.5 text-[14px] text-bone">
                   <input
                     type="radio"
@@ -313,7 +412,7 @@ export function ImportPanel({
                     className="mt-1 h-4 w-4 accent-[#edeef2]"
                   />
                   <span>
-                    Din coloana „{table.headers[mapping.group]}”
+                    Din {groupLabel}
                     {plan ? (
                       <span className="block text-[12.5px] text-dim">
                         {countNoun(plan.groups.length, "client", "clienți")}
@@ -430,7 +529,7 @@ export function ImportPanel({
         )}
       </div>
 
-      {table && !outcome ? (
+      {source && !outcome ? (
         <div className="flex flex-wrap items-center gap-3 border-t border-hair px-5 py-3.5 sm:px-6">
           <button
             type="button"
@@ -492,6 +591,86 @@ function RoleSelect({
           <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       </div>
+    </div>
+  );
+}
+
+/** Pasul de dinaintea revizuirii, pentru fișierul nostru: parola de export
+    → Argon2id (inelul la vedere) → intrările în clar, în memorie. */
+function ExportUnlock({
+  fileName,
+  counts,
+  exportedAt,
+  busySince,
+  onSubmit,
+  onCancel,
+}: {
+  fileName: string | null;
+  counts: { clients: number; entries: number };
+  exportedAt: string;
+  busySince: number | null;
+  onSubmit: (passphrase: string) => void;
+  onCancel: () => void;
+}) {
+  const id = useId();
+  const [value, setValue] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (busySince === null) return;
+    const interval = window.setInterval(() => setNow(Date.now()), 100);
+    return () => window.clearInterval(interval);
+  }, [busySince]);
+
+  return (
+    <div>
+      <p className="font-md-mono text-[11.5px] tracking-[0.06em] text-dim">
+        {fileName ?? "text lipit"} · {countNoun(counts.entries, "intrare", "intrări")} ·{" "}
+        {countNoun(counts.clients, "client", "clienți")} · exportat {formatDate(exportedAt)}
+      </p>
+      <p className="mt-3 text-[14.5px] leading-relaxed text-dim">
+        Fișierul e criptat cu parola lui de export. Se deschide aici, în browser; ce alegi să imporți
+        se re-criptează cu cheia vault-ului ăstuia.
+      </p>
+      {busySince !== null ? (
+        <div className="mt-5 flex items-center gap-4" role="status" aria-live="polite">
+          <KeyRing spinning className="h-16 w-16 shrink-0 text-bone" />
+          <div>
+            <p className="text-[15px] text-bone">Se derivă cheia de export</p>
+            <p className="mt-1 font-md-mono text-[12px] tracking-[0.08em] text-dim">
+              Argon2id · <span className="text-bone tabular-nums">{formatSeconds(Math.max(0, now - busySince))}</span>
+            </p>
+          </div>
+        </div>
+      ) : (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (value) onSubmit(value);
+          }}
+          className="mt-5"
+          noValidate
+        >
+          <label htmlFor={id} className="eyebrow !text-[11px]">
+            Parola de export
+          </label>
+          <input
+            id={id}
+            type="password"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            autoComplete="off"
+            className={`${FIELD} mt-1.5 h-11`}
+          />
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button type="submit" disabled={!value} className={BTN_SM_LIGHT}>
+              Deschide fișierul
+            </button>
+            <button type="button" onClick={onCancel} className={BTN_SM}>
+              Alt fișier
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

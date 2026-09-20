@@ -19,6 +19,7 @@ import { EntryPanel } from "./entry-panel";
 import { EntryEditor } from "./entry-editor";
 import { ImportPanel } from "./import-panel";
 import { TrashPanel } from "./trash-panel";
+import { ExportPanel } from "./export-panel";
 import { clearClipboardNow } from "./clipboard";
 import { BTN_SM, BTN_SM_LIGHT, FIELD, Note, countNoun } from "./ui";
 
@@ -61,6 +62,7 @@ type Panel =
   /** `template`: o copie (Duplică) — editorul pornește cu payload-ul ei. */
   | { kind: "create"; clientId?: string; template?: EntryPayload }
   | { kind: "import" }
+  | { kind: "export" }
   | { kind: "trash" }
   | null;
 
@@ -227,7 +229,7 @@ export function EntriesWorkspace({
       if (!supabase || !keys) return;
       setActionError(null);
       try {
-        await renameClient(supabase, keys.dek, clientId, name);
+        await renameClient(supabase, keys, clientId, name);
         await reload();
       } catch (cause) {
         setActionError(cause instanceof Error ? cause.message : "Redenumirea a eșuat.");
@@ -284,6 +286,8 @@ export function EntriesWorkspace({
         onKeepEditing={() => setDiscardPrompt(false)}
         onSaved={onSaved}
       />
+    ) : panel?.kind === "export" ? (
+      <ExportPanel snapshot={snapshot} headingId={headingId} onClose={close} />
     ) : panel?.kind === "trash" ? (
       <TrashPanel members={members} headingId={headingId} onClose={close} onRestored={reload} />
     ) : panel?.kind === "import" ? (
@@ -328,12 +332,15 @@ export function EntriesWorkspace({
               Parolele echipei
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => void reload()} disabled={loading} className={BTN_SM}>
               {loading ? "Se reîncarcă…" : "Reîncarcă"}
             </button>
+            <button type="button" onClick={() => go({ kind: "export" })} disabled={!snapshot} className={BTN_SM}>
+              Exportă
+            </button>
             <button type="button" onClick={() => go({ kind: "import" })} disabled={!snapshot} className={BTN_SM}>
-              Importă CSV
+              Importă
             </button>
             <button
               type="button"

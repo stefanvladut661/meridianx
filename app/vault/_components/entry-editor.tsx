@@ -255,14 +255,14 @@ export function EntryEditor({
     setError(null);
     try {
       const clientId = isNewClient
-        ? await createClient(supabase, keys.dek, draft.newClientName)
+        ? await createClient(supabase, keys, draft.newClientName)
         : draft.clientChoice;
       let id: string;
       if (mode === "edit" && entry) {
-        await updateEntry(supabase, keys.dek, { id: entry.id, version: entry.version }, clientId, payload);
+        await updateEntry(supabase, keys, { id: entry.id, version: entry.version, dekId: entry.dekId }, clientId, payload);
         id = entry.id;
       } else {
-        id = await createEntry(supabase, keys.dek, clientId, payload);
+        id = await createEntry(supabase, keys, clientId, payload);
       }
       onDirtyChange(false);
       await onSaved(id);

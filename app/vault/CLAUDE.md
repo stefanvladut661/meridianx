@@ -1,6 +1,6 @@
 # CLAUDE.md — `/vault`
 
-Se citește ÎNAINTE de orice modificare în `app/vault/`, `lib/vault/` sau `supabase/migrations/00000000000003_vault.sql`. Completează `CLAUDE.md` din rădăcină (care rămâne valabil: română, quality floor, disciplina pe zone); acolo unde acest fișier e mai strict, câștigă acesta.
+Se citește ÎNAINTE de orice modificare în `app/vault/`, `lib/vault/` sau `supabase/migrations/0000000000000{3,4}_vault*.sql`. Completează `CLAUDE.md` din rădăcină (care rămâne valabil: română, quality floor, disciplina pe zone); acolo unde acest fișier e mai strict, câștigă acesta.
 
 ---
 
@@ -26,6 +26,8 @@ Repo-ul e public. Securitatea vine din criptare, nu din obscuritate: **niciun se
 8. **Concurență optimistă**: orice update/ștergere de intrare cere `version` = cea văzută; zero rânduri = „altcineva a salvat între timp", mesaj pentru om, fără suprascriere oarbă. Versiunea o crește triggerul, nu clientul.
 9. **Nicio dependență nouă** fără notă în `PLAN.md`. Vault-ul are exact una proprie: `libsodium-wrappers-sumo`.
 10. **Copy-ul spune ce se întâmplă**: „Deblochează", „Ofertă cerută"-style — vocabular consecvent; erorile spun ce s-a întâmplat și ce să faci; eyebrow-urile mono poartă informație reală (fâșia „N intrări · M clienți · decriptate local în X ms" e afirmația modelului, nu decor).
+11. **Inelul de chei** (migrarea 4): fiecare rând poartă `dek_id` (`null` = cheia originală). Se CITEȘTE cu cheia rândului (`dekFor`), se SCRIE mereu cu cheia curentă (`keys.dek`, `keys.currentDekId`). Cheile vechi nu se șterg niciodată (istoricul e pe ele). Rotația = cheie nouă sigilată pentru TOȚI membrii activi (serverul refuză altfel) + cod de recuperare NOU. Un update nu schimbă niciodată conținutul și `dek_id` în același pas (triggerul ar lua re-criptarea drept editare sau invers).
+12. **Export doar criptat**, cu o parolă de export separată de cea master; fără istoric și coș.
 
 ---
 
@@ -42,13 +44,13 @@ ClientPayload = { v: 1, name }
 
 Câmpurile sunt o listă LIBERĂ; `kind` doar propune un șablon (`templateFields`). Un câmp `totp` (faza 8) ține seed-ul (base32 sau `otpauth://`), e MEREU secret (parserul forțează), iar fișa arată codul viu; un cititor mai vechi îl tratează ca text. O schimbare de formă cere `v: 2` și un cititor care înțelege ambele (`parseEntryPayload` e deja defensiv). Rândurile vechi rămân criptate cu forma veche.
 
-### Schema Supabase — migrarea 3
+### Schema Supabase — migrările 3 și 4
 
-`vault_members`, `vault_meta` (un singur rând), `vault_clients`, `vault_entries`, `vault_entry_versions`. RLS pe toate, nimic pentru `anon`, nicio politică `using (true)`. Membrii intră DOAR prin funcțiile `security definer`: `vault_bootstrap` (o singură dată), `vault_join`, `vault_approve_member`, `vault_rekey_self`, `vault_remove_member`; `wrapped_dek` e păzit și de trigger. Migrarea se aplică de om în SQL editor (nu există CLI/Docker local). Nu se editează migrarea 3 — o schimbare = migrarea 4, aditivă.
+`vault_members`, `vault_meta` (un singur rând), `vault_clients`, `vault_entries`, `vault_entry_versions`. RLS pe toate, nimic pentru `anon`, nicio politică `using (true)`. Membrii intră DOAR prin funcțiile `security definer`: `vault_bootstrap` (o singură dată), `vault_join`, `vault_approve_member`, `vault_rekey_self`, `vault_remove_member`; `wrapped_dek` e păzit și de trigger. **Migrarea 4** (obligatorie): `vault_deks` (cheile rotite, împachetate cu codul de recuperare curent), `vault_member_deks` (sigilările per membru), `dek_id` pe clienți / intrări / versiuni, triggerul care nu versionează re-criptarea, funcțiile `vault_rotate_dek`, `vault_grant_deks`, `vault_reseal_self`, `vault_rewrap_recovery`. Migrările se aplică de om în SQL editor, în ordine (nu există CLI/Docker local). Nu se editează 3 sau 4 — o schimbare = migrarea 5, aditivă.
 
 ### Providerul — `_components/vault-provider.tsx`
 
-`useVault()` → `{ phase, member, supabase, keys, lock, changeMasterPassword, recoverWithCode, … }`. `keys.dek` și `supabase` sunt non-null DOAR când `phase.kind === "unlocked"`. Fazele: `locked → busy → keys-missing → recovery-code | pending → unlocked`, plus `recovery` (membru activ cu chei sub parola veche — KEK-ul nou rămâne în memorie până se refac cheile). Datele deblocate vin dintr-un singur loc: `useVaultData()` (`snapshot` + `members` + `meta`, `reload`) — cele două vederi nu trebuie să se contrazică.
+`useVault()` → `{ phase, member, supabase, keys, lock, changeMasterPassword, recoverWithCode, … }`. `keys` (`KeyMaterial` = `{ dek, currentDekId, ring, publicKey, privateKey }`) și `supabase` sunt non-null DOAR când `phase.kind === "unlocked"`. Rotația MUTEAZĂ `keys` în loc (`keyring.ts`). Fazele: `locked → busy → keys-missing → recovery-code | pending → unlocked`, plus `recovery` (membru activ cu chei sub parola veche — KEK-ul nou rămâne în memorie până se refac cheile). Datele deblocate vin dintr-un singur loc: `useVaultData()` (`snapshot` + `members` + `meta`, `reload`) — cele două vederi nu trebuie să se contrazică.
 
 ### Conturi
 
@@ -65,12 +67,14 @@ Contul de vault e SEPARAT de contul de admin (activarea înlocuiește parola Sup
 | `lib/vault/supabase.ts` | Client de browser, sesiune în memorie. |
 | `lib/vault/bytea.ts` | `\x…` hex ⇄ bytes pentru PostgREST. |
 | `lib/vault/members.ts` | `vault_members` / `vault_meta` / funcțiile `vault_*`; erorile SQLSTATE → mesaje. `describeDbError` e folosit de tot stratul de date. `rekeySelf` / `rewrapSelf` / `openDekWithRecoveryCode` (faza 7). |
-| `lib/vault/entries.ts` | Contractul payload-ului; citire/decriptare (`loadVault`), scrieri (client/intrare, loturi de import), istoric (`listVersions`, `restoreVersion`), coș (`loadDeleted`, `restoreEntry`). |
+| `lib/vault/entries.ts` | Contractul payload-ului; citire/decriptare cu inelul (`loadVault`), scrieri cu cheia curentă (client/intrare, loturi de import), istoric, coș, re-criptare (`reencryptAll`, `countStaleRows`). |
 | `lib/vault/search.ts` | Căutare pură, fără diacritice, ȘI pe tokeni, `#etichetă`; secretele NU intră în index. |
-| `lib/vault/import.ts` | Parser CSV RFC 4180, detectarea rolurilor coloanelor, planul de import cu duplicate. PUR. |
+| `lib/vault/import.ts` | Parser CSV RFC 4180, roluri de coloane, JSON Bitwarden, fișierul de export; `finishPlan` marchează duplicatele pentru orice sursă. PUR. |
 | `lib/vault/generate.ts` | Generator de parole pe WebCrypto, entropie afișată. |
 | `lib/vault/diff.ts` | Diferența dintre două payload-uri, pentru istoric. PUR. |
 | `lib/vault/totp.ts` | TOTP (RFC 6238) pe WebCrypto HMAC; base32 RFC 4648; `otpauth://`. PUR, verificat pe vectorii din RFC. |
+| `lib/vault/keyring.ts` | Rotația cheii (`rotateDek`, mutează `keys`), starea inelului, acordarea cheilor lipsă. |
+| `lib/vault/export.ts` | Exportul criptat (parolă de export, salt aleator per fișier) și decriptarea lui la import. |
 | `app/vault/layout.tsx`, `page.tsx` | Root layout separat; pagina decide doar dacă există Supabase. |
 | `_components/vault-provider.tsx` | Mașina de stări, secretele în ref-uri, auto-blocare. |
 | `_components/vault-app.tsx` | Providerul + ecranul fazei curente. |
@@ -79,9 +83,9 @@ Contul de vault e SEPARAT de contul de admin (activarea înlocuiește parola Sup
 | `_components/entries-workspace.tsx` | Căutare + listă + panoul din dreapta (fișă / editor / import / coș), gardă la modificări nesalvate, dialog cu focus captiv pe telefon. |
 | `_components/entry-list.tsx`, `entry-panel.tsx`, `entry-field.tsx`, `entry-history.tsx`, `totp-code.tsx` | Lista grupată pe client; fișa; un câmp (mască, Arată, Copiază); istoricul cu diff și restaurare; codul 2FA viu. |
 | `_components/entry-editor.tsx`, `password-generator.tsx` | Adăugare / editare / duplicare; generatorul inline. |
-| `_components/import-panel.tsx`, `trash-panel.tsx` | Import CSV în trei pași; coșul. |
+| `_components/import-panel.tsx`, `export-panel.tsx`, `trash-panel.tsx` | Import (CSV / Bitwarden JSON / export MERIDIAN) în trei pași; exportul criptat; coșul. |
 | `_components/members-panel.tsx` | Membri (aprobă / elimină) + codul de recuperare. |
-| `_components/account-panel.tsx` | Contul tău: schimbarea parolei master (faza 7). |
+| `_components/account-panel.tsx`, `key-panel.tsx` | Contul tău: schimbarea parolei master (faza 7). Cheia de date: starea inelului, rotația, re-criptarea, acordarea cheilor (faza 10). |
 | `_components/clipboard.ts`, `use-vault-data.ts`, `ui.tsx` | Clipboard cu expirare; datele deblocate; vocabularul vizual local. |
 
 ---
@@ -98,12 +102,14 @@ Nu există Supabase local, CLI sau Docker pe mașina de dezvoltare, și extensia
 
 ---
 
-## 6. Ce nu există încă (și de ce)
+## 6. Ce nu există (și de ce)
+
+Lista de „ce lipsește" e goală de la faza 11: recuperare, schimbarea parolei, TOTP, export criptat, rotația cheii, import JSON — toate există. Ce rămâne intenționat în afară:
 
 TOTP EXISTĂ (faza 8): câmp de fel `totp`, HMAC prin WebCrypto, codul viu în fișă. Recuperarea cu codul și schimbarea parolei master EXISTĂ (faza 7): parola pierdută → parolă temporară setată de echipă din Supabase → „Activează contul" → ecranul de recuperare → codul de pe hârtie. Fără cod: eliminare + reinvitare de un membru activ. Nu se șterge și recrează contul (cascade pe `vault_members`).
 
-- **Rotația DEK-ului** la eliminarea unui membru activ (= re-criptarea tuturor intrărilor). Ce a apucat să vadă a văzut.
-- **Export.** Un export în clar contrazice `crypto.ts`; varianta corectă e un fișier criptat cu o parolă de export (Argon2id + XChaCha20, același strat). Decizie de securitate de luat cu omul.
-- **Import JSON** (Bitwarden). CSV-ul acoperă toate managerele; JSON-ul ar aduce câmpurile personalizate, cu un al doilea parser.
+- **Re-criptarea istoricului** la rotație: `vault_entry_versions` nu se poate rescrie din client (intenționat), deci istoricul rămâne pe cheile vechi. Un ex-membru care a văzut istoricul l-a văzut oricum.
+- **Export în clar.** Niciodată — vezi invariantul 12.
+- **Ștergerea definitivă din UI** — vezi invariantul 7.
 
 Orice adaugi din lista asta: fază proprie, commit propriu, notă în `PLAN.md`, verificare completă. Și, înainte de a scrie o linie: **ar ieși la fel dacă brief-ul ar fi fost pentru orice alt manager de parole?** Dacă da, refă.

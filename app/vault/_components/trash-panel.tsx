@@ -42,7 +42,7 @@ export function TrashPanel({
   const reload = useCallback(async () => {
     if (!supabase || !keys) return;
     try {
-      setItems(await loadDeleted(supabase, keys.dek));
+      setItems(await loadDeleted(supabase, keys));
       setError(null);
     } catch (cause) {
       setError(describe(cause));

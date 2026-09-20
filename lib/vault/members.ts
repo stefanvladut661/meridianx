@@ -1,6 +1,8 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { fromBytea, toBytea } from "./bytea";
 import {
+  decrypt,
+  encrypt,
   generateDek,
   generateMemberKeyPair,
   generateRecoveryCode,
@@ -16,7 +18,7 @@ import {
 } from "./crypto";
 
 /**
- * Stratul de date al membrilor (feat/vault, fazele 2 și 7).
+ * Stratul de date al membrilor (feat/vault, fazele 2, 7 și 10).
  *
  * Singurul loc care vorbește cu `vault_members` / `vault_meta` și cu
  * funcțiile `vault_*` din migrarea 3. Primește un client Supabase cu
@@ -54,11 +56,54 @@ export interface VaultMeta {
   updatedAt: string;
 }
 
-/** Tot ce are un membru activ în memorie, după deblocare. */
+/** Cheia legacy (originala, din `vault_members.wrapped_dek`) are id-ul
+    gol în inel; rândurile o indică prin `dek_id = null`. */
+export const LEGACY_DEK = "";
+
+/**
+ * Tot ce are un membru activ în memorie, după deblocare.
+ *
+ * Faza 10: un INEL de chei, nu una singură. `dek` e cheia CURENTĂ (cu ea
+ * se criptează tot ce e nou), `currentDekId` id-ul ei (`null` = legacy),
+ * `ring` toate cheile pe care membrul le-a putut deschide — rândurile
+ * vechi și istoricul se citesc cu cheia lor (`dek_id`).
+ */
 export interface KeyMaterial {
   dek: Uint8Array;
+  currentDekId: string | null;
+  ring: Map<string, Uint8Array>;
   publicKey: Uint8Array;
   privateKey: Uint8Array;
+}
+
+/** O cheie rotită (`vault_deks`). */
+export interface VaultDek {
+  id: string;
+  recoveryWrappedDek: Uint8Array;
+  recoveryNonce: Uint8Array;
+  createdBy: string | null;
+  createdAt: string;
+  retiredAt: string | null;
+}
+
+/** O cheie rotită, sigilată pentru un membru (`vault_member_deks`). */
+export interface MemberDek {
+  memberId: string;
+  dekId: string;
+  sealedDek: Uint8Array;
+}
+
+/** Cheia cu care se deschide un rând, după `dek_id`-ul lui. Aruncă
+    `decrypt_failed` dacă membrul n-o are — mesajul spune ce să ceară. */
+export function dekFor(keys: KeyMaterial, dekId: string | null): Uint8Array {
+  const key = keys.ring.get(dekId ?? LEGACY_DEK);
+  if (!key) {
+    throw new VaultCryptoError(
+      "decrypt_failed",
+      "Rândul e criptat cu o cheie pe care nu o ai. Cere unui membru activ să-ți acorde cheile lipsă (din Membri)."
+    );
+  }
+  return key;
 }
 
 export type RegisterOutcome =
@@ -94,10 +139,13 @@ export function describeDbError(error: PostgrestError | { message: string; code?
   switch (code) {
     case "42P01": // undefined_table
     case "42883": // undefined_function
+    case "42703": // undefined_column (dek_id → migrarea 4)
     case "PGRST202": // funcție necunoscută în schema cache
       return new VaultDataError(
         "not_migrated",
-        "Tabelele vault-ului lipsesc din baza de date. Aplică migrarea 3 (supabase/migrations/00000000000003_vault.sql) în SQL editor."
+        /dek|vault_deks|vault_member_deks|rotate|grant_deks|reseal|rewrap/i.test(error.message) || code === "42703"
+          ? "Inelul de chei lipsește din baza de date. Aplică migrarea 4 (supabase/migrations/00000000000004_vault_keyring.sql) în SQL editor."
+          : "Tabelele vault-ului lipsesc din baza de date. Aplică migrarea 3 (supabase/migrations/00000000000003_vault.sql) în SQL editor."
       );
     case "42501": // insufficient_privilege
       return new VaultDataError(
@@ -215,7 +263,12 @@ export async function fetchMeta(supabase: SupabaseClient): Promise<VaultMeta> {
  * după un login reușit cu authHash-ul din aceeași parolă, înseamnă că
  * rândul a fost alterat, nu că parola e greșită.
  */
-export function openKeys(member: VaultMember, kek: Uint8Array): KeyMaterial {
+export function openKeys(
+  member: VaultMember,
+  kek: Uint8Array,
+  deks: VaultDek[] = [],
+  memberDeks: MemberDek[] = []
+): KeyMaterial {
   if (!member.wrappedDek) {
     throw new VaultDataError("forbidden", "Membrul e încă în așteptare — nu are DEK sigilat.");
   }
@@ -225,12 +278,117 @@ export function openKeys(member: VaultMember, kek: Uint8Array): KeyMaterial {
     member.id
   );
   try {
-    const dek = openDek(member.wrappedDek, member.publicKey, privateKey);
-    return { dek, publicKey: member.publicKey, privateKey };
+    const legacy = openDek(member.wrappedDek, member.publicKey, privateKey);
+    const ring = new Map<string, Uint8Array>([[LEGACY_DEK, legacy]]);
+    for (const sealed of memberDeks) {
+      if (sealed.memberId !== member.id) continue;
+      try {
+        ring.set(sealed.dekId, openDek(sealed.sealedDek, member.publicKey, privateKey));
+      } catch {
+        // O sigilare alterată nu blochează deblocarea; rândurile ei
+        // apar ca ilizibile, cu mesajul de „cere cheia".
+      }
+    }
+    return withCurrent(ring, deks, member.publicKey, privateKey);
   } catch (error) {
     wipe(privateKey);
     throw error;
   }
+}
+
+/** Cheia curentă = singura din `vault_deks` fără `retired_at`, altfel
+    legacy. Dacă membrul n-o are în inel, nu poate scrie nimic corect —
+    mai bine oprit aici decât să scrie sub cheia retrasă. */
+function withCurrent(
+  ring: Map<string, Uint8Array>,
+  deks: VaultDek[],
+  publicKey: Uint8Array,
+  privateKey: Uint8Array
+): KeyMaterial {
+  const active = deks.find((dek) => dek.retiredAt === null);
+  const currentDekId = active ? active.id : null;
+  const dek = ring.get(currentDekId ?? LEGACY_DEK);
+  if (!dek) {
+    for (const key of ring.values()) wipe(key);
+    throw new VaultDataError(
+      "forbidden",
+      "Cheia curentă a vault-ului a fost rotită și încă nu ți-a fost acordată. Cere unui membru activ să-ți acorde cheile din Membri, apoi deblochează din nou."
+    );
+  }
+  return { dek, currentDekId, ring, publicKey, privateKey };
+}
+
+interface DekRow {
+  id: string;
+  recovery_wrapped_dek: string;
+  recovery_nonce: string;
+  created_by: string | null;
+  created_at: string;
+  retired_at: string | null;
+}
+
+/** Toate cheile rotite, cele mai vechi primele. Gol pe un vault fără rotații. */
+export async function fetchDeks(supabase: SupabaseClient): Promise<VaultDek[]> {
+  const { data, error } = await supabase
+    .from("vault_deks")
+    .select("id, recovery_wrapped_dek, recovery_nonce, created_by, created_at, retired_at")
+    .order("created_at", { ascending: true })
+    .overrideTypes<DekRow[], { merge: false }>();
+  if (error) throw describeDbError(error);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    recoveryWrappedDek: fromBytea(row.recovery_wrapped_dek),
+    recoveryNonce: fromBytea(row.recovery_nonce),
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    retiredAt: row.retired_at,
+  }));
+}
+
+interface MemberDekRow {
+  member_id: string;
+  dek_id: string;
+  sealed_dek: string;
+}
+
+/** Sigilările: ale unui membru, sau toate (pentru „cui îi lipsește"). */
+export async function fetchMemberDeks(supabase: SupabaseClient, memberId?: string): Promise<MemberDek[]> {
+  let query = supabase.from("vault_member_deks").select("member_id, dek_id, sealed_dek");
+  if (memberId) query = query.eq("member_id", memberId);
+  const { data, error } = await query.overrideTypes<MemberDekRow[], { merge: false }>();
+  if (error) throw describeDbError(error);
+  return (data ?? []).map((row) => ({
+    memberId: row.member_id,
+    dekId: row.dek_id,
+    sealedDek: fromBytea(row.sealed_dek),
+  }));
+}
+
+/** Cheile rotite din inel (fără legacy), sigilate către o cheie publică —
+    forma pe care o iau `vault_grant_deks` și `vault_reseal_self`. */
+function sealRing(keys: KeyMaterial, publicKey: Uint8Array): Array<{ dek_id: string; sealed_dek: string }> {
+  const out: Array<{ dek_id: string; sealed_dek: string }> = [];
+  for (const [id, key] of keys.ring) {
+    if (id === LEGACY_DEK) continue;
+    out.push({ dek_id: id, sealed_dek: toBytea(sealDek(key, publicKey)) });
+  }
+  return out;
+}
+
+/** Un membru activ acordă altuia cheile rotite pe care le are. Nimic de
+    făcut pe un vault fără rotații. */
+export async function grantDeks(supabase: SupabaseClient, keys: KeyMaterial, target: VaultMember): Promise<void> {
+  const sealed = sealRing(keys, target.publicKey);
+  if (sealed.length === 0) return;
+  const { error } = await supabase.rpc("vault_grant_deks", { p_member: target.id, p_sealed: sealed });
+  if (error) throw describeDbError(error);
+}
+
+/** După chei noi: cheile rotite, re-sigilate către propria cheie publică nouă. */
+export async function resealSelf(supabase: SupabaseClient, keys: KeyMaterial): Promise<void> {
+  const sealed = sealRing(keys, keys.publicKey);
+  const { error } = await supabase.rpc("vault_reseal_self", { p_sealed: sealed });
+  if (error) throw describeDbError(error);
 }
 
 /**
@@ -272,7 +430,13 @@ export async function registerKeys(
   if (!bootstrap.error) {
     return {
       outcome: "bootstrapped",
-      keys: { dek, publicKey: pair.publicKey, privateKey: pair.privateKey },
+      keys: {
+        dek,
+        currentDekId: null,
+        ring: new Map([[LEGACY_DEK, dek]]),
+        publicKey: pair.publicKey,
+        privateKey: pair.privateKey,
+      },
       recoveryCode: recovery.code,
     };
   }
@@ -301,15 +465,19 @@ export async function registerKeys(
     așteptare. DEK-ul nu părăsește browserul decât sigilat. */
 export async function approveMember(
   supabase: SupabaseClient,
-  dek: Uint8Array,
+  keys: KeyMaterial,
   target: VaultMember
 ): Promise<void> {
-  const sealed = sealDek(dek, target.publicKey);
+  const legacy = keys.ring.get(LEGACY_DEK);
+  if (!legacy) throw new VaultDataError("forbidden", "Nu ai cheia originală a vault-ului — nu poți aproba.");
+  const sealed = sealDek(legacy, target.publicKey);
   const { error } = await supabase.rpc("vault_approve_member", {
     p_member: target.id,
     p_wrapped_dek: toBytea(sealed),
   });
   if (error) throw describeDbError(error);
+  // Cheile rotite, dacă există: fără ele, membrul nou n-ar citi nimic scris după rotații.
+  await grantDeks(supabase, keys, target);
 }
 
 export async function removeMember(supabase: SupabaseClient, memberId: string): Promise<void> {
@@ -322,25 +490,41 @@ export async function removeMember(supabase: SupabaseClient, memberId: string): 
  * care update-ul reușește. Codul se întoarce ca să fie afișat o
  * singură dată.
  */
-export async function rotateRecoveryCode(
-  supabase: SupabaseClient,
-  dek: Uint8Array
-): Promise<string> {
-  const current = await fetchMeta(supabase);
+export async function rotateRecoveryCode(supabase: SupabaseClient, keys: KeyMaterial): Promise<string> {
+  const legacy = keys.ring.get(LEGACY_DEK);
+  if (!legacy) throw new VaultDataError("forbidden", "Nu ai cheia originală a vault-ului.");
   const recovery = generateRecoveryCode();
-  const box = wrapDekForRecovery(recovery.key, dek);
-  wipe(recovery.key);
+  try {
+    const box = wrapDekForRecovery(recovery.key, legacy);
+    const rotated = wrapRingForRecovery(keys, recovery.key);
 
-  const { error } = await supabase
-    .from("vault_meta")
-    .update({
-      recovery_wrapped_dek: toBytea(box.ciphertext),
-      recovery_nonce: toBytea(box.nonce),
-      recovery_rotations: current.recoveryRotations + 1,
-    })
-    .eq("id", true);
-  if (error) throw describeDbError(error);
-  return recovery.code;
+    const { error } = await supabase.rpc("vault_rewrap_recovery", {
+      p_legacy_wrapped: toBytea(box.ciphertext),
+      p_legacy_nonce: toBytea(box.nonce),
+      p_deks: rotated,
+    });
+    if (error) throw describeDbError(error);
+    return recovery.code;
+  } finally {
+    wipe(recovery.key);
+  }
+}
+
+/** AD-ul blob-ului de recuperare al unei chei rotite — legat de rândul ei. */
+export const dekRecoveryAd = (dekId: string) => `vault_deks:${dekId}:recovery`;
+
+/** Cheile rotite din inel, împachetate cu o cheie de recuperare. */
+export function wrapRingForRecovery(
+  keys: KeyMaterial,
+  recoveryKey: Uint8Array
+): Array<{ id: string; recovery_wrapped_dek: string; recovery_nonce: string }> {
+  const out: Array<{ id: string; recovery_wrapped_dek: string; recovery_nonce: string }> = [];
+  for (const [id, key] of keys.ring) {
+    if (id === LEGACY_DEK) continue;
+    const box = encrypt(recoveryKey, key, dekRecoveryAd(id));
+    out.push({ id, recovery_wrapped_dek: toBytea(box.ciphertext), recovery_nonce: toBytea(box.nonce) });
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -360,11 +544,13 @@ export async function rekeySelf(
   supabase: SupabaseClient,
   memberId: string,
   kek: Uint8Array,
-  dek: Uint8Array
+  ring: { dek: Uint8Array; currentDekId: string | null; ring: Map<string, Uint8Array> }
 ): Promise<KeyMaterial> {
+  const legacy = ring.ring.get(LEGACY_DEK);
+  if (!legacy) throw new VaultDataError("forbidden", "Nu ai cheia originală a vault-ului.");
   const pair = generateMemberKeyPair();
   const wrappedPrivate = wrapPrivateKey(kek, pair.privateKey, memberId);
-  const sealed = sealDek(dek, pair.publicKey);
+  const sealed = sealDek(legacy, pair.publicKey);
   const { error } = await supabase.rpc("vault_rekey_self", {
     p_public_key: toBytea(pair.publicKey),
     p_encrypted_private_key: toBytea(wrappedPrivate.ciphertext),
@@ -375,7 +561,17 @@ export async function rekeySelf(
     wipe(pair.privateKey);
     throw describeDbError(error);
   }
-  return { dek, publicKey: pair.publicKey, privateKey: pair.privateKey };
+  const keys: KeyMaterial = {
+    dek: ring.dek,
+    currentDekId: ring.currentDekId,
+    ring: ring.ring,
+    publicKey: pair.publicKey,
+    privateKey: pair.privateKey,
+  };
+  // Cheile rotite, sub noua cheie publică — separat, fiindcă funcția din
+  // migrarea 3 nu le cunoaște. Dacă pică, apelantul întoarce totul.
+  await resealSelf(supabase, keys);
+  return keys;
 }
 
 /**
@@ -389,8 +585,10 @@ export async function rewrapSelf(
   kek: Uint8Array,
   keys: KeyMaterial
 ): Promise<void> {
+  const legacy = keys.ring.get(LEGACY_DEK);
+  if (!legacy) throw new VaultDataError("forbidden", "Nu ai cheia originală a vault-ului.");
   const wrappedPrivate = wrapPrivateKey(kek, keys.privateKey, memberId);
-  const sealed = sealDek(keys.dek, keys.publicKey);
+  const sealed = sealDek(legacy, keys.publicKey);
   const { error } = await supabase.rpc("vault_rekey_self", {
     p_public_key: toBytea(keys.publicKey),
     p_encrypted_private_key: toBytea(wrappedPrivate.ciphertext),
@@ -398,6 +596,7 @@ export async function rewrapSelf(
     p_wrapped_dek: toBytea(sealed),
   });
   if (error) throw describeDbError(error);
+  await resealSelf(supabase, keys);
 }
 
 /**
@@ -410,7 +609,7 @@ export async function rewrapSelf(
 export async function openDekWithRecoveryCode(
   supabase: SupabaseClient,
   code: string
-): Promise<Uint8Array> {
+): Promise<{ dek: Uint8Array; currentDekId: string | null; ring: Map<string, Uint8Array> }> {
   const recoveryKey = recoveryKeyFromCode(code);
   if (!recoveryKey) {
     throw new VaultCryptoError(
@@ -419,9 +618,10 @@ export async function openDekWithRecoveryCode(
     );
   }
   try {
-    const meta = await fetchMeta(supabase);
+    const [meta, deks] = await Promise.all([fetchMeta(supabase), fetchDeks(supabase)]);
+    let legacy: Uint8Array;
     try {
-      return unwrapDekFromRecovery(recoveryKey, {
+      legacy = unwrapDekFromRecovery(recoveryKey, {
         ciphertext: meta.recoveryWrappedDek,
         nonce: meta.recoveryNonce,
       });
@@ -431,6 +631,29 @@ export async function openDekWithRecoveryCode(
         "Codul nu deschide vault-ul. Ori e tastat greșit, ori a fost regenerat între timp — codul vechi nu mai e valabil."
       );
     }
+    const ring = new Map<string, Uint8Array>([[LEGACY_DEK, legacy]]);
+    for (const dek of deks) {
+      try {
+        ring.set(
+          dek.id,
+          decrypt(recoveryKey, { ciphertext: dek.recoveryWrappedDek, nonce: dek.recoveryNonce }, dekRecoveryAd(dek.id))
+        );
+      } catch {
+        // O cheie rotită neîmpachetată cu codul curent: rândurile ei
+        // rămân ilizibile până le acordă un membru activ.
+      }
+    }
+    const active = deks.find((dek) => dek.retiredAt === null);
+    const currentDekId = active ? active.id : null;
+    const current = ring.get(currentDekId ?? LEGACY_DEK);
+    if (!current) {
+      for (const key of ring.values()) wipe(key);
+      throw new VaultCryptoError(
+        "decrypt_failed",
+        "Codul deschide cheia originală, dar nu și cheia curentă (rotită). Cere unui membru activ să-ți acorde cheile după ce îți refaci contul."
+      );
+    }
+    return { dek: current, currentDekId, ring };
   } finally {
     wipe(recoveryKey);
   }

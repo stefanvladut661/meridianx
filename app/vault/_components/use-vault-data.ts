@@ -60,7 +60,7 @@ export function useVaultData(): VaultData {
     setLoading(true);
     try {
       const [nextSnapshot, nextMembers, nextMeta] = await Promise.all([
-        loadVault(supabase, keys.dek),
+        loadVault(supabase, keys),
         listMembers(supabase),
         fetchMeta(supabase),
       ]);

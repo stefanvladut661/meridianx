@@ -15,6 +15,8 @@ import { normalizeEmail, ready, VaultCryptoError, wipe } from "@/lib/vault/crypt
 import { deriveMasterMaterialAsync } from "@/lib/vault/kdf";
 import { getVaultClient } from "@/lib/vault/supabase";
 import {
+  fetchDeks,
+  fetchMemberDeks,
   fetchOwnMember,
   openDekWithRecoveryCode,
   openKeys,
@@ -45,7 +47,7 @@ import {
  * e „în așteptare" — după aprobare, cu el se desface cheia privată.
  *
  * Contract pentru fazele următoare: `useVault()` → `{ phase, member,
- * supabase, keys, lock }`. `keys.dek` e cheia intrărilor; `supabase` e
+ * supabase, keys, lock }`. `keys` e inelul de chei (`dek` = cea curentă); `supabase` e
  * clientul cu sesiune. Ambele sunt non-null DOAR când `phase.kind ===
  * "unlocked"`.
  */
@@ -251,8 +253,10 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       const kek = kekRef.current;
       if (!kek) throw new VaultCryptoError("invalid_input", "Cheia de deblocare lipsește din memorie.");
 
+      // Inelul de chei (faza 10): cheile rotite, dacă vault-ul a avut rotații.
+      const [deks, memberDeks] = await Promise.all([fetchDeks(supabase), fetchMemberDeks(supabase, identity.id)]);
       try {
-        keysRef.current = openKeys(row, kek);
+        keysRef.current = openKeys(row, kek, deks, memberDeks);
       } catch (cause) {
         if (cause instanceof VaultCryptoError && cause.code === "decrypt_failed") {
           if (replacing) {
@@ -406,9 +410,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       setError(null);
       try {
         setPhase({ kind: "busy", step: "recovering", startedAt: Date.now(), from: "onboarding" });
-        const dek = await openDekWithRecoveryCode(supabase, code);
+        const ring = await openDekWithRecoveryCode(supabase, code);
         setPhase({ kind: "busy", step: "rekeying", startedAt: Date.now(), from: "onboarding" });
-        keysRef.current = await rekeySelf(supabase, identity.id, kek, dek);
+        keysRef.current = await rekeySelf(supabase, identity.id, kek, ring);
         wipe(kek);
         kekRef.current = null;
         setNotice(
@@ -459,7 +463,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         const next = await deriveMasterMaterialAsync(identity.email, nextPassword);
         try {
           onStep?.("rekeying");
-          const fresh = await rekeySelf(supabase, identity.id, next.kek, keys.dek);
+          const fresh = await rekeySelf(supabase, identity.id, next.kek, keys);
 
           onStep?.("updating-password");
           const { error: updateError } = await supabase.auth.updateUser({ password: next.authHash });

@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fromBytea, toBytea } from "./bytea";
 import { AD, decryptJson, encryptJson, VaultCryptoError } from "./crypto";
-import { describeDbError, VaultDataError } from "./members";
+import { dekFor, describeDbError, VaultDataError, type KeyMaterial } from "./members";
 
 /**
- * Stratul de date al intrărilor (feat/vault, fazele 3–6).
+ * Stratul de date al intrărilor (feat/vault, fazele 3–6 și 10).
  *
  * Singurul loc care vorbește cu `vault_clients` / `vault_entries`.
  * Primește un client Supabase cu sesiune și DEK-ul din memorie; întoarce
@@ -20,6 +20,11 @@ import { describeDbError, VaultDataError } from "./members";
  * alterat, JSON în altă formă) NU prăbușește lista: devine o intrare
  * „ilizibilă", vizibilă ca atare. Integritatea e informație pentru om —
  * un rând alterat pe server trebuie văzut, nu ascuns.
+ *
+ * INELUL DE CHEI (faza 10): fiecare rând spune cu ce cheie e scris
+ * (`dek_id`; NULL = cheia originală). Citirea ia cheia rândului din inel
+ * (`dekFor`); scrierea folosește mereu cheia CURENTĂ (`keys.dek`) și o
+ * notează în rând. Rotația (`keyring.ts`) re-criptează rândurile vii.
  */
 
 // ---------------------------------------------------------------------------
@@ -88,6 +93,8 @@ export interface ClientPayload {
 export interface VaultClient {
   id: string;
   name: string;
+  /** Cheia cu care e scris numele (`null` = originala). */
+  dekId: string | null;
   createdAt: string;
   updatedAt: string;
   updatedBy: string | null;
@@ -96,6 +103,8 @@ export interface VaultClient {
 interface EntryMeta {
   id: string;
   clientId: string;
+  /** Cheia cu care e scris payload-ul (`null` = originala). */
+  dekId: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -192,6 +201,7 @@ interface ClientRow {
   id: string;
   encrypted_name: string;
   nonce: string;
+  dek_id: string | null;
   created_at: string;
   updated_at: string;
   updated_by: string | null;
@@ -202,14 +212,15 @@ interface EntryRow {
   client_id: string;
   encrypted_payload: string;
   nonce: string;
+  dek_id: string | null;
   version: number;
   created_at: string;
   updated_at: string;
   updated_by: string | null;
 }
 
-const CLIENT_COLUMNS = "id, encrypted_name, nonce, created_at, updated_at, updated_by";
-const ENTRY_COLUMNS = "id, client_id, encrypted_payload, nonce, version, created_at, updated_at, updated_by";
+const CLIENT_COLUMNS = "id, encrypted_name, nonce, dek_id, created_at, updated_at, updated_by";
+const ENTRY_COLUMNS = "id, client_id, encrypted_payload, nonce, dek_id, version, created_at, updated_at, updated_by";
 
 /** Numele afișat pentru un client al cărui nume nu s-a putut decripta:
     id-ul scurt, ca omul să-l poată găsi în bază. */
@@ -226,7 +237,7 @@ export function unreadableClientName(id: string): string {
  * Aruncă `VaultDataError` DOAR la erori de transport sau de drepturi;
  * un rând care nu se decriptează e întors ca `unreadable`.
  */
-export async function loadVault(supabase: SupabaseClient, dek: Uint8Array): Promise<VaultSnapshot> {
+export async function loadVault(supabase: SupabaseClient, keys: KeyMaterial): Promise<VaultSnapshot> {
   const [clientsResult, entriesResult, deletedResult] = await Promise.all([
     supabase
       .from("vault_clients")
@@ -254,11 +265,11 @@ export async function loadVault(supabase: SupabaseClient, dek: Uint8Array): Prom
 
   let unreadableClients = 0;
   const clients: VaultClient[] = (clientsResult.data ?? []).map((row) => {
-    const client = decryptClientRow(dek, row);
+    const client = decryptClientRow(keys, row);
     if (client.unreadable) unreadableClients += 1;
     return client;
   });
-  const entries: VaultEntry[] = (entriesResult.data ?? []).map((row) => decryptEntryRow(dek, row));
+  const entries: VaultEntry[] = (entriesResult.data ?? []).map((row) => decryptEntryRow(keys, row));
 
   return {
     clients,
@@ -271,13 +282,13 @@ export async function loadVault(supabase: SupabaseClient, dek: Uint8Array): Prom
 }
 
 /** Un rând de client → nume în clar (sau numele de „ilizibil"). */
-function decryptClientRow(dek: Uint8Array, row: ClientRow): VaultClient & { unreadable: boolean } {
+function decryptClientRow(keys: KeyMaterial, row: ClientRow): VaultClient & { unreadable: boolean } {
   let name: string;
   let unreadable = false;
   try {
     name = parseClientPayload(
       decryptJson<unknown>(
-        dek,
+        dekFor(keys, row.dek_id),
         { ciphertext: fromBytea(row.encrypted_name), nonce: fromBytea(row.nonce) },
         AD.client(row.id)
       )
@@ -289,6 +300,7 @@ function decryptClientRow(dek: Uint8Array, row: ClientRow): VaultClient & { unre
   return {
     id: row.id,
     name,
+    dekId: row.dek_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
@@ -300,7 +312,8 @@ function decryptClientRow(dek: Uint8Array, row: ClientRow): VaultClient & { unre
     `entryId` separat de `row.id`: în istoric, rândul are id-ul lui, dar
     AD-ul e cel al intrării. */
 function decryptPayload(
-  dek: Uint8Array,
+  keys: KeyMaterial,
+  dekId: string | null,
   entryId: string,
   encryptedPayload: string,
   nonce: string
@@ -308,7 +321,7 @@ function decryptPayload(
   try {
     const payload = parseEntryPayload(
       decryptJson<unknown>(
-        dek,
+        dekFor(keys, dekId),
         { ciphertext: fromBytea(encryptedPayload), nonce: fromBytea(nonce) },
         AD.entry(entryId)
       )
@@ -325,16 +338,17 @@ function decryptPayload(
   }
 }
 
-function decryptEntryRow(dek: Uint8Array, row: EntryRow): VaultEntry {
+function decryptEntryRow(keys: KeyMaterial, row: EntryRow): VaultEntry {
   const meta: EntryMeta = {
     id: row.id,
     clientId: row.client_id,
+    dekId: row.dek_id,
     version: row.version,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
   };
-  return { ...meta, ...decryptPayload(dek, row.id, row.encrypted_payload, row.nonce) };
+  return { ...meta, ...decryptPayload(keys, row.dek_id, row.id, row.encrypted_payload, row.nonce) };
 }
 
 // ---------------------------------------------------------------------------
@@ -421,16 +435,17 @@ function conflict(): VaultDataError {
 
 export async function createClient(
   supabase: SupabaseClient,
-  dek: Uint8Array,
+  keys: KeyMaterial,
   name: string
 ): Promise<string> {
   const id = newId();
   const payload: ClientPayload = { v: ENTRY_SCHEMA_VERSION, name: name.trim() };
-  const box = encryptJson(dek, payload, AD.client(id));
+  const box = encryptJson(keys.dek, payload, AD.client(id));
   const { error } = await supabase.from("vault_clients").insert({
     id,
     encrypted_name: toBytea(box.ciphertext),
     nonce: toBytea(box.nonce),
+    dek_id: keys.currentDekId,
   });
   if (error) throw describeDbError(error);
   return id;
@@ -438,15 +453,15 @@ export async function createClient(
 
 export async function renameClient(
   supabase: SupabaseClient,
-  dek: Uint8Array,
+  keys: KeyMaterial,
   clientId: string,
   name: string
 ): Promise<void> {
   const payload: ClientPayload = { v: ENTRY_SCHEMA_VERSION, name: name.trim() };
-  const box = encryptJson(dek, payload, AD.client(clientId));
+  const box = encryptJson(keys.dek, payload, AD.client(clientId));
   const { data, error } = await supabase
     .from("vault_clients")
-    .update({ encrypted_name: toBytea(box.ciphertext), nonce: toBytea(box.nonce) })
+    .update({ encrypted_name: toBytea(box.ciphertext), nonce: toBytea(box.nonce), dek_id: keys.currentDekId })
     .eq("id", clientId)
     .is("deleted_at", null)
     .select("id");
@@ -469,17 +484,18 @@ export async function deleteClient(supabase: SupabaseClient, clientId: string): 
 
 export async function createEntry(
   supabase: SupabaseClient,
-  dek: Uint8Array,
+  keys: KeyMaterial,
   clientId: string,
   payload: EntryPayload
 ): Promise<string> {
   const id = newId();
-  const box = encryptJson(dek, payload, AD.entry(id));
+  const box = encryptJson(keys.dek, payload, AD.entry(id));
   const { error } = await supabase.from("vault_entries").insert({
     id,
     client_id: clientId,
     encrypted_payload: toBytea(box.ciphertext),
     nonce: toBytea(box.nonce),
+    dek_id: keys.currentDekId,
   });
   if (error) throw describeDbError(error);
   return id;
@@ -498,7 +514,7 @@ export const IMPORT_BATCH = 50;
  */
 export async function createEntries(
   supabase: SupabaseClient,
-  dek: Uint8Array,
+  keys: KeyMaterial,
   items: Array<{ clientId: string; payload: EntryPayload }>,
   onProgress?: (done: number) => void
 ): Promise<number> {
@@ -506,12 +522,13 @@ export async function createEntries(
   for (let start = 0; start < items.length; start += IMPORT_BATCH) {
     const batch = items.slice(start, start + IMPORT_BATCH).map(({ clientId, payload }) => {
       const id = newId();
-      const box = encryptJson(dek, payload, AD.entry(id));
+      const box = encryptJson(keys.dek, payload, AD.entry(id));
       return {
         id,
         client_id: clientId,
         encrypted_payload: toBytea(box.ciphertext),
         nonce: toBytea(box.nonce),
+        dek_id: keys.currentDekId,
       };
     });
     const { error } = await supabase.from("vault_entries").insert(batch);
@@ -529,7 +546,7 @@ export async function createEntries(
  */
 export async function ensureClients(
   supabase: SupabaseClient,
-  dek: Uint8Array,
+  keys: KeyMaterial,
   names: string[],
   existing: VaultClient[]
 ): Promise<Map<string, string>> {
@@ -539,7 +556,7 @@ export async function ensureClients(
     const key = clientKey(name);
     let id = byKey.get(key);
     if (!id) {
-      id = await createClient(supabase, dek, name);
+      id = await createClient(supabase, keys, name);
       byKey.set(key, id);
     }
     result.set(name, id);
@@ -558,18 +575,26 @@ function clientKey(name: string): string {
 
 export async function updateEntry(
   supabase: SupabaseClient,
-  dek: Uint8Array,
-  target: { id: string; version: number },
+  keys: KeyMaterial,
+  target: { id: string; version: number; dekId?: string | null },
   clientId: string,
   payload: EntryPayload
 ): Promise<void> {
-  const box = encryptJson(dek, payload, AD.entry(target.id));
+  const box = encryptJson(keys.dek, payload, AD.entry(target.id));
+  // Un rând editat trece pe cheia curentă. Triggerul vede și conținut
+  // nou și cheie nouă: `dek_id` schimbat → fără versiune (re-criptare)…
+  // ca să nu pierdem istoricul, editarea unui rând sub cheie veche se face
+  // în doi pași: întâi re-criptare (dek_id), apoi conținutul.
+  if (target.dekId !== undefined && target.dekId !== keys.currentDekId) {
+    await reencryptEntry(supabase, keys, { id: target.id, version: target.version, dekId: target.dekId });
+  }
   const { data, error } = await supabase
     .from("vault_entries")
     .update({
       client_id: clientId,
       encrypted_payload: toBytea(box.ciphertext),
       nonce: toBytea(box.nonce),
+      dek_id: keys.currentDekId,
     })
     .eq("id", target.id)
     .eq("version", target.version)
@@ -624,6 +649,7 @@ interface VersionRow {
   id: string;
   encrypted_payload: string;
   nonce: string;
+  dek_id: string | null;
   version: number;
   created_at: string;
   created_by: string | null;
@@ -632,12 +658,12 @@ interface VersionRow {
 /** Versiunile anterioare ale unei intrări, cea mai nouă prima. */
 export async function listVersions(
   supabase: SupabaseClient,
-  dek: Uint8Array,
+  keys: KeyMaterial,
   entryId: string
 ): Promise<EntryVersion[]> {
   const { data, error } = await supabase
     .from("vault_entry_versions")
-    .select("id, encrypted_payload, nonce, version, created_at, created_by")
+    .select("id, encrypted_payload, nonce, dek_id, version, created_at, created_by")
     .eq("entry_id", entryId)
     .order("version", { ascending: false })
     .overrideTypes<VersionRow[], { merge: false }>();
@@ -647,7 +673,7 @@ export async function listVersions(
     version: row.version,
     createdAt: row.created_at,
     createdBy: row.created_by,
-    content: decryptPayload(dek, entryId, row.encrypted_payload, row.nonce),
+    content: decryptPayload(keys, row.dek_id, entryId, row.encrypted_payload, row.nonce),
   }));
 }
 
@@ -658,11 +684,17 @@ export async function listVersions(
  */
 export async function restoreVersion(
   supabase: SupabaseClient,
-  dek: Uint8Array,
-  target: { id: string; version: number; clientId: string },
+  keys: KeyMaterial,
+  target: { id: string; version: number; clientId: string; dekId: string | null },
   payload: EntryPayload
 ): Promise<void> {
-  await updateEntry(supabase, dek, { id: target.id, version: target.version }, target.clientId, payload);
+  await updateEntry(
+    supabase,
+    keys,
+    { id: target.id, version: target.version, dekId: target.dekId },
+    target.clientId,
+    payload
+  );
 }
 
 /** O intrare din coș: la fel ca una vie, plus când a fost ștearsă (de
@@ -677,7 +709,7 @@ export interface DeletedEntry {
 
 /** Coșul: intrările cu `deleted_at`, cu numele clienților rezolvate din
     TOȚI clienții (și cei șterși odată cu ultima lor intrare). */
-export async function loadDeleted(supabase: SupabaseClient, dek: Uint8Array): Promise<DeletedEntry[]> {
+export async function loadDeleted(supabase: SupabaseClient, keys: KeyMaterial): Promise<DeletedEntry[]> {
   const [clientsResult, entriesResult] = await Promise.all([
     supabase
       .from("vault_clients")
@@ -694,12 +726,12 @@ export async function loadDeleted(supabase: SupabaseClient, dek: Uint8Array): Pr
   if (entriesResult.error) throw describeDbError(entriesResult.error);
 
   const clients = new Map(
-    (clientsResult.data ?? []).map((row) => [row.id, { ...decryptClientRow(dek, row), deleted: row.deleted_at !== null }])
+    (clientsResult.data ?? []).map((row) => [row.id, { ...decryptClientRow(keys, row), deleted: row.deleted_at !== null }])
   );
   return (entriesResult.data ?? []).map((row) => {
     const client = clients.get(row.client_id);
     return {
-      entry: decryptEntryRow(dek, row),
+      entry: decryptEntryRow(keys, row),
       deletedAt: row.deleted_at,
       clientName: client?.name ?? unreadableClientName(row.client_id),
       clientDeleted: client?.deleted ?? false,
@@ -730,4 +762,134 @@ export async function restoreEntry(
     .eq("id", target.clientId)
     .not("deleted_at", "is", null);
   if (client.error) throw describeDbError(client.error);
+}
+
+// ---------------------------------------------------------------------------
+// Re-criptare (faza 10) — același conținut, cheia curentă
+// ---------------------------------------------------------------------------
+// Triggerul recunoaște `dek_id` schimbat ca re-criptare și NU pune versiune
+// nouă. De aceea conținutul nu se schimbă în același update — vezi
+// `updateEntry`.
+
+/** Un rând viu sau din coș, adus pe cheia curentă. Zero rânduri = altcineva
+    l-a modificat între timp; apelantul reia după reîncărcare. */
+export async function reencryptEntry(
+  supabase: SupabaseClient,
+  keys: KeyMaterial,
+  target: { id: string; version: number; dekId: string | null }
+): Promise<void> {
+  const { data: rows, error: readError } = await supabase
+    .from("vault_entries")
+    .select("id, encrypted_payload, nonce, dek_id, version")
+    .eq("id", target.id)
+    .overrideTypes<Array<Pick<EntryRow, "id" | "encrypted_payload" | "nonce" | "dek_id" | "version">>, { merge: false }>();
+  if (readError) throw describeDbError(readError);
+  const row = rows?.[0];
+  if (!row) throw new VaultDataError("not_found", "Intrarea nu mai există.");
+  if (row.dek_id === keys.currentDekId) return;
+  if (row.version !== target.version) throw conflict();
+
+  const plaintext = decryptJson<unknown>(
+    dekFor(keys, row.dek_id),
+    { ciphertext: fromBytea(row.encrypted_payload), nonce: fromBytea(row.nonce) },
+    AD.entry(row.id)
+  );
+  const box = encryptJson(keys.dek, plaintext, AD.entry(row.id));
+  const { data, error } = await supabase
+    .from("vault_entries")
+    .update({ encrypted_payload: toBytea(box.ciphertext), nonce: toBytea(box.nonce), dek_id: keys.currentDekId })
+    .eq("id", row.id)
+    .eq("version", row.version)
+    .select("id");
+  if (error) throw describeDbError(error);
+  if (!data || data.length === 0) throw conflict();
+}
+
+export async function reencryptClient(
+  supabase: SupabaseClient,
+  keys: KeyMaterial,
+  target: { id: string; dekId: string | null }
+): Promise<void> {
+  if (target.dekId === keys.currentDekId) return;
+  const { data: rows, error: readError } = await supabase
+    .from("vault_clients")
+    .select("id, encrypted_name, nonce, dek_id")
+    .eq("id", target.id)
+    .overrideTypes<Array<Pick<ClientRow, "id" | "encrypted_name" | "nonce" | "dek_id">>, { merge: false }>();
+  if (readError) throw describeDbError(readError);
+  const row = rows?.[0];
+  if (!row || row.dek_id === keys.currentDekId) return;
+  const plaintext = decryptJson<unknown>(
+    dekFor(keys, row.dek_id),
+    { ciphertext: fromBytea(row.encrypted_name), nonce: fromBytea(row.nonce) },
+    AD.client(row.id)
+  );
+  const box = encryptJson(keys.dek, plaintext, AD.client(row.id));
+  const { error } = await supabase
+    .from("vault_clients")
+    .update({ encrypted_name: toBytea(box.ciphertext), nonce: toBytea(box.nonce), dek_id: keys.currentDekId })
+    .eq("id", row.id);
+  if (error) throw describeDbError(error);
+}
+
+/** Câte rânduri (clienți + intrări, inclusiv din coș) nu sunt încă pe
+    cheia curentă — „rotația e la jumătate" se vede în cifre. */
+export async function countStaleRows(supabase: SupabaseClient, currentDekId: string | null): Promise<number> {
+  const stale = (query: ReturnType<SupabaseClient["from"]>) =>
+    currentDekId === null ? query.select("id").not("dek_id", "is", null) : query.select("id").or(`dek_id.is.null,dek_id.neq.${currentDekId}`);
+  const [clients, entries] = await Promise.all([
+    stale(supabase.from("vault_clients")).overrideTypes<Array<{ id: string }>, { merge: false }>(),
+    stale(supabase.from("vault_entries")).overrideTypes<Array<{ id: string }>, { merge: false }>(),
+  ]);
+  if (clients.error) throw describeDbError(clients.error);
+  if (entries.error) throw describeDbError(entries.error);
+  return (clients.data?.length ?? 0) + (entries.data?.length ?? 0);
+}
+
+/**
+ * Toate rândurile (vii și din coș) aduse pe cheia curentă, unul câte unul,
+ * cu progres. Un rând care pică (modificat între timp, ilizibil) se sare
+ * și se numără — restul merge mai departe; rotația se poate relua.
+ */
+export async function reencryptAll(
+  supabase: SupabaseClient,
+  keys: KeyMaterial,
+  onProgress?: (done: number, total: number) => void
+): Promise<{ done: number; skipped: number }> {
+  const [clients, entries] = await Promise.all([
+    supabase.from("vault_clients").select("id, dek_id").overrideTypes<Array<{ id: string; dek_id: string | null }>, { merge: false }>(),
+    supabase
+      .from("vault_entries")
+      .select("id, dek_id, version")
+      .overrideTypes<Array<{ id: string; dek_id: string | null; version: number }>, { merge: false }>(),
+  ]);
+  if (clients.error) throw describeDbError(clients.error);
+  if (entries.error) throw describeDbError(entries.error);
+
+  const staleClients = (clients.data ?? []).filter((row) => row.dek_id !== keys.currentDekId);
+  const staleEntries = (entries.data ?? []).filter((row) => row.dek_id !== keys.currentDekId);
+  const total = staleClients.length + staleEntries.length;
+  let done = 0;
+  let skipped = 0;
+  onProgress?.(0, total);
+
+  for (const row of staleClients) {
+    try {
+      await reencryptClient(supabase, keys, { id: row.id, dekId: row.dek_id });
+      done += 1;
+    } catch {
+      skipped += 1;
+    }
+    onProgress?.(done + skipped, total);
+  }
+  for (const row of staleEntries) {
+    try {
+      await reencryptEntry(supabase, keys, { id: row.id, version: row.version, dekId: row.dek_id });
+      done += 1;
+    } catch {
+      skipped += 1;
+    }
+    onProgress?.(done + skipped, total);
+  }
+  return { done, skipped };
 }

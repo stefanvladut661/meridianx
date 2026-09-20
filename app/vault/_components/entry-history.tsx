@@ -58,7 +58,7 @@ export function EntryHistory({
     let cancelled = false;
     setLoading(true);
     setError(null);
-    listVersions(supabase, keys.dek, entry.id)
+    listVersions(supabase, keys, entry.id)
       .then((rows) => {
         if (!cancelled) setVersions(rows);
       })
@@ -93,8 +93,8 @@ export function EntryHistory({
     try {
       await restoreVersion(
         supabase,
-        keys.dek,
-        { id: entry.id, version: entry.version, clientId: entry.clientId },
+        keys,
+        { id: entry.id, version: entry.version, clientId: entry.clientId, dekId: entry.dekId },
         version.content.payload
       );
       setConfirming(null);

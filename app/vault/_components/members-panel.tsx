@@ -52,6 +52,7 @@ export function MembersPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [freshCode, setFreshCode] = useState<string | null>(null);
+  const [removedActive, setRemovedActive] = useState<string | null>(null);
 
   const error = actionError ?? loadError;
   const setError = setActionError;
@@ -61,7 +62,7 @@ export function MembersPanel({
     setBusyId(target.id);
     setError(null);
     try {
-      await approveMember(supabase, keys.dek, target);
+      await approveMember(supabase, keys, target);
       await reload();
     } catch (cause) {
       setError(describe(cause));
@@ -77,6 +78,7 @@ export function MembersPanel({
     setConfirm(null);
     try {
       await removeMember(supabase, target.id);
+      if (target.wrappedDek) setRemovedActive(target.email);
       await reload();
     } catch (cause) {
       setError(describe(cause));
@@ -91,7 +93,7 @@ export function MembersPanel({
     setError(null);
     setConfirm(null);
     try {
-      const code = await rotateRecoveryCode(supabase, keys.dek);
+      const code = await rotateRecoveryCode(supabase, keys);
       setFreshCode(code);
       await reload();
     } catch (cause) {
@@ -130,7 +132,15 @@ export function MembersPanel({
           </button>
         </div>
 
-        <div aria-live="polite">{error ? <Note tone="error">{error}</Note> : null}</div>
+        <div aria-live="polite">
+          {error ? <Note tone="error">{error}</Note> : null}
+          {removedActive ? (
+            <Note tone="info">
+              {removedActive} a avut cheia de date în memorie. Rotește cheia din secțiunea „Cheia de date”, ca ce se
+              scrie de acum să nu se mai deschidă cu ea.
+            </Note>
+          ) : null}
+        </div>
 
         {members === null ? (
           <p className="mt-6 text-[14.5px] text-dim">Se încarcă membrii…</p>

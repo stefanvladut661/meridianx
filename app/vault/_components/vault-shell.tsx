@@ -6,6 +6,7 @@ import { useVault } from "./vault-provider";
 import { useVaultData } from "./use-vault-data";
 import { MembersPanel } from "./members-panel";
 import { AccountPanel } from "./account-panel";
+import { KeyPanel } from "./key-panel";
 import { EntriesWorkspace } from "./entries-workspace";
 import { Note, formatCountdown } from "./ui";
 
@@ -138,6 +139,7 @@ export function VaultShell() {
               loadError={data.error}
               reload={data.reload}
             />
+            <KeyPanel members={data.members} onChanged={data.reload} />
             <AccountPanel />
           </>
         )}
