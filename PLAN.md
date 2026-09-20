@@ -837,7 +837,7 @@ deci diferă doar felul în care e servit: alegi / scanezi / derulezi.
 
 ## VAULT — parole zero-knowledge, `feat/vault` (2026-09-19)
 
-Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare ✅ → (3) listă + căutare ✅ → (4) adăugare + editare ✅ → (5) import + duplicare ✅ → (6) istoric + `app/vault/CLAUDE.md`**. Commit separat per fază, confirmare de la om între ele.
+Un vault de parole pentru echipă, la `/vault`, în afara i18n-ului și a shell-ului public. Serverul (Supabase) nu poate decripta nimic; cheile există doar în memoria browserului, după deblocare. Fazele: **(1) cripto + schemă ✅ → (2) deblocare + inițializare ✅ → (3) listă + căutare ✅ → (4) adăugare + editare ✅ → (5) import + duplicare ✅ → (6) istoric + `app/vault/CLAUDE.md` ✅**. Toate cele șase faze sunt livrate (2026-09-20). Commit separat per fază, confirmare de la om între ele.
 
 **Repo-ul e public.** Securitatea vine din criptare, nu din obscuritate: niciun secret în cod, teste sau commit-uri; valorile de test sunt evident false.
 
@@ -926,6 +926,22 @@ Tot în `app/vault/` și `lib/vault/`; niciun fișier partajat atins, nicio depe
 4. **Fără export în clar** în faza asta. `crypto.ts` interzice funcțiile de export în clar; un export ar fi o decizie de securitate separată (fișier criptat cu parolă?), nu o comoditate — rămâne în „Observații" pentru după faza 6.
 5. **Importul nu e tranzacțional** (loturi de 50): la o eroare la mijloc, ce a intrat rămâne, iar reluarea sare rândurile deja importate (sunt duplicate). Alternativa — o funcție SQL care să primească tot lotul — ar cere migrare nouă pentru un caz rar.
 
+### Faza 6 — terminat (istoric + coș + `app/vault/CLAUDE.md`)
+
+Tot în `app/vault/` și `lib/vault/`; niciun fișier partajat atins, nicio dependență nouă, `crypto.ts` și migrarea 3 neatinse.
+
+- **Istoric** (`lib/vault/entries.ts`: `listVersions`, `restoreVersion`; `lib/vault/diff.ts`; `_components/entry-history.tsx`). Versiunile din `vault_entry_versions` (scrise DOAR de trigger) se decriptează local cu AD-ul intrării — aceeași cheie deschide și trecutul. În fișă, sub câmpuri: „Istoric · vN" + „Vezi N-1 versiuni anterioare", încărcat la cerere. Fiecare versiune veche e arătată ca **diferență față de acum** („Parolă: •••••••• → ••••••••", „Titlu: A → B", etichete, notițe; câmpurile împerecheate după etichetă, ordinea nu contează), cu autor și dată. Secretele mascate; „Arată secretele" per versiune, 30 s, cu contor. **Restaurează vK** = update cu payload-ul vechi, cu verificarea versiunii curente (conflict → mesaj): conținutul de acum intră în istoric, vechiul devine curent ca vN+1 — nimic nu se pierde. Istoricul deschis se reîncarcă la orice versiune nouă.
+- **Coș** (`loadDeleted`, `restoreEntry`; `_components/trash-panel.tsx`). Sub listă: „N intrări în coș · deschide coșul" (din `deletedCount`, un `select id` suplimentar la încărcare). Panoul listează intrările șterse, decriptate, cu client (și „(client șters)" când a plecat odată cu ultima intrare), dată și autor al ștergerii; „Restaurează" scoate intrarea din coș și readuce și clientul. Ștergerea definitivă **nu există în aplicație** (RLS n-are politică de delete) — scris în subsolul coșului.
+- **`app/vault/CLAUDE.md`** — invariantele zero-knowledge (10, ne-negociabile), contractele (payload v1, schema și funcțiile migrării 3, `useVault`/`useVaultData`, conturile), harta fișierelor, cum se verifică (headless + backend fals + seed criptat, capcanele cunoscute), ce nu există încă și de ce.
+- **Verificat** în Chrome headless (39 de verificări, seed cu două versiuni vechi criptate cu AD-ul real + backend care versionează la PATCH ca triggerul): istoric v3 cu v2/v1, diff-uri corecte (parolă mascată de ambele părți, titlu/etichete/notițe în clar), „Arată secretele" doar pe versiunea cerută, cu contor; restaurare v1 cu conflict simulat apoi reușită → v4 cu titlul vechi, v3 în istoric (și în backend), lista actualizată, istoricul reîncărcat; coș: intrarea ștearsă din seed restaurată (17 · 5, rândul coșului dispare), client nou + ștergere → „(client șters)" + nota → restaurare readuce clientul (18 · 6); 360: istoricul în dialog, fără scroll orizontal. Regresie fazele 3–5: 34+53+48 verificări (o singură bătaie de clipboard în headless, `writeText` întârziat — nu e regresie). Consolă curată, build de producție verde.
+
+### Decizii luate în faza 6 (alese de asistent)
+
+1. **Diff, nu fișe întregi în istoric**: întrebarea e „ce s-a schimbat", iar o a doua fișă completă per versiune ar fi de trei ori mai lungă și ar arăta mai multe secrete.
+2. **Restaurarea e o versiune nouă**, nu un „undo": nimic nu se șterge din istoric, iar concurența optimistă rămâne valabilă.
+3. **Fără ștergere definitivă în UI** — intenționat, nu din lipsă de timp. O parolă ștearsă din greșeală se recuperează; una ștearsă rău-intenționat lasă urmă. Curățenia se face în SQL, de un om.
+4. **Coșul se încarcă la cerere**, nu odată cu lista: e rar folosit și n-are de ce să coste la fiecare deblocare; doar numărul intră în snapshot.
+
 ### De făcut de către om (înainte de a folosi vault-ul)
 
 - [ ] Aplică migrarea 3 în SQL editor (nu există CLI/Docker local; `db push` ar reîncerca și migrările 1–2, aplicate manual).
@@ -935,7 +951,7 @@ Tot în `app/vault/` și `lib/vault/`; niciun fișier partajat atins, nicio depe
 
 ### Observații
 
-- **Nu există încă UI de recuperare** (parolă master pierdută → cod → chei noi prin `vault_rekey_self`) și nici schimbare de parolă master pentru un membru activ. Datele pentru ambele există (blob-ul de recuperare, funcția SQL); UI-ul vine după faza 6. Până atunci, un membru care își pierde parola e eliminat și reinvitat de un membru activ — iar dacă e SINGURUL activ, rămâne codul de recuperare + o intervenție manuală.
+- **Nu există încă UI de recuperare** (parolă master pierdută → cod → chei noi prin `vault_rekey_self`) și nici schimbare de parolă master pentru un membru activ. Datele pentru ambele există (blob-ul de recuperare, funcția SQL); **e primul pas de după cele șase faze** — vezi și „Ce nu există încă" din `app/vault/CLAUDE.md`. Până atunci, un membru care își pierde parola e eliminat și reinvitat de un membru activ — iar dacă e SINGURUL activ, rămâne codul de recuperare + o intervenție manuală.
 - Un membru afișat fără „aprobat de" e unul al cărui aprobator a fost eliminat (`approved_by` → `null` prin `on delete set null`). Corect, nu bug.
 - În dev, `NEXT_PUBLIC_SUPABASE_URL` gol în `.env.local` → `/vault` arată ecranul „Lipsește Supabase", ca admin-ul. Pentru testele fazei 2 am pornit dev-ul cu variabilele date inline și un backend fals interceptat prin CDP; nimic din asta nu e în repo.
 - Argon2id la parametrii ceruți durează **~3 s** pe laptopul de dezvoltare (wasm, Node) — peste cele 1–2 s din brief. Faza 2 îl rulează într-un **Web Worker**, ca UI-ul să rămână viu; parametrii nu se slăbesc.

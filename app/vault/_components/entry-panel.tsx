@@ -5,10 +5,11 @@ import { KIND_LABEL, deleteEntry, type VaultClient, type VaultEntry } from "@/li
 import { VaultDataError, type VaultMember } from "@/lib/vault/members";
 import { useVault } from "./vault-provider";
 import { EntryFieldRow } from "./entry-field";
+import { EntryHistory } from "./entry-history";
 import { BTN_SM, KIND_TAG, Note, formatDate } from "./ui";
 
 /**
- * Fișa unei intrări (feat/vault, fazele 3–5).
+ * Fișa unei intrări (feat/vault, fazele 3–6).
  *
  * Citire, cu două acțiuni: „Editează" (deschide editorul în aceeași
  * ramă) și „Șterge" (soft, cu confirmare inline care spune exact ce
@@ -30,6 +31,7 @@ export function EntryPanel({
   onEdit,
   onDuplicate,
   onDeleted,
+  onRestored,
 }: {
   entry: VaultEntry;
   client: VaultClient | null;
@@ -42,6 +44,8 @@ export function EntryPanel({
   /** Faza 5: editorul pornește cu o copie a intrării, în același client. */
   onDuplicate?: () => void;
   onDeleted: () => Promise<void>;
+  /** Faza 6: după restaurarea unei versiuni, lista se reîncarcă. */
+  onRestored: () => Promise<void>;
 }) {
   const { supabase } = useVault();
   const [confirming, setConfirming] = useState(false);
@@ -143,6 +147,8 @@ export function EntryPanel({
                 ))}
               </ul>
             ) : null}
+
+            <EntryHistory entry={entry} members={members} onRestored={onRestored} />
           </>
         )}
 

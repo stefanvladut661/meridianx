@@ -4,7 +4,7 @@ import { AD, decryptJson, encryptJson, VaultCryptoError } from "./crypto";
 import { describeDbError, VaultDataError } from "./members";
 
 /**
- * Stratul de date al intrărilor (feat/vault, fazele 3–4).
+ * Stratul de date al intrărilor (feat/vault, fazele 3–6).
  *
  * Singurul loc care vorbește cu `vault_clients` / `vault_entries`.
  * Primește un client Supabase cu sesiune și DEK-ul din memorie; întoarce
@@ -114,6 +114,8 @@ export interface VaultSnapshot {
       reală: tot ce vede omul a fost deschis local, în atâta timp. */
   decryptMs: number;
   loadedAt: number;
+  /** Intrări șterse (soft) — câte sunt în coș (faza 6). */
+  deletedCount: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -221,7 +223,7 @@ export function unreadableClientName(id: string): string {
  * un rând care nu se decriptează e întors ca `unreadable`.
  */
 export async function loadVault(supabase: SupabaseClient, dek: Uint8Array): Promise<VaultSnapshot> {
-  const [clientsResult, entriesResult] = await Promise.all([
+  const [clientsResult, entriesResult, deletedResult] = await Promise.all([
     supabase
       .from("vault_clients")
       .select(CLIENT_COLUMNS)
@@ -234,65 +236,25 @@ export async function loadVault(supabase: SupabaseClient, dek: Uint8Array): Prom
       .is("deleted_at", null)
       .order("created_at", { ascending: true })
       .overrideTypes<EntryRow[], { merge: false }>(),
+    supabase
+      .from("vault_entries")
+      .select("id")
+      .not("deleted_at", "is", null)
+      .overrideTypes<Array<{ id: string }>, { merge: false }>(),
   ]);
   if (clientsResult.error) throw describeDbError(clientsResult.error);
   if (entriesResult.error) throw describeDbError(entriesResult.error);
+  if (deletedResult.error) throw describeDbError(deletedResult.error);
 
   const t0 = performance.now();
 
   let unreadableClients = 0;
   const clients: VaultClient[] = (clientsResult.data ?? []).map((row) => {
-    let name: string;
-    try {
-      name = parseClientPayload(
-        decryptJson<unknown>(
-          dek,
-          { ciphertext: fromBytea(row.encrypted_name), nonce: fromBytea(row.nonce) },
-          AD.client(row.id)
-        )
-      ).name;
-    } catch {
-      unreadableClients += 1;
-      name = unreadableClientName(row.id);
-    }
-    return {
-      id: row.id,
-      name,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      updatedBy: row.updated_by,
-    };
+    const client = decryptClientRow(dek, row);
+    if (client.unreadable) unreadableClients += 1;
+    return client;
   });
-
-  const entries: VaultEntry[] = (entriesResult.data ?? []).map((row) => {
-    const meta: EntryMeta = {
-      id: row.id,
-      clientId: row.client_id,
-      version: row.version,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      updatedBy: row.updated_by,
-    };
-    try {
-      const payload = parseEntryPayload(
-        decryptJson<unknown>(
-          dek,
-          { ciphertext: fromBytea(row.encrypted_payload), nonce: fromBytea(row.nonce) },
-          AD.entry(row.id)
-        )
-      );
-      return { ...meta, status: "ok", payload };
-    } catch (cause) {
-      return {
-        ...meta,
-        status: "unreadable",
-        reason:
-          cause instanceof VaultCryptoError
-            ? cause.message
-            : "Rândul nu are formatul așteptat de la server.",
-      };
-    }
-  });
+  const entries: VaultEntry[] = (entriesResult.data ?? []).map((row) => decryptEntryRow(dek, row));
 
   return {
     clients,
@@ -300,7 +262,75 @@ export async function loadVault(supabase: SupabaseClient, dek: Uint8Array): Prom
     unreadableClients,
     decryptMs: performance.now() - t0,
     loadedAt: Date.now(),
+    deletedCount: deletedResult.data?.length ?? 0,
   };
+}
+
+/** Un rând de client → nume în clar (sau numele de „ilizibil"). */
+function decryptClientRow(dek: Uint8Array, row: ClientRow): VaultClient & { unreadable: boolean } {
+  let name: string;
+  let unreadable = false;
+  try {
+    name = parseClientPayload(
+      decryptJson<unknown>(
+        dek,
+        { ciphertext: fromBytea(row.encrypted_name), nonce: fromBytea(row.nonce) },
+        AD.client(row.id)
+      )
+    ).name;
+  } catch {
+    unreadable = true;
+    name = unreadableClientName(row.id);
+  }
+  return {
+    id: row.id,
+    name,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    updatedBy: row.updated_by,
+    unreadable,
+  };
+}
+
+/** Un rând de intrare → payload în clar, sau `unreadable` cu motivul.
+    `entryId` separat de `row.id`: în istoric, rândul are id-ul lui, dar
+    AD-ul e cel al intrării. */
+function decryptPayload(
+  dek: Uint8Array,
+  entryId: string,
+  encryptedPayload: string,
+  nonce: string
+): { status: "ok"; payload: EntryPayload } | { status: "unreadable"; reason: string } {
+  try {
+    const payload = parseEntryPayload(
+      decryptJson<unknown>(
+        dek,
+        { ciphertext: fromBytea(encryptedPayload), nonce: fromBytea(nonce) },
+        AD.entry(entryId)
+      )
+    );
+    return { status: "ok", payload };
+  } catch (cause) {
+    return {
+      status: "unreadable",
+      reason:
+        cause instanceof VaultCryptoError
+          ? cause.message
+          : "Rândul nu are formatul așteptat de la server.",
+    };
+  }
+}
+
+function decryptEntryRow(dek: Uint8Array, row: EntryRow): VaultEntry {
+  const meta: EntryMeta = {
+    id: row.id,
+    clientId: row.client_id,
+    version: row.version,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    updatedBy: row.updated_by,
+  };
+  return { ...meta, ...decryptPayload(dek, row.id, row.encrypted_payload, row.nonce) };
 }
 
 // ---------------------------------------------------------------------------
@@ -566,4 +596,134 @@ export async function deleteEntry(
   if (error) throw describeDbError(error);
   if (!data || data.length === 0) throw conflict();
   if (lastOfClient) await deleteClient(supabase, target.clientId);
+}
+
+// ---------------------------------------------------------------------------
+// Istoric și coș (faza 6)
+// ---------------------------------------------------------------------------
+// Istoricul e scris DOAR de triggerul `vault_stamp_entry`: la fiecare
+// schimbare de payload, rândul vechi ajunge în `vault_entry_versions`,
+// în forma lui criptată de atunci. AD-ul e cel al intrării (`vault_entries:
+// <id>`), deci aceeași cheie deschide și versiunile vechi. Restaurarea nu
+// „dă înapoi" nimic: scrie payload-ul vechi ca versiune nouă — cea de acum
+// intră la rândul ei în istoric. Nimic nu se pierde, niciodată.
+
+export interface EntryVersion {
+  id: string;
+  version: number;
+  createdAt: string;
+  createdBy: string | null;
+  content: { status: "ok"; payload: EntryPayload } | { status: "unreadable"; reason: string };
+}
+
+interface VersionRow {
+  id: string;
+  encrypted_payload: string;
+  nonce: string;
+  version: number;
+  created_at: string;
+  created_by: string | null;
+}
+
+/** Versiunile anterioare ale unei intrări, cea mai nouă prima. */
+export async function listVersions(
+  supabase: SupabaseClient,
+  dek: Uint8Array,
+  entryId: string
+): Promise<EntryVersion[]> {
+  const { data, error } = await supabase
+    .from("vault_entry_versions")
+    .select("id, encrypted_payload, nonce, version, created_at, created_by")
+    .eq("entry_id", entryId)
+    .order("version", { ascending: false })
+    .overrideTypes<VersionRow[], { merge: false }>();
+  if (error) throw describeDbError(error);
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    version: row.version,
+    createdAt: row.created_at,
+    createdBy: row.created_by,
+    content: decryptPayload(dek, entryId, row.encrypted_payload, row.nonce),
+  }));
+}
+
+/**
+ * Restaurarea unei versiuni = un update obișnuit cu payload-ul vechi,
+ * cu aceeași verificare de versiune curentă (nu suprascrie ce a salvat
+ * altcineva între timp). Clientul rămâne cel de acum.
+ */
+export async function restoreVersion(
+  supabase: SupabaseClient,
+  dek: Uint8Array,
+  target: { id: string; version: number; clientId: string },
+  payload: EntryPayload
+): Promise<void> {
+  await updateEntry(supabase, dek, { id: target.id, version: target.version }, target.clientId, payload);
+}
+
+/** O intrare din coș: la fel ca una vie, plus când a fost ștearsă (de
+    cine — `updatedBy`, pus de trigger la ștergere) și numele clientului,
+    chiar dacă și el e șters. */
+export interface DeletedEntry {
+  entry: VaultEntry;
+  deletedAt: string;
+  clientName: string;
+  clientDeleted: boolean;
+}
+
+/** Coșul: intrările cu `deleted_at`, cu numele clienților rezolvate din
+    TOȚI clienții (și cei șterși odată cu ultima lor intrare). */
+export async function loadDeleted(supabase: SupabaseClient, dek: Uint8Array): Promise<DeletedEntry[]> {
+  const [clientsResult, entriesResult] = await Promise.all([
+    supabase
+      .from("vault_clients")
+      .select(`${CLIENT_COLUMNS}, deleted_at`)
+      .overrideTypes<Array<ClientRow & { deleted_at: string | null }>, { merge: false }>(),
+    supabase
+      .from("vault_entries")
+      .select(`${ENTRY_COLUMNS}, deleted_at`)
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false })
+      .overrideTypes<Array<EntryRow & { deleted_at: string }>, { merge: false }>(),
+  ]);
+  if (clientsResult.error) throw describeDbError(clientsResult.error);
+  if (entriesResult.error) throw describeDbError(entriesResult.error);
+
+  const clients = new Map(
+    (clientsResult.data ?? []).map((row) => [row.id, { ...decryptClientRow(dek, row), deleted: row.deleted_at !== null }])
+  );
+  return (entriesResult.data ?? []).map((row) => {
+    const client = clients.get(row.client_id);
+    return {
+      entry: decryptEntryRow(dek, row),
+      deletedAt: row.deleted_at,
+      clientName: client?.name ?? unreadableClientName(row.client_id),
+      clientDeleted: client?.deleted ?? false,
+    };
+  });
+}
+
+/** Scoate intrarea din coș; dacă și clientul ei era șters (a plecat
+    odată cu ultima intrare), revine și el. Fără versiune nouă — doar
+    `deleted_at` se schimbă, iar triggerul nu versionează asta. */
+export async function restoreEntry(
+  supabase: SupabaseClient,
+  target: { id: string; clientId: string }
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("vault_entries")
+    .update({ deleted_at: null })
+    .eq("id", target.id)
+    .not("deleted_at", "is", null)
+    .select("id");
+  if (error) throw describeDbError(error);
+  if (!data || data.length === 0) {
+    throw new VaultDataError("not_found", "Intrarea nu mai e în coș — poate a restaurat-o altcineva. Reîncarcă.");
+  }
+  const client = await supabase
+    .from("vault_clients")
+    .update({ deleted_at: null })
+    .eq("id", target.clientId)
+    .not("deleted_at", "is", null);
+  if (client.error) throw describeDbError(client.error);
 }

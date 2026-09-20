@@ -18,6 +18,7 @@ import { EntryList } from "./entry-list";
 import { EntryPanel } from "./entry-panel";
 import { EntryEditor } from "./entry-editor";
 import { ImportPanel } from "./import-panel";
+import { TrashPanel } from "./trash-panel";
 import { clearClipboardNow } from "./clipboard";
 import { BTN_SM, BTN_SM_LIGHT, FIELD, Note, countNoun } from "./ui";
 
@@ -60,6 +61,7 @@ type Panel =
   /** `template`: o copie (Duplică) — editorul pornește cu payload-ul ei. */
   | { kind: "create"; clientId?: string; template?: EntryPayload }
   | { kind: "import" }
+  | { kind: "trash" }
   | null;
 
 export function EntriesWorkspace({
@@ -282,6 +284,8 @@ export function EntriesWorkspace({
         onKeepEditing={() => setDiscardPrompt(false)}
         onSaved={onSaved}
       />
+    ) : panel?.kind === "trash" ? (
+      <TrashPanel members={members} headingId={headingId} onClose={close} onRestored={reload} />
     ) : panel?.kind === "import" ? (
       <ImportPanel
         clients={snapshot?.clients ?? []}
@@ -310,6 +314,7 @@ export function EntriesWorkspace({
             : undefined
         }
         onDeleted={onDeleted}
+        onRestored={reload}
       />
     ) : null;
 
@@ -409,6 +414,20 @@ export function EntriesWorkspace({
         ) : !error ? (
           <p className="mt-6 text-[14.5px] text-dim" aria-busy="true">
             Se încarcă intrările…
+          </p>
+        ) : null}
+
+        {snapshot && snapshot.deletedCount > 0 ? (
+          <p className="mt-5 px-1 font-md-mono text-[11px] tracking-[0.06em] text-dim">
+            {countNoun(snapshot.deletedCount, "intrare", "intrări")} în coș ·{" "}
+            <button
+              type="button"
+              onClick={() => go({ kind: "trash" })}
+              aria-current={panel?.kind === "trash" ? "true" : undefined}
+              className="text-bone underline-offset-4 hover:underline"
+            >
+              deschide coșul
+            </button>
           </p>
         ) : null}
       </section>
