@@ -1,18 +1,19 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { LEAD_STATUSES, type LeadStatus } from "@/lib/validations/lead";
 import { STATUS_LABELS } from "@/lib/supabase/types";
-import { changeStatus, saveNotes, type PanelState } from "../(dash)/actions";
+import { changeStatus, removeLead, saveNotes, type PanelState } from "../(dash)/actions";
 import { cn } from "@/lib/utils";
 import { FIELD, STATUS_PILL, STATUS_TONE } from "./tone";
 
 /**
- * Controalele de lucru din panou (FAZA 6): schimbarea statusului și notele.
+ * Controalele de lucru din panou (FAZA 6): schimbarea statusului, notele
+ * și ștergerea.
  *
- * Amândouă sunt formulare cu server action — merg și fără JavaScript, iar
- * cu JavaScript primesc stare de „se salvează" și confirmare. Mesajele
+ * Toate sunt formulare cu server action — statusul și notele merg și fără
+ * JavaScript, iar cu JavaScript primesc stare de „se salvează" și confirmare. Mesajele
  * intră într-un `aria-live`, ca schimbarea să fie anunțată, nu doar
  * colorată.
  */
@@ -144,6 +145,91 @@ export function NotesControl({
         className={`${FIELD} mt-3 resize-y !rounded-[var(--md-r)] py-3 leading-relaxed`}
       />
       <SaveNotesButton />
+      <Feedback state={state} />
+    </form>
+  );
+}
+
+/** Roșul lui „Pierdut” din tabel: aceeași culoare, același înțeles. */
+const DANGER = "#ef4444";
+
+function ConfirmDeleteButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="btn !min-h-10 !bg-[#ef4444] !px-5 !py-2 !text-[13.5px] !text-white hover:!bg-[#f65a5a] disabled:pointer-events-none disabled:opacity-60"
+    >
+      {pending ? "Se șterge…" : "Da, șterge definitiv"}
+    </button>
+  );
+}
+
+/**
+ * Ștergerea în doi pași, în același loc — nu un `confirm()` de browser.
+ * Primul click nu trimite nimic: deschide întrebarea și butonul roșu.
+ * Câmpul `confirm` apare doar în pasul al doilea, iar acțiunea de server
+ * îl cere — nu se poate șterge dintr-un singur submit.
+ */
+export function DeleteControl({
+  leadId,
+  leadName,
+  returnTo,
+}: {
+  leadId: string;
+  leadName: string;
+  /** Lista cu filtrele curente — acolo ajunge omul după ștergere. */
+  returnTo: string;
+}) {
+  const [state, formAction] = useActionState(removeLead, initialState);
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <div>
+        <p className="eyebrow">Ștergere</p>
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="btn btn-ghost mt-3 !min-h-10 !px-5 !py-2 !text-[13.5px] hover:!border-[#ef4444]/70 hover:!text-[#ff8a8a]"
+        >
+          Șterge lead-ul
+        </button>
+        <p className="mt-2.5 text-[13.5px] leading-5 text-dim">
+          Pentru spam sau teste. Un lead pierdut se marchează „Pierdut”, nu se șterge.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      action={formAction}
+      className="rounded-[var(--md-r)] border p-4"
+      style={{ borderColor: `${DANGER}80`, background: `${DANGER}14` }}
+      aria-labelledby={`delete-${leadId}`}
+    >
+      <input type="hidden" name="id" value={leadId} />
+      <input type="hidden" name="returnTo" value={returnTo} />
+      <input type="hidden" name="confirm" value="da" />
+      <p id={`delete-${leadId}`} className="text-[15px] font-semibold text-bone">
+        Ștergi lead-ul „{leadName}”?
+      </p>
+      <p className="mt-1 text-[13.5px] leading-5 text-bone/75">
+        Definitiv: dispar datele de contact, notele și istoricul. Nu se poate
+        recupera.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <ConfirmDeleteButton />
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          className="btn btn-ghost !min-h-10 !px-5 !py-2 !text-[13.5px]"
+        >
+          Anulează
+        </button>
+      </div>
       <Feedback state={state} />
     </form>
   );

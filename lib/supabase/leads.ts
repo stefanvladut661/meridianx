@@ -467,6 +467,30 @@ export async function updateLead(
 }
 
 // ---------------------------------------------------------------------------
+// Ștergere — din admin
+// ---------------------------------------------------------------------------
+
+/**
+ * Șterge lead-ul definitiv, cu tot istoricul (`lead_events` are
+ * `on delete cascade`). Nu există „coș de gunoi”: un lead șters e un rând
+ * în minus și atât — de aceea confirmarea se face în interfață, nu aici.
+ *
+ * Apelantul TREBUIE să fi verificat sesiunea de admin. `select("id")` după
+ * delete confirmă că a dispărut CHIAR un rând; un delete care nu potrivește
+ * nimic ar trece altfel drept succes.
+ */
+export async function deleteLead(id: string): Promise<DataResult<{ id: string }>> {
+  const supabase = createAdminClient();
+  if (!supabase) return fail("unconfigured");
+
+  const { data, error } = await supabase.from("leads").delete().eq("id", id).select("id");
+
+  if (error) return fail("error", error.message);
+  if (!data || data.length === 0) return fail("not_found");
+  return { ok: true, data: { id } };
+}
+
+// ---------------------------------------------------------------------------
 // Diagnostic
 // ---------------------------------------------------------------------------
 

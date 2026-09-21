@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getAdminUser } from "@/lib/supabase/clients";
-import { updateLead } from "@/lib/supabase/leads";
+import { deleteLead, updateLead } from "@/lib/supabase/leads";
 import { LEAD_STATUSES, type LeadStatus } from "@/lib/validations/lead";
 
 /**
@@ -78,4 +79,47 @@ export async function saveNotes(
 
   revalidatePath("/admin");
   return { error: null, ok: "Note salvate." };
+}
+
+/**
+ * Doar rute din panou: `returnTo` vine dintr-un câmp ascuns, deci
+ * teoretic poate fi orice. Un redirect spre alt domeniu ar face din
+ * acțiunea de ștergere un open redirect.
+ */
+function safeReturnTo(value: unknown): string {
+  return typeof value === "string" && /^\/admin(\?[^\s]*)?$/.test(value) ? value : "/admin";
+}
+
+export async function removeLead(
+  _previous: PanelState,
+  formData: FormData
+): Promise<PanelState> {
+  const user = await getAdminUser();
+  if (!user) return { error: "Sesiunea a expirat. Reautentifică-te.", ok: null };
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { error: "Lead lipsă.", ok: null };
+
+  // Confirmarea e un câmp explicit, nu doar un al doilea click: câmpul
+  // există în formular abia în pasul „sigur?”, deci un submit rătăcit
+  // din primul pas nu poate șterge nimic.
+  if (formData.get("confirm") !== "da") {
+    return { error: "Confirmă ștergerea înainte.", ok: null };
+  }
+
+  const result = await deleteLead(id);
+  if (!result.ok) {
+    if (result.reason === "not_found") {
+      return { error: "Lead-ul nu mai există — poate l-a șters altcineva.", ok: null };
+    }
+    return { error: "Nu s-a putut șterge. Încearcă din nou.", ok: null };
+  }
+
+  console.info(`[admin] lead ${id} șters de ${user.email ?? "admin"}`);
+  revalidatePath("/admin");
+
+  // Panoul lead-ului nu mai are ce arăta: înapoi la listă, cu filtrele
+  // păstrate și cu un semn că ștergerea chiar s-a făcut.
+  const returnTo = safeReturnTo(formData.get("returnTo"));
+  redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}sters=1`);
 }

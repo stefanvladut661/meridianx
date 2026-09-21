@@ -69,7 +69,9 @@ export default async function AdminDashboardPage({
 }: Readonly<{ searchParams: Promise<SearchParams> }>) {
   const raw = await searchParams;
   const cleaned = cleanParams(raw);
-  const { lead: openLeadId, ...filterParams } = cleaned;
+  // `sters` e semnul lăsat de acțiunea de ștergere; nu e filtru și nu
+  // trebuie să supraviețuiască următoarei navigări (`buildHref` nu îl copiază).
+  const { lead: openLeadId, sters: justDeleted, ...filterParams } = cleaned;
 
   if (!isWriteConfigured()) {
     return <SetupNotice />;
@@ -144,6 +146,15 @@ export default async function AdminDashboardPage({
           </p>
         </div>
       </div>
+
+      {justDeleted ? (
+        <p
+          role="status"
+          className="glass mt-5 rounded-[var(--md-r)] px-4 py-3 text-[14.5px] text-bone/85"
+        >
+          Lead șters definitiv.
+        </p>
+      ) : null}
 
       {statsResult.ok ? (
         <div className="mt-8">

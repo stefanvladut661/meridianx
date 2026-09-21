@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Lead, LeadEvent } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 import { PanelShell } from "./panel-shell";
-import { StatusControl, NotesControl } from "./lead-forms";
+import { DeleteControl, NotesControl, StatusControl } from "./lead-forms";
 import { formatLeadDateTime } from "./format-date";
 import {
   CHIP,
@@ -262,6 +262,12 @@ export function LeadPanel({
               })}
             </ol>
           )}
+        </div>
+
+        {/* Ultimul lucru din panou, după istoric: nimeni nu deschide un
+            lead ca să-l șteargă, deci nu stă lângă „Sună”. */}
+        <div className="mt-10 border-t border-hair pt-6">
+          <DeleteControl leadId={lead.id} leadName={lead.name} returnTo={closeHref} />
         </div>
       </div>
     </PanelShell>
