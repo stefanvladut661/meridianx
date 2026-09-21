@@ -85,42 +85,72 @@ function supabaseOrigins(): string[] {
  * domeniu și — cel mai important — încărcarea de script sau trimiterea
  * de date către orice origine care nu e pe listă.
  */
-function contentSecurityPolicy(): string {
+/**
+ * Două profiluri:
+ * - `site`  — tot ce e public, plus /admin: pixelii Meta și TikTok.
+ * - `vault` — /vault (feat/vault): FĂRĂ pixeli (layout-ul lui nu îi
+ *   încarcă, deci nu au ce căuta în listă), dar cu `'wasm-unsafe-eval'`,
+ *   fiindcă libsodium rulează în WebAssembly. `'unsafe-eval'` îl acoperă
+ *   oricum (implică wasm), însă în vault nu-l cere nimeni în producție —
+ *   doar Turbopack în dev — așa că acolo lipsește intenționat.
+ *   Browserul vorbește direct cu Supabase de aici (sesiune în memorie,
+ *   date criptate), deci `connect-src` are nevoie de originile lui.
+ */
+type CspProfile = "site" | "vault";
+
+function contentSecurityPolicy(profile: CspProfile = "site"): string {
+  const isVault = profile === "vault";
+
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
 
-    "script-src": [
-      "'self'",
-      "'unsafe-inline'",
-      META_SCRIPT,
-      TIKTOK,
-      TIKTOK_CDN,
-      // Codul nostru nu face eval (verificat în `.next/static/chunks`), dar
-      // SDK-ul TikTok (main.*.js) îl cere — fără el pixelul raportează
-      // violări și pierde evenimente. În dev îl cere și Turbopack.
-      "'unsafe-eval'",
-    ],
+    "script-src": isVault
+      ? [
+          "'self'",
+          "'unsafe-inline'",
+          "'wasm-unsafe-eval'",
+          ...(isProduction ? [] : ["'unsafe-eval'"]),
+        ]
+      : [
+          "'self'",
+          "'unsafe-inline'",
+          META_SCRIPT,
+          TIKTOK,
+          TIKTOK_CDN,
+          // Codul nostru nu face eval (verificat în `.next/static/chunks`), dar
+          // SDK-ul TikTok (main.*.js) îl cere — fără el pixelul raportează
+          // violări și pierde evenimente. În dev îl cere și Turbopack.
+          "'unsafe-eval'",
+        ],
 
     // Tailwind v4 și next/font ajung în atribute `style=` inline.
     "style-src": ["'self'", "'unsafe-inline'"],
 
     // `data:` — CSS-ul construit conține un data:image/svg+xml.
-    "img-src": ["'self'", "data:", "blob:", META_PIXEL, TIKTOK],
+    "img-src": isVault
+      ? ["'self'", "data:", "blob:"]
+      : ["'self'", "data:", "blob:", META_PIXEL, TIKTOK],
 
     // next/font auto-găzduiește totul în /_next/static/media.
     "font-src": ["'self'"],
 
-    "connect-src": [
-      "'self'", // /api/leads, /api/admin/session, /_vercel/insights
-      META_SCRIPT,
-      META_PIXEL,
-      TIKTOK,
-      TIKTOK_CDN,
-      TIKTOK_EVENTS,
-      ...supabaseOrigins(),
-      // HMR-ul lui `next dev` merge pe websocket.
-      ...(isProduction ? [] : ["ws:"]),
-    ],
+    "connect-src": isVault
+      ? [
+          "'self'",
+          ...supabaseOrigins(),
+          ...(isProduction ? [] : ["ws:"]),
+        ]
+      : [
+          "'self'", // /api/leads, /api/admin/session, /_vercel/insights
+          META_SCRIPT,
+          META_PIXEL,
+          TIKTOK,
+          TIKTOK_CDN,
+          TIKTOK_EVENTS,
+          ...supabaseOrigins(),
+          // HMR-ul lui `next dev` merge pe websocket.
+          ...(isProduction ? [] : ["ws:"]),
+        ],
 
     "media-src": ["'self'"], // /video/*.mp4
     "manifest-src": ["'self'"], // /manifest.webmanifest
@@ -198,7 +228,22 @@ const nextConfig: NextConfig = {
             key: CSP_REPORT_ONLY
               ? "Content-Security-Policy-Report-Only"
               : "Content-Security-Policy",
-            value: contentSecurityPolicy(),
+            value: contentSecurityPolicy("site"),
+          },
+        ],
+      },
+      {
+        /* Vault-ul primește profilul lui de CSP. Stă DUPĂ intrarea globală
+           intenționat: când două intrări potrivite setează același antet,
+           Next păstrează ultima — deci pe /vault câștigă rândul ăsta, iar
+           restul antetelor de securitate de mai sus rămân valabile. */
+        source: "/vault/:path*",
+        headers: [
+          {
+            key: CSP_REPORT_ONLY
+              ? "Content-Security-Policy-Report-Only"
+              : "Content-Security-Policy",
+            value: contentSecurityPolicy("vault"),
           },
         ],
       },
