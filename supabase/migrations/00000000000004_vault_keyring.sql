@@ -181,7 +181,8 @@ begin
   update public.vault_meta
      set recovery_wrapped_dek = p_legacy_wrapped,
          recovery_nonce       = p_legacy_nonce,
-         recovery_rotations   = recovery_rotations + 1;
+         recovery_rotations   = recovery_rotations + 1
+   where id;  -- rândul unic; safeupdate (Supabase) refuză UPDATE fără WHERE
 end;
 $$;
 
@@ -278,7 +279,8 @@ begin
   update public.vault_meta
      set recovery_wrapped_dek = p_legacy_wrapped,
          recovery_nonce       = p_legacy_nonce,
-         recovery_rotations   = recovery_rotations + 1;
+         recovery_rotations   = recovery_rotations + 1
+   where id;  -- rândul unic; safeupdate (Supabase) refuză UPDATE fără WHERE
 end;
 $$;
 
