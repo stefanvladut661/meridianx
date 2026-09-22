@@ -27,11 +27,19 @@ export const VERTICALS = [
    Formulate din simptom (ce vede clientul) → cauză (ce e de fapt).
    Nu sunt statistici, sunt observații — deci nu inventăm cifre.
 
-   `glyph` alege desenul care ARATĂ simptomul (problem-glyphs.tsx):
-   pe pagină, explicația stă după un click, desenul și soluția sunt la
-   vedere. Tipul de mai jos obligă fiecare desen să existe. */
+   `fix` nu se mai arată în card (2026-09-22): secțiunea răspunde la
+   „ce probleme auzim”, iar soluțiile se citesc în Servicii. Textele
+   rămân aici, sunt bune și se pot reîntoarce oriunde e nevoie.
+
+   `glyph` alege desenul care ARATĂ simptomul (problem-glyphs.tsx): pe
+   pagină, desenul și simptomul sunt la vedere, cauza se deschide la
+   cerere. Tipul de mai jos obligă fiecare desen să existe. */
 export type PainGlyph =
   "saptamana" | "pozele" | "agenda" | "leaduri" | "curba" | "tabloul";
+
+/* Desenele din „Servicii” (service-glyphs.tsx), pe același principiu:
+   tipul obligă fiecare serviciu să aibă un desen care există. */
+export type ServiceGlyph = "brand" | "ugc" | "performance" | "outdoor";
 
 export const PAINS = [
   {
@@ -90,7 +98,9 @@ export const PAINS = [
   fix: string;
 }[];
 
-/* ---------- Sistemul în patru pași ---------- */
+/* ---------- Sistemul în patru pași ----------
+   `body` nu se mai arată în card (2026-09-22): pasul se înțelege din
+   titlu, rândul de sub el și livrabilele care rămân la tine. */
 export const SYSTEM = [
   {
     n: "01",
@@ -147,6 +157,7 @@ export const SYSTEM = [
 export const SERVICES = [
   {
     key: "brand",
+    glyph: "brand",
     title: "Imaginea brandului",
     blurb:
       "Cum arăți și cum suni, la fel peste tot: film, fotografie, conținut lunar.",
@@ -158,6 +169,7 @@ export const SERVICES = [
   },
   {
     key: "ugc",
+    glyph: "ugc",
     title: "Filmări UGC și cu actori",
     blurb:
       "Nu trebuie să apari tu. Creatori și actori care sună a om, nu a reclamă.",
@@ -169,6 +181,7 @@ export const SERVICES = [
   },
   {
     key: "performance",
+    glyph: "performance",
     title: "Performance marketing",
     blurb:
       "Meta, TikTok și Google ca un singur plan. Contul rămâne pe numele tău.",
@@ -176,6 +189,7 @@ export const SERVICES = [
   },
   {
     key: "outdoor",
+    glyph: "outdoor",
     title: "Reclamă outdoor",
     blurb:
       "Panoul, de la locație la montaj — legat de o ofertă online, ca să știi ce aduce.",
@@ -185,47 +199,14 @@ export const SERVICES = [
       "Funnel de la panou la ofertă",
     ],
   },
-] as const;
-
-/* ---------- De ce noi ---------- */
-export const EDGES = [
-  {
-    title: "Un singur partener",
-    body: "Producție și campanii sub același acoperiș. N-are cine să dea vina pe celălalt.",
-  },
-  {
-    title: "Echipă in-house",
-    body: "Operatori, editori, scenariști, actori, media buyeri — toți ai noștri.",
-  },
-  {
-    title: "Măsurăm în cereri, nu în vizualizări",
-    body: "Raportul începe cu solicitările și comenzile. Reach-ul e a treia coloană.",
-  },
-  {
-    title: "Ritm lunar, nu proiect izolat",
-    body: "Un shoot pe trimestru alimentează campaniile luni întregi.",
-  },
-] as const;
-
-/* ---------- Echipa / capabilități ---------- */
-export const CREW = [
-  { role: "Scenariști", note: "Structura care ține omul în cadru" },
-  { role: "Operatori imagine", note: "Cinema line, lumini, sunet" },
-  { role: "Editori", note: "Montaj, color grading, sound design" },
-  { role: "Motion designeri", note: "Grafică, subtitrări, animație" },
-  { role: "Actori și voci", note: "Casting pe profilul publicului" },
-  { role: "Media buyeri", note: "Meta, TikTok, Google" },
-] as const;
-
-/* ---------- Ce primești ---------- */
-export const DELIVERABLES = [
-  "Materialele master, la rezoluție completă",
-  "Variante verticale pentru Reels, TikTok, Shorts",
-  "Fotografiile din filmare",
-  "Drept de utilizare nelimitat",
-  "Conturile de publicitate, pe firma ta",
-  "Raport lunar, în limbaj de om",
-] as const;
+] as const satisfies readonly {
+  key: string;
+  /** desenul din card — cheile din SERVICE_GLYPHS */
+  glyph: ServiceGlyph;
+  title: string;
+  blurb: string;
+  bullets: readonly string[];
+}[];
 
 /* ---------- Proces de colaborare (pași scurți pentru CTA) ---------- */
 export const STEPS = [
@@ -251,21 +232,26 @@ export const STEPS = [
   },
 ] as const;
 
-/* ---------- Testimoniale ----------
-   Trei, nu un perete. Primele două sunt primite în scris de la client
-   și citate cuvânt cu cuvânt. Al treilea e redactat de noi pe baza
-   colaborării și trimis clientului spre confirmare — clientul are
-   ultimul cuvânt pe text înainte de publicare. */
+/* ---------- Recenzii ----------
+   Primite în scris de la clienți și citate cuvânt cu cuvânt. Singura
+   excepție e marcată în comentariul ei.
+
+   `logo` e marca reală a clientului, curățată de fundal și adusă la
+   128px (public/video/recenzii/). Fără logo, cardul cade pe marca
+   desenată din client-marks.tsx — deci se poate adăuga o recenzie
+   oricând, chiar dacă logo-ul vine mai târziu. */
 export const TESTIMONIALS: (Placeholderable & {
   quote: string;
   who: string;
   where: string;
+  logo?: string;
 })[] = [
   {
     // verificat: primit în scris de la client
     quote:
       "Nu am primit doar un produs. Am primit și asistență pe tot parcursul, iar totul s-a întâmplat exact așa cum am discutat de la început.",
     who: "Art Install Suppliers",
+    logo: "/video/recenzii/logo-art-instal.webp",
     where: "Amenajări și montaj",
   },
   {
@@ -273,12 +259,22 @@ export const TESTIMONIALS: (Placeholderable & {
     quote:
       "Profesionalismul cu care s-a lucrat m-a surprins plăcut — genul de colaborare pe care ți-l dorești de la un furnizor.",
     who: "E45 RestoBar",
+    logo: "/video/recenzii/logo-e45.webp",
     where: "HORECA",
+  },
+  {
+    // verificat: primit de la client (2026-09-22)
+    quote:
+      "Videoclipurile create au transformat vizualizările în lead-uri calificate și tranzacții imobiliare încheiate rapid. Colaborare excelentă pentru obținerea de vânzări record!",
+    who: "Vesta Residence",
+    where: "Imobiliare",
+    logo: "/video/recenzii/logo-vesta.webp",
   },
   {
     quote:
       "Ne așteptam la un filmuleț frumos. Am primit un plan: ce filmăm, în ce ordine iese și ce urmărim după. E prima dată când cineva ne-a explicat de ce, nu doar cât costă.",
     who: "Vespera Gastrobar",
+    logo: "/video/recenzii/logo-vespera.webp",
     where: "HORECA",
   },
 ];
@@ -365,6 +361,5 @@ export const NAV = [
   { href: "#sistem", label: "Sistemul" },
   { href: "#servicii", label: "Servicii" },
   { href: "#probleme", label: "Probleme" },
-  { href: "#echipa", label: "Echipa" },
   { href: "#intrebari", label: "Întrebări" },
 ] as const;

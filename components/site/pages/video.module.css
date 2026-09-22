@@ -1,0 +1,33 @@
+/* ============================================================
+   /video — corecturi de layout care au nevoie de media query.
+
+   Modul CSS, nu globals.css: privesc o singură pagină. Selectorii sunt
+   dublați (`.x.x`) pentru că `.glass-2` din globals.css e nelayered și
+   ar bate un singur nume de clasă, indiferent de ordinea fișierelor.
+   ============================================================ */
+
+/* Cutia din jurul CTA-ului final. Pe telefon nu există: cartonașul de
+   WhatsApp și formularul au deja rama lor, iar o a treia ramă în jurul
+   lor lăsa câmpurile pe ~270px dintr-un ecran de 390 — două chenare
+   unul în altul și text înghesuit între ele.
+
+   De la 640px încolo cutia își recapătă rostul: acolo cele două stau
+   una lângă alta și au nevoie de ceva care să le țină împreună. */
+@media (max-width: 639px) {
+  .ctaBox.ctaBox {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  /* `edge-light` desenează o dungă de lumină pe marginea de sus a
+     cutiei; fără cutie n-are ce lumina. */
+  .ctaBox.ctaBox::before,
+  .ctaBox.ctaBox::after {
+    display: none;
+  }
+}

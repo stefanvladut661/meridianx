@@ -26,13 +26,12 @@ import {
 } from "@/components/site/ui";
 import { VideoCard, type PortfolioVideo } from "@/components/site/video-player";
 import { GlyphFrame, PROBLEM_GLYPHS } from "@/components/site/problem-glyphs";
+import { GlyphBox, SERVICE_GLYPHS } from "@/components/site/service-glyphs";
+import v from "./video.module.css";
 import { FEATURED } from "@/components/site/portfolio-content";
 import {
   CONTACT,
   PRESENTATION,
-  CREW,
-  DELIVERABLES,
-  EDGES,
   FAQ,
   NAV,
   PAINS,
@@ -68,7 +67,6 @@ export function VideoScreen() {
         {/* --- corpul, de la SIGNAL --- */}
         <Process />
         <Services />
-        <Numbers />
         <Social />
         <Questions />
         <FinalCta />
@@ -642,144 +640,87 @@ function Process() {
   );
 }
 
-/* ---------------- Servicii ---------------- */
+/* ---------------- Servicii ----------------
+
+   Fiecare serviciu are desenul lui (service-glyphs.tsx): ce vinzi se
+   vede înainte de ce scrii. Layoutul a trecut de la „titlu lipit în
+   stânga + 2x2 carduri" la titlu deasupra și patru carduri pe un rând,
+   tocmai ca desenele să încapă fără ca secțiunea să se lungească — pe
+   un laptop intră întreagă într-un ecran.
+
+   Cutia de preț a coborât sub carduri, pe toată lățimea: acolo e locul
+   ei firesc, după ce ai citit ce se poate cumpăra. */
 function Services() {
   return (
-    <section id="servicii" className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,380px)_1fr] lg:gap-16">
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <SectionHead
-            align="left"
-            eyebrow="Servicii"
-            title="Ce putem lua pe umerii noștri"
-            lead="Poți începe cu una singură. Merg cel mai bine împreună."
-            className="!max-w-none"
-          />
-          <Reveal delay={120}>
-            <div className="glass mt-8 p-5">
-              <p className="text-[16px] leading-relaxed text-dim">
-                Prețul se face pe proiect.
-                <span className="mt-1.5 block text-bone">
-                  Ofertă fermă după prima discuție.
-                </span>
-              </p>
-              <a href="#contact" className="btn btn-primary mt-5 !w-full">
-                Cere ofertă
-                <Icon name="arrowRight" size={16} className="arw" />
-              </a>
-            </div>
-          </Reveal>
-        </div>
+    <section id="servicii" className="relative px-5 py-20 sm:px-6 lg:py-28">
+      <div className="mx-auto max-w-6xl">
+        <SectionHead
+          align="left"
+          eyebrow="Servicii"
+          title="Ce putem lua pe umerii noștri"
+          lead="Poți începe cu una singură. Merg cel mai bine împreună."
+        />
 
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {SERVICES.map((s, i) => (
-            <Reveal as="li" key={s.key} delay={i * 55}>
-              {/* Textele de aici sunt cu o treaptă mai mari decât în restul
-                  cardurilor: pe telefon, serviciile sunt ce citește omul
-                  cel mai atent înainte să apese „Cere ofertă”. */}
-              <article className="glass lift flex h-full flex-col p-6 sm:p-7">
-                <h3 className="text-[21px] font-medium leading-snug text-bone">
-                  {s.title}
-                </h3>
-                <p className="mt-3 text-[16px] leading-relaxed text-dim">
-                  {s.blurb}
-                </p>
-                <ul className="mt-5 flex flex-wrap gap-2">
-                  {s.bullets.map((b) => (
-                    <li
-                      key={b}
-                      className="rounded-full border border-hair px-3 py-1.5 text-[14.5px] text-dim"
-                    >
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-                {/* Fiecare serviciu are drumul lui spre formular; textul
-                    din link spune pe ce serviciu se cere oferta. */}
-                <a
-                  href="#contact"
-                  className="mt-auto inline-flex min-h-11 items-center gap-1.5 self-start pt-5 text-[15.5px] font-medium text-a2 transition-colors hover:text-bone"
-                >
-                  Cere ofertă
-                  <Icon name="arrowRight" size={15} className="arw" />
-                  <span className="sr-only"> pentru {s.title}</span>
-                </a>
-              </article>
-            </Reveal>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- Cifre + livrabile ---------------- */
-function Numbers() {
-  return (
-    <section id="echipa" className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <SectionHead
-        eyebrow="Echipa"
-        title={
-          <>
-            Aceiași oameni,
-            <br />
-            <span className="grad-text-soft">de la scenariu la raport</span>
-          </>
-        }
-        lead="Nu subcontractăm. Cine scrie scenariul stă lângă cine citește campania o lună mai târziu."
-      />
-
-      <div className="mx-auto mt-16 max-w-6xl">
-        <div className="grid gap-4 lg:grid-cols-[1fr_minmax(0,400px)]">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {EDGES.map((e, i) => (
-              <Reveal key={e.title} delay={i * 60}>
-                <article className="glass lift h-full p-6">
-                  <h3 className="text-[18.5px] font-medium leading-snug text-bone">
-                    {e.title}
+        <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4">
+          {SERVICES.map((s, i) => {
+            const Draw = SERVICE_GLYPHS[s.glyph];
+            return (
+              <Reveal as="li" key={s.key} delay={i * 70}>
+                <article className="glass lift flex h-full flex-col p-5 sm:p-6">
+                  <GlyphBox>
+                    <Draw />
+                  </GlyphBox>
+                  <h3 className="text-[19.5px] font-medium leading-snug text-bone">
+                    {s.title}
                   </h3>
                   <p className="mt-2.5 text-[15.5px] leading-relaxed text-dim">
-                    {e.body}
+                    {s.blurb}
                   </p>
+                  <ul className="mt-4 flex flex-wrap gap-1.5">
+                    {s.bullets.map((b) => (
+                      <li
+                        key={b}
+                        className="rounded-full border border-hair px-2.5 py-1 text-[13px] text-dim"
+                      >
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                  {/* Fiecare serviciu are drumul lui spre formular; textul
+                      din link spune pe ce serviciu se cere oferta. */}
+                  <a
+                    href="#contact"
+                    className="mt-auto inline-flex min-h-11 items-center gap-1.5 self-start pt-4 text-[15px] font-medium text-a2 transition-colors hover:text-bone"
+                  >
+                    Cere ofertă
+                    <Icon name="arrowRight" size={15} className="arw" />
+                    <span className="sr-only"> pentru {s.title}</span>
+                  </a>
                 </article>
               </Reveal>
-            ))}
-          </div>
+            );
+          })}
+        </ul>
 
-          <Reveal delay={120}>
-            <article className="glass h-full p-7">
-              <p className="eyebrow mb-5">Ce rămâne la tine</p>
-              <ul className="space-y-3.5">
-                {DELIVERABLES.map((d) => (
-                  <li key={d} className="flex gap-3 text-[15.5px] text-dim">
-                    <Icon
-                      name="check"
-                      size={16}
-                      className="mt-0.5 shrink-0 text-a1"
-                    />
-                    {d}
-                  </li>
-                ))}
-              </ul>
-              <div className="rule my-6" />
-              <p className="eyebrow mb-4">Echipa care le produce</p>
-              <ul className="flex flex-wrap gap-2">
-                {CREW.map((c) => (
-                  <li
-                    key={c.role}
-                    className="rounded-full border border-hair px-3 py-1.5 text-[14px] text-dim"
-                  >
-                    {c.role}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          </Reveal>
-        </div>
+        <Reveal delay={140} className="mt-3">
+          <div className="glass edge-light flex flex-wrap items-center gap-x-8 gap-y-4 p-6 sm:p-7">
+            <p className="min-w-[220px] flex-1 text-[16px] leading-relaxed text-dim">
+              Prețul se face pe proiect.
+              <span className="block text-bone">
+                Ofertă fermă după prima discuție.
+              </span>
+            </p>
+            <a href="#contact" className="btn btn-primary">
+              Cere ofertă
+              <Icon name="arrowRight" size={16} className="arw" />
+            </a>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
 }
+
 
 /* ---------------- Recenzii ----------------
 
@@ -810,7 +751,26 @@ function ReviewCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
         „{t.quote}”
       </p>
       <div className="mt-5 flex items-center gap-3">
-        <ClientMark name={t.who} size={34} />
+        {/* Logo-ul real, dacă îl avem: e semnătura recenziei. Cade pe
+            marca desenată din client-marks.tsx pentru clienții care n-au
+            trimis încă unul — plăcuța are aceeași mărime în ambele
+            cazuri, deci rândul nu tresare. */}
+        {t.logo ? (
+          /* eslint-disable-next-line @next/next/no-img-element -- logo deja
+             curățat de fundal și adus la 128px, ca posterele din
+             portofoliu; optimizatorul lui Next n-ar mai avea ce adăuga. */
+          <img
+            src={t.logo}
+            alt=""
+            width={38}
+            height={38}
+            loading="lazy"
+            decoding="async"
+            className="size-[38px] shrink-0 rounded-[11px] border border-hair bg-white/[0.06] object-contain p-[3px]"
+          />
+        ) : (
+          <ClientMark name={t.who} size={38} />
+        )}
         <span className="min-w-0">
           <span className="block truncate text-[14.5px] font-medium text-bone">
             {t.who}
@@ -891,8 +851,13 @@ function Social() {
         lead="Unul a zis-o în fața camerei. Restul, în scris."
       />
 
-      <div className="mx-auto mt-14 grid max-w-6xl gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:gap-6">
-        <Reveal variant="scale">
+      {/* Placa video e ținută scurtă pe desktop (max 300px, adică ~530px
+          înălțime la 9:16): e o dovadă, nu materialul principal al
+          paginii. Pe telefon nu mai ocupă tot ecranul — se oprește la
+          270px lățime, centrată, cât să se vadă că e un om care
+          vorbește, nu un banner. */}
+      <div className="mx-auto mt-14 grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-6">
+        <Reveal variant="scale" className="mx-auto w-full max-w-[270px] lg:max-w-none">
           <VideoCard item={REVIEW_VIDEO} className="w-full" />
         </Reveal>
         <ReviewStream />
@@ -970,7 +935,7 @@ function FinalCta() {
   return (
     <section id="contact" className="relative px-5 pb-24 pt-8 sm:px-6">
       <Reveal variant="scale" className="mx-auto max-w-5xl">
-        <div className="glass-2 edge-light relative overflow-hidden px-6 py-16 text-center sm:px-12 sm:py-20">
+        <div className={`glass-2 edge-light relative overflow-hidden px-6 py-16 text-center sm:px-12 sm:py-20 ${v.ctaBox}`}>
           <div
             aria-hidden
             className="aurora aurora-drift"
@@ -981,7 +946,7 @@ function FinalCta() {
               bottom: "-72%",
               translate: "-50% 0",
               background:
-                "radial-gradient(circle, color-mix(in oklab, var(--md-a1) 85%, transparent), transparent 60%)",
+                "radial-gradient(circle closest-side, color-mix(in oklab, var(--md-a1) 85%, transparent), transparent)",
               opacity: 0.7,
             }}
           />
