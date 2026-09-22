@@ -171,7 +171,11 @@ export function PortfolioScreen() {
                        verticale puse una lângă alta au aproape exact
                        înălțimea unui 16:9 de aceeași lățime, deci stă
                        lângă un card vertical fără gol dedesubt.
-                       `h-full` absoarbe restul de ~3% prin decupaj. */
+                       `h-full` absoarbe restul de ~3% prin decupaj.
+                       `w-full` e obligatoriu lângă el: cu înălțimea
+                       fixată, `aspect-ratio` ar calcula lățimea din ea
+                       (~3% peste celulă) și cardul ar mânca spațiul
+                       dintre el și vecin. */
                     const wide = v.w > v.h;
                     return (
                       <Reveal
@@ -183,7 +187,7 @@ export function PortfolioScreen() {
                         <VideoCard
                           item={v}
                           eager={gi === 0 && i === 0}
-                          className={wide ? "h-full" : ""}
+                          className={wide ? "h-full w-full" : ""}
                         />
                       </Reveal>
                     );
