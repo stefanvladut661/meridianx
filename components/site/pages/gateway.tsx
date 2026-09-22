@@ -706,20 +706,18 @@ function AppWindow() {
   );
 }
 
-/* ---------------- Banda de sub fold ---------------- */
+/* ---------------- Banda de sub fold ----------------
+
+   Trei afirmații, fără explicații sub ele. Cine a ajuns până aici a
+   citit deja două lumi întregi; nu mai are nevoie de încă trei
+   paragrafe, are nevoie de trei lucruri pe care să le țină minte. Dacă
+   un titlu nu se susține singur, e prost scris — nu îi lipsește textul
+   de sub el. Numerotarea 01/02/03 a plecat odată cu paragrafele: nu e o
+   secvență, deci n-avea ce număra (CLAUDE.md §3). */
 const POINTS = [
-  {
-    title: "Un singur punct de contact",
-    body: "Un număr și un om care răspunde de proiect de la brief până la livrare. Nu te plimbăm între departamente ca să afli unde a rămas treaba.",
-  },
-  {
-    title: "Nu amestecăm",
-    body: "Video optimizează pentru impact, software pentru încredere. Sunt două meserii cu reguli opuse, iar noi refuzăm să le tratăm la fel doar ca să pară consecvent.",
-  },
-  {
-    title: "Se ajută reciproc",
-    body: "O campanie video are nevoie de o pagină care nu pierde omul la final. Un magazin nou are nevoie de material care să-l pornească. De obicei al doilea proiect vine din primul.",
-  },
+  "Un singur punct de contact, indiferent de divizie",
+  "Două echipe adevărate, nu una polivalentă",
+  "Al doilea proiect vine, de obicei, din primul",
 ];
 
 function Band() {
@@ -737,26 +735,18 @@ function Band() {
               <br />
               o singură divizie
             </h2>
-            <p className="mt-5 text-[16px] leading-relaxed text-dim">
-              Pentru că un clip și un sistem nu se cumpără la fel. Unul se
-              decide într-o după-amiază, pe telefon. Celălalt trece prin trei
-              discuții, un buget și un om care semnează.
+            <p className="mt-5 text-[clamp(1.0625rem,1.2vw,1.2rem)] leading-relaxed text-dim">
+              Pentru că un clip și un sistem nu se cumpără la fel.
             </p>
           </Reveal>
 
           <ul className="grid gap-3 sm:grid-cols-3">
             {POINTS.map((p, i) => (
-              <Reveal as="li" key={p.title} delay={i * 70}>
-                <article className="glass lift h-full p-6">
-                  <span className="font-md-mono text-[12px] text-dim">
-                    0{i + 1}
-                  </span>
-                  <h3 className="mt-4 text-[16.5px] font-medium leading-snug text-bone">
-                    {p.title}
+              <Reveal as="li" key={p} delay={i * 70}>
+                <article className="glass lift flex h-full items-center p-6">
+                  <h3 className="text-[clamp(1.15rem,1.6vw,1.45rem)] font-medium leading-snug text-bone">
+                    {p}
                   </h3>
-                  <p className="mt-3 text-[14.5px] leading-relaxed text-dim">
-                    {p.body}
-                  </p>
                 </article>
               </Reveal>
             ))}
@@ -770,10 +760,9 @@ function Band() {
                 <h3 className="display text-[clamp(1.4rem,3vw,1.9rem)]">
                   Tot nu știi în ce parte să mergi?
                 </h3>
-                <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-dim">
-                  Sună și spune-ne ce încerci să rezolvi. În cinci minute îți
-                  spunem dacă e o problemă de vizibilitate sau una de proces —
-                  și dacă răspunsul e „niciuna dintre ele”, îți spunem și asta.
+                <p className="mt-3 max-w-xl text-[clamp(1.0625rem,1.2vw,1.2rem)] leading-relaxed text-dim">
+                  Spune-ne ce încerci să rezolvi. În cinci minute știi în ce
+                  parte s-o iei — inclusiv dacă răspunsul e „niciuna”.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
