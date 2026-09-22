@@ -1,15 +1,16 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { Mark } from "@/components/site/mark";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
 import { MeridianSoftware, MeridianVideo } from "@/components/site/meridian";
-import { Reveal } from "@/components/site/motion";
+import { Reveal, useReducedMotion } from "@/components/site/motion";
 import { ObfuscatedEmail } from "@/components/site/obfuscated-email";
 import { Icon } from "@/components/site/ui";
 import { CONTACT } from "@/components/site/video-content";
 import { SCONTACT } from "@/components/site/software-content";
-import { FEATURED, VIDEOS } from "@/components/site/portfolio-content";
+import { FEATURED } from "@/components/site/portfolio-content";
 import { useWorldWipe } from "@/components/gateway/world-wipe";
 import s from "./gateway.module.css";
 
@@ -35,6 +36,13 @@ import s from "./gateway.module.css";
    Firul comun e arcul de meridian: un singur cerc, centrat exact pe
    cusătură — lumină care circulă în cameră, geodezică desenată pe
    foaie. Același obiect, două temperamente.
+
+   Amândouă obiectele se mișcă singure, fiecare în ritmul lumii lui
+   (CLAUDE.md §2): reel-urile își dau play pe rând, câte trei secunde,
+   fără sunet — lumina se plimbă prin cameră; fereastra de aplicație își
+   schimbă ecranul la fiecare 2,6s, cu treceri sub 400ms. Niciunul nu e
+   un player: sunt teasere, nu se pot apăsa separat. Clicul aparține
+   lumii, oriunde ai da în ea.
 
    Decizia trebuie luată în trei secunde, deci nu există nimic de citit
    înainte de alegere. Argumentele stau sub fold, pentru cine ezită.
@@ -87,6 +95,102 @@ export function GatewayScreen() {
 
 type Go = ReturnType<typeof useWorldWipe>["go"];
 
+/* ============================================================
+   Motorul comun al celor două teasere.
+
+   Un singur index care se rotește, pornit doar cât timp obiectul e pe
+   ecran și fila e în față. Ce înseamnă indexul — un clip care pleacă,
+   un ecran de aplicație care se schimbă — e treaba fiecărei lumi.
+
+   Sub prefers-reduced-motion nu pornește deloc: indexul rămâne −1, iar
+   amândouă obiectele rămân în starea lor de repaus, care e completă și
+   are sens singură (CLAUDE.md §7).
+   ============================================================ */
+function useCycle(count: number, ms: number, on: boolean) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [i, setI] = useState(-1);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!on || count < 1 || !el) return;
+
+    let timer: ReturnType<typeof setInterval> | undefined;
+    let inView = false;
+
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = undefined;
+    };
+    /* Ieșit din ecran se întoarce la repaus, nu rămâne înghețat pe
+       cadrul la care a apucat. La revenire pornește curat, de la capăt. */
+    const reset = () => {
+      stop();
+      setI(-1);
+    };
+    const start = () => {
+      if (timer || !inView || document.hidden) return;
+      setI((n) => (n < 0 ? 0 : n));
+      timer = setInterval(() => setI((n) => (n + 1) % count), ms);
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        inView = entries[0]?.isIntersecting ?? false;
+        if (inView) start();
+        else reset();
+      },
+      { threshold: 0.25 }
+    );
+    io.observe(el);
+
+    const onVis = () => (document.hidden ? reset() : start());
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVis);
+      stop();
+    };
+  }, [count, ms, on]);
+
+  return [ref, i] as const;
+}
+
+/**
+ * Armarea teaserului video. Trei fișiere .mp4 n-au ce căuta în
+ * competiție cu LCP-ul rădăcinii, deci nu se atinge nimic din rețea
+ * până când pagina nu s-a încărcat de tot (CLAUDE.md §7). Pe conexiuni
+ * măsurate sau foarte lente nu se armează deloc: posterele spun deja
+ * povestea, și o spun gratis.
+ */
+function useArmed() {
+  const [armed, setArmed] = useState(false);
+
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+
+    const arm = () => {
+      const net = (
+        navigator as Navigator & {
+          connection?: { saveData?: boolean; effectiveType?: string };
+        }
+      ).connection;
+      if (net?.saveData || (net?.effectiveType ?? "").includes("2g")) return;
+      t = setTimeout(() => setArmed(true), 400);
+    };
+
+    if (document.readyState === "complete") arm();
+    else window.addEventListener("load", arm, { once: true });
+
+    return () => {
+      if (t) clearTimeout(t);
+      window.removeEventListener("load", arm);
+    };
+  }, []);
+
+  return armed;
+}
+
 /* ---------------- Bara de sus ---------------- */
 function TopBar() {
   return (
@@ -125,11 +229,11 @@ function TopBar() {
 
 /* ---------------- Camera: VIDEO ---------------- */
 
-/* Trei materiale de prima pagină, în ordinea din manifest — postere
-   reale, din clipuri livrate. Dacă se schimbă portofoliul, se schimbă
-   și poarta: e intenționat, poarta e o dovadă, nu un decor. */
+/* Trei materiale de prima pagină, în ordinea din manifest — clipuri
+   reale, livrate. Dacă se schimbă portofoliul, se schimbă și poarta:
+   e intenționat, poarta e o dovadă, nu un decor. */
 const REELS = FEATURED.slice(0, 3);
-const KINDS = [...new Set(VIDEOS.map((v) => v.kind))];
+const TEASER_MS = 3000;
 
 function VideoRoom({ go }: { go: Go }) {
   return (
@@ -155,8 +259,8 @@ function VideoRoom({ go }: { go: Go }) {
           </Reveal>
           <Reveal delay={140}>
             <p className={s.body}>
-              Filmăm, montăm și distribuim pe Meta, TikTok și Google. Pentru
-              afaceri care trăiesc din clienți care revin.
+              Filmăm, montăm, publicăm și urmărim ce aduce fiecare clip — pe
+              Meta, TikTok și Google, lună după lună.
             </p>
           </Reveal>
           <Reveal delay={210}>
@@ -165,86 +269,314 @@ function VideoRoom({ go }: { go: Go }) {
               <Icon name="arrowRight" size={17} className="arw" />
             </span>
           </Reveal>
-          <Reveal delay={280}>
-            <p className={s.meta}>
-              {VIDEOS.length} materiale livrate · {KINDS.join(" · ")}
-            </p>
-          </Reveal>
         </div>
 
-        <Reveal variant="scale" delay={120} className={s.fan}>
-          {REELS.map((r, i) => (
-            <figure key={r.slug} className={s.reel}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- poster deja
-                  dimensionat și convertit în WebP de scripts/portfolio-build.mjs,
-                  ca peste tot în site. */}
-              <img
-                src={r.poster}
-                alt={`${r.title} — ${r.client}`}
-                width={r.w}
-                height={r.h}
-                /* Reel-ul din mijloc e cel mai mare element pictat pe
-                   poartă, deci candidatul LCP: pleacă primul. */
-                loading={i === 1 ? "eager" : "lazy"}
-                fetchPriority={i === 1 ? "high" : "auto"}
-                decoding="async"
-              />
-              {i === 1 && (
-                <span aria-hidden className={s.reelPlay}>
-                  <Icon name="play" size={14} />
-                </span>
-              )}
-              <figcaption className={s.reelCap}>
-                <b>{r.client}</b>
-                <span>{r.seconds}s</span>
-              </figcaption>
-            </figure>
-          ))}
-        </Reveal>
+        <ReelFan />
       </div>
     </Link>
   );
 }
 
+/**
+ * Evantaiul de reel-uri. Cele trei clipuri pornesc pe rând, de la stânga
+ * la dreapta, câte trei secunde, fără sunet. Cel care rulează crește
+ * puțin și trece peste celelalte — nu se bat pe același plan, pentru că
+ * primește și cel mai mare z-index cât ține tura lui.
+ *
+ * Nu sunt playere: n-au controale, nu primesc focus și nu se pot apăsa
+ * separat. Clicul aparține camerei întregi, care duce în divizie. Cine
+ * vrea un material cap-coadă îl găsește în portofoliu.
+ *
+ * Rețeaua: `preload="none"` peste tot, iar clipul următor trece pe
+ * „auto” abia când pornește cel dinaintea lui — se descarcă doar ce
+ * chiar se vede, cu trei secunde de avans.
+ */
+function ReelFan() {
+  const reduced = useReducedMotion();
+  const armed = useArmed();
+  const [rolling, setRolling] = useState(false);
+  const [fanRef, live] = useCycle(REELS.length, TEASER_MS, rolling);
+  const vids = useRef<Array<HTMLVideoElement | null>>([]);
+
+  /* Primul clip pornește cu o secundă după ce apar elementele <video>,
+     nu odată cu ele: altfel tura lui s-ar duce pe încărcare, iar omul ar
+     vedea trei secunde de poster. Cât se încarcă, restul dorm. */
+  useEffect(() => {
+    if (!armed || reduced) return;
+    const first = vids.current[0];
+    if (first) first.preload = "auto";
+    const t = setTimeout(() => setRolling(true), 900);
+    return () => clearTimeout(t);
+  }, [armed, reduced]);
+
+  useEffect(() => {
+    if (live < 0) return;
+    const cur = vids.current[live];
+    const next = vids.current[(live + 1) % REELS.length];
+    if (next && next.preload !== "auto") next.preload = "auto";
+    if (!cur) return;
+    // `muted` și din JS, nu doar din JSX: fără el, autoplay-ul e refuzat
+    // pe iOS, iar CLAUDE.md §7 e categoric — niciun clip nu pornește cu sunet.
+    cur.muted = true;
+    cur.currentTime = 0;
+    void cur.play().catch(() => {});
+    return () => {
+      cur.pause();
+    };
+  }, [live]);
+
+  return (
+    <Reveal variant="scale" delay={120} className={s.fanWrap}>
+      <div
+        ref={fanRef}
+        className={s.fan}
+        data-playing={live >= 0 ? "" : undefined}
+      >
+        {REELS.map((r, i) => (
+          <figure
+            key={r.slug}
+            className={s.reel}
+            data-live={i === live ? "" : undefined}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- poster deja
+                dimensionat și convertit în WebP de scripts/portfolio-build.mjs,
+                ca peste tot în site. */}
+            <img
+              src={r.poster}
+              alt={`${r.title} — ${r.client}`}
+              width={r.w}
+              height={r.h}
+              /* Reel-ul din mijloc e cel mai mare element pictat pe
+                 poartă, deci candidatul LCP: pleacă primul. */
+              loading={i === 1 ? "eager" : "lazy"}
+              fetchPriority={i === 1 ? "high" : "auto"}
+              decoding="async"
+            />
+            {armed && !reduced && (
+              <video
+                ref={(el) => {
+                  vids.current[i] = el;
+                }}
+                className={s.reelVid}
+                src={r.src}
+                poster={r.poster}
+                muted
+                playsInline
+                preload="none"
+                disablePictureInPicture
+                aria-hidden
+                tabIndex={-1}
+              />
+            )}
+            {/* Cât timp nu rulează nimic — primul cadru, reduced motion,
+                conexiune măsurată — cardul din mijloc păstrează semnul de
+                play, ca să se vadă că sunt clipuri, nu poze. */}
+            {live < 0 && i === 1 && (
+              <span aria-hidden className={s.reelPlay}>
+                <Icon name="play" size={14} />
+              </span>
+            )}
+            <figcaption className={s.reelCap}>
+              <b>{r.client}</b>
+              <span>{r.seconds}s</span>
+            </figcaption>
+            {/* Cele trei secunde, desenate. Pe lumea video timpul e mereu
+                la vedere — asta e ruda mică a timecode-ului. */}
+            <span aria-hidden className={s.reelBar} />
+          </figure>
+        ))}
+      </div>
+    </Reveal>
+  );
+}
+
 /* ---------------- Foaia: SOFTWARE ---------------- */
 
-/* Rândurile din fereastră sunt ilustrative și marcate ca atare în bara
+/* Ecranele din fereastră sunt ilustrative și marcate ca atare în bara
    ei. Numele sunt meserii din publicul diviziei, nu firme — nu inventăm
-   clienți (CLAUDE.md §5). Când există un caz real de arătat, intră aici. */
-const ORDERS = [
+   clienți (CLAUDE.md §5). Când există un caz real de arătat, intră aici.
+
+   Patru ecrane, nu unul: cine cumpără software nu cumpără o listă, ci un
+   instrument prin care circulă toată ziua. Plimbarea prin meniu e cea
+   mai scurtă demonstrație a treburilor care se leagă între ele —
+   comanda intrată devine lucrare în producție, apoi factură, apoi
+   material scăzut din stoc. */
+type Row = {
+  id: string;
+  what: string;
+  who: string;
+  stage: string;
+  tone: "green" | "amber" | "muted";
+  due: string;
+};
+
+type View = {
+  tab: string;
+  title: string;
+  cols: [string, string, string, string, string];
+  rows: Row[];
+};
+
+const VIEWS: View[] = [
   {
-    id: "1042",
-    what: "Ferestre PVC · 12 buc.",
-    who: "Atelier tâmplărie",
-    stage: "În producție",
-    tone: "green",
-    due: "18 sep",
+    tab: "Comenzi",
+    title: "Comenzi · septembrie",
+    cols: ["Nr.", "Comandă", "Client", "Etapă", "Termen"],
+    rows: [
+      {
+        id: "#1042",
+        what: "Ferestre PVC · 12 buc.",
+        who: "Atelier tâmplărie",
+        stage: "În producție",
+        tone: "green",
+        due: "18 sep",
+      },
+      {
+        id: "#1041",
+        what: "Revizie centrale · 6 loc.",
+        who: "Service HVAC",
+        stage: "Programat",
+        tone: "amber",
+        due: "16 sep",
+      },
+      {
+        id: "#1039",
+        what: "Piese frezate · lot 3",
+        who: "Atelier CNC",
+        stage: "Livrat",
+        tone: "muted",
+        due: "12 sep",
+      },
+      {
+        id: "#1038",
+        what: "Ofertă apartament 3 cam.",
+        who: "Agenție imobiliară",
+        stage: "Trimisă",
+        tone: "muted",
+        due: "11 sep",
+      },
+    ],
   },
   {
-    id: "1041",
-    what: "Revizie centrale · 6 locații",
-    who: "Service HVAC",
-    stage: "Programat",
-    tone: "amber",
-    due: "16 sep",
+    tab: "Producție",
+    title: "Producție · săptămâna 38",
+    cols: ["Nr.", "Lucrare", "Post", "Stare", "Gata"],
+    rows: [
+      {
+        id: "P-217",
+        what: "Frezare capace · lot 3",
+        who: "Freza CNC 2",
+        stage: "În lucru",
+        tone: "green",
+        due: "azi",
+      },
+      {
+        id: "P-216",
+        what: "Debitare profile PVC",
+        who: "Debitare",
+        stage: "Așteaptă",
+        tone: "amber",
+        due: "mâine",
+      },
+      {
+        id: "P-214",
+        what: "Sudură rame · 12 buc.",
+        who: "Sudură",
+        stage: "Gata",
+        tone: "muted",
+        due: "ieri",
+      },
+      {
+        id: "P-211",
+        what: "Control dimensional",
+        who: "Control final",
+        stage: "Gata",
+        tone: "muted",
+        due: "ieri",
+      },
+    ],
   },
   {
-    id: "1039",
-    what: "Piese frezate · lot 3",
-    who: "Atelier CNC",
-    stage: "Livrat",
-    tone: "muted",
-    due: "12 sep",
+    tab: "Facturi",
+    title: "Facturi · septembrie",
+    cols: ["Nr.", "Document", "Client", "Stare", "Termen"],
+    rows: [
+      {
+        id: "F-3084",
+        what: "Factură · ferestre PVC",
+        who: "Atelier tâmplărie",
+        stage: "Încasată",
+        tone: "green",
+        due: "14 sep",
+      },
+      {
+        id: "F-3083",
+        what: "Factură · revizie 6 loc.",
+        who: "Service HVAC",
+        stage: "Trimisă",
+        tone: "amber",
+        due: "22 sep",
+      },
+      {
+        id: "F-3081",
+        what: "Proformă · piese lot 3",
+        who: "Atelier CNC",
+        stage: "Acceptată",
+        tone: "muted",
+        due: "19 sep",
+      },
+      {
+        id: "F-3078",
+        what: "Factură · ofertă 1031",
+        who: "Agenție imobiliară",
+        stage: "Încasată",
+        tone: "muted",
+        due: "08 sep",
+      },
+    ],
   },
   {
-    id: "1038",
-    what: "Ofertă apartament 3 cam.",
-    who: "Agenție imobiliară",
-    stage: "Ofertă trimisă",
-    tone: "muted",
-    due: "11 sep",
+    tab: "Stoc",
+    title: "Stoc · depozit",
+    cols: ["Cod", "Material", "Loc", "Stare", "Ora"],
+    rows: [
+      {
+        id: "M-118",
+        what: "Profil PVC alb · 6 m",
+        who: "Raft A3",
+        stage: "Sub prag",
+        tone: "amber",
+        due: "08:40",
+      },
+      {
+        id: "M-104",
+        what: "Garnitură EPDM · rolă",
+        who: "Raft B1",
+        stage: "În stoc",
+        tone: "green",
+        due: "08:40",
+      },
+      {
+        id: "M-087",
+        what: "Bare aluminiu 6082",
+        who: "Hala 2",
+        stage: "Comandat",
+        tone: "muted",
+        due: "ieri",
+      },
+      {
+        id: "M-061",
+        what: "Freze 6 mm · set",
+        who: "Sculărie",
+        stage: "În stoc",
+        tone: "muted",
+        due: "ieri",
+      },
+    ],
   },
-] as const;
+];
+
+const VIEW_MS = 2600;
 
 function SoftwareSheet({ go }: { go: Go }) {
   return (
@@ -271,61 +603,19 @@ function SoftwareSheet({ go }: { go: Go }) {
           <h2 className={`display ${s.title}`}>SOFTWARE</h2>
         </Reveal>
         <Reveal delay={130}>
-          <p className={s.lead}>Sisteme pe care echipa chiar le folosește.</p>
+          <p className={s.lead}>
+            Software croit pe felul în care lucrează echipa ta.
+          </p>
         </Reveal>
         <Reveal delay={200}>
           <p className={s.body}>
             Aplicații la comandă, dashboard-uri, fidelizare, SaaS și mobil.
-            Pentru firme care digitalizează cu finanțare și cu termen.
+            Pentru firme care au depășit tabelele și fișierele partajate.
           </p>
         </Reveal>
 
         <Reveal delay={260}>
-          <div
-            className={s.win}
-            role="img"
-            aria-label="Machetă ilustrativă de aplicație: lista de comenzi cu etape și termene"
-          >
-            <div className={s.winBar}>
-              <span className={s.winTitle}>Comenzi · septembrie</span>
-              <span className={s.winTag}>ilustrativ</span>
-            </div>
-            <div className={s.winBody}>
-              <div className={s.winNav}>
-                <span data-on="">Comenzi</span>
-                <span>Producție</span>
-                <span>Facturi</span>
-                <span>Stoc</span>
-                <span>Clienți</span>
-              </div>
-              <table className={s.tbl}>
-                <thead>
-                  <tr>
-                    <th>Nr.</th>
-                    <th>Comandă</th>
-                    <th className={s.tdWho}>Client</th>
-                    <th>Etapă</th>
-                    <th className={s.tdDue}>Termen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ORDERS.map((o) => (
-                    <tr key={o.id}>
-                      <td className={s.num}>#{o.id}</td>
-                      <td>{o.what}</td>
-                      <td className={s.tdWho}>{o.who}</td>
-                      <td>
-                        <span className={s.tag} data-tone={o.tone}>
-                          {o.stage}
-                        </span>
-                      </td>
-                      <td className={`${s.num} ${s.tdDue}`}>{o.due}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <AppWindow />
         </Reveal>
 
         <Reveal delay={320}>
@@ -344,11 +634,83 @@ function SoftwareSheet({ go }: { go: Go }) {
   );
 }
 
+/**
+ * Fereastra de aplicație. Se plimbă singură prin meniu — comenzi,
+ * producție, facturi, stoc — la fiecare 2,6 secunde, iar trecerea dintre
+ * ecrane stă sub 400ms (CLAUDE.md §2: pe software mișcarea e scurtă și
+ * funcțională, nu coregrafie).
+ *
+ * Rămâne o machetă, nu un produs: `role="img"` o ține un singur obiect
+ * pentru cititoarele de ecran, așa că schimbarea ecranelor nu le aruncă
+ * un tabel nou la fiecare trei secunde.
+ */
+function AppWindow() {
+  const reduced = useReducedMotion();
+  const [winRef, step] = useCycle(VIEWS.length, VIEW_MS, !reduced);
+  const at = step < 0 ? 0 : step;
+  const v = VIEWS[at];
+
+  return (
+    <div
+      ref={winRef}
+      className={s.win}
+      role="img"
+      aria-label="Machetă ilustrativă de aplicație: comenzi, producție, facturi și stoc, cu etape și termene"
+    >
+      <div className={s.winBar}>
+        {/* `key`, ca titlul să reintre odată cu ecranul lui — altfel s-ar
+            schimba textul sub ochii omului, fără nicio trecere. */}
+        <span key={at} className={s.winTitle}>
+          {v.title}
+        </span>
+        <span className={s.winTag}>ilustrativ</span>
+      </div>
+      <div className={s.winBody}>
+        <div className={s.winNav}>
+          {VIEWS.map((x, i) => (
+            <span key={x.tab} data-on={i === at ? "" : undefined}>
+              {x.tab}
+            </span>
+          ))}
+        </div>
+        {/* `key` pe tabel: ecranul nou intră cu cascada lui de rânduri, în
+            loc să se schimbe celulă cu celulă sub ochii omului. */}
+        <table key={at} className={s.tbl}>
+          <thead>
+            <tr>
+              <th className={s.tdNr}>{v.cols[0]}</th>
+              <th>{v.cols[1]}</th>
+              <th className={s.tdWho}>{v.cols[2]}</th>
+              <th>{v.cols[3]}</th>
+              <th className={s.tdDue}>{v.cols[4]}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {v.rows.map((o, ri) => (
+              <tr key={o.id} style={{ ["--r" as string]: ri }}>
+                <td className={`${s.num} ${s.tdNr}`}>{o.id}</td>
+                <td>{o.what}</td>
+                <td className={s.tdWho}>{o.who}</td>
+                <td>
+                  <span className={s.tag} data-tone={o.tone}>
+                    {o.stage}
+                  </span>
+                </td>
+                <td className={`${s.num} ${s.tdDue}`}>{o.due}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------- Banda de sub fold ---------------- */
 const POINTS = [
   {
     title: "Un singur punct de contact",
-    body: "Vorbești cu aceiași oameni, indiferent de divizie. În spate lucrează două echipe diferite, pentru că un editor bun nu e și un arhitect de software bun.",
+    body: "Un număr și un om care răspunde de proiect de la brief până la livrare. Nu te plimbăm între departamente ca să afli unde a rămas treaba.",
   },
   {
     title: "Nu amestecăm",
@@ -376,8 +738,9 @@ function Band() {
               o singură divizie
             </h2>
             <p className="mt-5 text-[16px] leading-relaxed text-dim">
-              Pentru că ar fi o minciună comodă. Sunt două feluri diferite de a
-              cumpăra, două ritmuri și doi oameni diferiți care semnează.
+              Pentru că un clip și un sistem nu se cumpără la fel. Unul se
+              decide într-o după-amiază, pe telefon. Celălalt trece prin trei
+              discuții, un buget și un om care semnează.
             </p>
           </Reveal>
 
