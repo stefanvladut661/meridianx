@@ -1,0 +1,432 @@
+/* ============================================================
+   Ecranele din „Ce construim” (/software) — stilurile.
+
+   Un singur consumator (`software-screens.tsx`). Culori numai din
+   tokens-ii lumii software. Intrările pornesc când panoul primește
+   `.is-in` de la <Reveal> și durează sub 400ms; la schimbarea filei
+   ecranul se remontează, deci intrările se reiau.
+
+   Buclele (pachete, notificări, scanare) au starea de bază aleasă ca
+   desen static bun: sub prefers-reduced-motion, plasa globală le
+   rulează o singură dată, instant, și rămân în starea de bază.
+   ============================================================ */
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---------- suprafețe ---------- */
+.panel {
+  fill: var(--md-bg-2);
+  stroke: var(--md-line);
+}
+.soft {
+  fill: color-mix(in oklab, var(--md-fg) 5%, transparent);
+}
+.softer {
+  fill: color-mix(in oklab, var(--md-fg) 11%, transparent);
+}
+.softDot {
+  fill: color-mix(in oklab, var(--md-fg) 22%, transparent);
+}
+.softDark {
+  fill: var(--md-muted);
+}
+.acc {
+  fill: var(--md-a1);
+}
+.acc3 {
+  fill: var(--md-a3);
+}
+.accSoft {
+  fill: color-mix(in oklab, var(--md-a1) 14%, transparent);
+}
+.fgBar {
+  fill: color-mix(in oklab, var(--md-fg) 70%, transparent);
+}
+.inv {
+  fill: var(--md-bg-2);
+}
+.inv30 {
+  fill: color-mix(in oklab, var(--md-bg-2) 30%, transparent);
+}
+.field {
+  fill: var(--md-bg-2);
+  stroke: var(--md-line-strong);
+}
+.ring {
+  fill: none;
+  stroke: var(--md-line-strong);
+  stroke-width: 1.5;
+}
+.hair {
+  stroke: var(--md-line);
+}
+.line {
+  fill: none;
+  stroke: var(--md-a1);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.line2 {
+  fill: none;
+  stroke: var(--md-line-strong);
+  stroke-width: 1.5;
+}
+
+/* ---------- text ---------- */
+.t,
+.tInv,
+.tAccSmall {
+  font-family: var(--md-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  fill: var(--md-muted);
+}
+.tInv {
+  fill: var(--md-bg-2);
+}
+.tAccSmall {
+  fill: var(--md-a1);
+  letter-spacing: 0.02em;
+}
+.tDark,
+.tAcc,
+.tInvSmall {
+  font-family: var(--md-font-body);
+  font-size: 12px;
+  fill: var(--md-fg);
+}
+.tAcc {
+  fill: var(--md-a1);
+  font-weight: 600;
+}
+.tInvSmall {
+  font-size: 11px;
+  fill: var(--md-bg-2);
+  font-weight: 500;
+}
+.tb,
+.tInvBold {
+  font-family: var(--md-font-display);
+  font-size: 14px;
+  font-weight: 600;
+  fill: var(--md-fg);
+}
+.tInvBold {
+  fill: var(--md-bg-2);
+}
+.big,
+.bigInv {
+  font-family: var(--md-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  fill: var(--md-fg);
+}
+.bigInv {
+  font-size: 30px;
+  fill: var(--md-bg-2);
+}
+.tAccBold {
+  font-family: var(--md-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  fill: var(--md-a1);
+}
+.stampBox {
+  fill: color-mix(in oklab, var(--md-a1) 8%, var(--md-bg-2));
+  stroke: var(--md-a1);
+  stroke-width: 2;
+}
+
+/* ---------- intrări, sub 400ms ---------- */
+.in,
+.pop,
+.grow,
+.growX,
+.stamp {
+  transform-box: fill-box;
+}
+.in {
+  opacity: 0;
+}
+:global(.is-in) .in {
+  animation: sIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    calc(var(--i, 0) * 55ms) both;
+}
+@keyframes sIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pop {
+  opacity: 0;
+  transform-origin: center;
+}
+:global(.is-in) .pop {
+  animation: sPop 300ms cubic-bezier(0.2, 0.9, 0.3, 1.25)
+    calc(var(--i, 0) * 55ms) both;
+}
+@keyframes sPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.grow {
+  transform-origin: bottom;
+  transform: scaleY(0);
+}
+:global(.is-in) .grow {
+  animation: sGrow 360ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    calc(var(--i, 0) * 40ms) both;
+}
+@keyframes sGrow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.growX {
+  transform-origin: left;
+  transform: scaleX(0);
+}
+:global(.is-in) .growX {
+  animation: sGrowX 380ms cubic-bezier(0.2, 0.8, 0.2, 1)
+    calc(var(--i, 0) * 55ms) both;
+}
+@keyframes sGrowX {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.draw {
+  stroke-dasharray: var(--len, 300);
+  stroke-dashoffset: var(--len, 300);
+}
+:global(.is-in) .draw {
+  animation: sDraw 380ms cubic-bezier(0.4, 0, 0.2, 1)
+    calc(var(--i, 0) * 55ms) forwards;
+}
+@keyframes sDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.stamp {
+  opacity: 0;
+  transform-origin: center;
+  transform: rotate(-6deg);
+}
+:global(.is-in) .stamp {
+  animation: sStamp 260ms cubic-bezier(0.3, 1.4, 0.5, 1)
+    calc(var(--i, 0) * 55ms + 120ms) both;
+}
+@keyframes sStamp {
+  from {
+    opacity: 0;
+    transform: rotate(-6deg) scale(1.5);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-6deg);
+  }
+}
+
+/* ---------- bucle: lente, discrete ---------- */
+
+/* rândul selectat coboară prin tabel */
+.scan {
+  fill: color-mix(in oklab, var(--md-a1) 7%, transparent);
+}
+:global(.is-in) .scan {
+  animation: sScan 7.2s steps(6, end) 500ms infinite;
+}
+@keyframes sScan {
+  to {
+    transform: translateY(228px);
+  }
+}
+
+/* pachet de date care pleacă dintr-un punct și ajunge în altul */
+.packet {
+  opacity: 0;
+}
+:global(.is-in) .packet {
+  animation: sPacket 2.4s cubic-bezier(0.5, 0, 0.5, 1)
+    calc(600ms + var(--i, 0) * 380ms) infinite;
+}
+@keyframes sPacket {
+  0% {
+    opacity: 0;
+    transform: none;
+  }
+  12%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx, 0px), var(--dy, 0px));
+  }
+}
+
+.blink {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+:global(.is-in) .blink {
+  animation: sBlink 1.8s ease-in-out 400ms infinite;
+}
+@keyframes sBlink {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
+.pulse {
+  stroke: var(--md-a1);
+}
+:global(.is-in) .pulse {
+  animation: sPulse 1.6s ease-in-out 700ms infinite;
+}
+@keyframes sPulse {
+  50% {
+    stroke-opacity: 0.25;
+  }
+}
+
+/* comutatorul care pornește singur o campanie */
+.toggleKnob {
+  transform: translateX(-10px);
+}
+:global(.is-in) .toggleKnob {
+  animation: sKnob 3.2s ease 800ms infinite;
+}
+@keyframes sKnob {
+  0%,
+  40% {
+    transform: translateX(-10px);
+  }
+  50%,
+  90% {
+    transform: none;
+  }
+  100% {
+    transform: translateX(-10px);
+  }
+}
+:global(.is-in) .toggleTrack {
+  animation: sTrack 3.2s ease 800ms infinite;
+}
+@keyframes sTrack {
+  0%,
+  40%,
+  100% {
+    fill: color-mix(in oklab, var(--md-a1) 14%, transparent);
+  }
+  50%,
+  90% {
+    fill: var(--md-a1);
+  }
+}
+
+/* oferta trece prin etapele pipeline-ului */
+:global(.is-in) .pipeCard {
+  animation: sPipe 6s cubic-bezier(0.6, 0, 0.3, 1) 700ms infinite;
+}
+@keyframes sPipe {
+  0%,
+  18% {
+    transform: none;
+  }
+  25%,
+  43% {
+    transform: translateY(72px);
+  }
+  50%,
+  68% {
+    transform: translateY(144px);
+  }
+  75%,
+  96% {
+    transform: translateY(216px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* notificarea care intră pe ecranul telefonului */
+:global(.is-in) .toast {
+  animation: sToast 3.6s cubic-bezier(0.2, 0.8, 0.2, 1) 500ms infinite
+    backwards;
+}
+@keyframes sToast {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  10%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  92%,
+  100% {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+}
+
+/* offline ↔ sincronizat: B e starea de bază, A apare doar în buclă */
+.swapA {
+  opacity: 0;
+}
+:global(.is-in) .swapA {
+  animation: sSwapA 4s steps(1, end) 600ms infinite;
+}
+:global(.is-in) .swapB {
+  animation: sSwapB 4s steps(1, end) 600ms infinite;
+}
+@keyframes sSwapA {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes sSwapB {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}

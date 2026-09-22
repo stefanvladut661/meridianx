@@ -20,10 +20,10 @@ export type Placeholderable = { isPlaceholder?: true };
 /* ---------- Navigație ---------- */
 export const SNAV = [
   { href: "#solutii", label: "Ce construim" },
-  { href: "#configurator", label: "Configurator" },
   { href: "#proces", label: "Cum lucrăm" },
   { href: "#garantii", label: "Garanții" },
   { href: "#intrebari", label: "Întrebări" },
+  { href: "#configurator", label: "Configurator" },
 ] as const;
 
 /* ---------- Cine e clientul ---------- */
@@ -83,214 +83,95 @@ export const SPAINS = [
   },
 ] as const;
 
-/* ---------- Ce construim ---------- */
+/* ---------- Ce construim ----------
+   Titlu de 1–3 cuvinte + un singur rând. Restul îl spune ecranul
+   animat din `software-screens.tsx`, cheiat pe `key`. Când vin
+   demo-urile reale de aplicații, ele intră în același ecran. */
 export const SOLUTIONS = [
   {
     key: "business",
-    icon: "layers",
-    title: "Aplicații de business la comandă",
-    blurb:
-      "Fluxul tău intern, digitalizat exact cum îl trăiește echipa: comenzi, producție, stoc, aprobări, documente. Fără module pe care nu le folosește nimeni.",
-    bullets: ["Roluri și permisiuni", "Istoric și audit", "Rapoarte pe operațiuni"],
+    title: "Aplicații interne",
+    line: "Comenzi, producție, stoc și aprobări, exact cum lucrează echipa.",
+    path: "comenzi",
   },
   {
     key: "loyalty",
-    icon: "spark",
-    title: "Aplicații de fidelizare",
-    blurb:
-      "Puncte, niveluri, cupoane, campanii. Clientul revine pentru că are un motiv concret, iar tu vezi în sfârșit cine sunt clienții care contează.",
-    bullets: ["Card digital și QR", "Campanii automate", "Segmentare pe comportament"],
+    title: "Fidelizare",
+    line: "Puncte, niveluri și campanii care aduc clientul înapoi.",
+    path: "card-client",
   },
   {
     key: "dash",
-    icon: "chart",
-    title: "Dashboard-uri custom",
-    blurb:
-      "Datele din toate sursele tale, într-un singur ecran care răspunde la întrebările pe care le pui de fapt luni dimineața.",
-    bullets: ["Date din surse multiple", "Actualizare în timp real", "Alerte pe praguri"],
+    title: "Dashboard-uri",
+    line: "Toate cifrele firmei pe un singur ecran, actualizate singure.",
+    path: "dashboard",
   },
   {
     key: "sales",
-    icon: "target",
-    title: "Mecanisme de vânzare",
-    blurb:
-      "Configuratoare de produs, generare automată de oferte, pipeline, urmărire, relansări. Mai puțin timp pe ofertat, mai mult pe vândut.",
-    bullets: ["Configurator și ofertare", "Pipeline și relansări", "Semnătură și aprobări"],
+    title: "Ofertare",
+    line: "Oferte generate în minute, urmărite până la semnătură.",
+    path: "oferte",
   },
   {
     key: "saas",
-    icon: "cloud",
     title: "Produse SaaS",
-    blurb:
-      "Ai o idee de produs pe care să-l vinzi pe abonament. Construim varianta care poate fi vândută, nu prototipul care rămâne în sertar.",
-    bullets: ["Multi-tenant", "Abonamente și facturare", "Panou de administrare"],
+    line: "Produsul tău, vândut pe abonament către alte firme.",
+    path: "abonamente",
   },
   {
     key: "mobile",
-    icon: "phone",
     title: "Aplicații mobile",
-    blurb:
-      "iOS și Android din aceeași bază de cod. Pentru echipa de teren, pentru clienți sau pentru amândoi, cu funcționare și fără semnal bun.",
-    bullets: ["iOS + Android", "Lucru offline", "Notificări"],
+    line: "iOS și Android, merg și fără semnal.",
+    path: "mobil",
   },
   {
     key: "web",
-    icon: "search",
-    title: "Site-uri de conversie mare",
-    blurb:
-      "Site care aduce cereri, nu doar vizite. Structură de argumentare, viteză de încărcare, formulare care se completează și pe telefon.",
-    bullets: ["Structură de conversie", "Viteză și SEO tehnic", "Analitică pe obiective"],
+    title: "Site-uri care vând",
+    line: "Construite să aducă cereri, nu doar vizite.",
+    path: "site",
   },
   {
     key: "integrari",
-    icon: "link",
-    title: "Integrări și automatizări",
-    blurb:
-      "Legăm ce ai deja: facturare, e-Factura, plăți, curieri, magazin, ERP. Datele circulă singure, iar tu vezi imediat unde s-a blocat ceva.",
-    bullets: ["Facturare și e-Factura", "Plăți și curieri", "ERP și magazin online"],
+    title: "Integrări",
+    line: "Facturare, e-Factura, plăți, curieri și ERP, legate între ele.",
+    path: "integrari",
   },
 ] as const;
 
-/* ---------- Integrări frecvente ----------
-   Nume de sisteme cu care se lucrează uzual în piața locală.
-   TODO: verificat juridic — dacă afișăm logo-uri, avem nevoie de
-   acordul fiecărui furnizor; textul simplu e sigur. */
-export const INTEGRATIONS = [
-  "Facturare",
-  "e-Factura",
-  "Plăți online",
-  "Curieri",
-  "Magazin online",
-  "ERP existent",
-  "Casă de marcat",
-  "Semnătură electronică",
-  "Email și SMS",
-  "Analitică",
-] as const;
+export type SolutionKey = (typeof SOLUTIONS)[number]["key"];
 
-/* ---------- Procesul ---------- */
+/* ---------- Procesul ----------
+   Secvență reală, deci numerotarea e legitimă (CLAUDE.md §3). */
 export const SPROCESS = [
-  {
-    n: "01",
-    title: "Consultanță",
-    dur: "30 de minute",
-    lead: "Punem întrebările incomode înainte să scriem cod.",
-    body: "Ce proces te doare, cine îl folosește, ce sisteme există deja, ce termen ai. Ieșim cu o imagine clară a proiectului, nu cu o promisiune vagă.",
-    out: ["Harta procesului", "Riscurile identificate", "Direcția tehnică"],
-  },
-  {
-    n: "02",
-    title: "Fișa de proiect",
-    dur: "câteva zile",
-    lead: "Scopul, scris astfel încât să nu se poată interpreta.",
-    body: "Primești un document cu ce se construiește, în ce etape, ce livrăm la fiecare etapă și ce rămâne în afara scopului. E al tău, inclusiv ca să compari alte oferte.",
-    out: ["Scop și etape", "Estimare de timp", "Ofertă fermă"],
-  },
-  {
-    n: "03",
-    title: "Prima versiune utilizabilă",
-    dur: "primele săptămâni",
-    lead: "Vezi software care merge, nu prezentări.",
-    body: "Construim mai întâi felia care rezolvă durerea cea mai mare și o punem în mâinile echipei tale. De acolo, corectăm pe date reale, nu pe presupuneri.",
-    out: ["Aplicație funcțională", "Testare cu echipa", "Ajustări pe feedback"],
-  },
-  {
-    n: "04",
-    title: "Extindere și predare",
-    dur: "pe etape",
-    lead: "Creștem sistemul, apoi ți-l dăm cu totul.",
-    body: "Adăugăm etapele următoare, integrăm restul sistemelor, instruim echipa și predăm codul, conturile și documentația pe numele firmei tale.",
-    out: ["Documentație tehnică", "Instruire echipă", "Predare cod și conturi"],
-  },
-  {
-    n: "05",
-    title: "Mentenanță și evoluție",
-    dur: "lunar, opțional",
-    lead: "Rămânem în spate, cât ai nevoie de noi.",
-    body: "Monitorizare, corecții, îmbunătățiri cerute de echipă. Fără abonament obligatoriu: dacă vrei să continui cu altcineva sau intern, ai tot ce-ți trebuie.",
-    out: ["Monitorizare", "Corecții prioritizate", "Dezvoltări noi la cerere"],
-  },
+  { n: "01", title: "Consultanță", line: "30 de minute despre procesul care te încurcă." },
+  { n: "02", title: "Fișa de proiect", line: "Scop, etape și ofertă fermă, în scris." },
+  { n: "03", title: "Prima versiune", line: "Software funcțional la echipă, în câteva săptămâni." },
+  { n: "04", title: "Predare", line: "Cod, conturi și documentație pe firma ta." },
+  { n: "05", title: "Mentenanță", line: "Opțională, lunară, cât ai nevoie de noi." },
 ] as const;
 
-/* ---------- Garanții / de ce noi ---------- */
-export const GUARANTEES = [
+/* ---------- Garanții ----------
+   Titlu scurt pentru ce e evident; `line` doar unde merită explicat. */
+export const GUARANTEES: { title: string; line?: string }[] = [
   {
-    icon: "clock",
-    title: "Prima versiune în săptămâni, nu în trimestre",
-    body: "Lucrăm pe felii care produc valoare de la început. Vezi software real devreme, ceea ce înseamnă că poți corecta devreme — acolo unde corecțiile sunt ieftine.",
+    title: "Prima versiune în săptămâni",
+    line: "Nu în trimestre. Corectezi devreme, când e ieftin.",
   },
   {
-    icon: "check",
-    title: "Cod și date pe numele tău",
-    body: "Repository, servere, conturi de servicii: totul pe firma ta, din prima zi. Nu te ținem legați de noi prin acces, ci prin faptul că e mai bine cu noi.",
+    title: "Codul e al tău",
+    line: "Repository, servere și conturi pe firma ta, din prima zi.",
+  },
+  { title: "Ecrane învățate în minute" },
+  {
+    title: "Performanță măsurată",
+    line: "Timpi stabiliți la început, verificați pe volumul tău real.",
   },
   {
-    icon: "spark",
-    title: "Interfețe pe care le folosește lumea",
-    body: "Design făcut de aceeași echipă care construiește. Ecranele se învață în minute, nu într-o zi de training — altfel sistemul rămâne neatins.",
+    title: "Documente pentru raportare",
+    // TODO: verificat juridic pe program — forma cerută în dosar.
+    line: "La fiecare etapă, pentru dosarul de finanțare.",
   },
-  {
-    icon: "chart",
-    title: "Performanță măsurată, nu promisă",
-    body: "Stabilim de la început timpii acceptabili pentru operațiunile zilnice și îi verificăm pe volumul tău real, înainte de predare.",
-  },
-  {
-    icon: "shield",
-    title: "Documentație pentru raportare",
-    body: "Livrăm documentele tehnice și de proces în forma cerută în dosarul de finanțare, la fiecare etapă. TODO: verificat juridic pe program.",
-  },
-  {
-    icon: "target",
-    title: "Preț competitiv, fără surprize",
-    body: "Pornim de la o fundație internă pe care o refolosim, deci nu plătești construcția lucrurilor deja rezolvate. Oferta e fermă și pe etape.",
-  },
-] as const;
-
-/* ---------- Ce primești ---------- */
-export const SDELIVERABLES = [
-  "Codul sursă, în repository pe numele firmei tale",
-  "Conturile de infrastructură și servicii, tot pe firma ta",
-  "Documentație tehnică și manual de utilizare",
-  "Instruirea echipei, înregistrată, ca să o revadă oricine",
-  "Documentele tehnice necesare la raportare",
-  "O lună de corecții după predare, fără cost suplimentar",
-] as const;
-
-/* ---------- Cifre de capabilitate ----------
-   Capacități de lucru, NU rezultate. Marcate placeholder până le
-   confirmă clientul; nu se publică fără confirmare. */
-export const SSTATS: (Placeholderable & {
-  value: number;
-  suffix?: string;
-  label: string;
-  note: string;
-})[] = [
-  {
-    isPlaceholder: true,
-    value: 4,
-    suffix: "–6",
-    label: "săptămâni până la prima versiune",
-    note: "Felia care rezolvă durerea principală, în mâinile echipei",
-  },
-  {
-    isPlaceholder: true,
-    value: 8,
-    label: "tipuri de proiecte acoperite",
-    note: "De la aplicație internă la SaaS și mobil",
-  },
-  {
-    isPlaceholder: true,
-    value: 100,
-    suffix: "%",
-    label: "cod predat clientului",
-    note: "Fără licențiere ascunsă, fără dependență de noi",
-  },
-  {
-    isPlaceholder: true,
-    value: 30,
-    label: "minute de consultanță, gratuit",
-    note: "Cu fișă de proiect scrisă după, indiferent de decizie",
-  },
+  { title: "Ofertă fermă, pe etape" },
 ];
 
 /* ---------- Testimoniale — STRUCTURĂ ILUSTRATIVĂ ----------

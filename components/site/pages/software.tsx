@@ -1,18 +1,15 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { useState, type ComponentProps } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { Mark } from "@/components/site/mark";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
-import {
-  CountUp,
-  Marquee,
-  Reveal,
-  useScrolled,
-} from "@/components/site/motion";
+import { Marquee, Reveal, useScrolled } from "@/components/site/motion";
 import { Faq, Icon } from "@/components/site/ui";
 import { VideoCard } from "@/components/site/video-player";
 import { Configurator } from "@/components/site/configurator";
+import { SCREENS } from "@/components/site/software-screens";
+import st from "./software.module.css";
 import { ObfuscatedEmail } from "@/components/site/obfuscated-email";
 import {
   WorldSwitch,
@@ -22,15 +19,12 @@ import {
   AUDIENCE,
   CONSULT_OUTPUT,
   GUARANTEES,
-  INTEGRATIONS,
   SCONTACT,
   SPRESENTATION,
-  SDELIVERABLES,
   SFAQ,
   SNAV,
   SOLUTIONS,
   SPROCESS,
-  SSTATS,
   STESTIMONIALS,
 } from "@/components/site/software-content";
 
@@ -66,14 +60,13 @@ export function SoftwareScreen() {
         <Hero />
         <AudienceStrip />
         <Solutions />
-        <LeadMagnet />
         <Process />
         <Guarantees />
-        <Handover />
-        <Stats />
         {SHOW_TESTIMONIALS && <Voices />}
         <Questions />
-        <FinalCta />
+        {/* Formularul stă la final, nu la mijloc: cine ajunge aici a
+            văzut deja ce facem, cum lucrăm și ce garantăm. */}
+        <LeadMagnet />
       </main>
       <Foot />
       {/* Stânga sus: acolo stă video în poartă. */}
@@ -214,7 +207,7 @@ function Nav() {
 /* ---------------- Hero ---------------- */
 function Hero() {
   return (
-    <section className="relative overflow-hidden pb-20 pt-28 sm:pt-36 lg:pb-28 lg:pt-44">
+    <section className="relative overflow-hidden pb-20 pt-24 sm:pt-28 lg:pb-24">
       <div
         aria-hidden
         className="aurora aurora-drift"
@@ -248,43 +241,22 @@ function Hero() {
 
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-14 px-5 sm:px-6 lg:grid-cols-[1.02fr_1fr] lg:gap-12">
         <div>
-          <R className="hidden sm:block">
-            <span className="pill">
-              <span className="node-dot" aria-hidden />
-              <span className="text-dim">
-                Pentru firme cu{" "}
-                <span className="text-bone">finanțare de digitalizare</span>
-              </span>
-            </span>
-          </R>
-
-          <R delay={70}>
-            <h1 className="display mt-7 text-[clamp(2.2rem,5.8vw,4rem)]">
-              Ai banii aprobați și un termen.
-              <br />
-              <span className="text-a2">
-                Noi îi transformăm în infrastructură
-              </span>{" "}
-              pe care echipa chiar o folosește.
+          <R>
+            <h1 className="display mt-4 text-[clamp(2.3rem,5.8vw,4.1rem)]">
+              Software construit{" "}
+              <span className="text-a2">pe felul în care lucrezi.</span>
             </h1>
           </R>
 
-          <R delay={130}>
+          <R delay={70}>
             <p className="mt-5 max-w-lg text-[16px] leading-relaxed text-dim sm:mt-6 sm:text-[16.5px]">
-              <span className="sm:hidden">
-                Aplicații construite pe procesul tău, livrate pe etape scurte,
-                predate integral pe numele firmei tale.
-              </span>
-              <span className="hidden sm:inline">
-                Aplicații de business, dashboard-uri, fidelizare, mecanisme de
-                vânzare, mobil și SaaS — construite pe procesul tău, livrate pe
-                etape scurte, predate integral pe numele firmei tale.
-              </span>
+              Aplicații, dashboard-uri și integrări, livrate pe etape scurte și
+              predate pe numele firmei tale.
             </p>
           </R>
 
-          <R delay={190}>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <R delay={130}>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
                 href="#configurator"
                 className="btn btn-primary !rounded-panel-sm"
@@ -299,8 +271,8 @@ function Hero() {
             </div>
           </R>
 
-          <R delay={250}>
-            <ul className="mt-9 flex flex-wrap gap-x-6 gap-y-2.5">
+          <R delay={190}>
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2.5">
               {[
                 "Ofertă fermă, pe etape",
                 "Cod și conturi pe firma ta",
@@ -387,21 +359,21 @@ function AudienceStrip() {
   );
 }
 
-/* ---------------- Titlu de secțiune, varianta software ---------------- */
+/* ---------------- Titlu de secțiune, varianta software ----------------
+   Doar eyebrow + titlu. Subtitlurile au fost scoase: titlul trebuie să
+   se țină singur, iar ce merită explicat stă în conținutul secțiunii. */
 function Head({
   eyebrow,
   title,
-  lead,
   align = "center",
 }: {
   eyebrow: string;
   title: React.ReactNode;
-  lead?: React.ReactNode;
   align?: "center" | "left";
 }) {
   const c = align === "center";
   return (
-    <R className={`${c ? "mx-auto text-center" : ""} max-w-2xl`}>
+    <R className={`${c ? "mx-auto text-center" : ""} max-w-3xl`}>
       <p
         className={`eyebrow mb-4 flex items-center gap-2 ${
           c ? "justify-center" : ""
@@ -410,27 +382,20 @@ function Head({
         <span className="node-dot" aria-hidden />
         {eyebrow}
       </p>
-      <h2 className="display text-[clamp(1.9rem,4.6vw,3rem)]">{title}</h2>
-      {lead && (
-        <p className="mt-5 text-[16.5px] leading-relaxed text-dim">{lead}</p>
-      )}
+      <h2 className="display text-[clamp(2rem,5vw,3.3rem)]">{title}</h2>
     </R>
   );
 }
 
 /**
- * Banda de chemare la actiune, pusa la capatul unei sectiuni.
- * Aceeasi destinatie ca butonul din bara — configuratorul — dar
- * intalnita in momentul in care sectiunea tocmai a ridicat intrebarea.
+ * Banda de chemare la acțiune, pusă la capătul unei secțiuni: o
+ * întrebare și butonul. Aceeași destinație ca butonul din bară.
  */
-function CtaBand({ title, body }: { title: string; body: string }) {
+function CtaBand({ title }: { title: string }) {
   return (
     <R delay={120} className="mx-auto mt-10 max-w-6xl">
-      <div className="glass-2 edge-light flex flex-col items-start gap-6 p-7 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
-        <div className="max-w-xl">
-          <h3 className="display text-[clamp(1.3rem,2.6vw,1.7rem)]">{title}</h3>
-          <p className="mt-2.5 text-[15px] leading-relaxed text-dim">{body}</p>
-        </div>
+      <div className="glass-2 edge-light flex flex-col items-start gap-5 p-6 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
+        <h3 className="display text-[clamp(1.3rem,2.6vw,1.7rem)]">{title}</h3>
         <a
           href="#configurator"
           className="btn btn-primary shrink-0 !rounded-panel-sm !px-7"
@@ -443,355 +408,275 @@ function CtaBand({ title, body }: { title: string; body: string }) {
   );
 }
 
-/* ---------------- Ce construim ---------------- */
+/* ---------------- Ce construim ----------------
+   Vitrină cu file, nu grilă de carduri: în stânga numele, în dreapta
+   un ecran care arată aplicația lucrând. Filele avansează singure cât
+   timp nimeni nu le atinge; primul clic, tastă sau hover preia
+   controlul. Sub prefers-reduced-motion nu avansează deloc. */
+const TAB_MS = 6000;
+
 function Solutions() {
+  const [active, setActive] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const [hold, setHold] = useState(false);
+  const [inView, setInView] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setAuto(false);
+    }
+    const el = wrap.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => setInView(e.isIntersecting),
+      { threshold: 0.35 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const pick = (i: number, focus = false) => {
+    const n = (i + SOLUTIONS.length) % SOLUTIONS.length;
+    setAuto(false);
+    setActive(n);
+    if (focus) tabs.current[n]?.focus();
+  };
+
+  const onKey = (e: React.KeyboardEvent) => {
+    const map: Record<string, number> = {
+      ArrowDown: active + 1,
+      ArrowRight: active + 1,
+      ArrowUp: active - 1,
+      ArrowLeft: active - 1,
+      Home: 0,
+      End: SOLUTIONS.length - 1,
+    };
+    if (e.key in map) {
+      e.preventDefault();
+      pick(map[e.key], true);
+    }
+  };
+
+  const cur = SOLUTIONS[active];
+  const Screen = SCREENS[cur.key];
+
   return (
-    <section id="solutii" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-32">
-      <Head
-        eyebrow="Ce construim"
-        title={
-          <>
-            Construim orice aplicație la comandă.
-            <br />
-            <span className="text-dim">Astea sunt cele mai cerute opt.</span>
-          </>
-        }
-        lead={
-          <>
-            <span className="sm:hidden">
-              Dacă procesul tău nu seamănă cu niciunul, construim exact ce îți
-              trebuie.
-            </span>
-            <span className="hidden sm:inline">
-              Lista de mai jos nu e un meniu din care trebuie să alegi — sunt
-              tipurile care ni se cer cel mai des, puse aici ca să ai de unde
-              porni. Dacă procesul tău nu seamănă cu niciunul, construim exact
-              ce îți trebuie.
-            </span>
-          </>
-        }
-      />
+    <section id="solutii" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-28">
+      <Head eyebrow="Ce construim" title="Orice aplicație, la comandă." />
 
-      <ul className="mx-auto mt-10 grid max-w-6xl gap-3 sm:mt-16 md:grid-cols-2 lg:grid-cols-4">
-        {SOLUTIONS.map((s, i) => (
-          <R as="li" key={s.key} delay={i * 45}>
-            <article className="glass bleed lift group flex h-full flex-col p-5 sm:p-6">
-              <div className="relative z-10 flex flex-1 flex-col">
-                <span className="mb-4 flex size-10 items-center justify-center rounded-panel-sm border border-hair text-a1 sm:mb-5">
-                  <Icon
-                    name={
-                      s.icon as
-                        | "layers"
-                        | "spark"
-                        | "chart"
-                        | "target"
-                        | "cloud"
-                        | "phone"
-                        | "search"
-                        | "link"
-                    }
-                    size={18}
-                  />
-                </span>
-                <h3 className="text-[16.5px] font-medium leading-snug text-bone">
-                  {s.title}
-                </h3>
-                <p className="mt-2.5 flex-1 text-[14px] leading-relaxed text-dim">
-                  {s.blurb}
-                </p>
-                {/* specificațiile rămân pe desktop; pe telefon vinde promisiunea */}
-                <ul className="mt-4 hidden space-y-1.5 border-t border-hair pt-4 sm:mt-5 sm:block">
-                  {s.bullets.map((b) => (
-                    <li
-                      key={b}
-                      className="flex items-center gap-2 text-[12.5px] text-dim"
-                    >
-                      <span
-                        className="size-1 rotate-45 bg-a1"
-                        aria-hidden
-                      />
-                      {b}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </article>
-          </R>
-        ))}
-      </ul>
-
-      {/* Ultimul cuvant al sectiunii ii apartine celui care nu s-a
-          regasit in cele opt: el e clientul pe care lista tocmai l-ar
-          fi trimis mai departe. */}
-      <CtaBand
-        title="Nu se potrivește niciunul?"
-        body="Cele opt de sus sunt doar exemple. Spune-ne cum lucrezi acum și îți construim sistemul pe procesul tău, nu invers."
-      />
-    </section>
-  );
-}
-
-/* ---------------- Lead magnet ---------------- */
-function LeadMagnet() {
-  return (
-    <section id="configurator" className="relative px-5 py-24 sm:px-6 lg:py-32">
       <div
-        aria-hidden
-        className="aurora aurora-drift"
-        style={{
-          width: "min(80vw, 760px)",
-          height: "min(60vw, 520px)",
-          left: "50%",
-          top: "8%",
-          translate: "-50% 0",
-          background:
-            "radial-gradient(ellipse, color-mix(in oklab, var(--md-a1) 45%, transparent), transparent 64%)",
-          opacity: "var(--md-glow-o, 0.4)",
-        }}
-      />
-
-      <div className="relative z-10 mx-auto max-w-6xl">
-        <Head
-          eyebrow="Configurator de proiect"
-          title={
-            <>
-              Două minute acum,
-              <br />
-              <span className="text-a2">o fișă de proiect după.</span>
-            </>
-          }
-          lead="Răspunde la patru întrebări și vezi pe loc conturul proiectului: module, etape, interval de timp. La final îl primești în scris și îl poți folosi ca să compari orice altă ofertă."
-        />
-
-        <R delay={90} className="mt-14">
-          <Configurator />
-        </R>
-
-        <R delay={140}>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {CONSULT_OUTPUT.map((c) => (
-              <li key={c.title} className="glass p-5">
-                <h3 className="text-[14.5px] font-medium text-bone">
-                  {c.title}
-                </h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-dim">
-                  {c.body}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </R>
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- Proces ---------------- */
-function Process() {
-  return (
-    <section id="proces" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-32">
-      <div className="mx-auto grid max-w-6xl gap-8 sm:gap-12 lg:grid-cols-[minmax(0,340px)_1fr] lg:gap-16">
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <Head
-            align="left"
-            eyebrow="Cum lucrăm"
-            title={
-              <>
-                Cinci etape.
-                <br />
-                Fiecare cu livrabil.
-              </>
-            }
-            lead={
-              <>
-                <span className="sm:hidden">
-                  Etape scurte, fiecare cu ceva ce poți vedea și folosi.
-                </span>
-                <span className="hidden sm:inline">
-                  Nu semnezi pentru un rezultat la final de an. Semnezi pentru
-                  etape scurte, fiecare cu ceva ce poți vedea și folosi.
-                </span>
-              </>
-            }
-          />
+        ref={wrap}
+        onMouseEnter={() => setHold(true)}
+        onMouseLeave={() => setHold(false)}
+        className="mx-auto mt-10 grid max-w-6xl gap-4 sm:mt-14 lg:grid-cols-[minmax(0,300px)_1fr] lg:gap-8"
+      >
+        <div
+          role="tablist"
+          aria-label="Tipuri de aplicații"
+          aria-orientation="vertical"
+          onKeyDown={onKey}
+          className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0 lg:pb-0"
+        >
+          {SOLUTIONS.map((s, i) => {
+            const on = i === active;
+            return (
+              <button
+                key={s.key}
+                ref={(el) => {
+                  tabs.current[i] = el;
+                }}
+                id={`tab-${s.key}`}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                aria-controls="panou-solutii"
+                tabIndex={on ? 0 : -1}
+                onClick={() => pick(i)}
+                className={`relative shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[14.5px] transition-colors duration-200 lg:rounded-none lg:border-0 lg:border-l-2 lg:py-3.5 lg:pl-5 lg:text-left lg:text-[19px] lg:font-medium ${
+                  on
+                    ? "border-a1 bg-a1/10 text-bone lg:border-a1 lg:bg-transparent"
+                    : "border-hair text-dim hover:text-bone lg:border-hair"
+                }`}
+              >
+                {s.title}
+              </button>
+            );
+          })}
         </div>
 
-        <ol className="relative grid gap-3">
-          {SPROCESS.map((p, i) => (
-            <R as="li" key={p.n} delay={i * 60}>
-              <article className="glass lift p-5 sm:p-7">
-                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span className="font-md-mono text-[13px] text-a1">
-                    {p.n}
-                  </span>
-                  <h3 className="display text-[1.35rem]">{p.title}</h3>
-                  <span className="rounded-full border border-hair px-2.5 py-0.5 font-md-mono text-[11px] text-dim">
-                    {p.dur}
-                  </span>
-                </div>
-                <p className="mt-3 text-[14.5px] text-a2">{p.lead}</p>
-                {/* proza explicativă rămâne pe desktop; pe telefon contează livrabilele */}
-                <p className="mt-3 hidden max-w-2xl text-[14.5px] leading-relaxed text-dim sm:block">
-                  {p.body}
-                </p>
-                <ul className="mt-4 flex flex-wrap gap-2 sm:mt-5">
-                  {p.out.map((o) => (
-                    <li
-                      key={o}
-                      className="flex items-center gap-2 rounded-panel-sm border border-hair px-3 py-1.5 text-[12.5px] text-dim"
-                    >
-                      <Icon name="check" size={13} className="text-a1" />
-                      {o}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            </R>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- Garanții ---------------- */
-function Guarantees() {
-  return (
-    <section id="garantii" className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <Head
-        eyebrow="Garanții"
-        title="Ce ne obligăm să facem"
-        lead="Nu sunt sloganuri. Sunt lucrurile pe care le trecem în contract și pe care ni le poți reproșa dacă nu le respectăm."
-      />
-
-      <ul className="mx-auto mt-16 grid max-w-6xl gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {GUARANTEES.map((g, i) => (
-          <R as="li" key={g.title} delay={i * 50}>
-            <article className="glass lift h-full p-6 sm:p-7">
-              <span className="mb-5 flex size-10 items-center justify-center rounded-panel-sm border border-hair text-a1">
-                <Icon
-                  name={
-                    g.icon as
-                      | "clock"
-                      | "check"
-                      | "spark"
-                      | "chart"
-                      | "shield"
-                      | "target"
-                  }
-                  size={18}
-                />
+        <R delay={60}>
+          <div className="glass-2 edge-light overflow-hidden !p-0">
+            <div className="relative flex items-center gap-3 border-b border-hair px-4 py-2.5">
+              <span className="flex gap-1.5" aria-hidden>
+                <span className="size-2.5 rounded-full bg-hair" />
+                <span className="size-2.5 rounded-full bg-hair" />
+                <span className="size-2.5 rounded-full bg-hair" />
               </span>
-              <h3 className="text-[16.5px] font-medium leading-snug text-bone">
-                {g.title}
-              </h3>
-              <p className="mt-3 text-[14.5px] leading-relaxed text-dim">
-                {g.body}
-              </p>
-            </article>
-          </R>
-        ))}
-      </ul>
-
-      <CtaBand
-        title="Le vrei trecute în contractul tău?"
-        body="Le discutăm punct cu punct la consultanță și pleci cu ele scrise, împreună cu fișa de proiect — a ta, chiar dacă alegi alt furnizor."
-      />
-    </section>
-  );
-}
-
-/* ---------------- Livrabile + integrări ---------------- */
-function Handover() {
-  return (
-    <section className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <div className="mx-auto grid max-w-6xl gap-3 lg:grid-cols-[1fr_minmax(0,420px)]">
-        <R>
-          <article className="glass-2 edge-light bleed relative h-full overflow-hidden p-7 sm:p-9">
-            <div className="relative z-10">
-              <p className="eyebrow mb-5">La predare</p>
-              <h3 className="display text-[clamp(1.5rem,3.4vw,2.1rem)]">
-                Pleci cu tot. Inclusiv cu noi din drum.
-              </h3>
-              <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-dim">
-                Dependența de furnizor e cea mai scumpă linie invizibilă dintr-un
-                proiect software. O eliminăm din start, ca decizia de a lucra mai
-                departe cu noi să fie una de business, nu de acces.
-              </p>
-              <ul className="mt-7 grid gap-3 sm:grid-cols-2">
-                {SDELIVERABLES.map((d) => (
-                  <li key={d} className="flex gap-3 text-[14.5px] text-dim">
-                    <Icon
-                      name="check"
-                      size={16}
-                      className="mt-0.5 shrink-0 text-a1"
-                    />
-                    {d}
-                  </li>
-                ))}
-              </ul>
+              <span className="truncate font-md-mono text-[11.5px] text-dim">
+                firma-ta.ro/<span className="text-bone">{cur.path}</span>
+              </span>
+              <span className="ml-auto shrink-0 rounded-full border border-hair px-2 py-0.5 font-md-mono text-[9.5px] uppercase tracking-widest text-dim">
+                schiță
+              </span>
+              {auto && (
+                <span
+                  key={active}
+                  aria-hidden
+                  className={`${st.progress} absolute inset-x-0 bottom-[-1px] h-0.5 bg-a1`}
+                  style={
+                    {
+                      "--dur": `${TAB_MS}ms`,
+                      animationPlayState: inView && !hold ? "running" : "paused",
+                    } as React.CSSProperties
+                  }
+                  onAnimationEnd={() =>
+                    setActive((a) => (a + 1) % SOLUTIONS.length)
+                  }
+                />
+              )}
             </div>
-          </article>
-        </R>
 
-        <R delay={90}>
-          <article className="glass h-full p-7">
-            <p className="eyebrow mb-5">Integrări frecvente</p>
-            <ul className="flex flex-wrap gap-2">
-              {INTEGRATIONS.map((n) => (
-                <li
-                  key={n}
-                  className="rounded-panel-sm border border-hair px-3 py-1.5 text-[13px] text-dim"
-                >
-                  {n}
-                </li>
-              ))}
-            </ul>
-            <div className="rule my-7" />
-            <p className="text-[14.5px] leading-relaxed text-dim">
-              Dacă sistemul tău nu e în listă, întreabă. În aproape toate
-              cazurile există o cale de integrare — iar dacă nu există, îți
-              spunem asta la consultanță, nu după semnare.
-            </p>
-            <a
-              href="#configurator"
-              className="btn btn-ghost mt-7 !rounded-panel-sm !min-h-11 !py-2.5 !text-[14px]"
+            <div
+              id="panou-solutii"
+              role="tabpanel"
+              aria-labelledby={`tab-${cur.key}`}
+              tabIndex={0}
+              className="focus-visible:outline-offset-[-2px]"
             >
-              Verifică-ți sistemele
-              <Icon name="arrowRight" size={15} className="arw" />
-            </a>
-          </article>
+              <div className="bg-char/40 px-3 py-4 sm:px-6 sm:py-6">
+                <Screen key={cur.key} />
+              </div>
+              <div className="flex flex-col gap-1 border-t border-hair px-5 py-4 sm:flex-row sm:items-baseline sm:gap-4 sm:px-6">
+                <h3 className="shrink-0 text-[16px] font-medium text-bone">
+                  {cur.title}
+                </h3>
+                <p className="text-[14.5px] text-dim">{cur.line}</p>
+              </div>
+            </div>
+          </div>
         </R>
       </div>
+
+      <CtaBand title="Nu e în listă? Construim pe procesul tău." />
     </section>
   );
 }
 
-/* ---------------- Cifre ---------------- */
-function Stats() {
+/* ---------------- Proces ----------------
+   O șină cu cinci noduri, desenată de la stânga la dreapta (pe telefon,
+   de sus în jos). Fiecare etapă: un titlu scurt și un singur rând. */
+function Process() {
   return (
-    <section className="relative px-5 py-16 sm:px-6 lg:py-24">
-      <div className="mx-auto max-w-6xl">
-        <dl className="grid gap-px overflow-hidden rounded-panel-lg border border-hair bg-hair sm:grid-cols-2 lg:grid-cols-4">
-          {SSTATS.map((s, i) => (
-            <R key={s.label} delay={i * 60}>
-              <div className="h-full bg-ink p-7">
-                <dd className="display text-[clamp(2.2rem,5vw,3rem)] leading-none text-a1">
-                  <CountUp to={s.value} suffix={s.suffix} />
-                </dd>
-                <dt className="mt-3.5 text-[14.5px] text-bone">{s.label}</dt>
-                <p className="mt-1.5 text-[12.5px] leading-relaxed text-dim">
-                  {s.note}
+    <section id="proces" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-28">
+      <Head eyebrow="Cum lucrăm" title="De la apel la predare." />
+
+      <R className="mx-auto mt-12 max-w-6xl sm:mt-16">
+        <ol className={st.rail}>
+          {SPROCESS.map((p, i) => (
+            <li
+              key={p.n}
+              className={st.step}
+              style={{ ["--i" as string]: i } as React.CSSProperties}
+            >
+              {i < SPROCESS.length - 1 && <span className={st.seg} aria-hidden />}
+              <span className={st.node} aria-hidden>
+                {p.n}
+              </span>
+              <div className="pt-2 lg:pt-0 lg:pr-4">
+                <h3 className="display text-[clamp(1.25rem,1.9vw,1.5rem)]">
+                  <span className="sr-only">Etapa {i + 1}: </span>
+                  {p.title}
+                </h3>
+                <p className="mt-2 text-[14.5px] leading-relaxed text-dim">
+                  {p.line}
                 </p>
               </div>
-            </R>
+            </li>
           ))}
-        </dl>
-        <p className="mt-3 text-[12px] text-dim">
-          Cifre de capabilitate, marcate ca exemplu — se confirmă înainte de
-          publicare.
-        </p>
-      </div>
+        </ol>
+      </R>
+    </section>
+  );
+}
+
+/* ---------------- Garanții ----------------
+   Nu încă o grilă de carduri: o foaie de contract. Clauzele se bifează
+   pe rând, iar semnătura noastră se scrie la final — exact promisiunea
+   secțiunii: ce e aici intră în contract. */
+function Guarantees() {
+  return (
+    <section id="garantii" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-28">
+      <Head eyebrow="Garanții" title="Scrise în contract, nu pe site." />
+
+      <R className="mx-auto mt-12 max-w-5xl sm:mt-16">
+        <div className={`${st.sheet} px-5 py-7 sm:px-10 sm:py-10`}>
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-hair pb-5">
+            <p className="font-md-mono text-[11px] uppercase tracking-[0.18em] text-dim">
+              Anexa 1 · Obligațiile MERIDIAN
+            </p>
+            <p className="font-md-mono text-[11px] text-dim">pag. 1 / 1</p>
+          </div>
+
+          <ol className="mt-2 grid gap-x-12 md:grid-cols-2">
+            {GUARANTEES.map((g, i) => (
+              <li
+                key={g.title}
+                className="flex gap-4 border-b border-hair py-5 sm:py-6"
+                style={{ ["--i" as string]: i } as React.CSSProperties}
+              >
+                <svg viewBox="0 0 28 28" className={st.box} aria-hidden>
+                  <rect x="1" y="1" width="26" height="26" rx="6" className={st.boxFrame} />
+                  <path d="M8 14.5l4 4 8-9" className={st.tick} />
+                </svg>
+                <div>
+                  <p className="font-md-mono text-[10.5px] uppercase tracking-[0.16em] text-dim">
+                    Art. {i + 1}
+                  </p>
+                  <h3 className="display mt-1 text-[clamp(1.25rem,2.2vw,1.6rem)]">
+                    {g.title}
+                  </h3>
+                  {g.line && (
+                    <p className="mt-1.5 text-[14.5px] leading-relaxed text-dim">
+                      {g.line}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-8 grid items-end gap-8 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
+            <div>
+              <svg viewBox="0 0 250 60" className="h-12 w-auto" aria-hidden>
+                <path
+                  d="M8 42 C 24 6, 42 4, 36 34 S 58 58, 72 26 S 92 10, 98 34 S 124 50, 142 22 C 150 8, 166 30, 182 28 S 214 20, 242 32"
+                  className={st.signature}
+                />
+              </svg>
+              <div className="border-t border-hair pt-2 font-md-mono text-[11px] uppercase tracking-[0.16em] text-dim">
+                Pentru MERIDIAN
+              </div>
+            </div>
+            <div>
+              <div className="flex h-12 items-end pb-2">
+                <span className={st.caret} aria-hidden />
+              </div>
+              <div className="border-t border-hair pt-2 font-md-mono text-[11px] uppercase tracking-[0.16em] text-dim">
+                Pentru firma ta
+              </div>
+            </div>
+            <a
+              href="#configurator"
+              className="btn btn-primary !rounded-panel-sm !px-6 sm:col-span-2 lg:col-span-1"
+            >
+              <Icon name="calendar" size={17} />
+              Le vreau în contract
+            </a>
+          </div>
+        </div>
+      </R>
     </section>
   );
 }
@@ -800,11 +685,7 @@ function Stats() {
 function Voices() {
   return (
     <section className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <Head
-        eyebrow="Clienți"
-        title="Locul rezervat pentru primele recenzii"
-        lead="Nu punem citate scrise de noi. Pe măsură ce primele proiecte se predau, aici apar cuvintele oamenilor cu care am lucrat — cu acordul lor scris."
-      />
+      <Head eyebrow="Clienți" title="Locul rezervat pentru primele recenzii" />
       <ul className="mx-auto mt-14 grid max-w-6xl gap-3 md:grid-cols-3">
         {STESTIMONIALS.map((t, i) => (
           <R as="li" key={i} delay={i * 70}>
@@ -838,15 +719,10 @@ function Voices() {
 /* ---------------- Întrebări ---------------- */
 function Questions() {
   return (
-    <section id="intrebari" className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-20">
+    <section id="intrebari" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-28">
+      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-20">
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <Head
-            align="left"
-            eyebrow="Întrebări"
-            title="Răspunsuri directe"
-            lead="Inclusiv la cele la care furnizorii răspund de obicei evaziv."
-          />
+          <Head align="left" eyebrow="Întrebări" title="Răspunsuri directe" />
         </div>
         <R delay={70}>
           <Faq items={SFAQ} />
@@ -856,56 +732,57 @@ function Questions() {
   );
 }
 
-/* ---------------- CTA final ---------------- */
-function FinalCta() {
+/* ---------------- Configurator ----------------
+   Ultima secțiune a paginii: cine a ajuns aici a văzut ce facem, cum și
+   ce garantăm — acum e momentul formularului, nu la mijloc. */
+function LeadMagnet() {
   return (
-    <section className="relative px-5 pb-24 pt-8 sm:px-6">
-      <R variant="scale" className="mx-auto max-w-6xl">
-        <div className="glass-2 edge-light relative overflow-hidden px-6 py-16 text-center sm:px-12 sm:py-20">
-          <div
-            aria-hidden
-            className="aurora aurora-drift"
-            style={{
-              width: "min(85vw, 720px)",
-              height: "min(60vw, 460px)",
-              left: "50%",
-              bottom: "-56%",
-              translate: "-50% 0",
-              background:
-                "radial-gradient(circle, color-mix(in oklab, var(--md-a1) 75%, transparent), transparent 62%)",
-              opacity: "var(--md-glow-o, 0.4)",
-            }}
-          />
-          <div className="blueprint absolute inset-0 opacity-70" aria-hidden />
+    <section id="configurator" className="relative px-5 pb-24 pt-16 sm:px-6 sm:pt-24 lg:pb-32 lg:pt-28">
+      <div
+        aria-hidden
+        className="aurora aurora-drift"
+        style={{
+          width: "min(80vw, 760px)",
+          height: "min(60vw, 520px)",
+          left: "50%",
+          top: "8%",
+          translate: "-50% 0",
+          background:
+            "radial-gradient(ellipse, color-mix(in oklab, var(--md-a1) 45%, transparent), transparent 64%)",
+          opacity: "var(--md-glow-o, 0.4)",
+        }}
+      />
 
-          <div className="relative z-10">
-            <h2 className="display mx-auto max-w-3xl text-[clamp(1.9rem,5vw,3.2rem)]">
-              Treizeci de minute, și pleci cu proiectul scris.
-            </h2>
-            <p className="mx-auto mt-5 max-w-xl text-[16.5px] leading-relaxed text-dim">
-              Fără prezentare de agenție. Ne uităm la procesul care te doare, îl
-              desenăm împreună și îți trimitem fișa de proiect — a ta, chiar dacă
-              alegi alt furnizor.
-            </p>
-            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <a
-                href="#configurator"
-                className="btn btn-primary !rounded-panel-sm !px-7"
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <Head
+          eyebrow="Configurator de proiect"
+          title={
+            <>
+              Două minute acum,
+              <br />
+              <span className="text-a2">o fișă de proiect după.</span>
+            </>
+          }
+        />
+
+        <R delay={90} className="mt-12">
+          <Configurator />
+        </R>
+
+        <R delay={140}>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {CONSULT_OUTPUT.map((c) => (
+              <li
+                key={c.title}
+                className="glass flex items-center gap-3 p-4 text-[14.5px] font-medium text-bone"
               >
-                <Icon name="calendar" size={17} />
-                Programează consultanța gratuită
-              </a>
-              <a
-                href={SCONTACT.phoneHref}
-                className="btn btn-ghost !rounded-panel-sm"
-              >
-                <Icon name="phone" size={16} />
-                {SCONTACT.phone}
-              </a>
-            </div>
-          </div>
-        </div>
-      </R>
+                <Icon name="check" size={16} className="shrink-0 text-a1" />
+                {c.title}
+              </li>
+            ))}
+          </ul>
+        </R>
+      </div>
     </section>
   );
 }
