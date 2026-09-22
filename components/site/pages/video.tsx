@@ -3,6 +3,7 @@
 import { Link } from "@/i18n/navigation";
 import { useId, useState, type ReactNode } from "react";
 import { Mark } from "@/components/site/mark";
+import { ClientMark } from "@/components/site/client-marks";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
 import { VideoLeadForm } from "@/components/site/video-form";
 import {
@@ -14,6 +15,7 @@ import {
   PointerGlow,
   Reveal,
   RotatingWord,
+  useReducedMotion,
   useScrolled,
 } from "@/components/site/motion";
 import {
@@ -21,9 +23,8 @@ import {
   Faq,
   Icon,
   SectionHead,
-  TestimonialWall,
 } from "@/components/site/ui";
-import { VideoCard } from "@/components/site/video-player";
+import { VideoCard, type PortfolioVideo } from "@/components/site/video-player";
 import { GlyphFrame, PROBLEM_GLYPHS } from "@/components/site/problem-glyphs";
 import { FEATURED } from "@/components/site/portfolio-content";
 import {
@@ -38,6 +39,7 @@ import {
   SERVICES,
   STEPS,
   SYSTEM,
+  TESTIMONIALS,
   VERTICALS,
 } from "@/components/site/video-content";
 
@@ -359,7 +361,7 @@ function Hero() {
                   ȘEDINȚA 01 / FILMARE
                 </span>
               </div>
-              <p className="mt-2 text-[13px] leading-snug text-dim">
+              <p className="mt-2 text-[14.5px] leading-snug text-dim">
                 Din fiecare ședință ies{" "}
                 <span className="text-bone">mai multe unghiuri</span>, tăiate
                 pentru trei platforme.
@@ -438,10 +440,10 @@ function Work() {
               <span className="grid size-14 place-items-center rounded-full border border-hair text-a1 transition-transform duration-300 group-hover:scale-110">
                 <Icon name="arrowRight" size={20} />
               </span>
-              <span className="text-[15px] font-medium text-bone">
+              <span className="text-[16.5px] font-medium text-bone">
                 Vezi tot portofoliul
               </span>
-              <span className="text-[13px] leading-relaxed text-dim">
+              <span className="text-[14.5px] leading-relaxed text-dim">
                 Toate filmările și fotografiile, pe client.
               </span>
             </Link>
@@ -496,14 +498,8 @@ function Problems() {
     >
       <SectionHead
         eyebrow="Ce te costă acum"
-        title={
-          <>
-            Problema nu e că nu ai conținut.
-            <br />
-            <span className="text-dim">E că nu ajunge la cine cumpără.</span>
-          </>
-        }
-        lead="Șase tipare pe care le vedem cel mai des. Dacă unul e al tău, îl recunoști din desen."
+        title="Ce probleme auzim cel mai des"
+        lead="Și pe care le și rezolvăm."
       />
 
       <ul className="mx-auto mt-10 grid max-w-6xl gap-3 sm:mt-16 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -542,8 +538,14 @@ function ProblemCard({ pain }: { pain: (typeof PAINS)[number] }) {
         open ? "acc-open" : ""
       }`}
     >
+      {/* Nișa e primul lucru care se citește: omul se caută pe el în
+          grilă, nu citește șase simptome ca să vadă care e al lui. De
+          aceea e mai mare decât un eyebrow obișnuit și poartă culoarea
+          caldă a diviziei, nu griul. */}
       <div className="flex items-baseline justify-between gap-3">
-        <span className="eyebrow">{pain.tag}</span>
+        <span className="font-md-mono text-[14px] uppercase tracking-[0.16em] text-a1 sm:text-[15px]">
+          {pain.tag}
+        </span>
         {/* ce arată desenul, în aceeași voce mono ca eyebrow-ul */}
         <span className="whitespace-nowrap font-md-mono text-[10px] uppercase tracking-[0.14em] text-dim/75">
           {caption}
@@ -554,29 +556,25 @@ function ProblemCard({ pain }: { pain: (typeof PAINS)[number] }) {
         <Draw />
       </GlyphFrame>
 
-      <h3 className="mt-4 text-[17px] font-medium leading-snug text-bone sm:text-[19px]">
+      <h3 className="mt-4 text-[19px] font-medium leading-snug text-bone sm:text-[21px]">
         „{pain.symptom}”
       </h3>
-      <p className="mt-3 flex gap-2.5 text-[14px] leading-relaxed text-a3">
-        <Icon name="check" size={16} className="mt-0.5 shrink-0" />
-        {pain.fix}
-      </p>
 
       <button
         type="button"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
-        className="mt-auto inline-flex items-center gap-2 self-start pt-4 text-[13px] text-dim transition-colors hover:text-bone"
+        className="mt-auto inline-flex items-center gap-2 self-start pt-4 text-[15px] text-dim transition-colors hover:text-bone"
       >
         <span className="acc-sign inline-flex">
-          <Icon name="plus" size={14} />
+          <Icon name="plus" size={15} />
         </span>
         De ce se întâmplă
       </button>
       <div id={id} className="acc-body" role="region">
         <div>
-          <p className="pt-2.5 text-[14px] leading-relaxed text-dim">
+          <p className="pt-2.5 text-[15.5px] leading-relaxed text-dim sm:text-[16px]">
             {pain.cause}
           </p>
         </div>
@@ -598,19 +596,7 @@ function Process() {
       <SectionHead
         eyebrow="Alături de tine"
         title="Nu livrăm și plecăm"
-        lead={
-          <>
-            <span className="sm:hidden">
-              Aceeași echipă, de la prima cafea la raportul lunar.
-            </span>
-            <span className="hidden sm:inline">
-              Aceeași echipă rămâne lângă tine după filmare: urmărim
-              campaniile, schimbăm ce obosește și îți spunem lunar ce a adus
-              cereri. Ai o întrebare seara? Răspunde omul care a lucrat la
-              proiect, nu un tichet.
-            </span>
-          </>
-        }
+        lead="Aceeași echipă, de la prima cafea la raportul lunar."
       />
 
       <ol className="relative mx-auto mt-10 grid max-w-6xl gap-3 sm:mt-16 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -624,15 +610,16 @@ function Process() {
               <span className="relative z-10 mb-4 flex size-10 items-center justify-center rounded-full border border-hair bg-ink font-md-mono text-[13px] text-a2 sm:mb-6 sm:size-11">
                 {s.n}
               </span>
-              <h3 className="text-[18px] font-medium text-bone">{s.title}</h3>
-              <p className="mt-1.5 text-[14px] text-a2">{s.lead}</p>
-              {/* proza explicativă rămâne pe desktop; pe telefon contează livrabilele */}
-              <p className="mt-3.5 hidden text-[14.5px] leading-relaxed text-dim sm:block">
-                {s.body}
+              {/* Titlu, un rând de explicație, livrabilele. Proza de sub
+                  ele a plecat: pasul se înțelege din ce rămâne la tine
+                  după el, nu din încă un paragraf care îl repovestește. */}
+              <h3 className="text-[20px] font-medium text-bone">{s.title}</h3>
+              <p className="mt-2 text-[15.5px] leading-snug text-a2">
+                {s.lead}
               </p>
               <ul className="mt-4 space-y-2 border-t border-hair pt-3.5 sm:mt-5 sm:pt-4">
                 {s.outputs.map((o) => (
-                  <li key={o} className="flex gap-2.5 text-[13.5px] text-dim">
+                  <li key={o} className="flex gap-2.5 text-[14.5px] text-dim">
                     <Icon
                       name="check"
                       size={15}
@@ -665,16 +652,15 @@ function Services() {
             align="left"
             eyebrow="Servicii"
             title="Ce putem lua pe umerii noștri"
-            lead="Imagine, campanii, panouri, filmări. Poți începe cu una singură — dar cel mai bine merg împreună, din aceleași mâini."
+            lead="Poți începe cu una singură. Merg cel mai bine împreună."
             className="!max-w-none"
           />
           <Reveal delay={120}>
             <div className="glass mt-8 p-5">
-              <p className="text-[15.5px] leading-relaxed text-dim">
-                Prețurile se stabilesc pe proiect, în funcție de ședințele de
-                filmare, locații, actori și bugetul media administrat.
-                <span className="mt-2 block text-bone">
-                  Primești ofertă fermă după prima discuție.
+              <p className="text-[16px] leading-relaxed text-dim">
+                Prețul se face pe proiect.
+                <span className="mt-1.5 block text-bone">
+                  Ofertă fermă după prima discuție.
                 </span>
               </p>
               <a href="#contact" className="btn btn-primary mt-5 !w-full">
@@ -702,7 +688,7 @@ function Services() {
                   {s.bullets.map((b) => (
                     <li
                       key={b}
-                      className="rounded-full border border-hair px-3 py-1.5 text-[13.5px] text-dim"
+                      className="rounded-full border border-hair px-3 py-1.5 text-[14.5px] text-dim"
                     >
                       {b}
                     </li>
@@ -740,7 +726,7 @@ function Numbers() {
             <span className="grad-text-soft">de la scenariu la raport</span>
           </>
         }
-        lead="Nu subcontractăm. Cine scrie scenariul stă lângă cine se uită peste campanii o lună mai târziu — așa nu are cine să dea vina pe celălalt."
+        lead="Nu subcontractăm. Cine scrie scenariul stă lângă cine citește campania o lună mai târziu."
       />
 
       <div className="mx-auto mt-16 max-w-6xl">
@@ -749,10 +735,10 @@ function Numbers() {
             {EDGES.map((e, i) => (
               <Reveal key={e.title} delay={i * 60}>
                 <article className="glass lift h-full p-6">
-                  <h3 className="text-[17px] font-medium text-bone">
+                  <h3 className="text-[18.5px] font-medium leading-snug text-bone">
                     {e.title}
                   </h3>
-                  <p className="mt-2.5 text-[14.5px] leading-relaxed text-dim">
+                  <p className="mt-2.5 text-[15.5px] leading-relaxed text-dim">
                     {e.body}
                   </p>
                 </article>
@@ -765,7 +751,7 @@ function Numbers() {
               <p className="eyebrow mb-5">Ce rămâne la tine</p>
               <ul className="space-y-3.5">
                 {DELIVERABLES.map((d) => (
-                  <li key={d} className="flex gap-3 text-[14.5px] text-dim">
+                  <li key={d} className="flex gap-3 text-[15.5px] text-dim">
                     <Icon
                       name="check"
                       size={16}
@@ -781,7 +767,7 @@ function Numbers() {
                 {CREW.map((c) => (
                   <li
                     key={c.role}
-                    className="rounded-full border border-hair px-3 py-1.5 text-[13px] text-dim"
+                    className="rounded-full border border-hair px-3 py-1.5 text-[14px] text-dim"
                   >
                     {c.role}
                   </li>
@@ -795,12 +781,106 @@ function Numbers() {
   );
 }
 
-/* ---------------- Testimoniale ---------------- */
+/* ---------------- Recenzii ----------------
+
+   Un client filmat, lângă restul recenziilor în scris. Ordinea nu e
+   întâmplătoare: pe o pagină de agenție video, dovada trebuie să fie
+   ea însăși video — altfel vindem filmare cu text. Omul din stânga
+   vorbește, coloana din dreapta curge încet pe lângă el.
+
+   Videoul nu pornește singur și n-are sunet până nu-l ceri: VideoCard
+   montează elementul abia la apăsare (CLAUDE.md §7). */
+const REVIEW_VIDEO: PortfolioVideo = {
+  slug: "recenzie-e45",
+  client: "E45 Restobar",
+  title: "Recenzie, filmată la ei în local",
+  kind: "Recenzie",
+  src: "/video/recenzii/e45.mp4",
+  poster: "/video/recenzii/e45.webp",
+  w: 720,
+  h: 1280,
+  seconds: 97,
+  audio: true,
+};
+
+function ReviewCard({ t }: { t: (typeof TESTIMONIALS)[number] }) {
+  return (
+    <article className="glass p-6">
+      <p className="text-[16px] leading-relaxed text-bone sm:text-[16.5px]">
+        „{t.quote}”
+      </p>
+      <div className="mt-5 flex items-center gap-3">
+        <ClientMark name={t.who} size={34} />
+        <span className="min-w-0">
+          <span className="block truncate text-[14.5px] font-medium text-bone">
+            {t.who}
+          </span>
+          <span className="block truncate text-[13px] text-dim">{t.where}</span>
+        </span>
+        {t.isPlaceholder && (
+          <span className="ml-auto shrink-0 rounded-full border border-hair px-2 py-0.5 font-md-mono text-[10px] uppercase tracking-widest text-dim">
+            exemplu
+          </span>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/**
+ * Coloana care curge. Marquee vertical din globals.css: lista e scrisă
+ * de două ori, iar animația urcă exact cu o copie, deci bucla nu se
+ * vede. Se oprește la hover, ca să poți citi ce ți-a sărit în ochi.
+ *
+ * Sub prefers-reduced-motion nu curge nimic și nici nu se taie nimic:
+ * recenziile se așază una sub alta, întregi. O coloană cu înălțime fixă
+ * și animația oprită ar ascunde jumătate din ele fără nicio cale de a
+ * ajunge la restul.
+ */
+function ReviewStream() {
+  const reduced = useReducedMotion();
+
+  if (reduced) {
+    return (
+      <Reveal delay={90}>
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          {TESTIMONIALS.map((t) => (
+            <li key={t.who}>
+              <ReviewCard t={t} />
+            </li>
+          ))}
+        </ul>
+      </Reveal>
+    );
+  }
+
+  return (
+    <Reveal delay={90} className="min-w-0 lg:h-full">
+      {/* `h-full` pe desktop: coloana se întinde exact cât placa video de
+          lângă ea, oricât ar fi aceea. Înălțimea rândului o dă videoul,
+          care are raport fix — deci nu se învârt una după alta. */}
+      <div className="marquee-col fade-y h-[420px] overflow-hidden lg:h-full">
+        <div className="marquee-v" style={{ ["--dur" as string]: "52s" }}>
+          {[0, 1].map((copy) => (
+            <ul key={copy} className="grid shrink-0 gap-4 pb-4" aria-hidden={copy === 1}>
+              {TESTIMONIALS.map((t) => (
+                <li key={t.who}>
+                  <ReviewCard t={t} />
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </div>
+    </Reveal>
+  );
+}
+
 function Social() {
   return (
     <section className="relative px-5 py-24 sm:px-6 lg:py-32">
       <SectionHead
-        eyebrow="Testimoniale"
+        eyebrow="Recenzii"
         title={
           <>
             Nu ne credeți pe noi.
@@ -808,11 +888,16 @@ function Social() {
             <span className="grad-text-soft">Credeți-i pe ei.</span>
           </>
         }
-        lead="Trei clienți, trei domenii diferite, același mod de lucru."
+        lead="Unul a zis-o în fața camerei. Restul, în scris."
       />
-      <div className="mx-auto mt-14 max-w-6xl">
-        <TestimonialWall />
+
+      <div className="mx-auto mt-14 grid max-w-6xl gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:gap-6">
+        <Reveal variant="scale">
+          <VideoCard item={REVIEW_VIDEO} className="w-full" />
+        </Reveal>
+        <ReviewStream />
       </div>
+
       <OfferRow
         className="mt-10 sm:mt-14"
         text="Următorul citat poate fi al tău."
@@ -845,7 +930,7 @@ function Questions() {
  */
 function ChatPreview() {
   const bubble =
-    "max-w-[85%] rounded-panel px-3.5 py-2.5 text-[13.5px] leading-snug";
+    "max-w-[85%] rounded-panel px-3.5 py-2.5 text-[14.5px] leading-snug";
   const stamp = "mt-1 font-md-mono text-[10.5px] tracking-wider text-dim/75";
   return (
     <div aria-hidden className="relative my-auto hidden py-8 md:block">
@@ -904,10 +989,6 @@ function FinalCta() {
             <h2 className="display mx-auto max-w-2xl text-[clamp(2rem,5.4vw,3.3rem)]">
               Gata să vezi unde se pierd clienții?
             </h2>
-            <p className="mx-auto mt-5 max-w-lg text-[16.5px] leading-relaxed text-dim">
-              Douăzeci de minute, fără prezentare de agenție. Ne uităm la ce
-              faci acum și îți spunem ce am schimba primul.
-            </p>
             {/* Două căi, aceeași greutate (CLAUDE.md §8): vocea pentru
                 cine decide acum, formularul pentru cine citește la 23:40.
                 Nu ascundem a doua sub „alte metode de contact". */}
@@ -917,7 +998,7 @@ function FinalCta() {
                 <h3 className="display mt-3 text-[clamp(1.2rem,2.6vw,1.5rem)]">
                   Contactează-ne
                 </h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-dim">
+                <p className="mt-2 text-[15.5px] leading-relaxed text-dim">
                   Pe WhatsApp răspundem în minute, în program.
                 </p>
 
@@ -947,11 +1028,8 @@ function FinalCta() {
                   <span className="font-md-mono text-[12px] text-a2">
                     PASUL {s.n}
                   </span>
-                  <p className="mt-2 text-[15px] font-medium text-bone">
+                  <p className="mt-2 text-[16.5px] font-medium leading-snug text-bone">
                     {s.title}
-                  </p>
-                  <p className="mt-1 text-[13.5px] leading-relaxed text-dim">
-                    {s.body}
                   </p>
                 </li>
               ))}
@@ -975,7 +1053,7 @@ function Foot() {
               MERIDIAN
             </span>
           </span>
-          <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-dim">
+          <p className="mt-4 max-w-xs text-[15px] leading-relaxed text-dim">
             Producție video și campanii plătite, sub același acoperiș. Partener
             pe termen lung, nu furnizor de proiect.
           </p>
@@ -1004,7 +1082,7 @@ function Foot() {
               <li key={n.href}>
                 <NavLink
                   href={n.href}
-                  className="text-[14px] text-dim transition-colors hover:text-bone"
+                  className="text-[15px] text-dim transition-colors hover:text-bone"
                 >
                   {n.label}
                 </NavLink>
@@ -1017,7 +1095,7 @@ function Foot() {
           <p className="eyebrow mb-4">Industrii</p>
           <ul className="space-y-2.5">
             {VERTICALS.map((v) => (
-              <li key={v.key} className="text-[14px] text-dim">
+              <li key={v.key} className="text-[15px] text-dim">
                 {v.label}
               </li>
             ))}

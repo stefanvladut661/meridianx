@@ -149,7 +149,7 @@ export const SERVICES = [
     key: "brand",
     title: "Imaginea brandului",
     blurb:
-      "Cum arăți și cum suni, peste tot la fel. Film de prezentare, fotografie comercială, conținut pentru social și identitatea vizuală care le leagă — ca omul să te recunoască înainte să-ți citească numele.",
+      "Cum arăți și cum suni, la fel peste tot: film, fotografie, conținut lunar.",
     bullets: [
       "Film de brand",
       "Fotografie de produs și spațiu",
@@ -160,7 +160,7 @@ export const SERVICES = [
     key: "ugc",
     title: "Filmări UGC și cu actori",
     blurb:
-      "Nu trebuie să apari tu în cadru. Lucrăm cu creatori și actori care sună a om real, nu a reclamă, potriviți cu publicul tău. Ședințe de filmare bine organizate, cu scenarii gata scrise.",
+      "Nu trebuie să apari tu. Creatori și actori care sună a om, nu a reclamă.",
     bullets: [
       "Casting pe profilul publicului",
       "Scenarii conversaționale",
@@ -171,14 +171,14 @@ export const SERVICES = [
     key: "performance",
     title: "Performance marketing",
     blurb:
-      "Meta, TikTok și Google, lucrate ca un singur plan. Structură de cont, targetare, bugete, testare de hook-uri și raport lunar pe înțeles. Contul rămâne pe numele tău.",
+      "Meta, TikTok și Google ca un singur plan. Contul rămâne pe numele tău.",
     bullets: ["Meta & TikTok Ads", "Google & YouTube", "Raport lunar clar"],
   },
   {
     key: "outdoor",
     title: "Reclamă outdoor",
     blurb:
-      "Panouri în oraș, pe autostradă, la intrarea în cartier sau în magazin. Ne ocupăm de tot lanțul: alegem locațiile, facem designul, tipărim, montăm și legăm panoul de o ofertă online, ca să știi cine a venit de la el.",
+      "Panoul, de la locație la montaj — legat de o ofertă online, ca să știi ce aduce.",
     bullets: [
       "Alegere locații și plasare",
       "Design și producție",
@@ -191,19 +191,19 @@ export const SERVICES = [
 export const EDGES = [
   {
     title: "Un singur partener",
-    body: "Producție și campanii sub același acoperiș. Nu mai există „agenția zice că materialul e slab, studioul zice că targetarea e slabă”.",
+    body: "Producție și campanii sub același acoperiș. N-are cine să dea vina pe celălalt.",
   },
   {
     title: "Echipă in-house",
-    body: "Operatori, editori, scenariști, actori, media buyeri. Nu subcontractăm oameni pe care nu i-am văzut lucrând.",
+    body: "Operatori, editori, scenariști, actori, media buyeri — toți ai noștri.",
   },
   {
     title: "Măsurăm în cereri, nu în vizualizări",
-    body: "Raportul lunar începe cu numărul de solicitări și comenzi. Reach-ul e a treia coloană, nu prima.",
+    body: "Raportul începe cu solicitările și comenzile. Reach-ul e a treia coloană.",
   },
   {
     title: "Ritm lunar, nu proiect izolat",
-    body: "Un shoot pe trimestru alimentează campaniile luni întregi. Așa scade costul pe material și crește predictibilitatea.",
+    body: "Un shoot pe trimestru alimentează campaniile luni întregi.",
   },
 ] as const;
 
@@ -219,12 +219,12 @@ export const CREW = [
 
 /* ---------- Ce primești ---------- */
 export const DELIVERABLES = [
-  "Materialele master, în rezoluție completă",
-  "Variantele verticale pentru Reels, TikTok și Shorts",
-  "Fotografiile din ședințele de filmare",
-  "Drept de utilizare nelimitat pe canalele tale",
-  "Conturile de publicitate pe numele firmei tale",
-  "Raport lunar de campanie, în limbaj de om",
+  "Materialele master, la rezoluție completă",
+  "Variante verticale pentru Reels, TikTok, Shorts",
+  "Fotografiile din filmare",
+  "Drept de utilizare nelimitat",
+  "Conturile de publicitate, pe firma ta",
+  "Raport lunar, în limbaj de om",
 ] as const;
 
 /* ---------- Proces de colaborare (pași scurți pentru CTA) ---------- */

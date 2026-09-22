@@ -411,8 +411,13 @@ export function SectionHead({
         </p>
       )}
       <h2 className="display text-[clamp(2rem,5.2vw,3.4rem)]">{title}</h2>
+      {/* Pe telefon subtitlul e singurul text de dimensiune normală dintre
+          un titlu mare și un rând de carduri; pornește de la 18.5px și se
+          așază la 17.5 pe ecranele mari, unde rândul e oricum mai lung. */}
       {lead && (
-        <p className="mt-5 text-[17px] leading-relaxed text-dim">{lead}</p>
+        <p className="mt-5 text-[18.5px] leading-relaxed text-dim sm:text-[17.5px]">
+          {lead}
+        </p>
       )}
     </Reveal>
   );

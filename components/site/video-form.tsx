@@ -20,11 +20,18 @@ import { CONTACT } from "./video-content";
    apelul de douăzeci de minute pe care oricum îl facem.
    ============================================================ */
 
+/* Opțiunile sunt serviciile de pe pagină, spuse cum le cere omul — nu
+   categorii de agenție. Cine a derulat până aici a citit exact aceste
+   patru servicii; dacă în formular ar găsi alte cuvinte, ar trebui să
+   traducă singur. „Conținut lunar” e al cincilea pentru că e cea mai
+   cerută formă a primului serviciu, iar omul o caută după nume. */
 const NEEDS = [
-  { id: "film", label: "Film de brand" },
-  { id: "ads", label: "Reclame care vând" },
+  { id: "film", label: "Film de prezentare" },
+  { id: "continut", label: "Conținut lunar (Reels, TikTok)" },
+  { id: "ugc", label: "Filmări UGC / cu actori" },
   { id: "campanii", label: "Campanii plătite" },
-  { id: "foto", label: "Fotografie" },
+  { id: "foto", label: "Fotografie de produs sau spațiu" },
+  { id: "outdoor", label: "Panouri și outdoor" },
   { id: "altceva", label: "Vreau altceva" },
 ] as const;
 
