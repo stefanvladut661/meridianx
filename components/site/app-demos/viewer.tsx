@@ -323,14 +323,14 @@ export function DemoViewer({ meta }: { meta: AppDemoMeta }) {
             <nav aria-label="Alte proiecte" className="mt-4 flex gap-2 lg:hidden">
               <Link
                 href={`/software/proiecte/${prev.slug}`}
-                className="btn btn-ghost flex-1 !rounded-panel-sm !text-[13px]"
+                className="btn btn-ghost min-w-0 flex-1 !rounded-panel-sm !px-3 !text-[13px]"
               >
                 <Icon name="arrowRight" size={14} className="rotate-180" />
                 <span className="truncate">{prev.name}</span>
               </Link>
               <Link
                 href={`/software/proiecte/${next.slug}`}
-                className="btn btn-ghost flex-1 !rounded-panel-sm !text-[13px]"
+                className="btn btn-ghost min-w-0 flex-1 !rounded-panel-sm !px-3 !text-[13px]"
               >
                 <span className="truncate">{next.name}</span>
                 <Icon name="arrowRight" size={14} />
