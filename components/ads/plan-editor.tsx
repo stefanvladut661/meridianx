@@ -114,9 +114,18 @@ function PlanSentence({
   return (
     <div>
       <p className="font-md-display text-[1.375rem] font-semibold leading-snug tracking-tight text-bone sm:text-[1.625rem]">
-        {summary.objective ? `O campanie de ${summary.objective.toLowerCase()}` : "O campanie fără obiectiv"}
-        {workspaceName ? ` în ${workspaceName}` : ` pe ${PLATFORM_LABEL[platform]}`}, cu{" "}
-        {summary.budget ?? "bugetul necompletat"}.
+        {summary.objective
+          ? `O campanie de ${summary.objective.toLowerCase()}`
+          : summary.objectiveInvalid
+            ? "O campanie cu obiectivul de corectat"
+            : "O campanie fără obiectiv"}
+        {workspaceName ? ` în ${workspaceName}` : ` pe ${PLATFORM_LABEL[platform]}`},{" "}
+        {summary.budget
+          ? `cu ${summary.budget}`
+          : summary.budgetInvalid
+            ? "cu bugetul de corectat"
+            : "fără buget"}
+        .
       </p>
       <p className="mt-3 text-[15.5px] leading-relaxed text-bone/80">
         Pentru oameni de {summary.age}
@@ -125,7 +134,7 @@ function PlanSentence({
         {summary.languages ? `, care folosesc aplicația în ${summary.languages}` : ""}.{" "}
         {adCount === 0
           ? "Nicio reclamă încă."
-          : `${adCount === 1 ? "O reclamă" : `${countOf(adCount, "reclame")}`} cu butonul „${summary.cta ?? "—"}”.`}
+          : `${adCount === 1 ? "O reclamă" : countOf(adCount, "reclame")} ${summary.cta ? `cu butonul „${summary.cta}”` : summary.ctaInvalid ? "cu butonul de corectat" : "fără buton ales"}.`}
       </p>
       <p className="mt-4 font-md-mono text-[12px] tracking-wide text-dim">
         1 campanie → 1 set de reclame → {adCount === 1 ? "1 reclamă" : countOf(adCount, "reclame")}
@@ -470,7 +479,9 @@ export function PlanEditor({
           </div>
         )}
 
-        <div className="sticky bottom-0 z-10 -mx-4 mt-2 border-t border-hair bg-ink/92 px-4 py-4 backdrop-blur-md sm:mx-0 sm:rounded-t-panel-lg sm:border-x sm:px-6">
+        {/* Lipită jos doar pe ecrane mari: pe telefon ar mânca un sfert din
+            ecran la fiecare derulare, iar planul se citește oricum până la capăt. */}
+        <div className="mt-2 rounded-panel-lg border border-hair bg-ink/92 px-4 py-4 lg:sticky lg:bottom-0 lg:z-10 lg:rounded-b-none lg:backdrop-blur-md sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <button
               type="button"

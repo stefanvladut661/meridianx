@@ -27,4 +27,4 @@ export const WARNING_DOT = "bg-[#f0b429]";
 export const OK_DOT = "bg-[#1fb583]";
 
 /** Eticheta mono mică de deasupra unui câmp. */
-export const LABEL = "eyebrow !text-[11.5px] !tracking-[0.18em]";
+export const LABEL = "eyebrow block !text-[11.5px] !leading-4 !tracking-[0.18em]";

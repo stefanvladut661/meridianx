@@ -58,7 +58,10 @@ export function joinRo(items: string[]): string {
 
 export interface PlanSummary {
   objective: string | null;
+  /** Există în plan, dar nu e o valoare acceptată — alt mesaj decât „lipsește". */
+  objectiveInvalid: boolean;
   budget: string | null;
+  budgetInvalid: boolean;
   monthly: string | null;
   places: string[];
   age: string;
@@ -71,6 +74,7 @@ export interface PlanSummary {
   finalUrl: string | null;
   ads: DerivedAd[];
   cta: string | null;
+  ctaInvalid: boolean;
 }
 
 export function summarizePlan(raw: Record<string, unknown>, platform: Platform): PlanSummary {
@@ -102,7 +106,9 @@ export function summarizePlan(raw: Record<string, unknown>, platform: Platform):
       typeof objective === "string" && objective in OBJECTIVE_LABEL
         ? OBJECTIVE_LABEL[objective as Objective]
         : null,
+    objectiveInvalid: objective !== undefined && !(typeof objective === "string" && objective in OBJECTIVE_LABEL),
     budget: daily !== null ? `${formatMoney(daily, currency)} pe zi` : null,
+    budgetInvalid: daily === null && getIn(raw, "campaign.daily_budget") !== undefined,
     monthly: daily !== null ? `≈ ${formatMoney(monthlyBudget(daily), currency)} pe lună` : null,
     places: asArray(getIn(raw, "audience.locations"))
       .map(locationLabel)
@@ -134,5 +140,6 @@ export function summarizePlan(raw: Record<string, unknown>, platform: Platform):
     }),
     cta:
       typeof ctaRaw === "string" && ctaRaw in CTA_LABEL ? CTA_LABEL[ctaRaw as Cta] : null,
+    ctaInvalid: ctaRaw !== undefined && !(typeof ctaRaw === "string" && ctaRaw in CTA_LABEL),
   };
 }

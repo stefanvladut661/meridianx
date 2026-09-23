@@ -588,7 +588,7 @@ export function PlanForm({
         <PathMessages path="destination" />
         <PathMessages path="destination.type" />
         <TextField path="destination.url" label="Pagina" placeholder="https://www.meridianx.ro/video" mono />
-        <div className="grid gap-x-3 gap-y-4 sm:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-x-3 gap-y-4 sm:grid-cols-3">
           {UTM_KEYS.map((key) => (
             <TextField key={key} path={`destination.utm.${key}`} label={`utm_${key}`} mono />
           ))}
