@@ -1053,6 +1053,60 @@ date inventate „pline de viață". Plus o secțiune de recenzii spre final.
   instasuplier cu tot istoricul, nici în Desktop/Downloads/Documents/OneDrive).
   Când apare: `public/software/recenzii/art-install.mp4` + poster `.webp`,
   apoi completează `SREVIEW_VIDEO` din `components/site/software-content.ts`.
+  → ✅ **Rezolvat în aceeași zi** — omul l-a pus în rădăcina proiectului;
+  vezi secțiunea următoare.
 - Recenzii scrise de la ceilalți clienți software (Prosperanța, Elyssium,
   ZOF) — acum există doar citatul Art Install.
+
+## RECENZIA FILMATĂ ART INSTALL + PIXELII DUPĂ CONSIMȚĂMÂNT (2026-09-23)
+
+Proiectul s-a mutat de pe `C:\Users\PC Lenovo\Desktop\meridianx` pe
+`E:\meridianx` (C: avea ~2 GB liberi). Omul a cerut: întâi recenzia, apoi
+„termină tot" — fără altă comandă după.
+
+- **Recenzia Art Install:** sursa `art install.mp4` (rădăcina, 184 MB,
+  1080×1920) e un interviu orizontal pus de montaj într-un vertical cu blur
+  sus/jos. Pe web: doar banda clară (y 520–1400 → 960×782), H.264 ~1,3 Mbps +
+  AAC 112k, faststart → `public/software/recenzii/art-install.mp4` (17 MB,
+  cerut abia la apăsare) + poster `art-install.webp` (29 KB, cadrul de la
+  0:42). Comprimat cu ffmpeg-ul din CapCut
+  (`%LOCALAPPDATA%\CapCut\Apps\9.4.0.4015\ffmpeg.exe`, fără libx264 —
+  `h264_amf`). Sursa rămâne în rădăcină, ignorată de git (`/*.mp4`).
+- **Pe /software:** clipul pe jumătate de rând, citatul lângă el, aceeași
+  înălțime (1440: 528×430 / 472×430); pe telefon clipul primul. Pe
+  `/software/proiecte`, citatul stă sub Art Instal cu legătură spre recenzie.
+  `Unbroken` (în `software-projects.tsx`) ține „s-a", „într-o" pe un rând.
+- **Pixelii — decizie luată de asistent** (omul n-a mai putut răspunde la
+  întrebare): pornesc DOAR după „marketing: da", cum promite deja politica de
+  cookie-uri („scripturile nu se încarcă deloc până nu accepți") și cum cere
+  legea în UE. Codul rămâne în `<head>` (`public/pixels/*.js`), dar citește
+  întâi cookie-ul `meridian_consent`; fără accept nu pornește nimic. După
+  accept îl pornesc componentele, fără reîncărcare; la retragere, `revoke`
+  către SDK și `fbq`/`ttq` scoși. Scos `<noscript>`-ul Meta (pleca
+  necondiționat). Dispar „fbq is not defined" și evenimentele pierdute.
+  **Dacă omul vrea totuși pixelii pentru toți:** scoate blocul cu
+  `granted` din cele două fișiere din `public/pixels/` — dar atunci politica
+  de cookie-uri (`app/[locale]/(legal)/legal/_content/documents.ts`) trebuie
+  rescrisă, iar decizia e una juridică, nu tehnică. // TODO: verificat juridic
+- **Bara de sus la 1024px:** pe /software legăturile se rupeau pe două rânduri
+  (telefonul cedează acum locul între 1024 și 1280); pe /video „Cere ofertă"
+  intra sub colțul SOFTWARE (spațierile se strâng între 1024 și 1280, „Sună
+  acum" rămâne cu text).
+- **Verificat pe build de producție** (Chrome headless + CDP): 360/768/1024/
+  1440/1920 fără overflow orizontal, redare cu mouse și cu tastatura (Enter),
+  pauză la ieșirea din ecran, reduced-motion, fluxul pixelilor
+  (fără accept → nimic; accept → pornesc; reîncărcare → din `<head>`;
+  retragere → opriți), zero erori în consolă.
+
+### Observații între faze
+- **Eroare de hidratare doar în `next dev`, nu în producție:** pe /video, cam
+  la jumătate din încărcări, toate `useId`-urile din `<main>` diferă între
+  server și client (ProblemCard, FAQ, formularul) — un nivel în plus de arbore,
+  deasupra paginii. Cauza probabilă: `SegmentViewNode`/`SegmentTrieNode`,
+  unealta de dev a Next 15.5 care pune un frate lângă fiecare pagină.
+  În producție am comparat 32 de încărcări (id din HTML vs id din props-urile
+  React): identice. Nu cere reparație. Cauza nu e confirmată în codul Next —
+  doar deduse din forma diff-ului și din faptul că producția e curată.
+- `ffmpeg` tot nu e în PATH; `scripts/portfolio-build.mjs` îl caută la calea
+  winget. Pe mașina asta merge cel din CapCut (vezi mai sus).
 
