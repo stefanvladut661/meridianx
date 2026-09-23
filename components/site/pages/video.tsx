@@ -112,10 +112,15 @@ function Nav() {
   const [open, setOpen] = useState(false);
   const scrolled = useScrolled(20);
 
+  /* Între 1024 și 1280 bara are tot conținutul pe un singur rând, iar
+     colțul „SOFTWARE" din dreapta sus îi ia 130px (ws-inset-right). Cu
+     spațierile de desktop mare, „Cere ofertă" ieșea din padding și intra
+     sub colț; acolo spațierile se strâng, fără să dispară nimic din bară
+     — „Sună acum" rămâne cu text, la fel de vizibil ca formularul. */
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
       <nav
-        className={`ws-inset-right pointer-events-auto mx-auto flex max-w-6xl items-center gap-2 rounded-full border px-2.5 py-2 transition-all duration-500 sm:gap-3 sm:px-4 ${
+        className={`ws-inset-right pointer-events-auto mx-auto flex max-w-6xl items-center gap-2 rounded-full border px-2.5 py-2 transition-all duration-500 sm:gap-3 sm:px-4 lg:gap-2 xl:gap-3 ${
           scrolled
             ? "border-hair bg-black/55 backdrop-blur-xl"
             : "border-transparent bg-transparent"
@@ -134,12 +139,12 @@ function Nav() {
           </span>
         </Link>
 
-        <ul className="mx-auto hidden items-center gap-1 lg:flex">
+        <ul className="mx-auto hidden items-center gap-0 lg:flex xl:gap-1">
           {NAV.map((n) => (
             <li key={n.href}>
               <NavLink
                 href={n.href}
-                className="rounded-full px-3.5 py-2 text-sm text-dim transition-colors hover:bg-white/5 hover:text-bone"
+                className="whitespace-nowrap rounded-full px-2.5 py-2 text-sm text-dim transition-colors hover:bg-white/5 hover:text-bone xl:px-3.5"
               >
                 {n.label}
               </NavLink>
@@ -152,7 +157,7 @@ function Nav() {
           /* `!hidden`: .btn din globals.css setează display:inline-flex și, fiind
              nelayered, bate utilitarul `hidden`. Fără `!`, butonul rămânea
              vizibil pe telefon și scotea bara din ecran. */
-          className="btn btn-ghost ml-auto !hidden shrink-0 whitespace-nowrap !min-h-10 !px-3.5 !py-2 !text-[13px] lg:ml-0 lg:!px-4 md:!inline-flex"
+          className="btn btn-ghost ml-auto !hidden shrink-0 whitespace-nowrap !min-h-10 !px-3.5 !py-2 !text-[13px] lg:ml-0 lg:!px-3 md:!inline-flex xl:!px-4"
         >
           <Icon name="phone" size={15} />
           Sună acum
