@@ -22,7 +22,7 @@ export const SNAV = [
   { href: "#solutii", label: "Ce construim" },
   { href: "#proces", label: "Cum lucrăm" },
   { href: "#garantii", label: "Garanții" },
-  { href: "#intrebari", label: "Întrebări" },
+  { href: "#proiecte", label: "Proiecte" },
   { href: "#configurator", label: "Configurator" },
 ] as const;
 
@@ -85,26 +85,30 @@ export const SPAINS = [
 
 /* ---------- Ce construim ----------
    Titlu de 1–3 cuvinte + un singur rând. Restul îl spune ecranul
-   animat din `software-screens.tsx`, cheiat pe `key`. Când vin
-   demo-urile reale de aplicații, ele intră în același ecran. */
+   animat din `software-screens.tsx`, cheiat pe `key`. `demo` = slug-ul
+   unui proiect livrat de același tip (app-demos/registry.ts): panoul
+   trimite spre demo-ul lui, ca schița să aibă și o dovadă. */
 export const SOLUTIONS = [
   {
     key: "business",
     title: "Aplicații interne",
     line: "Comenzi, producție, stoc și aprobări, exact cum lucrează echipa.",
     path: "comenzi",
+    demo: "zof",
   },
   {
     key: "loyalty",
     title: "Fidelizare",
     line: "Puncte, niveluri și campanii care aduc clientul înapoi.",
     path: "card-client",
+    demo: "prosperanta",
   },
   {
     key: "dash",
     title: "Dashboard-uri",
     line: "Toate cifrele firmei pe un singur ecran, actualizate singure.",
     path: "dashboard",
+    demo: "zof",
   },
   {
     key: "sales",
@@ -117,24 +121,28 @@ export const SOLUTIONS = [
     title: "Produse SaaS",
     line: "Produsul tău, vândut pe abonament către alte firme.",
     path: "abonamente",
+    demo: "tablex",
   },
   {
     key: "mobile",
     title: "Aplicații mobile",
     line: "iOS și Android, merg și fără semnal.",
     path: "mobil",
+    demo: "elyssium",
   },
   {
     key: "web",
     title: "Site-uri care vând",
     line: "Construite să aducă cereri, nu doar vizite.",
     path: "site",
+    demo: "art-install",
   },
   {
     key: "integrari",
     title: "Integrări",
     line: "Facturare, e-Factura, plăți, curieri și ERP, legate între ele.",
     path: "integrari",
+    demo: "prosperanta",
   },
 ] as const;
 
@@ -174,35 +182,44 @@ export const GUARANTEES: { title: string; line?: string }[] = [
   { title: "Ofertă fermă, pe etape" },
 ];
 
-/* ---------- Testimoniale — STRUCTURĂ ILUSTRATIVĂ ----------
-   Nu există încă recenzii reale. NU se publică live. */
-export const STESTIMONIALS: (Placeholderable & {
+/* ---------- Recenzii ----------
+   Doar citate primite în scris, cuvânt cu cuvânt. Fiecare recenzie duce
+   la demo-ul proiectului despre care vorbește (`project` = slug din
+   app-demos/registry.ts), ca dovada să poată fi verificată pe loc. */
+export const SREVIEWS: {
   quote: string;
   who: string;
   where: string;
-})[] = [
+  logo?: string;
+  project?: string;
+}[] = [
   {
-    isPlaceholder: true,
+    // verificat: primit în scris de la client (același citat ca pe /video)
     quote:
-      "Aici va apărea o recenzie reală, după primele proiecte predate. Structura rămâne aceasta: procesul care se bloca, ce am construit, ce s-a schimbat în operațiune.",
-    who: "Rol client",
-    where: "Industrie, oraș",
-  },
-  {
-    isPlaceholder: true,
-    quote:
-      "Spațiu rezervat pentru feedback dintr-un proiect cu finanțare de digitalizare. Se completează cu acordul scris al clientului.",
-    who: "Rol client",
-    where: "Producție",
-  },
-  {
-    isPlaceholder: true,
-    quote:
-      "Spațiu rezervat pentru feedback de la un client de aplicație de fidelizare. Se completează cu acordul scris al clientului.",
-    who: "Rol client",
-    where: "Retail",
+      "Nu am primit doar un produs. Am primit și asistență pe tot parcursul, iar totul s-a întâmplat exact așa cum am discutat de la început.",
+    who: "Art Install Suppliers",
+    where: "Site cu recomandare de pompe de căldură",
+    logo: "/video/recenzii/logo-art-instal.webp",
+    project: "art-install",
   },
 ];
+
+/* Recenzia filmată de la Art Install. Fișierul nu e încă în proiect:
+   când ajunge în public/software/recenzii/ (mp4 + poster webp), se
+   completează aici și apare lângă citat, ca pe /video.
+   TODO: clipul Art Install — cerut omului pe 2026-09-23. */
+export const SREVIEW_VIDEO: {
+  slug: string;
+  client: string;
+  title: string;
+  kind: string;
+  src: string;
+  poster: string;
+  w: number;
+  h: number;
+  seconds: number;
+  audio: boolean;
+} | null = null;
 
 /* ---------- Întrebări ---------- */
 export const SFAQ = [

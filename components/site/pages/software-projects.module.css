@@ -1,0 +1,40 @@
+/* Cardurile de proiect: la hover, fereastra urcă puțin și telefonul
+   iese de dedesubt. Sub 400ms, ca tot ce se mișcă în lumea software. */
+
+.visual {
+  isolation: isolate;
+}
+
+.desk,
+.phone {
+  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card:hover .desk,
+.card:focus-visible .desk {
+  transform: translateY(-6px);
+}
+.card:hover .phone,
+.card:focus-visible .phone {
+  transform: translateY(-10%);
+}
+
+/* punctul verde de „live" */
+.live {
+  animation: livePulse 1.8s ease-in-out infinite;
+}
+@keyframes livePulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk,
+  .phone {
+    transition: none;
+  }
+  .live {
+    animation: none;
+  }
+}

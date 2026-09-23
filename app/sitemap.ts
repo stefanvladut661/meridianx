@@ -4,6 +4,7 @@ import { routing } from "@/i18n/routing";
 import { LEGAL_LINKS } from "@/components/site/legal-links";
 import { PHOTOS, VIDEOS } from "@/components/site/portfolio-content";
 import { SITE_URL } from "@/lib/site-url";
+import { DEMO_SLUGS } from "@/components/site/app-demos/registry";
 
 /**
  * Sitemap.
@@ -28,13 +29,16 @@ const ROUTES = [
   "/video",
   "/software",
   "/video/portofoliu",
+  "/software/proiecte",
+  ...DEMO_SLUGS.map((slug) => `/software/proiecte/${slug}`),
   ...LEGAL_LINKS.map((link) => link.href),
 ];
 
 function priorityFor(route: string): number {
   if (route === "/") return 1;
   if (route === "/video" || route === "/software") return 0.9;
-  if (route === "/video/portofoliu") return 0.8;
+  if (route === "/video/portofoliu" || route === "/software/proiecte") return 0.8;
+  if (route.startsWith("/software/proiecte/")) return 0.6;
   return 0.3;
 }
 

@@ -287,6 +287,7 @@ Build verde: TS + ESLint + toate rutele. Verificat la runtime: honeypot 200 cu i
 | 0 | resend | email transacțional (F6) |
 | 0 | clsx, tailwind-merge | `cn()` din lib/utils.ts |
 | vault | libsodium-wrappers-sumo | singura dependență criptografică a vault-ului (Argon2id, XChaCha20-Poly1305, crypto_box_seal, KDF). Import DOAR din `lib/vault/crypto.ts`. Fără `@types/*` — pachetul își aduce tipurile. |
+| portofoliu software | lucide-react | iconițele din demo-urile de aplicații (`components/site/app-demos/`), ca interfețele să arate ca aplicațiile reale, care îl folosesc. Se încarcă doar în chunk-urile demo-urilor (import leneș din viewer), nu pe landing. |
 
 ---
 
@@ -1022,3 +1023,36 @@ Codul e COMPLET (11 faze). **Vault-ul e verificat pe Supabase-ul real și livrat
 - `NEXT_PUBLIC_SUPABASE_URL` nu e citit la evaluarea `next.config.ts` în dev, deci `connect-src` cade pe `https://*.supabase.co` local. Pe Vercel e prezent la build. Comportament preexistent, valabil și pentru profilul site-ului.
 - ~~Eliminarea unui membru ACTIV nu rotește DEK-ul~~ — **rotația există (faza 10)**, manuală, din „Cheia de date"; după eliminarea unui membru activ, panoul de membri o sugerează. Ce a văzut ex-membrul cât era activ, a văzut — inclusiv istoricul, care rămâne pe cheile vechi (nu se poate rescrie).
 - ~~Nu există export.~~ — **exportul criptat există (faza 9)**, cu parolă de export separată; importul îl citește înapoi (faza 11).
+
+---
+
+## PORTOFOLIU SOFTWARE — demo-uri interactive de aplicații (2026-09-23)
+
+Cerut de om: portofoliu ca la video, dar pentru aplicații, cu demo-uri
+restricționate pe care vizitatorul le poate folosi (desktop + telefon),
+date inventate „pline de viață". Plus o secțiune de recenzii spre final.
+
+- **Contract:** `components/site/app-demos/types.ts` (pânză fixă 1280×800 /
+  390×844, scalată de vizualizator — fără breakpoint-uri în demo-uri),
+  `kit.tsx` (formatare, date vii, grafice SVG), `registry.ts` (ordinea de
+  pe site), `viewer.tsx` (ramă, comutator de dispozitiv, tur ghidat, toast).
+- **Un folder per aplicație:** `prosperanta`, `tablex`, `zof`, `elyssium`,
+  `art-install` — `meta.ts` + `demo.tsx`. Construite după repo-urile reale
+  ale omului (stefanvladut661/*), cu identitatea vizuală a fiecărei aplicații.
+- **Rute:** `/software/proiecte` (index) și `/software/proiecte/[slug]` (demo).
+  Parametri: `?device=`, `?screen=`, `?capture=1` (doar pânza — pentru capturi).
+- **Capturi pentru carduri:** `node scripts/demo-posters.mjs` cu serverul
+  pornit → `public/software/proiecte/<slug>-{desktop,mobile}.webp`. De rulat
+  din nou după orice schimbare vizuală într-un demo.
+- **Pe /software:** secțiunile „Proiecte" și „Recenzii" între Întrebări și
+  configurator; tab-urile din „Ce construim" trimit spre proiectul real de
+  același tip.
+
+### De făcut de către om
+- **Clipul de recenzie Art Install** nu a fost găsit (nici în repo-ul
+  instasuplier cu tot istoricul, nici în Desktop/Downloads/Documents/OneDrive).
+  Când apare: `public/software/recenzii/art-install.mp4` + poster `.webp`,
+  apoi completează `SREVIEW_VIDEO` din `components/site/software-content.ts`.
+- Recenzii scrise de la ceilalți clienți software (Prosperanța, Elyssium,
+  ZOF) — acum există doar citatul Art Install.
+

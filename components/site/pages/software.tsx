@@ -25,8 +25,11 @@ import {
   SNAV,
   SOLUTIONS,
   SPROCESS,
-  STESTIMONIALS,
+  SREVIEWS,
+  SREVIEW_VIDEO,
 } from "@/components/site/software-content";
+import { getDemo } from "@/components/site/app-demos/registry";
+import { ProjectsGrid } from "./software-projects";
 
 /* ============================================================
    MERIDIAN SOFTWARE — landing corporate.
@@ -40,13 +43,6 @@ import {
    Culorile nu sunt scrise nicăieri în componente: vin din
    [data-scope="software"], deci paleta se schimbă dintr-un singur loc.
    ============================================================ */
-
-/**
- * Recenziile sunt ascunse pana cand clientul aduce citatele reale de la
- * oamenii cu care a lucrat. Sectiunea ramane intreaga dedesubt: cand vin
- * textele, se schimba `false` in `true` si se inlocuieste STESTIMONIALS.
- */
-const SHOW_TESTIMONIALS = false;
 
 export function SoftwareScreen() {
 
@@ -62,10 +58,12 @@ export function SoftwareScreen() {
         <Solutions />
         <Process />
         <Guarantees />
-        {SHOW_TESTIMONIALS && <Voices />}
         <Questions />
-        {/* Formularul stă la final, nu la mijloc: cine ajunge aici a
-            văzut deja ce facem, cum lucrăm și ce garantăm. */}
+        {/* Dovezile stau lângă formular: proiectele, care se pot încerca,
+            apoi ce spun clienții. Formularul rămâne ultimul — cine ajunge
+            acolo a văzut deja ce facem, cum lucrăm și ce garantăm. */}
+        <Projects />
+        <Reviews />
         <LeadMagnet />
       </main>
       <Foot />
@@ -553,6 +551,15 @@ function Solutions() {
                   {cur.title}
                 </h3>
                 <p className="text-[14.5px] text-dim">{cur.line}</p>
+                {"demo" in cur && getDemo(cur.demo) && (
+                  <Link
+                    href={`/software/proiecte/${cur.demo}`}
+                    className="mt-2 inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[14px] font-medium text-a1 transition-colors hover:text-bone sm:ml-auto sm:mt-0"
+                  >
+                    Proiect real: {getDemo(cur.demo)?.name}
+                    <Icon name="arrowRight" size={14} />
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -681,38 +688,102 @@ function Guarantees() {
   );
 }
 
-/* ---------------- Testimoniale ---------------- */
-function Voices() {
+/* ---------------- Proiecte ----------------
+   Portofoliul de aplicații. Fiecare card duce într-un demo care se
+   poate folosi — dovada nu e o captură, e aplicația. */
+function Projects() {
   return (
-    <section className="relative px-5 py-24 sm:px-6 lg:py-32">
-      <Head eyebrow="Clienți" title="Locul rezervat pentru primele recenzii" />
-      <ul className="mx-auto mt-14 grid max-w-6xl gap-3 md:grid-cols-3">
-        {STESTIMONIALS.map((t, i) => (
-          <R as="li" key={i} delay={i * 70}>
-            <article className="glass h-full p-6 sm:p-7">
-              <p className="text-[14.5px] leading-relaxed text-dim">
-                {t.quote}
-              </p>
-              <div className="mt-6 flex items-center gap-3 border-t border-hair pt-5">
-                <span
-                  className="size-9 rounded-full border border-hair bg-glass"
-                  aria-hidden
-                />
-                <span>
-                  <span className="block text-[13.5px] text-bone">{t.who}</span>
-                  <span className="block text-[12.5px] text-dim">
-                    {t.where}
-                  </span>
-                </span>
-                <span className="ml-auto rounded-full border border-hair px-2 py-0.5 font-md-mono text-[9.5px] uppercase tracking-widest text-dim">
-                  exemplu
-                </span>
-              </div>
-            </article>
-          </R>
-        ))}
-      </ul>
+    <section id="proiecte" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-28">
+      <Head eyebrow="Proiecte" title="Aplicații livrate. Încearcă-le." />
+      <ProjectsGrid />
+      <R delay={80} className="mt-8 flex justify-center">
+        <Link href="/software/proiecte" className="btn btn-ghost !rounded-panel-sm">
+          Toate proiectele, pe larg
+          <Icon name="arrowRight" size={16} className="arw" />
+        </Link>
+      </R>
     </section>
+  );
+}
+
+/* ---------------- Recenzii ----------------
+   Doar citate primite în scris. Fiecare duce la demo-ul proiectului
+   despre care vorbește. Clipul filmat, când există, stă în stânga,
+   ca pe /video; până atunci, citatul ocupă singur rândul. */
+function Reviews() {
+  const video = SREVIEW_VIDEO;
+  return (
+    <section id="recenzii" className="relative px-5 py-16 sm:px-6 sm:py-24 lg:py-28">
+      <Head eyebrow="Recenzii" title="Spus de clienți, nu de noi." />
+      <div
+        className={`mx-auto mt-12 grid max-w-5xl gap-5 sm:mt-16 ${
+          video ? "lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-6" : ""
+        }`}
+      >
+        {video && (
+          <R variant="scale" className="mx-auto w-full max-w-[270px] lg:max-w-none">
+            <VideoCard item={video} className="w-full" />
+          </R>
+        )}
+        <div className="grid content-center gap-4">
+          {SREVIEWS.map((r, i) => (
+            <R key={r.who} delay={i * 70}>
+              <ReviewCard r={r} />
+            </R>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReviewCard({ r }: { r: (typeof SREVIEWS)[number] }) {
+  const project = r.project ? getDemo(r.project) : undefined;
+  return (
+    <figure className="glass-2 edge-light relative overflow-hidden p-7 sm:p-10">
+      <svg
+        viewBox="0 0 48 36"
+        className="absolute right-6 top-6 h-9 w-12 text-a1/15 sm:right-9 sm:top-9 sm:h-12 sm:w-16"
+        fill="currentColor"
+        aria-hidden
+      >
+        <path d="M0 36V21.6C0 9.6 6.4 2.4 19.2 0l2 5.2C14 7.2 10.8 11.2 10.4 17.2H20V36H0Zm28 0V21.6C28 9.6 34.4 2.4 47.2 0l.8 5.2c-7.2 2-10.4 6-10.8 12H48V36H28Z" />
+      </svg>
+      <blockquote className="relative max-w-3xl">
+        <p className="display text-[clamp(1.35rem,2.7vw,1.95rem)] leading-snug">
+          „{r.quote}”
+        </p>
+      </blockquote>
+      <figcaption className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-4 border-t border-hair pt-6">
+        {r.logo && (
+          /* eslint-disable-next-line @next/next/no-img-element -- logo deja
+             curățat și adus la 128px (public/video/recenzii/); are text alb,
+             deci stă pe plăcuță închisă și pe fundalul deschis al lumii software */
+          <img
+            src={r.logo}
+            alt=""
+            width={44}
+            height={44}
+            loading="lazy"
+            decoding="async"
+            className="size-12 shrink-0 rounded-panel-sm bg-[#1b1f24] object-contain p-1"
+          />
+        )}
+        <span className="min-w-0">
+          <span className="block text-[15px] font-medium text-bone">{r.who}</span>
+          <span className="block text-[13.5px] text-dim">{r.where}</span>
+        </span>
+        {project && (
+          <Link
+            href={`/software/proiecte/${project.slug}`}
+            className="ml-auto inline-flex items-center gap-2 text-[14px] font-medium text-a1 transition-colors hover:text-bone"
+          >
+            Încearcă proiectul lor
+            <Icon name="arrowRight" size={15} />
+          </Link>
+        )}
+      </figcaption>
+    </figure>
   );
 }
 
