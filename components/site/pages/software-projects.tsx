@@ -8,6 +8,7 @@ import { Reveal } from "@/components/site/motion";
 import { Icon } from "@/components/site/ui";
 import { DEMOS, demoPoster } from "@/components/site/app-demos/registry";
 import type { AppDemoMeta } from "@/components/site/app-demos/types";
+import { SREVIEWS, SREVIEW_VIDEO } from "@/components/site/software-content";
 import st from "./software-projects.module.css";
 
 /* ============================================================
@@ -27,6 +28,26 @@ import st from "./software-projects.module.css";
 
 function R(props: ComponentProps<typeof Reveal>) {
   return <Reveal {...props} className={`reveal-fast ${props.className ?? ""}`} />;
+}
+
+/**
+ * Text în care cratima din interiorul cuvântului nu e loc de rupt
+ * rândul: „s-a”, „într-o”, „dintr-un”. Browserul rupe după cratimă, iar
+ * „s-” la capăt de rând cu „a” pe următorul se citește ca o greșeală —
+ * mai ales în citatele mari, unde rândurile sunt scurte.
+ */
+export function Unbroken({ text }: { text: string }) {
+  return text
+    .split(/(\S+-\S+)/)
+    .map((part, i) =>
+      i % 2 ? (
+        <span key={i} className="whitespace-nowrap">
+          {part}
+        </span>
+      ) : (
+        part
+      )
+    );
 }
 
 /** Capturile demo-ului, compuse: fereastra de desktop și telefonul peste ea. */
@@ -260,6 +281,9 @@ export function ProjectsList() {
     <ol className="mx-auto grid max-w-6xl gap-16 sm:gap-24">
       {DEMOS.map((m, i) => {
         const flip = i % 2 === 1;
+        /* Clientul care a spus ceva despre proiect își are citatul chiar
+           lângă el; recenzia întreagă, cu clipul, stă pe /software. */
+        const review = SREVIEWS.find((r) => r.project === m.slug);
         return (
           <li key={m.slug}>
             <R>
@@ -287,6 +311,23 @@ export function ProjectsList() {
                       </li>
                     ))}
                   </ul>
+                  {review && (
+                    <figure className="mt-6 rounded-panel-sm border border-hair bg-white/[0.03] p-4 sm:p-5">
+                      <blockquote className="text-[15px] leading-relaxed text-bone">
+                        „<Unbroken text={review.quote} />”
+                      </blockquote>
+                      <figcaption className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-dim">
+                        <span>{review.who}</span>
+                        <Link
+                          href="/software#recenzii"
+                          className="inline-flex items-center gap-1.5 font-medium text-a1 transition-colors hover:text-bone"
+                        >
+                          {SREVIEW_VIDEO ? "Vezi recenzia filmată" : "Toate recenziile"}
+                          <Icon name="arrowRight" size={13} />
+                        </Link>
+                      </figcaption>
+                    </figure>
+                  )}
                   <Link
                     href={`/software/proiecte/${m.slug}`}
                     className="btn btn-primary mt-7 !rounded-panel-sm !px-6"

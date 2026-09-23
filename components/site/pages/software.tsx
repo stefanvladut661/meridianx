@@ -29,7 +29,7 @@ import {
   SREVIEW_VIDEO,
 } from "@/components/site/software-content";
 import { getDemo } from "@/components/site/app-demos/registry";
-import { ProjectsGrid } from "./software-projects";
+import { ProjectsGrid, Unbroken } from "./software-projects";
 
 /* ============================================================
    MERIDIAN SOFTWARE — landing corporate.
@@ -111,12 +111,12 @@ function Nav() {
           </span>
         </Link>
 
-        <ul className="mx-auto hidden items-center gap-7 lg:flex">
+        <ul className="mx-auto hidden items-center gap-5 lg:flex xl:gap-7">
           {SNAV.map((n) => (
             <li key={n.href}>
               <a
                 href={n.href}
-                className="text-[14px] text-dim transition-colors duration-200 hover:text-bone"
+                className="whitespace-nowrap text-[14px] text-dim transition-colors duration-200 hover:text-bone"
               >
                 {n.label}
               </a>
@@ -124,9 +124,12 @@ function Nav() {
           ))}
         </ul>
 
+        {/* Între 1024 și 1280 nu încap și meniul, și telefonul, pe un rând:
+            acolo telefonul cedează locul (rămâne în subsol, la Contact),
+            altfel legăturile se rup pe două rânduri. */}
         <a
           href={SCONTACT.phoneHref}
-          className="ml-auto hidden items-center gap-2 text-[13.5px] text-dim transition-colors hover:text-bone lg:ml-0 md:flex"
+          className="ml-auto hidden items-center gap-2 whitespace-nowrap text-[13.5px] text-dim transition-colors hover:text-bone md:flex lg:ml-0 lg:hidden xl:flex"
         >
           <Icon name="phone" size={15} />
           {SCONTACT.phone}
@@ -707,9 +710,12 @@ function Projects() {
 }
 
 /* ---------------- Recenzii ----------------
-   Doar citate primite în scris. Fiecare duce la demo-ul proiectului
-   despre care vorbește. Clipul filmat, când există, stă în stânga,
-   ca pe /video; până atunci, citatul ocupă singur rândul. */
+   Clientul filmat în stânga, citatul lui scris în dreapta, ca pe
+   /video. Clipul e orizontal (un interviu la birou, nu un vertical de
+   telefon), deci ia jumătate de rând, nu o coloană îngustă: pe desktop
+   cele două plăci au aceeași înălțime, pe telefon videoul vine primul,
+   pe toată lățimea. Citatul duce la demo-ul proiectului despre care
+   vorbește — dovada de lângă dovadă. */
 function Reviews() {
   const video = SREVIEW_VIDEO;
   return (
@@ -717,18 +723,18 @@ function Reviews() {
       <Head eyebrow="Recenzii" title="Spus de clienți, nu de noi." />
       <div
         className={`mx-auto mt-12 grid max-w-5xl gap-5 sm:mt-16 ${
-          video ? "lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-6" : ""
+          video ? "lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] lg:gap-6" : ""
         }`}
       >
         {video && (
-          <R variant="scale" className="mx-auto w-full max-w-[270px] lg:max-w-none">
+          <R variant="scale" className="min-w-0 lg:self-center">
             <VideoCard item={video} className="w-full" />
           </R>
         )}
-        <div className="grid content-center gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           {SREVIEWS.map((r, i) => (
-            <R key={r.who} delay={i * 70}>
-              <ReviewCard r={r} />
+            <R key={r.who} delay={i * 70} className="flex-1">
+              <ReviewCard r={r} compact={Boolean(video)} />
             </R>
           ))}
         </div>
@@ -737,10 +743,22 @@ function Reviews() {
   );
 }
 
-function ReviewCard({ r }: { r: (typeof SREVIEWS)[number] }) {
+function ReviewCard({
+  r,
+  compact = false,
+}: {
+  r: (typeof SREVIEWS)[number];
+  /** Lângă clip, pe jumătate de rând: citatul mai mic, ca să nu crească
+      placa peste înălțimea videoului. */
+  compact?: boolean;
+}) {
   const project = r.project ? getDemo(r.project) : undefined;
   return (
-    <figure className="glass-2 edge-light relative overflow-hidden p-7 sm:p-10">
+    <figure
+      className={`glass-2 edge-light relative flex h-full flex-col overflow-hidden ${
+        compact ? "p-6 sm:p-8" : "p-7 sm:p-10"
+      }`}
+    >
       <svg
         viewBox="0 0 48 36"
         className="absolute right-6 top-6 h-9 w-12 text-a1/15 sm:right-9 sm:top-9 sm:h-12 sm:w-16"
@@ -749,34 +767,44 @@ function ReviewCard({ r }: { r: (typeof SREVIEWS)[number] }) {
       >
         <path d="M0 36V21.6C0 9.6 6.4 2.4 19.2 0l2 5.2C14 7.2 10.8 11.2 10.4 17.2H20V36H0Zm28 0V21.6C28 9.6 34.4 2.4 47.2 0l.8 5.2c-7.2 2-10.4 6-10.8 12H48V36H28Z" />
       </svg>
-      <blockquote className="relative max-w-3xl">
-        <p className="display text-[clamp(1.35rem,2.7vw,1.95rem)] leading-snug">
-          „{r.quote}”
+      <blockquote className="relative max-w-3xl flex-1">
+        <p
+          className={`display leading-snug ${
+            compact
+              ? "pr-10 text-[clamp(1.35rem,2.3vw,1.75rem)] sm:pr-14"
+              : "text-[clamp(1.35rem,2.7vw,1.95rem)]"
+          }`}
+        >
+          „<Unbroken text={r.quote} />”
         </p>
       </blockquote>
-      <figcaption className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-4 border-t border-hair pt-6">
-        {r.logo && (
-          /* eslint-disable-next-line @next/next/no-img-element -- logo deja
-             curățat și adus la 128px (public/video/recenzii/); are text alb,
-             deci stă pe plăcuță închisă și pe fundalul deschis al lumii software */
-          <img
-            src={r.logo}
-            alt=""
-            width={44}
-            height={44}
-            loading="lazy"
-            decoding="async"
-            className="size-12 shrink-0 rounded-panel-sm bg-[#1b1f24] object-contain p-1"
-          />
-        )}
-        <span className="min-w-0">
-          <span className="block text-[15px] font-medium text-bone">{r.who}</span>
-          <span className="block text-[13.5px] text-dim">{r.where}</span>
+      <figcaption className="mt-7 flex flex-wrap items-center justify-between gap-x-4 gap-y-4 border-t border-hair pt-6">
+        {/* Logo-ul și numele stau împreună: la 360px, dacă se rupe ceva
+            pe rândul următor, e legătura, nu numele de lângă logo. */}
+        <span className="flex min-w-0 items-center gap-4">
+          {r.logo && (
+            /* eslint-disable-next-line @next/next/no-img-element -- logo deja
+               curățat și adus la 128px (public/video/recenzii/); are text alb,
+               deci stă pe plăcuță închisă și pe fundalul deschis al lumii software */
+            <img
+              src={r.logo}
+              alt=""
+              width={44}
+              height={44}
+              loading="lazy"
+              decoding="async"
+              className="size-12 shrink-0 rounded-panel-sm bg-[#1b1f24] object-contain p-1"
+            />
+          )}
+          <span className="min-w-0">
+            <span className="block text-[15px] font-medium text-bone">{r.who}</span>
+            <span className="block text-[13.5px] text-dim">{r.where}</span>
+          </span>
         </span>
         {project && (
           <Link
             href={`/software/proiecte/${project.slug}`}
-            className="ml-auto inline-flex items-center gap-2 text-[14px] font-medium text-a1 transition-colors hover:text-bone"
+            className="ml-auto inline-flex items-center gap-2 whitespace-nowrap text-[14px] font-medium text-a1 transition-colors hover:text-bone"
           >
             Încearcă proiectul lor
             <Icon name="arrowRight" size={15} />

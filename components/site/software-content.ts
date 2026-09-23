@@ -204,10 +204,13 @@ export const SREVIEWS: {
   },
 ];
 
-/* Recenzia filmată de la Art Install. Fișierul nu e încă în proiect:
-   când ajunge în public/software/recenzii/ (mp4 + poster webp), se
-   completează aici și apare lângă citat, ca pe /video.
-   TODO: clipul Art Install — cerut omului pe 2026-09-23. */
+/* Recenzia filmată de la Art Install, la ei în birou. Sursa e un cadru
+   orizontal pus de montaj într-un vertical 9:16, cu blur sus și jos;
+   pe web s-a păstrat doar banda clară (1080×880 → 960×782, fără
+   scalare în sus), ca omul să se vadă, nu blurul. Comprimat cu ffmpeg-ul
+   din CapCut (h264_amf, ~1,3 Mbps, AAC 112k, faststart): 17MB, dar
+   player-ul îl cere abia la apăsare, deci pagina plătește doar posterul
+   de 29KB. Posterul e cadrul de la 0:42. */
 export const SREVIEW_VIDEO: {
   slug: string;
   client: string;
@@ -219,7 +222,19 @@ export const SREVIEW_VIDEO: {
   h: number;
   seconds: number;
   audio: boolean;
-} | null = null;
+} | null = {
+  slug: "recenzie-art-install",
+  client: "Art Install Suppliers",
+  // scurt: stă peste cadru, lângă bannerul lor portocaliu
+  title: "Recenzie filmată",
+  kind: "Recenzie",
+  src: "/software/recenzii/art-install.mp4",
+  poster: "/software/recenzii/art-install.webp",
+  w: 960,
+  h: 782,
+  seconds: 97,
+  audio: true,
+};
 
 /* ---------- Întrebări ---------- */
 export const SFAQ = [

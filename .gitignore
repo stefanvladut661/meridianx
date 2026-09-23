@@ -46,5 +46,11 @@ next-env.d.ts
 # referințe de design (screenshot-uri de inspirație, nu fac parte din build)
 /ideas/
 
+# material brut lăsat în rădăcină (ex. „art install.mp4”, 184MB): sursa
+# de montaj, nu ce se servește — varianta web stă în public/, comprimată.
+# GitHub refuză oricum fișiere peste 100MB.
+/*.mp4
+/*.mov
+
 .vercel
 .env*
