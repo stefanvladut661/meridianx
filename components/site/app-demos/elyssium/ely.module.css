@@ -1,0 +1,222 @@
+/* Animațiile demo-ului Elyssium. Se aplică doar când reducedMotion e fals
+   (demo-ul nu pune clasa altfel), deci aici nu există media queries. */
+
+.fadeUp {
+  animation: elyFadeUp 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.fade {
+  animation: elyFade 220ms ease both;
+}
+.rowIn {
+  animation: elyRowIn 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.flash {
+  animation: elyFlash 2600ms ease-out both;
+}
+.pop {
+  animation: elyPop 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.sheet {
+  animation: elySheet 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.modal {
+  animation: elyModal 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.drawer {
+  animation: elyDrawer 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.scanLine {
+  animation: elyScan 1700ms ease-in-out infinite alternate;
+}
+.pulse {
+  animation: elyPulse 1600ms ease-in-out infinite;
+}
+.ping {
+  animation: elyPing 1500ms cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.spin {
+  animation: elySpin 900ms linear infinite;
+}
+.nudge {
+  animation: elyNudge 1400ms ease-in-out infinite;
+}
+.check path {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: elyDraw 520ms 160ms cubic-bezier(0.6, 0, 0.3, 1) forwards;
+}
+.ringPulse {
+  animation: elyRing 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.bar {
+  transform-origin: bottom;
+  animation: elyBar 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.shimmer {
+  background-size: 200% 100%;
+  animation: elyShimmer 1300ms linear infinite;
+}
+
+@keyframes elyFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes elyFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes elyRowIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes elyFlash {
+  0%,
+  35% {
+    background-color: #efeaf7;
+  }
+  100% {
+    background-color: #ffffff;
+  }
+}
+@keyframes elyPop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes elySheet {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes elyModal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes elyDrawer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes elyScan {
+  from {
+    top: 6%;
+  }
+  to {
+    top: 90%;
+  }
+}
+@keyframes elyPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes elyPing {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@keyframes elySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes elyNudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+}
+@keyframes elyDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes elyRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 26px rgba(15, 118, 110, 0);
+  }
+}
+@keyframes elyBar {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes elyShimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.travel {
+  animation: elyTravel 760ms cubic-bezier(0.5, 0, 0.3, 1) both;
+}
+@keyframes elyTravel {
+  from {
+    left: 0;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    left: calc(100% - 12px);
+    opacity: 0;
+  }
+}

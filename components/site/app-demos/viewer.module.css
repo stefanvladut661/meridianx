@@ -1,0 +1,14 @@
+/* Toast-ul vizualizatorului: intră de jos, sub 400ms (lumea software). */
+.toast {
+  animation: toastIn 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
