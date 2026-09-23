@@ -7,6 +7,9 @@ cifrele campaniilor.
 Ramura: `feat/ads-portal`. Zona portalului: `app/(admin)/admin/ads/**`,
 `lib/ads/**`, `components/ads/**` și migrarea lui (din faza 2).
 
+**Citește întâi `GHID.md`** — ce e de făcut după fiecare fază și ce e de hotărât.
+Promptul complet al portalului e în `PROMPT.md`.
+
 ---
 
 ## Regula care nu se negociază
