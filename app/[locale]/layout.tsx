@@ -116,21 +116,16 @@ export default async function LocaleLayout({
       <head>
         {/* Codul de bază al pixelilor stă în /public/pixels, nu inline: un
             <Script> inline apare de două ori în sursa paginii (tag + payload
-            RSC), iar Meta raportează „pixel inițializat de mai multe ori". */}
+            RSC), iar Meta raportează „pixel inițializat de mai multe ori".
+            Fiecare fișier citește întâi cookie-ul de consimțământ și nu
+            pornește nimic fără „da" la marketing. Fără `<noscript>`-ul lui
+            Meta: e o imagine care pleacă necondiționat, înainte de orice
+            accept — exact ce politica de cookie-uri spune că nu facem. */}
         <Script
           id="meta-pixel-base"
           src="/pixels/meta.js"
           strategy="beforeInteractive"
         />
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: "none" }}
-            src="https://www.facebook.com/tr?id=3075133136161307&ev=PageView&noscript=1"
-            alt=""
-          />
-        </noscript>
         <Script
           id="tiktok-pixel-base"
           src="/pixels/tiktok.js"

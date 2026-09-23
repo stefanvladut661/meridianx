@@ -42,10 +42,11 @@ export function loadMetaPixel(): void {
   if (typeof window === "undefined") return;
   if (!hasConsent("marketing")) return;
   if (document.getElementById(SCRIPT_ID)) return;
-  /* Codul static din <head> a pornit deja pixelul (fbevents.js + init +
-     PageView) și a lăsat `fbq`. Un al doilea init pe același ID dă
-     „Duplicate Pixel ID" în consolă. Când `fbq` lipsește — după
-     retragerea consimțământului — pornim noi, ca până acum. */
+  /* Cine avea consimțământul salvat de la o vizită anterioară are deja
+     pixelul pornit de /pixels/meta.js din <head> (fbevents.js + init +
+     PageView), cu `fbq` lăsat pe window. Un al doilea init pe același ID
+     dă „Duplicate Pixel ID" în consolă. Când `fbq` lipsește — prima
+     vizită, accept din banner, sau accept după o retragere — pornim noi. */
   if (window.fbq) return;
 
   if (!window.fbq) {
@@ -80,6 +81,10 @@ export function loadMetaPixel(): void {
      `SubmitApplication` sau `Subscribe`, iar campaniile optimizate pe
      `Lead` nu văd nicio conversie. Evenimentele le trimitem noi, explicit,
      din `submitLead`. Trebuie setat înainte de `init`. */
+  /* `grant` explicit: dacă în aceeași filă omul a acceptat, a retras și a
+     acceptat din nou, SDK-ul deja încărcat ține minte `revoke`-ul de la
+     `unloadMetaPixel` și ar tăcea. */
+  window.fbq("consent", "grant");
   window.fbq("set", "autoConfig", false, PIXEL_ID);
 
   /* `init` doar configurează pixelul; vizualizarea e un eveniment
@@ -90,9 +95,21 @@ export function loadMetaPixel(): void {
   window.fbq("track", "PageView");
 }
 
-/** Scoate pixelul dacă omul își retrage consimțământul. */
+/**
+ * Scoate pixelul dacă omul își retrage consimțământul — indiferent cine
+ * l-a pornit, noi sau /pixels/meta.js din <head>. Un SDK deja executat nu
+ * se poate descărca, deci întâi îi spunem `revoke` (Meta nu mai trimite
+ * nimic de acolo încolo), apoi ștergem `fbq`, ca `pixelTrack` să nu mai
+ * aibă pe cine chema.
+ *
+ * La vizitatorii fără consimțământ nu există nimic de scos: fișierul din
+ * <head> nu pornește fără „da", deci `apply()` de la montare nu mai
+ * șterge un `fbq` cât încă se încarcă (de acolo venea „fbq is not
+ * defined" în consolă).
+ */
 export function unloadMetaPixel(): void {
   if (typeof window === "undefined") return;
+  window.fbq?.("consent", "revoke");
   document.getElementById(SCRIPT_ID)?.remove();
   delete window.fbq;
   delete window._fbq;
@@ -118,12 +135,9 @@ export type PixelEvent = "Lead" | "Contact" | "Schedule" | "ViewContent";
 
 /**
  * Pleacă oriunde există `fbq` — poarta e cine a încărcat pixelul, nu
- * funcția asta. Codul static din `<head>` îl pornește pentru toți, deci
- * un `Lead` condiționat de consimțământ ar lipsi din Events Manager
- * exact la vizitatorii pentru care Meta deja a numărat `PageView`-ul, iar
- * campania ar raporta o fracțiune din conversiile reale. Dacă pixelul se
- * întoarce vreodată doar în spatele porții, `fbq` există doar după „da"
- * și evenimentul se oprește singur acolo.
+ * funcția asta. Iar `fbq` există doar după „da" la marketing: îl pune
+ * /pixels/meta.js pentru consimțământul salvat, sau `loadMetaPixel`
+ * după accept, și îl scoate `unloadMetaPixel` la retragere.
  */
 export function pixelTrack(
   event: PixelEvent,

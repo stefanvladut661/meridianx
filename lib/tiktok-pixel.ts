@@ -61,14 +61,18 @@ declare global {
 const SCRIPT_ID = "meridian-tiktok-pixel";
 const SCRIPT_SRC = "https://analytics.tiktok.com/i18n/pixel/events.js";
 
+/** A fost retras consimțământul în fila asta, după ce pixelul rulase? */
+let revokedHere = false;
+
 /** Injectează pixelul o singură dată, doar cu consimțământ de marketing. */
 export function loadTikTokPixel(): void {
   if (typeof window === "undefined") return;
   if (!hasConsent("marketing")) return;
   if (document.getElementById(SCRIPT_ID)) return;
-  /* Codul static din <head> a înregistrat deja pixelul ăsta. Meta ignoră
-     un al doilea `init` pe același ID; TikTok nu — ar reseta coada și ar
-     număra vizualizarea de două ori. */
+  /* Cine avea consimțământul salvat are deja pixelul înregistrat de
+     /pixels/tiktok.js din <head>. Meta ignoră un al doilea `init` pe
+     același ID; TikTok nu — ar reseta coada și ar număra vizualizarea de
+     două ori. */
   if (window.ttq?._i?.[TIKTOK_PIXEL_ID]) return;
 
   if (!window.ttq) {
@@ -111,6 +115,12 @@ export function loadTikTokPixel(): void {
   }
 
   window.ttq.load(TIKTOK_PIXEL_ID);
+  /* Accept după o retragere în aceeași filă: SDK-ul deja executat ține
+     minte `revokeConsent` și ar tăcea până la `grantConsent`. */
+  if (revokedHere) {
+    window.ttq.grantConsent?.();
+    revokedHere = false;
+  }
 
   const script = document.createElement("script");
   script.id = SCRIPT_ID;
@@ -124,23 +134,23 @@ export function loadTikTokPixel(): void {
 }
 
 /**
- * Scoate pixelul dacă omul își retrage consimțământul — dar doar pe cel
- * pus de `loadTikTokPixel`, nu pe cel pornit de codul static din `<head>`.
+ * Scoate pixelul dacă omul își retrage consimțământul — indiferent cine
+ * l-a pornit, noi sau /pixels/tiktok.js din <head>. Un SDK deja executat
+ * nu se poate descărca, deci întâi `revokeConsent` (nu mai trimite nimic),
+ * apoi ștergem `ttq`, ca `tiktokTrack` să nu mai aibă pe cine chema.
  *
- * Fără condiția asta, la fiecare vizitator fără consimțământ salvat (prima
- * vizită, banner ignorat) `apply()` din `<TikTokPixel />` ștergea `window.ttq`
- * imediat după hidratare. `page`-ul plecase deja din `<head>`, deci
- * LandingPageView ajungea, dar `SubmitForm` de la trimiterea formularului
- * găsea `ttq` undefined și nu pleca niciodată. Iar după „Accept", o coadă
- * `ttq` nouă nu mai e consumată de SDK-ul deja inițializat din `<head>`.
- * Scriptul din `<head>` e proprietarul pixelului pentru toți — aici nu ne
- * atingem de el.
+ * Până la poarta din /pixels/tiktok.js, fișierul din <head> pornea
+ * pixelul pentru toți, iar funcția asta trebuia să-l ocolească: altfel
+ * `apply()` de la montare ștergea `ttq` la fiecare vizitator fără
+ * consimțământ cât SDK-ul încă se încărca. Acum, fără „da", în <head> nu
+ * pornește nimic, deci la montare nu e nimic de scos.
  */
 export function unloadTikTokPixel(): void {
   if (typeof window === "undefined") return;
-  const own = document.getElementById(SCRIPT_ID);
-  if (!own) return;
-  own.remove();
+  if (!window.ttq) return;
+  window.ttq.revokeConsent?.();
+  revokedHere = true;
+  document.getElementById(SCRIPT_ID)?.remove();
   delete window.ttq;
   delete window.TiktokAnalyticsObject;
 }
@@ -165,9 +175,9 @@ export type TikTokEvent = "SubmitForm" | "Contact" | "ViewContent";
 
 /**
  * Pleacă oriunde există `ttq` — poarta e cine a încărcat pixelul, nu
- * funcția asta. Codul static din `<head>` îl pornește pentru toți (la fel
- * ca Meta), deci un eveniment condiționat de consimțământ ar lipsi exact
- * la vizitatorii pentru care TikTok a numărat deja `page`-ul.
+ * funcția asta. Iar `ttq` există doar după „da" la marketing (la fel ca
+ * `fbq` la Meta): din <head> pentru consimțământul salvat, din
+ * `loadTikTokPixel` după accept.
  */
 export function tiktokTrack(
   event: TikTokEvent,
