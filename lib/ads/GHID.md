@@ -1,6 +1,6 @@
-# Ghid — portalul de reclame, după faza 2
+# Ghid — portalul de reclame, după faza 3
 
-*Actualizat pe 2026-09-25, la finalul fazei 2. Ramura: `feat/ads-portal`.*
+*Actualizat pe 2026-09-25, la finalul fazei 3. Ramura: `feat/ads-portal`.*
 
 Trei documente, în ordinea în care se citesc:
 
@@ -18,8 +18,8 @@ Trei documente, în ordinea în care se citesc:
 |---|---|---|
 | **1** | Schema JSON + validare + previzualizare, fără apeluri la platforme | ✅ gata |
 | **2** | Meta: creare campanie pe pauză, cu video deja urcat | ✅ gata pe `feat/ads-portal`, testată pe un Meta fals local — **încă nu pe contul real** |
-| 3 | Meta: încărcare video din browser | ⬜ așteaptă confirmarea ta |
-| 4 | Dashboard + cron pentru Meta | ⬜ |
+| **3** | Meta: încărcare video din browser | ✅ gata pe `feat/ads-portal`, testată pe Meta și Supabase falși — **încă nu pe contul real** |
+| 4 | Dashboard + cron pentru Meta | ⬜ așteaptă confirmarea ta |
 | 5 | TikTok, peste structura existentă | ⬜ |
 
 Migrarea 5 (`admin_emails` + `is_lead_admin()`) e pe `main`; portalul, tot
@@ -42,6 +42,9 @@ separat, nu trec mai departe fără confirmarea ta.
 - [ ] `supabase/migrations/00000000000006_ads_portal.sql` — tabelele portalului.
       Fără ea, portalul refuză crearea înainte să trimită ceva la Meta și spune
       „aplică migrarea 6”.
+- [ ] `supabase/migrations/00000000000007_ads_uploads.sql` — anticamera
+      video-urilor noi (bucket privat `ads-uploads`, 50 MB pe fișier). Fără ea,
+      urcarea spune „aplică migrarea 7”.
 
 ### 2.2 Tokenul Meta
 
@@ -82,6 +85,18 @@ Fără ele, „Verifică în Meta” se oprește și spune exact asta (cu sugest
       bugetul pe set; plasările; în reclamă, la „Advantage+ creative”, toate
       îmbunătățirile oprite; „Multi-advertiser ads” oprit.
 - [ ] Șterge campania de test din Ads Manager.
+
+### 2.5 Primul video urcat din portal
+
+- [ ] În același plan, la „Materialul”: **Fișier nou** → **Alege fișierul**
+      (MP4, sub 50 MB) → **Urcă în contul …**.
+- [ ] Urmărește pașii: urcare în portal → Meta copiază → Meta procesează →
+      gata. La final planul trece singur pe video-ul din bibliotecă.
+- [ ] În Ads Manager → Media library: video-ul apare cu numele fișierului tău.
+- [ ] În Supabase → Storage → `ads-uploads`: bucket-ul e gol (fișierul se
+      șterge când Meta termină).
+- [ ] Spune-mi dacă s-a oprit undeva — mai ales la „Meta copiază”: e singurul
+      pas pe care documentația Meta nu-l descrie complet.
 - [ ] Spune-mi ce ai văzut — mai ales dacă ceva e pornit deși portalul l-a
       trimis oprit. Lista a ce n-a putut fi verificat fără un cont real e în
       `lib/ads/README.md` → „Neverificat încă”.
@@ -97,13 +112,14 @@ Fără ele, „Verifică în Meta” se oprește și spune exact asta (cu sugest
 | 3.1 | `is_lead_admin()` | ✅ **Luată de mine**, pe propunerea din ghid: migrarea 5 scrisă exact ca în `PLAN.md`, pe `main`. O aplici tu (2.1). |
 | 3.2 | Lista de conturi de reclame vine din token, nu din `workspaces.ts` | ✅ așa e construit: tokenul vede conturile, planul se respinge dacă `ad_account` nu e printre ele. Confirmă. |
 | 3.3 | Plafoanele de buget (500 lei / 100 € Meridian, 2.500 lei / 500 € / 500 USD clienți) | ⬜ de confirmat — sau le schimbi în `lib/ads/workspaces.ts`. |
-| 3.4 | Faza 3 are nevoie de `next.config.ts` (CSP) | ⬜ îți cer voie la începutul fazei 3. Între timp, miniaturile de pe CDN-ul Meta apar în raportul CSP (doar raport, nu blochează). |
+| 3.4 | CSP în `next.config.ts` | ✅ **Nu mai e nevoie pentru urcare**: merge spre Supabase, deja permis. Rămâne doar `img-src` pentru miniaturile de pe CDN-ul Meta (azi doar raportate) — îți cer voie când activezi CSP-ul. |
 | 3.5 | „Ad sources” pe Meta | ✅ **Rezolvat:** n-are câmp în API; portalul refuză, una câte una, cele 5 funcții pe care le alimentează (README → „Faza 2”). |
-| 3.6 | Video „direct din browser” vs. „niciun token în browser” (faza 3) | ⬜ propunerea rămâne varianta A (4.3). |
+| 3.6 | Video „direct din browser” vs. „niciun token în browser” | ✅ **Luată de mine**, pe propunerea A: browser → Supabase Storage (URL semnat) → Meta descarcă singur. Fără dependență nouă. Limita: 50 MB pe fișier pe Supabase Free (4.3). |
 | 3.7 | Istoricul de metrici | ✅ **Luată de mine**, pe propunere: migrarea 6 îngheață zilele mai vechi de 7 (trigger în bază). Spune-mi dacă vrei altfel până la faza 4. |
 | 3.8 | Cron-ul (faza 4) în `app/api/cron/…` și `vercel.json` | ⬜ îți cer voie la începutul fazei 4. |
 | 3.9 | **DSA**: plan → setările contului → eroare; portalul nu completează singur un câmp legal | nou, de confirmat |
-| 3.10 | **Dublura**: același plan, creat în ultimele 30 de minute, cere „Creează încă una, intenționat” | nou, de confirmat |
+| 3.10 | **Dublura**: același plan, creat în ultimele 30 de minute, cere „Creează încă una, intenționat” | de confirmat |
+| 3.11 | **50 MB pe video** cât timp Supabase e pe Free. Alternativa: Supabase Pro (limită până la 500 GB) sau Vercel Blob (dependență nouă) | nou, de hotărât dacă reclamele tale trec des de 50 MB |
 
 ---
 
@@ -115,25 +131,14 @@ Ce face, pe scurt, în anexa „Raportul fazei 2” de la final; tehnic, în
 `lib/ads/README.md` → „Faza 2 — crearea pe Meta”. Ce mai trebuie ca să creezi
 prima campanie reală: secțiunea 2 de mai sus.
 
-### 4.3 Faza 3 — încărcare video din browser
+### 4.3 Faza 3 — gata
 
-Problema: promptul cere ca video-ul să meargă **direct din browser la
-platformă**, iar la Meta upload-ul direct cere tokenul în browser — ceea ce
-promptul interzice („niciun token în răspuns către browser”). Variantele:
+Varianta A, pe Supabase Storage. De ce și cum: `lib/ads/README.md` → „Faza 3”.
+Ce ai de făcut: 2.1 (migrarea 7) și 2.5.
 
-| | Cum | Token în browser | Trece prin Vercel |
-|---|---|---|---|
-| **A (propusă)** | Browserul urcă fișierul **direct** într-o stocare temporară (Supabase Storage sau Vercel Blob, cu URL semnat, valabil minute); serverul îi dă platformei adresa (`file_url` la Meta, `UPLOAD_BY_URL` la TikTok), așteaptă procesarea, apoi șterge fișierul. | nu | nu |
-| B | Browserul urcă direct la Meta, cu tokenul System User-ului | **da** — respins | nu |
-| C | Fișierul pe bucăți sub 4,5 MB prin serverul nostru | nu | **da** — contrazice promptul |
-
-Pentru A: Supabase Free limitează un fișier la 50 MB. Reclamele video trec ușor
-de atât, deci fie Supabase Pro, fie Vercel Blob (dependență nouă, `@vercel/blob`,
-de trecut în `PLAN.md` la „Dependențe noi”). Decizia 3.6.
-
-Restul fazei: starea procesării afișată (încarcă → procesează → gata), ca
-interfața să nu pară blocată; crearea se deblochează abia când platforma
-spune că video-ul e gata. Plus CSP-ul din `next.config.ts` (decizia 3.4).
+**Limita de 50 MB** (decizia 3.11): un video de 60 s, 1080p, la ~10 Mbps are
+~75 MB. Pe Free: exportă la 4–6 Mbps sau urcă-l din Ads Manager și alege-l
+din bibliotecă. Pe Pro: o linie în migrare + o constantă în cod.
 
 ### 4.4 Faza 4 — dashboard + cron (Meta)
 
@@ -191,6 +196,31 @@ spune că video-ul e gata. Plus CSP-ul din `next.config.ts` (decizia 3.4).
   fișierele portalului. La merge, notele de aici se pot trece în `PLAN.md`.
 - **Panoul de lead-uri** nu are încă link spre `/admin/ads` (capul lui e în
   `(dash)/layout.tsx`, în afara zonei). Portalul are link înapoi spre lead-uri.
+
+---
+
+## Anexă — raportul fazei 3
+
+- **Urcarea**: la „Materialul” → „Fișier nou” → alegi fișierul (MP4/MOV, sub
+  50 MB) → „Urcă în contul …”. Patru pași vizibili: urcare în portal (progres
+  în MB, cu „Oprește urcarea”) → Meta copiază → Meta procesează → gata. La
+  final planul trece singur pe video-ul din bibliotecă.
+- **Tokenul nu ajunge în browser**: browserul primește doar un URL semnat
+  Supabase pentru un singur fișier. Meta descarcă fișierul de la un link
+  semnat, valabil 3 ore; fișierul se șterge când Meta spune „gata” sau
+  „eroare”, iar urcările uitate, după 6 ore.
+- **Garda**: `advideos` e a șasea muchie de scriere, tot prin `metaPost`;
+  `verify-paused` are acum 23 de verificări.
+- **Verificat** (Chrome, pe Meta și Supabase falși, dev și producție):
+  urcare reușită până la „gata” și creare pe pauză cu video-ul urcat; Meta
+  care descarcă abia după ce a răspuns (fișierul era încă acolo); fișier
+  prea mare oprit în browser, fără nicio cerere; eroare de procesare Meta
+  (mesajul lor, anticamera golită, „Urcă din nou”); oprire la jumătate (nimic
+  rămas, nimic trimis la Meta); 360 și 1280 px fără scroll orizontal;
+  tastatură (câmpul de fișier cu nume accesibil în română și focus vizibil);
+  hidratare curată în 30 de încărcări; regresia fazei 2 trece.
+- **Neverificat**: cu un fișier real, pe contul real — vezi README → „Faza 3”
+  → „Neverificat încă”.
 
 ---
 

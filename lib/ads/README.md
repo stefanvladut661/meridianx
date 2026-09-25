@@ -33,7 +33,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 |---|---|---|
 | 1 | Schema JSON + validare + previzualizare, fără apeluri la platforme | ✅ `feat/ads-portal` |
 | 2 | Meta: creare campanie pe pauză, cu video deja urcat | ✅ `feat/ads-portal` — testat pe Meta fals, încă nu pe contul real |
-| 3 | Meta: încărcare video din browser | ⬜ |
+| 3 | Meta: încărcare video din browser | ✅ `feat/ads-portal` — testat pe Meta și Supabase falși, încă nu pe contul real |
 | 4 | Dashboard + cron pentru Meta | ⬜ |
 | 5 | TikTok, peste structura existentă | ⬜ |
 
@@ -66,7 +66,9 @@ Commit separat după fiecare fază; nu se trece mai departe fără confirmarea o
 | `meta/errors.ts` | Erorile Meta spuse în română, cu mesajul lor original și `fbtrace_id`. |
 | `meta/links.ts` | Linkurile spre Ads Manager. |
 | `meta/types.ts` | Ce ajunge în browser din verificare și creare. |
-| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză" (21 de verificări, fără rețea). |
+| `meta/video.ts` | `server-only`: video nou — Meta îl descarcă de la un link semnat (`file_url`); starea procesării. |
+| `staging.ts` | `server-only`: anticamera video-urilor (bucket-ul privat `ads-uploads`, migrarea 7): URL semnat de urcare, link de descărcare pentru Meta, ștergere, curățenie la 6 ore. |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză" (23 de verificări, fără rețea). |
 
 ---
 
@@ -391,6 +393,70 @@ creativ), apoi ștearsă de tine din Ads Manager.
 
 ---
 
+## Faza 3 — video nou, din browser
+
+### De ce așa
+
+Promptul cere două lucruri care, la Meta, se bat cap în cap: video-ul să
+meargă „direct din browser la platformă" și niciun token în browser. Toate
+căile documentate de urcare la Meta (chunked, Resumable Upload API,
+`rupload.facebook.com`) cer tokenul complet în cererea de urcare; nu există
+un token doar pentru urcare (verificat 2026-09-25). Iar prin serverul nostru
+nu poate trece (Vercel: 4,5 MB pe cerere).
+
+Drumul ales (varianta A din `GHID.md`): **browser → stocare temporară →
+Meta descarcă singur.** Fișierul nu trece prin Vercel, tokenul nu ajunge în
+browser, iar browserul primește doar un URL semnat valabil pentru UN fișier.
+
+### Pașii, pe ecran (la „Materialul", cu „Fișier nou")
+
+1. **Alege fișierul** — MP4 sau MOV, cel mult 50 MB (verificat în browser,
+   înainte de orice trimitere).
+2. **Urcă în contul …** → serverul verifică sesiunea, spațiul și că tokenul
+   vede contul, curăță anticamera de urcări uitate (peste 6 ore) și dă un URL
+   semnat de urcare (Supabase, valabil 2 ore). Numele din anticameră e
+   `spațiu--moment--uuid.mp4`, fără numele fișierului omului.
+3. Browserul urcă fișierul cu un singur `PUT`, cu progres real în MB și
+   buton „Oprește urcarea".
+4. Serverul face un link de descărcare semnat (3 ore) și cere Meta
+   `POST /act_…/advideos` cu `file_url` și `name` (numele fișierului, ca să-l
+   recunoști în bibliotecă). Meta răspunde cu id-ul video-ului.
+5. Browserul întreabă starea la 3 secunde: „Meta copiază fișierul" (cu
+   procent, când Meta îl dă) → „Meta procesează" → gata. Documentația nu
+   spune dacă Meta descarcă înainte sau după ce răspunde, deci **fișierul din
+   anticameră se șterge abia când starea e `ready` sau eroare**.
+6. Gata → planul trece singur pe `{ "source": "library", "video_id": "…" }`, cu
+   nota „Urcat acum: …". De aici drumul e cel din faza 2: „Verifică în Meta",
+   „Creează pe pauză".
+
+Închiderea paginii în mijlocul urcării cere confirmare. Un video pe care
+Meta îl termină după ce ai plecat rămâne în biblioteca contului: îl alegi din
+„Alege din biblioteca contului".
+
+### Limite
+
+| | |
+|---|---|
+| Supabase Free | 50 MB pe fișier (limita globală a proiectului; bucket-ul nu o poate depăși) |
+| Supabase Pro | până la 500 GB; se ridică în migrarea 7 (`file_size_limit`) și în `VIDEO_UPLOAD_MAX_BYTES`. Peste ~6 MB Supabase recomandă urcarea resumabilă (TUS); portalul face un singur `PUT` — suficient pentru 50 MB, de trecut pe TUS dacă ridici limita mult. |
+| Meta | video de reclamă până la 4 GB; MP4/MOV, H.264, sunet AAC stereo, fără liste de editare |
+| Vercel | cererile noastre rămân mici (câțiva KB); `maxDuration = 60` pe `/admin/ads/nou` |
+
+Un video de 60 de secunde, 1080p, la ~10 Mbps are ~75 MB — **peste limita
+de pe Free.** Exportă reclamele la 4–6 Mbps (tot 1080p) sau urcă-le din
+Ads Manager și alege-le din bibliotecă.
+
+### Neverificat încă — se confirmă la primul video real
+
+1. Dacă Meta descarcă `file_url` în timpul cererii sau după (portalul
+   funcționează în ambele cazuri).
+2. Dacă Meta acceptă un link Supabase semnat (fără antet de autentificare;
+   robots.txt-ul Supabase nu blochează crawlerul Meta — verificat pe host).
+3. Valorile exacte ale `processing_phase.status`; eroarea e citită și din
+   `errors[]`, și din `error`, pentru că documentația și SDK-ul diferă.
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server; niciuna cu prefix `NEXT_PUBLIC_`.
@@ -522,16 +588,26 @@ Detaliile TikTok se confirmă pe documentația curentă în faza 5, înainte de 
 7. **Istoricul de cifre**: migrarea 6 îngheață în bază zilele mai vechi de 7
    (propunerea 3.7) — un `update` pe ele e refuzat de un trigger.
 
+## Decizii luate în faza 3 (de confirmat de om)
+
+1. **Stocarea temporară = Supabase Storage** (bucket privat, migrarea 7), nu
+   Vercel Blob: fără dependență nouă, fără cont nou, fără modificare în CSP
+   (originea Supabase e deja în `connect-src`). Prețul: 50 MB pe fișier cât
+   timp proiectul e pe Free.
+2. **Fișierul temporar se șterge când Meta termină** (gata sau eroare), nu
+   imediat după cerere; uitat, după 6 ore.
+3. **Planul trece singur pe video-ul din bibliotecă** când Meta spune „gata".
+
 ## De rezolvat — în afara zonei portalului
 
-- **Migrările 5 și 6 se aplică de om**, în SQL editor, în ordine. Imediat
+- **Migrările 5, 6 și 7 se aplică de om**, în SQL editor, în ordine. Imediat
   după migrarea 5: `insert into public.admin_emails (email) values (…)` cu
   aceleași adrese ca în `ADMIN_EMAILS` — altfel panoul de lead-uri arată zero
   lead-uri (nu se pierde nimic, doar lista e goală).
 - **CSP (`next.config.ts`):** miniaturile din biblioteca video și din
   verificare vin de pe CDN-ul Meta (`*.fbcdn.net`) — azi CSP-ul doar
   raportează, deci se văd, dar trebuie adăugate în `img-src` înainte ca
-  CSP-ul să devină activ. Faza 3 va cere, în plus, originea stocării
-  temporare a video-urilor în `connect-src` (vezi `GHID.md`, 4.3).
+  CSP-ul să devină activ. Urcarea din faza 3 NU cere nimic în plus: merge
+  spre Supabase, deja în `connect-src`.
 - **Legătura din panoul de lead-uri spre reclame:** capul din `(dash)/layout.tsx`
   nu are link spre `/admin/ads` (portalul are link înapoi spre lead-uri).
