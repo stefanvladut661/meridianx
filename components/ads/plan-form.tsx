@@ -35,7 +35,7 @@ import { asArray, asRecord, asString, getIn } from "@/lib/ads/plan-path";
 import type { PlanSummary } from "@/lib/ads/plan-summary";
 import { UTM_KEYS } from "@/lib/ads/plan-derive";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
-import type { LibraryResponse } from "@/lib/ads/meta/types";
+import type { LibraryResponse, UploadActions } from "@/lib/ads/meta/types";
 import { cn } from "@/lib/utils";
 import {
   FieldMessages,
@@ -51,6 +51,7 @@ import {
 } from "./fields";
 import { ERROR_DOT, ERROR_TEXT, FIELD, LABEL, OK_DOT, OK_TEXT, WARNING_DOT, WARNING_TEXT } from "./tone";
 import { VideoLibrary } from "./video-library";
+import { VideoUpload } from "./video-upload";
 
 /**
  * Previzualizarea editabilă, pe secțiuni — fișa de ordin a campaniei.
@@ -453,6 +454,7 @@ export function PlanForm({
   currentWorkspace,
   onSwitchWorkspace,
   loadLibrary,
+  upload,
 }: {
   platform: Platform;
   summary: PlanSummary;
@@ -461,8 +463,11 @@ export function PlanForm({
   onSwitchWorkspace: (id: string) => void;
   /** Biblioteca video a contului din plan — doar pe Meta, cu token setat. */
   loadLibrary?: (adAccount: string) => Promise<LibraryResponse>;
+  /** Urcarea unui video nou — doar pe Meta, cu token setat. */
+  upload?: UploadActions;
 }) {
   const { draft, update } = usePlanForm();
+  const [uploaded, setUploaded] = useState<{ id: string; fileName: string } | null>(null);
   const planWorkspace = workspaces.find((workspace) => workspace.id === draft.workspace) ?? null;
   const mismatch = planWorkspace !== null && planWorkspace.id !== currentWorkspace.id;
 
@@ -637,15 +642,35 @@ export function PlanForm({
                     : "Din biblioteca contului TikTok. Alegerea din listă vine odată cu conectarea TikTok."
               }
             />
+            {uploaded && uploaded.id === asString(getIn(draft, "creative.video.video_id")) ? (
+              <p className={cn("flex items-center gap-2 text-[13.5px]", OK_TEXT)}>
+                <span aria-hidden className={cn("h-2 w-2 rounded-full", OK_DOT)} />
+                Urcat acum: {uploaded.fileName} — Meta l-a procesat, e în biblioteca contului.
+              </p>
+            ) : null}
             {loadLibrary && platform === "meta" ? <VideoLibrary load={loadLibrary} /> : null}
           </>
         ) : videoSource === "upload" ? (
-          <TextField
-            path="creative.video.file_name"
-            label="Numele fișierului (opțional)"
-            mono
-            hint="Fișierul îl alegi aici, după verificare. Merge direct din browser la platformă — încărcarea vine în faza 3."
-          />
+          upload && platform === "meta" ? (
+            <VideoUpload
+              actions={upload}
+              onReady={(video) => {
+                setUploaded(video);
+                update("creative.video", { source: "library", video_id: video.id });
+              }}
+            />
+          ) : (
+            <TextField
+              path="creative.video.file_name"
+              label="Numele fișierului (opțional)"
+              mono
+              hint={
+                platform === "meta"
+                  ? "Fișierul se urcă de aici după ce spațiul are token."
+                  : "Urcarea pe TikTok vine odată cu conectarea TikTok."
+              }
+            />
+          )
         ) : null}
 
         <RadioRow

@@ -166,7 +166,7 @@ export async function checkOnMeta(workspace: AdsWorkspace, plan: Plan): Promise<
   if (plan.creative.video.source === "upload") {
     errors.push({
       path: "creative.video",
-      message: "Încărcarea unui video nou din portal vine în faza 3. Până atunci, alege un video deja urcat în contul de reclame.",
+      message: "Video-ul nu e încă în contul de reclame. Urcă-l la „Materialul”: când Meta termină de procesat, planul trece singur pe el.",
     });
   } else if (!video) {
     errors.push({

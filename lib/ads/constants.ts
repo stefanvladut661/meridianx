@@ -188,6 +188,15 @@ export const VARIANT_MODE_LABEL: Record<VariantMode, string> = {
 
 export const MAX_TEXT_VARIANTS = 5;
 
+/**
+ * Video nou urcat din portal. Trece prin stocarea temporară din Supabase
+ * (migrarea 7), iar limita de acolo e limita de aici: 50 MB pe planul Free.
+ * Pe Pro se ridică în ambele locuri, cu același număr.
+ */
+export const VIDEO_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
+export const VIDEO_UPLOAD_TYPES = ["video/mp4", "video/quicktime"] as const;
+export type VideoUploadType = (typeof VIDEO_UPLOAD_TYPES)[number];
+
 /** TikTok taie textul reclamei la 100 de caractere; Meta îl ascunde după ~125. */
 export const TIKTOK_AD_TEXT_MAX = 100;
 export const META_PRIMARY_TEXT_VISIBLE = 125;

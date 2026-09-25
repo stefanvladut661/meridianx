@@ -18,8 +18,12 @@
 
 export const PAUSED = "PAUSED" as const;
 
-/** Muchiile contului pe care portalul scrie. `adimages` = coperta video-ului. */
-export const CREATE_EDGES = ["campaigns", "adsets", "adcreatives", "ads", "adimages"] as const;
+/**
+ * Muchiile contului pe care portalul scrie. `adimages` = coperta video-ului,
+ * `advideos` = un video nou în bibliotecă (faza 3). Niciuna nu modifică un
+ * obiect existent.
+ */
+export const CREATE_EDGES = ["campaigns", "adsets", "adcreatives", "ads", "adimages", "advideos"] as const;
 export type CreateEdge = (typeof CREATE_EDGES)[number];
 
 /** Muchiile pe care obiectul creat are status de livrare. */

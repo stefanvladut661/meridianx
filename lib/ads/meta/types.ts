@@ -108,6 +108,26 @@ export interface LibraryVideo {
   ready: boolean;
 }
 
+/** Starea unui video nou în Meta, după ce i-am dat linkul spre fișier. */
+export interface UploadStatus {
+  state: "copying" | "processing" | "ready" | "error";
+  /** Procentul procesării, când Meta îl dă. */
+  progress: number | null;
+  /** Motivul, la `error`. */
+  message: string | null;
+}
+
+type Failure = { ok: false; message: string };
+
+/** Acțiunile urcării, legate de spațiul curent de editor. */
+export interface UploadActions {
+  prepare: (file: { name: string; size: number; type: string }) => Promise<
+    { ok: true; uploadUrl: string; name: string } | Failure
+  >;
+  send: (input: { stagingName: string; fileName: string }) => Promise<{ ok: true; videoId: string } | Failure>;
+  status: (input: { videoId: string; stagingName: string }) => Promise<{ ok: true; status: UploadStatus } | Failure>;
+}
+
 export type LibraryResponse =
   | { ok: true; videos: LibraryVideo[]; truncated: boolean }
   | { ok: false; message: string };

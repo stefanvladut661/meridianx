@@ -12,8 +12,10 @@ import { checkOnMeta } from "@/lib/ads/meta/check";
 import { createPausedOnMeta } from "@/lib/ads/meta/create";
 import { describeMetaError } from "@/lib/ads/meta/errors";
 import { adsManagerCampaignUrl } from "@/lib/ads/meta/links";
-import { listLibrary } from "@/lib/ads/meta/lookup";
-import type { CreateResponse, LibraryResponse, MetaCheckResponse } from "@/lib/ads/meta/types";
+import { listAdAccounts, listLibrary } from "@/lib/ads/meta/lookup";
+import type { CreateResponse, LibraryResponse, MetaCheckResponse, UploadStatus } from "@/lib/ads/meta/types";
+import { readVideoUploadStatus, sendVideoToMeta } from "@/lib/ads/meta/video";
+import { createStagingDownload, createStagingUpload, isStagingNameOf, removeStaged } from "@/lib/ads/staging";
 import { STORE_FAILURE_MESSAGE, findRecentDuplicate } from "@/lib/ads/store";
 
 /**
@@ -172,6 +174,115 @@ export async function createPausedCampaign(input: {
   const result = await createPausedOnMeta({ workspace, context, user });
   revalidatePath("/admin/ads");
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Video nou: browser → stocarea temporară → Meta
+// ---------------------------------------------------------------------------
+
+type Failure = { ok: false; message: string };
+
+/** Sesiune + spațiul de pe ecran = cel din cookie + Meta + cont de forma corectă. */
+async function uploadContext(
+  workspaceId: string,
+  adAccountInput: string
+): Promise<{ ok: true; workspace: AdsWorkspace; adAccount: string } | Failure> {
+  const user = await getAdminUser();
+  if (!user) return { ok: false, message: SESSION_EXPIRED };
+
+  const currentId = await currentWorkspaceId();
+  const workspace = findWorkspace(currentId);
+  if (!workspace || workspaceId !== currentId) {
+    return { ok: false, message: "Spațiul de lucru s-a schimbat între timp. Reîncarcă pagina." };
+  }
+  if (workspace.platform !== "meta") {
+    return { ok: false, message: "Urcarea pe TikTok vine în faza 5." };
+  }
+  const adAccount = normalizeAdAccount("meta", adAccountInput);
+  if (!/^act_\d{5,25}$/.test(adAccount)) {
+    return { ok: false, message: `„${adAccountInput}” nu e un cont de reclame Meta (act_ urmat de cifre).` };
+  }
+  return { ok: true, workspace, adAccount };
+}
+
+export async function prepareVideoUpload(input: {
+  workspace: string;
+  adAccount: string;
+  file: { name: string; size: number; type: string };
+}): Promise<{ ok: true; uploadUrl: string; name: string } | Failure> {
+  const context = await uploadContext(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+
+  // Înainte de 50 MB urcați degeaba: tokenul trebuie să vadă contul.
+  try {
+    const accounts = await listAdAccounts(context.workspace);
+    if (!accounts.some((account) => account.id === context.adAccount)) {
+      return {
+        ok: false,
+        message: `Tokenul spațiului ${workspaceName(context.workspace)} nu vede contul ${context.adAccount}, deci n-ar putea pune video-ul în biblioteca lui. Verifică contul din plan.`,
+      };
+    }
+  } catch (error) {
+    return { ok: false, message: describeMetaError(error, "verificarea contului", context.workspace.tokenEnv) };
+  }
+
+  const staged = await createStagingUpload(context.workspace.id, input.file);
+  return staged.ok ? { ok: true, ...staged.data } : staged;
+}
+
+export async function sendStagedVideoToMeta(input: {
+  workspace: string;
+  adAccount: string;
+  stagingName: string;
+  fileName: string;
+}): Promise<{ ok: true; videoId: string } | Failure> {
+  const context = await uploadContext(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  if (!isStagingNameOf(context.workspace.id, input.stagingName)) {
+    return { ok: false, message: "Fișierul nu e al spațiului de lucru curent. Urcă-l din nou." };
+  }
+
+  const download = await createStagingDownload(input.stagingName);
+  if (!download.ok) return download;
+
+  // Numele din bibliotecă = numele fișierului omului, ca să-l recunoască mai târziu.
+  const title = input.fileName.replace(/[\\/]/g, " ").replace(/\.(mp4|mov)$/i, "").trim().slice(0, 120) || "Video din portal";
+
+  // Fișierul rămâne în anticameră până când Meta spune „gata” sau „eroare”
+  // (vezi `checkVideoUploadStatus`): nu e documentat dacă Meta îl descarcă
+  // înainte să răspundă sau după. Uitat, se curăță singur în 6 ore.
+  try {
+    const { videoId } = await sendVideoToMeta(context.workspace, context.adAccount, { fileUrl: download.data.url, title });
+    return { ok: true, videoId };
+  } catch (error) {
+    return { ok: false, message: describeMetaError(error, "copierea video-ului în biblioteca contului", context.workspace.tokenEnv) };
+  }
+}
+
+export async function checkVideoUploadStatus(input: {
+  workspace: string;
+  videoId: string;
+  /** Fișierul din anticameră: se șterge când Meta a terminat, cu bine sau cu eroare. */
+  stagingName: string;
+}): Promise<{ ok: true; status: UploadStatus } | Failure> {
+  const user = await getAdminUser();
+  if (!user) return { ok: false, message: SESSION_EXPIRED };
+  const currentId = await currentWorkspaceId();
+  const workspace = findWorkspace(currentId);
+  if (!workspace || input.workspace !== currentId || workspace.platform !== "meta") {
+    return { ok: false, message: "Spațiul de lucru s-a schimbat între timp. Reîncarcă pagina." };
+  }
+  if (!/^\d{5,25}$/.test(input.videoId)) return { ok: false, message: "Id de video invalid." };
+
+  try {
+    const status = await readVideoUploadStatus(workspace, input.videoId);
+    if ((status.state === "ready" || status.state === "error") && isStagingNameOf(workspace.id, input.stagingName)) {
+      await removeStaged(input.stagingName);
+    }
+    return { ok: true, status };
+  } catch (error) {
+    return { ok: false, message: describeMetaError(error, "citirea stării video-ului", workspace.tokenEnv) };
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -906,7 +906,7 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
   if (getIn(raw, "creative.video.source") === "upload") {
     warnings.push({
       path: "creative.video",
-      message: "Video-ul e nou: îl alegi din calculator după verificarea planului, iar campania se poate crea abia după ce platforma termină de procesat fișierul.",
+      message: "Video-ul e nou: îl urci din calculator la „Materialul”. Campania se poate verifica și crea după ce platforma termină de procesat fișierul.",
     });
   }
 

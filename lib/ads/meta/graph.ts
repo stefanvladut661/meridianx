@@ -207,7 +207,7 @@ function missing(what: string): MetaApiError {
 export async function metaCreate(
   workspace: AdsWorkspace,
   adAccount: string,
-  edge: Exclude<CreateEdge, "adimages">,
+  edge: Exclude<CreateEdge, "adimages" | "advideos">,
   payload: Params
 ): Promise<{ id: string }> {
   const result = await metaPost(workspace, adAccount, edge, payload);
@@ -231,6 +231,22 @@ export async function metaUploadImage(
   const hash = asText((images[0] as { hash?: unknown } | undefined)?.hash);
   if (!hash) throw missing("hash-ul imaginii urcate");
   return { hash };
+}
+
+/**
+ * Un video nou în biblioteca contului: Meta îl descarcă singur de la
+ * `fileUrl` (un link semnat, pe termen scurt, din stocarea portalului).
+ * Fișierul nu trece prin serverul nostru, iar tokenul nu ajunge în browser.
+ */
+export async function metaUploadVideoFromUrl(
+  workspace: AdsWorkspace,
+  adAccount: string,
+  video: { fileUrl: string; title: string }
+): Promise<{ id: string }> {
+  const result = await metaPost(workspace, adAccount, "advideos", { file_url: video.fileUrl, name: video.title });
+  const id = asText(result.id);
+  if (!id) throw missing("id-ul video-ului urcat");
+  return { id };
 }
 
 /**

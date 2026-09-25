@@ -8,7 +8,13 @@ import { getIn, setIn } from "@/lib/ads/plan-path";
 import { countOf } from "@/lib/ads/plan-derive";
 import { joinRo, summarizePlan, type PlanSummary } from "@/lib/ads/plan-summary";
 import { validatePlan, type PlanProblem } from "@/lib/ads/plan-validate";
-import type { CreateResponse, LibraryResponse, MetaCheck, MetaCheckResponse } from "@/lib/ads/meta/types";
+import type {
+  CreateResponse,
+  LibraryResponse,
+  MetaCheck,
+  MetaCheckResponse,
+  UploadActions,
+} from "@/lib/ads/meta/types";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { cn } from "@/lib/utils";
 import { AdsPreview } from "./ads-preview";
@@ -100,6 +106,18 @@ export interface PlanEditorActions {
     allowDuplicate: boolean;
   }) => Promise<CreateResponse>;
   listLibrary: (input: { workspace: string; adAccount: string }) => Promise<LibraryResponse>;
+  prepareUpload: (input: {
+    workspace: string;
+    adAccount: string;
+    file: { name: string; size: number; type: string };
+  }) => ReturnType<UploadActions["prepare"]>;
+  sendUpload: (input: {
+    workspace: string;
+    adAccount: string;
+    stagingName: string;
+    fileName: string;
+  }) => ReturnType<UploadActions["send"]>;
+  uploadStatus: (input: { workspace: string; videoId: string; stagingName: string }) => ReturnType<UploadActions["status"]>;
 }
 
 const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Nu s-a trimis nimic spre Meta. Încearcă din nou.";
@@ -253,6 +271,18 @@ export function PlanEditor({
       ? (adAccount: string) => actions.listLibrary({ workspace: current.id, adAccount })
       : undefined;
 
+  // Contul se citește la momentul apelului: omul îl poate corecta între pași.
+  const accountNow = () => String(getIn(draftRef.current ?? {}, "ad_account") ?? "");
+  const upload: UploadActions | undefined =
+    current.platform === "meta" && current.tokenConfigured
+      ? {
+          prepare: (file) => actions.prepareUpload({ workspace: current.id, adAccount: accountNow(), file }),
+          send: ({ stagingName, fileName }) =>
+            actions.sendUpload({ workspace: current.id, adAccount: accountNow(), stagingName, fileName }),
+          status: ({ videoId, stagingName }) => actions.uploadStatus({ workspace: current.id, videoId, stagingName }),
+        }
+      : undefined;
+
   const goToLine = (line: number, column: number) => {
     const area = textareaRef.current;
     if (!area) return;
@@ -309,7 +339,7 @@ export function PlanEditor({
             : videoSource === "upload"
               ? {
                   action: "none",
-                  reason: "Planul e valid. Încărcarea unui video nou vine în faza 3 — până atunci, alege un video deja urcat.",
+                  reason: "Planul e valid. Urcă întâi video-ul, la „Materialul”: când Meta termină de procesat, planul trece singur pe el și se poate verifica.",
                 }
               : created
                 ? { action: "none", reason: "Creată. Pentru încă o campanie, schimbă planul și verifică din nou." }
@@ -510,6 +540,7 @@ export function PlanEditor({
                   currentWorkspace={current}
                   onSwitchWorkspace={switchWorkspace}
                   loadLibrary={loadLibrary}
+                  upload={upload}
                 />
               </PlanFormProvider>
             </div>
