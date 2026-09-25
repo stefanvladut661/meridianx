@@ -1,6 +1,6 @@
-# Ghid — portalul de reclame, după faza 3
+# Ghid — portalul de reclame, după faza 4
 
-*Actualizat pe 2026-09-25, la finalul fazei 3. Ramura: `feat/ads-portal`.*
+*Actualizat pe 2026-09-25, la finalul fazei 4. Ramura: `feat/ads-portal`.*
 
 Trei documente, în ordinea în care se citesc:
 
@@ -19,8 +19,8 @@ Trei documente, în ordinea în care se citesc:
 | **1** | Schema JSON + validare + previzualizare, fără apeluri la platforme | ✅ gata |
 | **2** | Meta: creare campanie pe pauză, cu video deja urcat | ✅ gata pe `feat/ads-portal`, testată pe un Meta fals local — **încă nu pe contul real** |
 | **3** | Meta: încărcare video din browser | ✅ gata pe `feat/ads-portal`, testată pe Meta și Supabase falși — **încă nu pe contul real** |
-| 4 | Dashboard + cron pentru Meta | ⬜ așteaptă confirmarea ta |
-| 5 | TikTok, peste structura existentă | ⬜ |
+| **4** | Dashboard + cron pentru Meta | ✅ gata pe `feat/ads-portal`, testată pe Meta și Supabase falși — cron-ul cere o linie în `vercel.json` (3.8) |
+| 5 | TikTok, peste structura existentă | ⬜ așteaptă confirmarea ta |
 
 Migrarea 5 (`admin_emails` + `is_lead_admin()`) e pe `main`; portalul, tot
 **fără merge în `main`**. Regula din prompt rămâne: fază cu fază, commit
@@ -101,6 +101,15 @@ Fără ele, „Verifică în Meta” se oprește și spune exact asta (cu sugest
       trimis oprit. Lista a ce n-a putut fi verificat fără un cont real e în
       `lib/ads/README.md` → „Neverificat încă”.
 
+### 2.6 Primele cifre
+
+- [ ] După ce pornești o campanie din Ads Manager și rulează o zi: **Statistici
+      → Sincronizează acum**. Compară cheltuiala și lead-urile cu Ads Manager, pe
+      aceeași perioadă (atribuirea e cea a setului de reclame, ca acolo).
+- [ ] Spune-mi dacă „Lead-uri” diferă de coloana „Results” din Ads Manager.
+- [ ] La merge (3.8): linia de cron în `vercel.json`; de atunci, sincronizarea
+      rulează singură în fiecare dimineață.
+
 > Pentru Clienți: aceiași pași în portofoliul clienților, cu `META_TOKEN_CLIENTI`.
 
 ---
@@ -116,9 +125,11 @@ Fără ele, „Verifică în Meta” se oprește și spune exact asta (cu sugest
 | 3.5 | „Ad sources” pe Meta | ✅ **Rezolvat:** n-are câmp în API; portalul refuză, una câte una, cele 5 funcții pe care le alimentează (README → „Faza 2”). |
 | 3.6 | Video „direct din browser” vs. „niciun token în browser” | ✅ **Luată de mine**, pe propunerea A: browser → Supabase Storage (URL semnat) → Meta descarcă singur. Fără dependență nouă. Limita: 50 MB pe fișier pe Supabase Free (4.3). |
 | 3.7 | Istoricul de metrici | ✅ **Luată de mine**, pe propunere: migrarea 6 îngheață zilele mai vechi de 7 (trigger în bază). Spune-mi dacă vrei altfel până la faza 4. |
-| 3.8 | Cron-ul (faza 4) în `app/api/cron/…` și `vercel.json` | ⬜ îți cer voie la începutul fazei 4. |
+| 3.8 | Cron-ul | ✅ ruta e în zona portalului (`/admin/ads/sincronizare`, cu `CRON_SECRET`). ⬜ **Îți cer voie** pentru o singură linie în `vercel.json` (în afara zonei, n-am atins-o): `{ "path": "/admin/ads/sincronizare", "schedule": "30 3 * * *" }`. Cron-ul rulează doar pe producție, deci contează la merge. |
 | 3.9 | **DSA**: plan → setările contului → eroare; portalul nu completează singur un câmp legal | nou, de confirmat |
 | 3.10 | **Dublura**: același plan, creat în ultimele 30 de minute, cere „Creează încă una, intenționat” | de confirmat |
+| 3.12 | **Obiectivele și monedele nu se amestecă** în indicatori: la obiective diferite, Statisticile arată afișări și clicuri; rezultatele, după alegerea obiectivului | nou, de confirmat |
+| 3.13 | **Statusul citit din Meta se afișează** („Pornită”, „Ștearsă”); portalul tot nu scrie alt status decât pauza | nou, de confirmat |
 | 3.11 | **50 MB pe video** cât timp Supabase e pe Free. Alternativa: Supabase Pro (limită până la 500 GB) sau Vercel Blob (dependență nouă) | nou, de hotărât dacă reclamele tale trec des de 50 MB |
 
 ---
@@ -140,25 +151,9 @@ Ce ai de făcut: 2.1 (migrarea 7) și 2.5.
 ~75 MB. Pe Free: exportă la 4–6 Mbps sau urcă-l din Ads Manager și alege-l
 din bibliotecă. Pe Pro: o linie în migrare + o constantă în cod.
 
-### 4.4 Faza 4 — dashboard + cron (Meta)
+### 4.4 Faza 4 — gata
 
-- **Cron zilnic** (Vercel Cron, gardă `CRON_SECRET` — variabila există deja):
-  trage cifrele din Meta Insights pentru fiecare spațiu cu token și le scrie în
-  `ads_metrics_daily`; fiecare rulare scrie un rând în `ads_runs`.
-- **Dashboard-ul citește doar din bază**, niciodată din API.
-- **Metrici**: cheltuială, afișări, click-uri, CTR, CPC, CPM, rezultate
-  (lead-uri), cost per rezultat — pe campanie, pe zi, cu comparație între
-  perioade.
-- **Istoric permanent**: platformele nu țin datele la infinit.
-- **Decizia 3.7**: Meta atribuie conversiile cu întârziere (fereastra de
-  atribuire merge până la 7 zile după clic). Dacă actualizăm doar ziua curentă,
-  lead-urile atribuite mai târziu zilelor trecute nu mai ajung niciodată în
-  bază. Propun: actualizăm ultimele 7 zile la fiecare rulare, iar zilele mai
-  vechi rămân înghețate.
-- **Ecranele** `/admin/ads/statistici` și `/admin/ads/[id]`. Înainte de grafice
-  citesc skill-ul `dataviz`, cum cere promptul.
-- Pe Vercel Hobby, cron-urile rulează cel mult o dată pe zi (±59 min) —
-  suficient pentru cifre zilnice.
+Tehnic: `lib/ads/README.md` → „Faza 4”. Ce ai de făcut: 2.6 și decizia 3.8.
 
 ### 4.5 Faza 5 — TikTok
 
@@ -183,10 +178,10 @@ din bibliotecă. Pe Pro: o linie în migrare + o constantă în cod.
 
 ## 5. Observații
 
-- **Hidratare:** pe build-ul de producție, eroarea React #418 apare rar și
-  nereprodus: o dată în faza 1 (din peste 70 de încărcări) și o dată în faza 2
-  (din ~170, pe `/admin/ads`, fără să se repete pe aceeași pagină în alte 40
-  de încărcări). Cauza nu e cunoscută.
+- **Hidratare — găsită și rezolvată în faza 4:** #418-ul rar din fazele 1–2 era
+  un bug de reluare a hidratării în React 19.2 canary (Next 15.5), declanșat
+  când scriptul de pornire vine din cache înaintea datelor paginii. Remediul și
+  măsurătorile: anexa fazei 4.
 - **CSP-ul** e încă doar raportat (`CSP_REPORT_ONLY = true` în `next.config.ts`),
   deci nu blochează nimic azi.
 - **Pixelul din exemplu** e fals (zerouri), deci portalul avertizează că
@@ -198,6 +193,59 @@ din bibliotecă. Pe Pro: o linie în migrare + o constantă în cod.
   `(dash)/layout.tsx`, în afara zonei). Portalul are link înapoi spre lead-uri.
 
 ---
+
+## Anexă — raportul fazei 4
+
+### Ce face portalul acum
+
+- **Sincronizarea cifrelor** din Meta Insights în `ads_metrics_daily`: o cerere
+  pe cont de reclame, ultimele 7 zile + golul de la ultima rulare reușită (prima
+  rulare aduce tot, de la crearea campaniilor). Zilele mai vechi de 7 se scriu o
+  singură dată și nu se mai ating. Statusul campaniei se citește din Meta.
+  Fiecare rulare, în `ads_runs`.
+- **Pornită de** cron (`/admin/ads/sincronizare`, cu `CRON_SECRET`) sau de
+  „Sincronizează acum” din Statistici (spațiul curent, cel mult o dată la 2
+  minute).
+- **`/admin/ads/statistici`**: perioada (7 / 30 / 90 de zile), obiectivul,
+  moneda; indicatorii cu schimbarea față de perioada dinainte; cheltuiala și
+  rezultatele pe zi; tabelul pe campanii; toate cifrele pe zile, ca tabel.
+- **`/admin/ads/[id]`**: fișa campaniei — ultimele 7 zile, totalul de la
+  creare, graficele, tabelul, materialul și reclamele cum au fost trimise.
+- **`/admin/ads`**: cheltuiala, rezultatele și statusul pe fiecare rând; rândul
+  duce la fișă.
+
+### Verificat (Chrome, pe Meta și Supabase falși, dev și producție)
+
+- Sincronizarea: 4 campanii (două monede, două obiective), 204 zile scrise
+  dintr-o singură cerere pe cont; a doua apăsare în 2 minute refuzată fără
+  cerere la Meta; o resincronizare completă cu cifre schimbate de Meta a
+  actualizat ziua de acum 2 zile (21,31 → 24,31 lei) și a lăsat neatinsă o zi de
+  acum 40 de zile (27,35 lei) — fără nicio eroare de la trigger-ul din bază.
+- Cron: 401 fără secret și cu secret greșit, 200 și sincronizare cu secretul bun.
+- Statistici: obiective amestecate → afișări și clicuri, nu „rezultate”
+  adunate; filtrat pe Lead-uri → „Lead-uri” / „Cost pe lead”; EUR separat de
+  RON; graficul se citește și din săgeți.
+- 360, 768, 1024, 1440, 1920 px fără derulare laterală a paginii (tabelele
+  largi derulează în chenarul lor); tastatura; reduced-motion.
+- Regresie: creare pe pauză, erori, urcare video — toate trec.
+- Culoarea graficelor (`#3987e5`) validată cu scriptul din skill-ul `dataviz`.
+
+### Hidratarea — cauza #418 și remediul
+
+| Varianta (build de producție) | Încărcări cu #418 |
+|---|---|
+| Fără nimic (fișa campaniei) | ~1 din 4 (4/30, 6/16) |
+| Granițe `<Suspense>` în layout | tot ~1 din 7 + erori noi `$RS` (streaming stricat) |
+| Componente transparente la liste/tabele | 8 din 48 |
+| Granițe pe secțiuni + componente transparente | 1 din 48 (în dev, problema s-a mutat pe `<main>`) |
+| **Hidratare după `DOMContentLoaded`** (`hydrate-when-parsed.tsx`) | **0 din 128** (și 0 din 45 în dev) |
+
+Cauza, dovedită pe pași: HTML-ul serverului e identic byte cu byte la o
+încărcare bună și la una cu eroare; nimic din afara React nu atinge DOM-ul
+înainte de eroare; cu cache-ul browserului oprit eroarea dispare; în dev, React
+arată mereu același tipar (`<li>` unde aștepta `<ol>`, `<caption>` unde aștepta
+`<table>`) cu stiva în `replaySuspendedUnitOfWork`. Next 15.5.26 are același
+React canary, deci o actualizare minoră nu ajută.
 
 ## Anexă — raportul fazei 3
 

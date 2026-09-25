@@ -34,7 +34,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 1 | Schema JSON + validare + previzualizare, fără apeluri la platforme | ✅ `feat/ads-portal` |
 | 2 | Meta: creare campanie pe pauză, cu video deja urcat | ✅ `feat/ads-portal` — testat pe Meta fals, încă nu pe contul real |
 | 3 | Meta: încărcare video din browser | ✅ `feat/ads-portal` — testat pe Meta și Supabase falși, încă nu pe contul real |
-| 4 | Dashboard + cron pentru Meta | ⬜ |
+| 4 | Dashboard + cron pentru Meta | ✅ `feat/ads-portal` — testat pe Meta și Supabase falși; cron-ul cere o linie în `vercel.json` (vezi „Faza 4”) |
 | 5 | TikTok, peste structura existentă | ⬜ |
 
 Commit separat după fiecare fază; nu se trece mai departe fără confirmarea omului.
@@ -68,6 +68,11 @@ Commit separat după fiecare fază; nu se trece mai departe fără confirmarea o
 | `meta/types.ts` | Ce ajunge în browser din verificare și creare. |
 | `meta/video.ts` | `server-only`: video nou — Meta îl descarcă de la un link semnat (`file_url`); starea procesării. |
 | `staging.ts` | `server-only`: anticamera video-urilor (bucket-ul privat `ads-uploads`, migrarea 7): URL semnat de urcare, link de descărcare pentru Meta, ștergere, curățenie la 6 ore. |
+| `meta/insights.ts` | `server-only`: cifrele zilnice din Insights (o cerere pe cont) și statusul de livrare al fiecărei campanii. |
+| `sync.ts` | `server-only`: sincronizarea Insights → `ads_metrics_daily`, cu jurnalul în `ads_runs`. |
+| `stats.ts` | `server-only`: citirea cifrelor pentru ecrane, prin sesiune (RLS) — niciodată din API. |
+| `../../components/ads/hydrate-when-parsed.tsx` | Hidratarea portalului abia după citirea completă a paginii (vezi „Hidratarea”). |
+| `metrics.ts` | Calculele pure: totaluri, CTR/CPC/CPM/cost pe rezultat din sume, perioade, comparații, formatare. |
 | `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză" (23 de verificări, fără rețea). |
 
 ---
@@ -457,6 +462,118 @@ Ads Manager și alege-le din bibliotecă.
 
 ---
 
+## Faza 4 — cifrele: sincronizare zilnică și statistici
+
+### Sincronizarea
+
+- **Cine o pornește:** cron-ul zilnic (`GET /admin/ads/sincronizare`, cu
+  `Authorization: Bearer <CRON_SECRET>` — 401 altfel) și butonul
+  **„Sincronizează acum”** din Statistici (doar spațiul curent, cel mult o dată
+  la 2 minute).
+- **O cerere Insights pe cont de reclame**, nu una pe campanie:
+  `GET /act_…/insights?level=campaign&time_increment=1&filtering=[campaign.id IN …]`,
+  cu `use_unified_attribution_setting=true` (ca în Ads Manager).
+- **Intervalul:** ultimele 7 zile la fiecare rulare, plus golul de la ultima
+  rulare reușită (dacă cron-ul a lipsit câteva zile). Prima rulare aduce tot, de
+  la crearea celei mai vechi campanii (Meta păstrează 37 de luni).
+- **De ce 7 zile:** Meta își mai corectează cifrele „o pereche de zile” după
+  (niciodată după 28), iar conversiile de pe site se raportează în ziua în care
+  se întâmplă, nu în ziua clicului.
+- **Istoricul:** o zi mai veche de 7 zile se scrie o singură dată (rândurile
+  lipsă se adaugă, cele existente rămân). Baza refuză oricum actualizarea lor
+  (trigger în migrarea 6).
+- **Statusul:** `effective_status` al fiecărei campanii se citește la fiecare
+  sincronizare — după ce o pornești din Ads Manager, portalul arată „Pornită”;
+  după ce o ștergi, „Ștearsă”. Doar afișare: portalul tot nu trimite alt status
+  decât pauza.
+- **Jurnalul:** fiecare rulare e un rând în `ads_runs` (`ok` / `partial` /
+  `failed`, câte campanii, mesajele de eroare în română). Răspunsul rutei de cron
+  are doar starea și numere — niciun id de cont.
+
+### Ce numără fiecare cifră
+
+| Cifra | De unde |
+|---|---|
+| Cheltuială | `spend` (în unitățile monedei contului) |
+| Afișări | `impressions` |
+| Clicuri pe link | `inline_link_clicks` — ce folosește Ads Manager pentru CTR și CPC „link” |
+| CTR / CPC / CPM | calculate din SUME (niciodată media rapoartelor zilnice) |
+| Rezultate | după obiectivul campaniei: Lead-uri → `offsite_conversion.fb_pixel_lead`; Vânzări → `…fb_pixel_purchase`; Contact → `contact_website`; Programare → `schedule_website`; Trafic → `landing_page_view`; Video → `video_thruplay_watched_actions`; Notorietate → `reach` |
+
+Un singur tip de acțiune pe campanie: `lead` include deja lead-urile din pixel;
+adunate, s-ar număra de două ori. Câmpul `results` din Insights (coloana
+„Results”) se păstrează în `raw`, pentru comparații.
+
+**Obiective amestecate:** lead-urile nu se adună cu vizitele pe pagină. Când
+spațiul are campanii cu obiective diferite, Statisticile arată afișări și
+clicuri; rezultatele și costul lor apar după ce alegi un obiectiv din filtru.
+La fel monedele: RON și EUR nu se adună — filtrul de monedă.
+
+**Notorietate:** acoperirea e pe zi; însumată pe mai multe zile, un om văzut în
+două zile contează de două ori. Eticheta o spune.
+
+### Ecranele
+
+- **`/admin/ads/statistici`** — filtrele pe un rând (perioada 7 / 30 / 90 de
+  zile, obiectivul, moneda), indicatorii cu schimbarea față de aceeași durată de
+  dinainte (săgeată + procent; verde = mai bine, roșu = mai rău, cheltuiala
+  neutră), cheltuiala și rezultatele pe zi (două grafice, nu o axă dublă), tabelul
+  pe campanii și toate cifrele pe zile, ca tabel.
+- **`/admin/ads/[id]`** — o campanie: ultimele 7 zile comparate cu cele 7 de
+  dinainte, totalul de la creare, graficele pe zile (cel mult 120), tabelul
+  complet, materialul și reclamele exact cum au fost trimise, planul JSON salvat.
+- **`/admin/ads`** — fiecare campanie cu cheltuiala și rezultatele de la creare
+  și statusul citit din Meta; rândul duce la fișă.
+
+Graficele urmează skill-ul `dataviz`: o singură serie, coloane de cel mult 24
+px, grilă subțire, culoarea `#3987e5` validată cu `validate_palette.js` pe
+suprafața panoului; hover și săgețile stânga/dreapta dau aceeași fișă a zilei.
+
+### Cron-ul — ce lipsește ca să ruleze singur
+
+Ruta stă în zona portalului, deci n-a fost nevoie de `app/api/cron`. Programarea
+însă stă în `vercel.json`, în afara zonei — **n-am atins-o**. La merge, o linie:
+
+```json
+{ "path": "/admin/ads/sincronizare", "schedule": "30 3 * * *" }
+```
+
+(03:30 UTC = 06:30 vara, 05:30 iarna; Vercel Hobby rulează cron-urile o dată pe
+zi, cu o toleranță de până la 59 de minute, doar pe producție.) `CRON_SECRET`
+există deja în proiect (sonda Supabase). Până atunci, cifrele vin din
+„Sincronizează acum”.
+
+### Neverificat încă — la primele cifre reale
+
+1. Forma exactă a elementelor din `results` (nedocumentată strict; stă doar în `raw`).
+2. Șirul de filtru `campaign.id` (documentat e operatorul `IN` și notația cu punct).
+3. Că zilele fără livrare lipsesc din răspuns (portalul le tratează oricum ca zero).
+4. Numerele de lead-uri față de Ads Manager: de comparat pe o campanie reală, pe aceeași perioadă.
+
+### Hidratarea (eroarea React #418) — rezolvată
+
+Paginile mari (liste, tabele) primesc datele RSC în mai multe bucăți, ca
+scripturi puse DUPĂ scriptul care pornește hidratarea. Când acel script vine
+din cache, rulează înainte ca browserul să citească bucățile de după el. React
+ajunge la o bucată lipsă, se oprește, iar la reluare (React 19.2 canary, inclus
+în Next 15.5 — și în 15.5.26) „revendică” a doua oară elementul HTML la care se
+oprise: găsește `<li>` unde aștepta `<ol>`, `<caption>` unde aștepta
+`<table>`, și reconstruiește toată pagina în browser. Asta era și #418-ul rar
+din fazele 1–2; în faza 4, cu pagini mai mari, ajunsese la ~1 din 4 încărcări
+pe fișa campaniei.
+
+**Remediul:** `components/ads/hydrate-when-parsed.tsx`, în jurul layout-ului
+portalului. Dacă documentul încă se citește când începe hidratarea, componenta
+așteaptă `DOMContentLoaded` (atunci toate bucățile au sosit); fiind o
+componentă-funcție, reluarea ei nu revendică nimic din DOM. Pe server și la
+navigarea între pagini nu așteaptă nimic. Măsurat pe build de producție: 0
+erori în 128 de încărcări (față de 11 din 40 înainte) și 0 în 45 în dev.
+
+Încercări respinse, cu măsurători: granițe `<Suspense>` (au mutat problema pe
+`<main>` și, în layout, au stricat scripturile de streaming `$RS`) și
+componente transparente între elementele HTML și rândurile lor (au scăzut doar
+rata). Detalii în `GHID.md`, anexa fazei 4.
+
 ## Variabile de mediu
 
 Toate doar pe server; niciuna cu prefix `NEXT_PUBLIC_`.
@@ -587,6 +704,21 @@ Detaliile TikTok se confirmă pe documentația curentă în faza 5, înainte de 
    cu link, notat `partial`.
 7. **Istoricul de cifre**: migrarea 6 îngheață în bază zilele mai vechi de 7
    (propunerea 3.7) — un `update` pe ele e refuzat de un trigger.
+
+## Decizii luate în faza 4 (de confirmat de om)
+
+1. **Ruta de cron în zona portalului** (`/admin/ads/sincronizare`), nu în
+   `app/api/cron`: aceeași protecție (`CRON_SECRET`), fără fișiere din afara
+   zonei. Doar linia din `vercel.json` rămâne de adăugat, cu voia ta.
+2. **Fereastra de 7 zile rămâne** (decizia 3.7): documentația Meta spune că
+   cifrele se stabilizează în câteva zile, iar conversiile de pe site se
+   raportează în ziua conversiei.
+3. **„Sincronizează acum”** sincronizează doar spațiul curent, cel mult o dată
+   la 2 minute.
+4. **Obiectivele și monedele nu se amestecă** în indicatori (vezi „Faza 4”).
+5. **Statusul citit din Meta se afișează** („Pornită”, „Ștearsă”); portalul tot
+   nu scrie niciodată alt status decât pauza.
+
 
 ## Decizii luate în faza 3 (de confirmat de om)
 
