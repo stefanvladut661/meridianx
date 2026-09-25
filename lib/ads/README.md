@@ -14,9 +14,10 @@ Promptul complet al portalului e în `PROMPT.md`.
 
 ## Regula care nu se negociază
 
-**Portalul creează campanii DOAR în stare PAUSED.** Nu există cod, rută sau
-buton care să pornească o campanie. Activarea o face omul, în Ads Manager.
-Dacă o funcție ar putea trimite `ACTIVE`, designul e greșit.
+**Portalul creează campanii DOAR în stare PAUSED** (pe TikTok:
+`operation_status: DISABLE`). Nu există cod, rută sau buton care să pornească
+o campanie. Activarea o face omul, în Ads Manager. Dacă o funcție ar putea
+trimite statusul de pornire, designul e greșit.
 
 Consecința oricărei erori de cod trebuie să fie o campanie oprită, nu una care
 arde buget. De aici și plafonul de buget pe spațiu de lucru: prinde un zero în
@@ -35,7 +36,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 2 | Meta: creare campanie pe pauză, cu video deja urcat | ✅ `feat/ads-portal` — testat pe Meta fals, încă nu pe contul real |
 | 3 | Meta: încărcare video din browser | ✅ `feat/ads-portal` — testat pe Meta și Supabase falși, încă nu pe contul real |
 | 4 | Dashboard + cron pentru Meta | ✅ `feat/ads-portal` — testat pe Meta și Supabase falși; cron-ul cere o linie în `vercel.json` (vezi „Faza 4”) |
-| 5 | TikTok, peste structura existentă | ⬜ |
+| 5 | TikTok, peste structura existentă | ✅ `feat/ads-portal` — testat pe TikTok și Supabase falși, încă nu pe contul real |
 
 Commit separat după fiecare fază; nu se trece mai departe fără confirmarea omului.
 
@@ -55,8 +56,12 @@ Commit separat după fiecare fază; nu se trece mai departe fără confirmarea o
 | `plan-summary.ts` | Planul spus în română, din datele brute. |
 | `example-plan.ts` | Exemplul comentat — sursa unică (butonul „Încarcă exemplul" și secțiunea de mai jos). |
 | `store.ts` | `server-only`: tabelele portalului (migrarea 6). Citire prin sesiune (RLS), scriere prin service role. |
+| `platform.ts` | `server-only`: contractul comun al platformelor și `adapterFor(platform)` — acțiunile și sincronizarea nu știu nimic despre Meta sau TikTok. |
+| `types.ts` | Ce ajunge în browser din verificare și creare, pe ambele platforme. |
+| `links.ts` | Linkurile spre Ads Manager și TikTok Ads Manager. |
+| `fingerprint.ts` | Amprenta care leagă verificarea de creare. |
 | `meta/graph.ts` | `server-only`: SINGURUL client Graph API. GET-uri + o singură cale de scriere (`metaPost` → `metaCreate`, `metaUploadImage`), cu `assertPaused` înainte de rețea. Fără update, fără delete. |
-| `meta/paused.ts` | Garda: orice câmp de status, la orice adâncime, trebuie să fie `PAUSED`; muchiile de scriere sunt o listă închisă. |
+| `meta/paused.ts` | Garda, pe ambele platforme: orice câmp de status, la orice adâncime, trebuie să fie `PAUSED` (Meta) sau `DISABLE` (TikTok); căile de scriere sunt o listă închisă. |
 | `meta/build.ts` | Planul → corpurile de cerere v26 (campanie, set, creativ, reclamă). Funcții pure. |
 | `meta/lookup.ts` | Citiri: conturile tokenului, pagină, Instagram, pixel, video, biblioteca video, DSA-ul contului. |
 | `meta/targeting.ts` | Numele din plan → cheile Meta (orașe, regiuni, limbi, interese, comportamente). |
@@ -64,8 +69,6 @@ Commit separat după fiecare fază; nu se trece mai departe fără confirmarea o
 | `meta/create.ts` | Crearea: copertă → campanie → set → (creativ → reclamă) × N, toate pe pauză. |
 | `meta/thumbnail.ts` | Coperta propusă de Meta, descărcată ca s-o urcăm în cont (Meta nu vrea linkuri spre CDN-ul lui). |
 | `meta/errors.ts` | Erorile Meta spuse în română, cu mesajul lor original și `fbtrace_id`. |
-| `meta/links.ts` | Linkurile spre Ads Manager. |
-| `meta/types.ts` | Ce ajunge în browser din verificare și creare. |
 | `meta/video.ts` | `server-only`: video nou — Meta îl descarcă de la un link semnat (`file_url`); starea procesării. |
 | `staging.ts` | `server-only`: anticamera video-urilor (bucket-ul privat `ads-uploads`, migrarea 7): URL semnat de urcare, link de descărcare pentru Meta, ștergere, curățenie la 6 ore. |
 | `meta/insights.ts` | `server-only`: cifrele zilnice din Insights (o cerere pe cont) și statusul de livrare al fiecărei campanii. |
@@ -73,7 +76,17 @@ Commit separat după fiecare fază; nu se trece mai departe fără confirmarea o
 | `stats.ts` | `server-only`: citirea cifrelor pentru ecrane, prin sesiune (RLS) — niciodată din API. |
 | `../../components/ads/hydrate-when-parsed.tsx` | Hidratarea portalului abia după citirea completă a paginii (vezi „Hidratarea”). |
 | `metrics.ts` | Calculele pure: totaluri, CTR/CPC/CPM/cost pe rezultat din sume, perioade, comparații, formatare. |
-| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză" (23 de verificări, fără rețea). |
+| `tiktok/api.ts` | `server-only`: SINGURUL client TikTok. GET-uri + o singură cale de scriere (`tiktokCreate`), cu `assertTikTokDisabled` înainte de rețea. Fără update, fără delete. Id-urile de 19 cifre trec exact. |
+| `tiktok/build.ts` | Planul → corpurile de cerere v1.3 (campanie, grup, reclame). Funcții pure. |
+| `tiktok/lookup.ts` | Citiri: contul, identitățile, pixelul, video-ul, biblioteca. |
+| `tiktok/targeting.ts` | Numele din plan → id-urile TikTok (țări, regiuni, orașe, limbi, interese). |
+| `tiktok/check.ts` | „Verifică în TikTok" + amprenta planului. |
+| `tiktok/create.ts` | Crearea: copertă → campanie → grup → reclame (o cerere), toate oprite. |
+| `tiktok/video.ts` | Video nou prin link (`UPLOAD_BY_URL`) și starea conversiei. |
+| `tiktok/insights.ts` | Cifrele zilnice (ferestre de 30 de zile) și statusul campaniilor. |
+| `tiktok/errors.ts` | Erorile TikTok spuse în română, cu mesajul lor și `request_id`. |
+| `tiktok/adapter.ts` | TikTok sub contractul din `platform.ts`. |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", Meta și TikTok (48 de verificări, fără rețea). |
 
 ---
 
@@ -120,7 +133,7 @@ câmp `platform` separat, ca să nu se poată contrazice.
 | `audience.age_min` / `age_max` | nu (18 / 65) | 18–65; 65 = „65+" |
 | `audience.gender` | nu (`all`) | `all`, `male`, `female` |
 | `audience.languages[]` | nu (orice) | coduri ISO 639-1: `ro`, `hu` |
-| `audience.interests[]` / `behaviors[]` | nu | `{ "name": "…", "id"?: "…" }` — fără id, se caută după nume la creare |
+| `audience.interests[]` / `behaviors[]` | nu | `{ "name": "…", "id"?: "…" }` — fără id, se caută după nume la creare; `behaviors` doar pe Meta |
 | `conversion.pixel_id` · `.event` | da pentru `leads` și `sales` | evenimente: `lead`, `contact`, `schedule`, `complete_registration`, `purchase`, `view_content` |
 | `destination` | da | `{ "type": "website", "url": "https://…", "utm"?: { source, medium, campaign, content, term } }` |
 | `creative.video` | da | `{ "source": "library", "video_id": "…" }` sau `{ "source": "upload", "file_name"?: "…" }` |
@@ -133,7 +146,8 @@ câmp `platform` separat, ca să nu se poată contrazice.
 | `meta.instagram_account_id` · `special_ad_categories[]` · `advantage_audience` · `placements` | nu | `advantage_audience` implicit `false`; `placements` implicit `"automatic"` |
 | `meta.enhancements` | nu — **toate `false`** | `advantage_creative`, `ad_sources`, `multi_advertiser_ads` |
 | `meta.dsa_beneficiary` · `meta.dsa_payor` | da în UE, dacă contul n-are valori implicite | cine beneficiază și cine plătește reclama (DSA) — apar pe reclamă |
-| `tiktok.identity_type` · `identity_id` | da pe TikTok | `CUSTOMIZED_USER`, `TT_USER`, `BC_AUTH_TT` |
+| `tiktok.identity_type` · `identity_id` | da pe TikTok | `TT_USER` sau `BC_AUTH_TT` (Spark Ads); `CUSTOMIZED_USER` se respinge — TikTok n-o mai acceptă |
+| `tiktok.identity_bc_id` | da la `BC_AUTH_TT` | Business Center-ul care a autorizat contul TikTok |
 | `tiktok.placements` | nu (`tiktok_only`) | sau `automatic` |
 | `tiktok.enhancements` | nu — **toate `false`** | `automatic_enhancements`, `auto_add_assets`, `translate_and_dub`, `music_refresh` |
 
@@ -282,18 +296,96 @@ Sursa: `example-plan.ts`. Se poate lipi direct în portal, cu comentarii cu tot.
 }
 ```
 
-Pe TikTok, în loc de `meta`:
+### Exemplul complet, comentat — TikTok, Leads, destinație Website
+
+În spațiile TikTok, „Încarcă exemplul” dă exact acest plan.
 
 ```jsonc
-"tiktok": {
-  "identity_type": "CUSTOMIZED_USER",   // sau TT_USER, BC_AUTH_TT
-  "identity_id": "…",
-  "placements": "tiktok_only",           // sau automatic
-  "enhancements": {
-    "automatic_enhancements": false,
-    "auto_add_assets": false,
-    "translate_and_dub": false,
-    "music_refresh": false
+{
+  "format": "meridian-ads/1",
+
+  // Pe TikTok: tiktok-meridian sau tiktok-clienti — cel din selectorul de sus.
+  "workspace": "tiktok-meridian",
+
+  // advertiser_id-ul contului TikTok, doar cifre. În TikTok Ads Manager,
+  // sus, sub numele contului.
+  "ad_account": "7000000000000000001",
+
+  "campaign": {
+    "name": "Video imobiliare · testimonial · TikTok · oct 2026",
+    "objective": "leads",
+    // Pe zi, pe grupul de reclame, în moneda contului. TikTok cere cel puțin 20.
+    "daily_budget": 60,
+    "currency": "RON"
+  },
+
+  "audience": {
+    // TikTok nu targetează pe rază. Regiunile și orașele merg doar unde
+    // TikTok le are în listă — verificarea îți spune dacă nu le are.
+    "locations": [
+      { "type": "country", "code": "RO" }
+    ],
+    // Pe grupe întregi: 18–24, 25–34, 35–44, 45–54, 55+.
+    "age_min": 25,
+    "age_max": 54,
+    "gender": "all",
+    "languages": ["ro"],
+    // Categoriile de interes TikTok, în engleză, ca în TikTok Ads Manager.
+    // Comportamentele (behaviors) nu se folosesc pe TikTok.
+    "interests": [
+      { "name": "Real Estate" }
+    ]
+  },
+
+  "conversion": {
+    // Id-ul numeric al pixelului SAU codul lui — cel din codul site-ului.
+    "pixel_id": "DAN9FTJC77U07P78RH10",
+    // lead = formular trimis. Pe TikTok, site-ul trimite lead, contact și view_content.
+    "event": "lead"
+  },
+
+  "destination": {
+    "type": "website",
+    "url": "https://www.meridianx.ro/video",
+    // Macro-urile TikTok (__CAMPAIGN_NAME__, __CID__) se înlocuiesc la clic.
+    "utm": {
+      "source": "tiktok",
+      "medium": "paid_social",
+      "campaign": "video-imobiliare-oct26"
+    }
+  },
+
+  "creative": {
+    // Video deja în biblioteca contului TikTok, sau { "source": "upload" }.
+    "video": { "source": "library", "video_id": "v10033g50000fake00001" },
+    "thumbnail": "auto",
+    // Cel mult 100 de caractere, fără emoji. O reclamă pentru fiecare text.
+    // Pe TikTok nu există titlu și descriere.
+    "primary_texts": [
+      "Un apartament se vinde din primele trei secunde de video. Noi le filmăm.",
+      "Filmăm proiectul tău așa cum îl vede cumpărătorul, la lumina reală."
+    ],
+    "cta": "get_quote"
+  },
+
+  // Obligatorie pe TikTok.
+  "tiktok": {
+    // Reclama apare în numele unui cont TikTok (Spark Ads). TikTok nu mai
+    // acceptă identitatea personalizată (nume + avatar fără cont).
+    //   TT_USER    — contul TikTok legat de contul de reclame;
+    //   BC_AUTH_TT — cont autorizat în Business Center, cu "identity_bc_id".
+    "identity_type": "TT_USER",
+    // Verificarea portalului îți arată identitățile pe care le vede contul.
+    "identity_id": "7100000000000000009",
+    // tiktok_only (implicit) | automatic
+    "placements": "tiktok_only",
+    // Toate oprite. Auto-add assets și Translate and dub există doar în Smart+.
+    "enhancements": {
+      "automatic_enhancements": false,
+      "auto_add_assets": false,
+      "translate_and_dub": false,
+      "music_refresh": false
+    }
   }
 }
 ```
@@ -305,7 +397,10 @@ Pe TikTok, în loc de `meta`:
   cel afișat, secțiunea platformei lipsă, formatul contului, pixel lipsă la
   `leads`/`sales`, eveniment fără echivalent pe platformă (Programare pe
   TikTok), buget peste plafonul spațiului, monedă fără plafon, vârstă inversată,
-  texte TikTok peste 100 de caractere, `platform_rotates` pe TikTok. Pe Meta,
+  texte TikTok peste 100 de caractere, `platform_rotates` pe TikTok. Pe TikTok,
+  în plus: identitatea personalizată (`CUSTOMIZED_USER`), `BC_AUTH_TT` fără
+  `identity_bc_id`, bugetul sub 20, comportamentele, „Auto-add assets” și
+  „Translate and dub” pornite (există doar în Smart+). Pe Meta,
   în plus (ce ar refuza Meta abia la setul de reclame, după ce campania
   există deja): rază de oraș sub 17 km, Facebook Stories fără Facebook flux
   sau Instagram Stories, Advantage+ audience cu vârsta maximă sub 65 sau cea
@@ -574,6 +669,135 @@ erori în 128 de încărcări (față de 11 din 40 înainte) și 0 în 45 în de
 componente transparente între elementele HTML și rândurile lor (au scăzut doar
 rata). Detalii în `GHID.md`, anexa fazei 4.
 
+## Faza 5 — TikTok
+
+Aceeași interfață ca pe Meta, alt adaptor. Acțiunile portalului și
+sincronizarea aleg platforma după spațiul de lucru (`platform.ts`) și nu mai
+știu nimic despre Meta sau TikTok. Regula pauzei stă în fiecare adaptor, la
+singura lui cale de scriere: `tiktokCreate` → `assertTikTokDisabled` →
+`POST`.
+
+### Drumul, pe ecran
+
+1. Treci în spațiul TikTok din selector. „Încarcă exemplul” dă un plan
+   TikTok, deja pe spațiul curent.
+2. **Verifică în TikTok.** Serverul citește, cu tokenul spațiului:
+   - **contul** (`/advertiser/info/`): tokenul trebuie să-l vadă, iar moneda
+     trebuie să fie cea din plan;
+   - **identitatea** (`/identity/get/`): contul TikTok de pe reclamă,
+     disponibil și cu dreptul de a primi video urcat de agenție (`can_push_video`);
+   - **pixelul** (`/pixel/list/`), după id sau după cod, și dacă a primit deja
+     evenimentul pe care optimizează campania;
+   - **video-ul** (`/file/video/ad/info/`), convertit complet;
+   - **locațiile** (`/tool/region/`), **limbile** și **interesele**: numele din
+     plan → id-uri TikTok, cu refuz pentru locațiile care se suprapun;
+   - un **avertisment DSA** pe publicul din UE (mai jos).
+3. **Creează pe pauză:** coperta (propusă de TikTok sau cea din plan, urcată
+   în biblioteca contului) → campania → grupul de reclame → reclamele, toate
+   într-o singură cerere. Toate cu `operation_status: DISABLE`.
+4. Rezultatul: linkul spre campanie în TikTok Ads Manager. De acolo o verifici
+   și o pornești tu.
+
+**Video nou** — ca pe Meta: browser → stocarea temporară → TikTok îl descarcă
+de la un link semnat (`UPLOAD_BY_URL`) → portalul așteaptă conversia → planul
+trece singur pe video-ul din bibliotecă.
+
+**Cifrele** — aceeași sincronizare (cron + buton), aceleași ecrane.
+
+### Maparea pe TikTok API for Business v1.3
+
+Verificată pe documentația v1.3 (2026-09-25).
+
+| Plan | TikTok |
+|---|---|
+| `leads` | `WEB_CONVERSIONS` · grup `promotion_type: WEBSITE`, `CONVERT` / `OCPM`, `pixel_id`, `optimization_event: FORM` |
+| `sales` | la fel, cu `SHOPPING`; campania are `virtual_objective_type: SALES`, `sales_destination: WEBSITE` (apare ca Vânzări în Ads Manager) |
+| `traffic` | `TRAFFIC` · `CLICK` / `CPC` (decizia 3.14) |
+| `video_views` | `VIDEO_VIEWS` · `ENGAGED_VIEW` / `CPV` — vizionări de cel puțin 6 secunde (`VIDEO_VIEW` nu mai există) |
+| `awareness` | `REACH` · `REACH` / `CPM` |
+| evenimente | `lead` → `FORM`, `contact` → `CONSULT`, `complete_registration` → `ON_WEB_REGISTER`, `purchase` → `SHOPPING`, `view_content` → `ON_WEB_DETAIL`; `schedule` nu are echivalent (planul se respinge) |
+| buget | campania `BUDGET_MODE_INFINITE`; grupul `BUDGET_MODE_DAY`, minim 20 (RON, EUR, USD), `BID_TYPE_NO_BID` (livrare maximă), `PACING_MODE_SMOOTH` |
+| program | `SCHEDULE_FROM_NOW`, startul = momentul creării, în UTC |
+| plasări | `PLACEMENT_TYPE_NORMAL` + `PLACEMENT_TIKTOK` (implicit) sau `PLACEMENT_TYPE_AUTOMATIC` |
+| public | `location_ids`, `age_groups` (grupe întregi, de la 18 — cerința UE), `gender`, `languages`, `interest_category_ids` |
+| reclamă | `SINGLE_VIDEO`, `video_id`, o copertă în `image_ids`, `ad_text` (≤100, fără emoji), `call_to_action` (`download` → `DOWNLOAD_NOW`), linkul final cu UTM, `tracking_pixel_id` = pixelul grupului |
+| identitate | Spark Ads: `TT_USER`, sau `BC_AUTH_TT` + `identity_authorized_bc_id`; `dark_post_status: ON` — postarea există doar ca reclamă, nu apare pe profil |
+
+**Automatizările, trimise explicit oprite** — unele pornesc singure dacă nu le
+trimiți:
+
+| Ce | Câmp | Trimis |
+|---|---|---|
+| Îmbunătățiri automate (calitate video, muzică) | reclamă · `creative_auto_enhancement_strategy_list` | `[]` (`VIDEO_QUALITY` / `MUSIC_REFRESH` doar dacă planul le pornește) |
+| Afișare și în căutare | grup · `search_result_enabled` | `false` — altfel TikTok o pornește singur la Trafic și Conversii |
+| Public lărgit automat | grup · `smart_audience_enabled`, `smart_interest_behavior_enabled` | `false` |
+| Material generat automat | grup · `creative_material_mode` | `CUSTOM` |
+| Optimizare pe un al doilea eveniment | grup · `deep_funnel_optimization_status` | `OFF` |
+| Destinație înlocuită automat | reclamă · `dynamic_destination` | `UNSET` |
+| Seturi de evenimente offline legate automat | reclamă · `tracking_offline_event_set_ids` | `[]` |
+| Muzică promoțională, duet, stitch | reclamă · `promotional_music_disabled` | `true` |
+| Reclama arătată în Creative Center | reclamă · `creative_authorized` | `false` |
+
+„Auto-add assets” și „Translate and dub” există doar în campaniile Smart+.
+Portalul face campanii manuale (`/campaign/create/` nu face Smart+), deci ele
+sunt oprite prin construcție; un plan care le pornește se respinge.
+
+**Ce refuză portalul înainte să ajungă la TikTok:** identitatea
+personalizată (`CUSTOMIZED_USER` — TikTok n-o mai acceptă pe plasarea TikTok,
+nici la conturile vechi), `BC_AUTH_TT` fără `identity_bc_id`, bugetul sub 20,
+comportamentele (TikTok le targetează altfel), regiunile și orașele pe care
+TikTok nu le are, locațiile suprapuse, o identitate fără drept de „push”.
+
+**DSA pe TikTok:** API-ul v1.3 nu are câmp pentru plătitor sau beneficiar.
+TikTok cere informațiile despre plătitor (*Payer information*) pe reclamele
+din UE și nu publică reclama fără ele — se completează **o dată pe cont, în
+TikTok Ads Manager**. Portalul avertizează la fiecare verificare cu public în UE.
+
+**Id-urile de 19 cifre:** TikTok are id-uri mai lungi decât ține exact un număr
+JavaScript. La trimitere, `tracking_pixel_id` (număr, în documentație) pleacă
+cu toate cifrele; la citire, un număr prea mare rămâne text (Node 22+).
+
+### Cifrele pe TikTok
+
+- Raportul `/report/integrated/get/` (`BASIC`, `AUCTION_CAMPAIGN`, pe campanie
+  și zi): o cerere pe cont și pe fereastră de cel mult 30 de zile (limita
+  TikTok cu dimensiunea „zi”), cel mult 100 de campanii pe cerere.
+- **Rezultate:** `conversion` (evenimentul pixelului pe care optimizează
+  grupul) la Lead-uri și Vânzări, `clicks` la Trafic, `engaged_view` (6 s) la
+  video, `reach` la Notorietate. Rândul brut, cu `result` (coloana „Results”
+  din Ads Manager), rămâne în `raw`. Etichetele de pe ecran spun „Clicuri” și
+  „Vizionări de 6 s” acolo unde TikTok numără altceva decât Meta.
+- **Statusul:** `secondary_status` din `/campaign/get/` (spune și de ce nu
+  livrează: buget epuizat, respinsă), altfel `operation_status`. Campaniile
+  șterse se caută separat — lista implicită nu le întoarce.
+- TikTok corectează cifrele a doua zi (reparația zilnică rulează la 12:00
+  UTC); fereastra de 7 zile a portalului le prinde.
+
+### Limite
+
+| | |
+|---|---|
+| Video prin link (`UPLOAD_BY_URL`) | documentația spune „mai bine sub 10 MB”, iar cererea are 10 secunde la TikTok. Un fișier de 50 MB poate pica; atunci îl urci din TikTok Ads Manager și îl alegi din bibliotecă. Exportă reclamele la 4–6 Mbps. |
+| Rate limit | 10 cereri/s, 600/min pe aplicație; după o limită pe minut, 5 minute pauză — mesajul o spune |
+| Text | 100 de caractere, fără emoji; fără titlu și descriere |
+
+### Neverificat încă — se confirmă la prima campanie reală
+
+1. Linkul spre o campanie anume (`ads.tiktok.com/i18n/perf/campaign?aadvid=…&keyword=…`) — nedocumentat; sigur e doar lista de campanii a contului.
+2. Dacă România are regiuni și orașe în `/tool/region/` (anexa documentației nu le listează; portalul spune clar dacă nu le găsește).
+3. Numele exacte ale categoriilor de interes și câmpurile din `/tool/interest_category/` (citite tolerant).
+4. Filtrul `secondary_status: CAMPAIGN_STATUS_DELETE` la `/campaign/get/` (dacă TikTok îl refuză, statusul rămâne cel vechi, fără eroare).
+5. Dacă TikTok descarcă un video mare în timpul cererii `UPLOAD_BY_URL` (vezi „Limite”).
+6. Conturile încă în verificare la TikTok (`STATUS_PENDING_*`): portalul lasă crearea, campania fiind oprită oricum.
+7. Dacă API-ul refuză crearea reclamei când lipsesc informațiile despre plătitor.
+8. Valorile implicite pentru comentarii și descărcarea video-ului (portalul nu le atinge).
+
+**Testul recomandat:** ca pe Meta — prima campanie reală cu 20 lei pe zi,
+creată oprită, verificată în TikTok Ads Manager (grupul, plasările, identitatea,
+îmbunătățirile din reclamă), apoi ștearsă de tine.
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server; niciuna cu prefix `NEXT_PUBLIC_`.
@@ -584,9 +808,12 @@ Toate doar pe server; niciuna cu prefix `NEXT_PUBLIC_`.
 | `META_TOKEN_CLIENTI` | 2 | System User token, portofoliul clienților |
 | `TIKTOK_TOKEN_MERIDIAN` | 5 | token pe termen lung, Business Center Meridian |
 | `TIKTOK_TOKEN_CLIENTI` | 5 | token pe termen lung, Business Center clienți |
-| `TIKTOK_APP_ID`, `TIKTOK_APP_SECRET` | 5 | aplicația TikTok for Business (lista de conturi autorizate o cere) — de confirmat în faza 5 |
 | `CRON_SECRET` | 4 | există deja (sonda Supabase); îl folosește și cron-ul de cifre |
 | `META_GRAPH_URL` | test | DOAR pe calculatorul de dezvoltare: un Meta fals local. Ignorată dacă nu e `http://localhost` / `http://127.0.0.1` — **nu se pune în Vercel**. |
+| `TIKTOK_API_URL` | test | La fel, pentru un TikTok fals local. **Nu se pune în Vercel.** |
+
+`app_id` și `secret` ale aplicației TikTok **nu** intră în Vercel: se folosesc o
+singură dată, la schimbarea codului pe token (mai jos).
 
 Portalul funcționează fără ele: un spațiu fără token se poate folosi pentru
 verificarea planurilor, iar selectorul arată „fără token".
@@ -645,24 +872,68 @@ Tokenul nu se pune nicăieri altundeva: nu în `.env.example`, nu în chat, nu
 
 ### TikTok — token pe termen lung (echivalentul)
 
-TikTok nu are System User ca Meta. Echivalentul e tokenul pe termen lung din
-autorizarea unei aplicații TikTok for Business: **nu expiră**, dar devine
-invalid dacă autorizarea e retrasă. Tot câte unul pe Business Center.
+TikTok nu are System User. Echivalentul e tokenul pe termen lung dat de
+autorizarea unei aplicații TikTok for Business: **nu expiră**, devine invalid
+doar dacă autorizarea e retrasă. Câte unul pe Business Center:
+`TIKTOK_TOKEN_MERIDIAN` și `TIKTOK_TOKEN_CLIENTI`. Tokenul poartă doar
+permisiunile bifate la autorizare, nu pe toate cele cerute de aplicație.
 
-1. [business-api.tiktok.com](https://business-api.tiktok.com) → *My Apps* →
-   *Create*. Scopes: gestionare conturi de reclame, reclame, creative,
-   rapoarte. *Advertiser redirect URL*: o pagină a ta (poate fi
-   `https://www.meridianx.ro/`). Aplicația intră în verificare la TikTok.
-2. După aprobare, deschizi linkul de autorizare al aplicației, logat ca admin
-   al Business Center-ului, și bifezi conturile de reclame ale acelui BC.
-3. TikTok te trimite la redirect URL cu `auth_code` în adresă. Codul e valabil
-   **o oră și o singură folosire**.
-4. Schimbi codul pe token: `POST /open_api/v1.3/oauth2/access_token/` cu
-   `app_id`, `secret`, `auth_code`. Răspunsul conține `access_token`.
-5. Vercel: `TIKTOK_TOKEN_MERIDIAN` / `TIKTOK_TOKEN_CLIENTI`, plus
-   `TIKTOK_APP_ID` și `TIKTOK_APP_SECRET`.
+1. **Aplicația.** [business-api.tiktok.com](https://business-api.tiktok.com/portal)
+   → *My Apps* → *Create an app*. *Advertiser redirect URL*:
+   `https://www.meridianx.ro/` — TikTok te trimite acolo cu codul, pagina nu
+   trebuie să facă nimic. Permisiunile (scopes) de cerut:
 
-Detaliile TikTok se confirmă pe documentația curentă în faza 5, înainte de cod.
+   | Permisiune (id) | Pentru |
+   |---|---|
+   | Read Ad Account Information (100) | contul, moneda, starea |
+   | Read / Create Campaigns (200, 201) | crearea pe pauză, statusul |
+   | Read / Create Ad Groups (210, 211) | grupul de reclame |
+   | Read / Create Ads (220, 221) | reclamele |
+   | Consolidated Report (44) | cifrele |
+   | Create Images (601) | coperta |
+   | Read Video Library (610) · Create Videos (611) · Video Thumbnails (612) | biblioteca, video nou, coperta propusă |
+   | Query Identity (693) | identitatea Spark |
+   | Read Pixels (800) | pixelul |
+
+   Plus ce oferă aplicația pentru căutările de targetare (regiuni, limbi,
+   interese) — documentația nu spune ce permisiune le acoperă; dacă
+   verificarea spune „nu are voie” la locații, adaugă-o. **Nu cere**
+   permisiuni de actualizare sau ștergere: portalul nu le folosește.
+   Aplicația intră în verificare la TikTok (2–3 zile lucrătoare).
+2. **Autorizarea.** După aprobare, deschizi *Advertiser authorization URL* al
+   aplicației, logat cu contul TikTok for Business care e admin în Business
+   Center, și **bifezi toate conturile de reclame** pe care le va folosi
+   portalul. Un cont nebifat = „tokenul nu vede contul”.
+3. **Codul.** TikTok te trimite la redirect URL cu `auth_code=…` în adresă.
+   E valabil **o oră** și merge **o singură dată**.
+4. **Tokenul.** Schimbi codul pe token, din terminal:
+   ```bash
+   curl -X POST https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/ \
+     -H "Content-Type: application/json" \
+     -d '{"app_id": "…", "secret": "…", "auth_code": "…"}'
+   ```
+   Răspunsul: `data.access_token` (tokenul), `data.advertiser_ids` (conturile
+   autorizate) și `data.scope` (permisiunile primite — verifică să fie toate
+   din tabel).
+5. **Vercel** → `TIKTOK_TOKEN_MERIDIAN` (respectiv `TIKTOK_TOKEN_CLIENTI`), pe
+   *Production* (și *Preview*, ca să testezi pe ramură), apoi redeploy.
+   `app_id` și `secret` **nu** trebuie în Vercel: portalul lucrează doar cu
+   tokenul.
+6. Pașii 2–5 se repetă pentru celălalt Business Center.
+
+**Pe fiecare cont de reclame, o singură dată, în TikTok Ads Manager:**
+
+- **Payer information** — plătitorul, pentru reclamele din UE. Fără ea,
+  TikTok nu publică reclama când o pornești.
+- **Identitatea Spark** — contul TikTok în numele căruia apar reclamele,
+  legat de contul de reclame (`TT_USER`) sau autorizat în Business Center
+  (`BC_AUTH_TT`), cu dreptul de a primi video urcat de agenție. Verificarea
+  portalului arată identitățile pe care le vede contul.
+- **Pixelul** site-ului (`DAN9FTJC77U07P78RH10`) legat de contul de reclame,
+  pentru campaniile de Lead-uri.
+
+Dacă tokenul ajunge undeva public: retragi autorizarea aplicației (în
+Business Center sau cu `POST /oauth2/revoke_token/`), apoi refaci pașii 2–5.
 
 ---
 
@@ -730,6 +1001,25 @@ Detaliile TikTok se confirmă pe documentația curentă în faza 5, înainte de 
    imediat după cerere; uitat, după 6 ore.
 3. **Planul trece singur pe video-ul din bibliotecă** când Meta spune „gata".
 
+## Decizii luate în faza 5 (de confirmat de om)
+
+1. **Doar Spark Ads** (`TT_USER` / `BC_AUTH_TT`): TikTok nu mai acceptă
+   identitatea personalizată pe plasarea TikTok. Fiecare client pe TikTok are
+   nevoie de un cont TikTok legat sau autorizat.
+2. **Trafic = clicuri** pe TikTok (decizia 3.14 din `GHID.md`).
+3. **Lead-uri = conversii web** (`WEB_CONVERSIONS` + `FORM`), nu obiectivul
+   TikTok „Lead generation”: același eveniment pe care îl trimite site-ul,
+   comparabil cu Meta.
+4. **Contul se verifică direct** (`/advertiser/info/`), nu din lista
+   tokenului: lista ar cere secretul aplicației, pe care portalul nu-l ține.
+5. **Coperta propusă de TikTok se urcă în cont** (linkul ei expiră într-o oră).
+6. **DSA pe TikTok = avertisment**, nu eroare: nu există câmp în API; se
+   setează o dată pe cont.
+7. **Comportamentele se resping pe TikTok** în loc să fie sărite în tăcere.
+8. **„Încarcă exemplul” dă planul platformei și spațiului curent.**
+9. **Structura comună** (`platform.ts`): `types.ts` și `links.ts` au ieșit
+   din `meta/`; acțiunile și sincronizarea aleg adaptorul după spațiu.
+
 ## De rezolvat — în afara zonei portalului
 
 - **Migrările 5, 6 și 7 se aplică de om**, în SQL editor, în ordine. Imediat
@@ -737,7 +1027,8 @@ Detaliile TikTok se confirmă pe documentația curentă în faza 5, înainte de 
   aceleași adrese ca în `ADMIN_EMAILS` — altfel panoul de lead-uri arată zero
   lead-uri (nu se pierde nimic, doar lista e goală).
 - **CSP (`next.config.ts`):** miniaturile din biblioteca video și din
-  verificare vin de pe CDN-ul Meta (`*.fbcdn.net`) — azi CSP-ul doar
+  verificare vin de pe CDN-ul Meta (`*.fbcdn.net`) și de pe cel TikTok
+  (domeniile apar în raportul CSP la primele miniaturi reale) — azi CSP-ul doar
   raportează, deci se văd, dar trebuie adăugate în `img-src` înainte ca
   CSP-ul să devină activ. Urcarea din faza 3 NU cere nimic în plus: merge
   spre Supabase, deja în `connect-src`.

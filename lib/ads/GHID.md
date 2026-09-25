@@ -1,13 +1,13 @@
-# Ghid — portalul de reclame, după faza 4
+# Ghid — portalul de reclame, după faza 5
 
-*Actualizat pe 2026-09-25, la finalul fazei 4. Ramura: `feat/ads-portal`.*
+*Actualizat pe 2026-09-26, la finalul fazei 5 — toate fazele din prompt sunt scrise. Ramura: `feat/ads-portal`.*
 
 Trei documente, în ordinea în care se citesc:
 
 | Fișier | Ce e |
 |---|---|
 | `lib/ads/GHID.md` | **acesta** — ce ai de făcut acum, ce e de hotărât, ce urmează pe faze, rapoartele fazelor |
-| `lib/ads/README.md` | documentația tehnică: formatul planului, exemplul comentat, regulile de validare, maparea pe Meta, variabilele, pașii pentru tokenuri |
+| `lib/ads/README.md` | documentația tehnică: formatul planului, exemplele comentate (Meta și TikTok), regulile de validare, maparea pe Meta și pe TikTok, variabilele, pașii pentru tokenuri |
 | `lib/ads/PROMPT.md` | promptul complet al portalului, copiat identic din `e:\._media agentie\prompt-ads-portal.md` |
 
 ---
@@ -20,11 +20,10 @@ Trei documente, în ordinea în care se citesc:
 | **2** | Meta: creare campanie pe pauză, cu video deja urcat | ✅ gata pe `feat/ads-portal`, testată pe un Meta fals local — **încă nu pe contul real** |
 | **3** | Meta: încărcare video din browser | ✅ gata pe `feat/ads-portal`, testată pe Meta și Supabase falși — **încă nu pe contul real** |
 | **4** | Dashboard + cron pentru Meta | ✅ gata pe `feat/ads-portal`, testată pe Meta și Supabase falși — cron-ul cere o linie în `vercel.json` (3.8) |
-| 5 | TikTok, peste structura existentă | ⬜ așteaptă confirmarea ta |
+| **5** | TikTok, peste structura existentă | ✅ gata pe `feat/ads-portal`, testată pe TikTok și Supabase falși — **încă nu pe contul real** |
 
 Migrarea 5 (`admin_emails` + `is_lead_admin()`) e pe `main`; portalul, tot
-**fără merge în `main`**. Regula din prompt rămâne: fază cu fază, commit
-separat, nu trec mai departe fără confirmarea ta.
+**fără merge în `main`** — merge-ul îl faci tu sau mi-l ceri explicit.
 
 ---
 
@@ -112,6 +111,32 @@ Fără ele, „Verifică în Meta” se oprește și spune exact asta (cu sugest
 
 > Pentru Clienți: aceiași pași în portofoliul clienților, cu `META_TOKEN_CLIENTI`.
 
+### 2.7 TikTok
+
+Pașii exacți: `lib/ads/README.md` → „TikTok — token pe termen lung”.
+
+- [ ] Aplicația TikTok for Business, cu permisiunile din tabelul din README;
+      așteaptă aprobarea (2–3 zile lucrătoare).
+- [ ] Autorizarea, logat ca admin al Business Center-ului Meridian, cu **toate
+      conturile de reclame bifate** → `auth_code` → tokenul (comanda `curl` din
+      README, într-o oră de la autorizare).
+- [ ] `TIKTOK_TOKEN_MERIDIAN` direct în Vercel (*Preview* + *Production*).
+      `app_id` și `secret` nu intră în Vercel.
+- [ ] Pe contul de reclame, în TikTok Ads Manager: **Payer information**
+      (plătitorul, pentru UE), **identitatea Spark** (contul TikTok legat, cu
+      drept de a primi video de la agenție) și **pixelul** site-ului legat.
+- [ ] Prima campanie de test: spațiul „Meridian · TikTok” → **Încarcă
+      exemplul** → pui contul, identitatea și un video real → **Verifică în
+      TikTok** → **Creează pe pauză** → în TikTok Ads Manager verifici că
+      totul e oprit, plasarea doar TikTok, fără „Automatic enhancements” și
+      fără „Search” → o ștergi.
+- [ ] Un video urcat din portal (sub 10 MB, ca să fie sigur — README → „Faza 5
+      → Limite”).
+- [ ] Spune-mi ce diferă — mai ales linkul spre campanie și dacă regiunile
+      României apar la TikTok.
+
+> Pentru Clienți: aceiași pași în Business Center-ul clienților, cu `TIKTOK_TOKEN_CLIENTI`.
+
 ---
 
 ## 3. Decizii
@@ -130,7 +155,11 @@ Fără ele, „Verifică în Meta” se oprește și spune exact asta (cu sugest
 | 3.10 | **Dublura**: același plan, creat în ultimele 30 de minute, cere „Creează încă una, intenționat” | de confirmat |
 | 3.12 | **Obiectivele și monedele nu se amestecă** în indicatori: la obiective diferite, Statisticile arată afișări și clicuri; rezultatele, după alegerea obiectivului | nou, de confirmat |
 | 3.13 | **Statusul citit din Meta se afișează** („Pornită”, „Ștearsă”); portalul tot nu scrie alt status decât pauza | nou, de confirmat |
-| 3.11 | **50 MB pe video** cât timp Supabase e pe Free. Alternativa: Supabase Pro (limită până la 500 GB) sau Vercel Blob (dependență nouă) | nou, de hotărât dacă reclamele tale trec des de 50 MB |
+| 3.11 | **50 MB pe video** cât timp Supabase e pe Free. Alternativa: Supabase Pro (limită până la 500 GB) sau Vercel Blob (dependență nouă) | de hotărât dacă reclamele tale trec des de 50 MB |
+| 3.14 | **Trafic pe TikTok = clicuri** (`CLICK` / `CPC`), nu vizualizări de pagină: acelea depind de pixel, iar pixelul site-ului pornește doar după „Acceptă tot”. Pe Meta rămâne „vizualizări de pagină” | nou, de confirmat |
+| 3.15 | **TikTok doar cu Spark Ads** (`TT_USER` / `BC_AUTH_TT`): TikTok nu mai acceptă identitatea personalizată. Fiecare client pe TikTok are nevoie de un cont TikTok legat de contul de reclame | nou — nu e o alegere, e regula TikTok; de știut la ofertare |
+| 3.16 | **DSA pe TikTok = avertisment**, nu eroare: API-ul n-are câmp; plătitorul se setează o dată pe cont, în TikTok Ads Manager | nou, de confirmat |
+| 3.17 | **Lead-uri pe TikTok = conversii web** (`WEB_CONVERSIONS` + `FORM`), nu obiectivul „Lead generation”: același eveniment ca pe site, comparabil cu Meta | nou, de confirmat |
 
 ---
 
@@ -155,17 +184,11 @@ din bibliotecă. Pe Pro: o linie în migrare + o constantă în cod.
 
 Tehnic: `lib/ads/README.md` → „Faza 4”. Ce ai de făcut: 2.6 și decizia 3.8.
 
-### 4.5 Faza 5 — TikTok
+### 4.5 Faza 5 — gata
 
-- Același plan, altă traducere: obiective, grupe de vârstă, identitate,
-  evenimente (`SubmitForm` în loc de `Lead`), texte de maxim 100 de caractere.
-- Token pe termen lung (pașii în README) + probabil `TIKTOK_APP_ID` și
-  `TIKTOK_APP_SECRET`.
-- Campanii manuale, nu Smart+: îmbunătățirile TikTok (automatic enhancements,
-  auto-add assets, translate and dub, music refresh) țin de Smart+ și rămân
-  oprite.
-- Cifrele în același cron și în aceleași tabele.
-- Detaliile API se verifică pe documentația curentă la începutul fazei.
+Tehnic: `lib/ads/README.md` → „Faza 5 — TikTok”. Ce ai de făcut: 2.7 și
+deciziile 3.14–3.17. Doar tokenul pe Business Center — fără `TIKTOK_APP_ID`
+și `TIKTOK_APP_SECRET` în Vercel.
 
 ### 4.6 La finalul tuturor fazelor (secțiunea 9 din prompt)
 
@@ -184,13 +207,68 @@ Tehnic: `lib/ads/README.md` → „Faza 4”. Ce ai de făcut: 2.6 și decizia 3
   măsurătorile: anexa fazei 4.
 - **CSP-ul** e încă doar raportat (`CSP_REPORT_ONLY = true` în `next.config.ts`),
   deci nu blochează nimic azi.
-- **Pixelul din exemplu** e fals (zerouri), deci portalul avertizează că
+- **Pixelul din exemplul Meta** e fals (zerouri), deci portalul avertizează că
   site-ul trimite evenimentele către alt pixel. E avertismentul corect: la un
-  plan real, pune pixelul site-ului.
+  plan real, pune pixelul site-ului. Exemplul TikTok folosește deja codul
+  pixelului TikTok al site-ului.
+- **Utilitarul de test `cdp.mjs`** din directorul temporar al sesiunii a fost
+  suprascris de agentul de documentare TikTok; l-am refăcut din istoricul
+  sesiunii. Nu atinge repo-ul.
 - **`PLAN.md` și `.env.example` nu au fost atinse** — promptul limitează zona la
   fișierele portalului. La merge, notele de aici se pot trece în `PLAN.md`.
 - **Panoul de lead-uri** nu are încă link spre `/admin/ads` (capul lui e în
   `(dash)/layout.tsx`, în afara zonei). Portalul are link înapoi spre lead-uri.
+
+---
+
+## Anexă — raportul fazei 5
+
+### Ce face portalul acum (TikTok, spațiu cu token)
+
+- **Verifică în TikTok:** contul și moneda, identitatea Spark (disponibilă, cu
+  drept de „push”), pixelul după id sau după codul din site (și dacă a primit
+  evenimentul), video-ul convertit, locațiile / limbile / interesele traduse în
+  id-uri TikTok, suprapunerile de locații, avertismentul DSA.
+- **Creează pe pauză:** copertă → campanie → grup → reclame (o cerere), toate cu
+  `operation_status: DISABLE`, cu toate automatizările trimise explicit oprite.
+- **Video nou din browser**, prin aceeași anticameră Supabase.
+- **Cifre și status** în aceleași ecrane, cu rapoarte în ferestre de 30 de zile.
+- **Structura:** `lib/ads/platform.ts` — acțiunile și sincronizarea aleg
+  adaptorul după spațiu; Meta și TikTok au fiecare o singură cale de scriere,
+  cu garda ei.
+
+### Verificat (Chrome, pe TikTok și Supabase falși, build de producție)
+
+- **Fluxul TikTok cap-coadă, 65 de verificări:** exemplul pe spațiul curent,
+  verificarea (cont, identitate, pixel după cod, România, interes, limbă, video,
+  DSA), crearea (4 cereri: copertă, campanie, grup, reclame — toate `DISABLE`,
+  tokenul doar în antet), id-ul pixelului de 19 cifre trimis exact, dublura,
+  planurile refuzate (identitate personalizată, buget sub 20, comportamente,
+  identitate fără „push”, oraș suprapus peste țară), eroarea la jumătate
+  (campania oprită, notată „parțial”, mesajul TikTok în română cu `request_id`),
+  video nou (conversia, trecerea planului pe video, anticamera golită),
+  biblioteca, sincronizarea (3 ferestre de ≤30 de zile pentru 70 de zile,
+  statusul `secondary_status`, campania ștearsă găsită).
+- **Garda:** `verify-paused.mjs` — 48 de verificări (Meta și TikTok), fără rețea.
+- **Regresii Meta:** creare, erori, urcare video, statistici — toate trecute.
+- **Hidratare:** 0 erori în 48 de încărcări, în spațiul TikTok, la 1440 și 360.
+- **Lățimi:** fără scroll orizontal la 360 pe listă, plan nou, verificare,
+  statistici, fișa campaniei.
+- TypeScript strict și ESLint fără erori; build de producție.
+
+### Neverificat — cere contul real
+
+Lista din `lib/ads/README.md` → „Faza 5 → Neverificat încă”: linkul spre o
+campanie anume, regiunile României la TikTok, video-urile mari prin link,
+filtrul pentru campaniile șterse, refuzul fără plătitor.
+
+### Surse
+
+Documentația TikTok API for Business v1.3, citită pe 2026-09-25 din sursa
+portalului lor (`business-api.tiktok.com/portal/docs`): campanie, grup,
+reclamă, identități, pixeli, video, imagini, regiuni, raport integrat, coduri
+de eroare, permisiuni, limite de cereri; centrul de ajutor TikTok pentru
+plătitorul din UE.
 
 ---
 
