@@ -1,6 +1,8 @@
+import type { Platform } from "./constants";
+
 /**
- * Exemplul complet de plan, comentat: o campanie Meta de tip Leads cu
- * destinație Website. E formatul pe care îl ceri conversației în care
+ * Exemplele complete de plan, comentate: o campanie de tip Leads cu
+ * destinație Website, pe Meta și pe TikTok. E formatul pe care îl ceri conversației în care
  * scrii planul.
  *
  * Portalul acceptă comentariile `//` exact așa — exemplul se poate lipi
@@ -139,8 +141,8 @@ export const EXAMPLE_PLAN = `{
 
   // Pe TikTok, în loc de "meta":
   // "tiktok": {
-  //   "identity_type": "CUSTOMIZED_USER",   // sau TT_USER, BC_AUTH_TT
-  //   "identity_id": "…",
+  //   "identity_type": "TT_USER",            // sau BC_AUTH_TT, cu "identity_bc_id"
+  //   "identity_id": "…",                    // contul TikTok de pe reclamă (Spark Ads)
   //   "placements": "tiktok_only",           // sau automatic
   //   "enhancements": {
   //     "automatic_enhancements": false,
@@ -151,3 +153,105 @@ export const EXAMPLE_PLAN = `{
   // }
 }
 `;
+
+/**
+ * Același plan, pe TikTok: ce e comun rămâne, ce ține de TikTok stă în
+ * secțiunea `tiktok`. Id-urile sunt evident false.
+ */
+export const EXAMPLE_PLAN_TIKTOK = `{
+  "format": "meridian-ads/1",
+
+  // Pe TikTok: tiktok-meridian sau tiktok-clienti — cel din selectorul de sus.
+  "workspace": "tiktok-meridian",
+
+  // advertiser_id-ul contului TikTok, doar cifre. În TikTok Ads Manager,
+  // sus, sub numele contului.
+  "ad_account": "7000000000000000001",
+
+  "campaign": {
+    "name": "Video imobiliare · testimonial · TikTok · oct 2026",
+    "objective": "leads",
+    // Pe zi, pe grupul de reclame, în moneda contului. TikTok cere cel puțin 20.
+    "daily_budget": 60,
+    "currency": "RON"
+  },
+
+  "audience": {
+    // TikTok nu targetează pe rază. Regiunile și orașele merg doar unde
+    // TikTok le are în listă — verificarea îți spune dacă nu le are.
+    "locations": [
+      { "type": "country", "code": "RO" }
+    ],
+    // Pe grupe întregi: 18–24, 25–34, 35–44, 45–54, 55+.
+    "age_min": 25,
+    "age_max": 54,
+    "gender": "all",
+    "languages": ["ro"],
+    // Categoriile de interes TikTok, în engleză, ca în TikTok Ads Manager.
+    // Comportamentele (behaviors) nu se folosesc pe TikTok.
+    "interests": [
+      { "name": "Real Estate" }
+    ]
+  },
+
+  "conversion": {
+    // Id-ul numeric al pixelului SAU codul lui — cel din codul site-ului.
+    "pixel_id": "DAN9FTJC77U07P78RH10",
+    // lead = formular trimis. Pe TikTok, site-ul trimite lead, contact și view_content.
+    "event": "lead"
+  },
+
+  "destination": {
+    "type": "website",
+    "url": "https://www.meridianx.ro/video",
+    // Macro-urile TikTok (__CAMPAIGN_NAME__, __CID__) se înlocuiesc la clic.
+    "utm": {
+      "source": "tiktok",
+      "medium": "paid_social",
+      "campaign": "video-imobiliare-oct26"
+    }
+  },
+
+  "creative": {
+    // Video deja în biblioteca contului TikTok, sau { "source": "upload" }.
+    "video": { "source": "library", "video_id": "v10033g50000fake00001" },
+    "thumbnail": "auto",
+    // Cel mult 100 de caractere, fără emoji. O reclamă pentru fiecare text.
+    // Pe TikTok nu există titlu și descriere.
+    "primary_texts": [
+      "Un apartament se vinde din primele trei secunde de video. Noi le filmăm.",
+      "Filmăm proiectul tău așa cum îl vede cumpărătorul, la lumina reală."
+    ],
+    "cta": "get_quote"
+  },
+
+  // Obligatorie pe TikTok.
+  "tiktok": {
+    // Reclama apare în numele unui cont TikTok (Spark Ads). TikTok nu mai
+    // acceptă identitatea personalizată (nume + avatar fără cont).
+    //   TT_USER    — contul TikTok legat de contul de reclame;
+    //   BC_AUTH_TT — cont autorizat în Business Center, cu "identity_bc_id".
+    "identity_type": "TT_USER",
+    // Verificarea portalului îți arată identitățile pe care le vede contul.
+    "identity_id": "7100000000000000009",
+    // tiktok_only (implicit) | automatic
+    "placements": "tiktok_only",
+    // Toate oprite. Auto-add assets și Translate and dub există doar în Smart+.
+    "enhancements": {
+      "automatic_enhancements": false,
+      "auto_add_assets": false,
+      "translate_and_dub": false,
+      "music_refresh": false
+    }
+  }
+}
+`;
+
+/**
+ * Exemplul pentru spațiul pe care lucrezi: platforma lui și id-ul lui în
+ * `workspace`, ca exemplul să treacă de verificarea „același spațiu”.
+ */
+export function examplePlanFor(workspace: { id: string; platform: Platform }): string {
+  const text = workspace.platform === "tiktok" ? EXAMPLE_PLAN_TIKTOK : EXAMPLE_PLAN;
+  return text.replace(/"workspace": "[a-z-]+"/, `"workspace": "${workspace.id}"`);
+}

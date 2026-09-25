@@ -8,9 +8,9 @@ import { buildAd, buildAdSet, buildCampaign, buildCreatives, type Thumbnail } fr
 import type { MetaCheckContext } from "./check";
 import { describeMetaError } from "./errors";
 import { metaCreate, metaUploadImage } from "./graph";
-import { adsManagerCampaignUrl } from "./links";
+import { campaignUrl } from "../links";
 import { ThumbnailError, downloadThumbnail } from "./thumbnail";
-import type { CreateResponse, CreatedObject } from "./types";
+import type { CreateResponse, CreatedObject } from "../types";
 
 /**
  * Crearea pe Meta: copertă → campanie → set → (creativ → reclamă) × N.
@@ -72,7 +72,7 @@ export async function createPausedOnMeta(input: CreateInput): Promise<CreateResp
     return { ok: false, message: describeMetaError(error, "crearea campaniei", workspace.tokenEnv) };
   }
   created.push({ kind: "campaign", id: campaignId, name: plan.campaign.name });
-  const adsManagerUrl = adsManagerCampaignUrl(account.id, campaignId);
+  const adsManagerUrl = campaignUrl("meta", account.id, campaignId);
 
   const save = (creation: "complete" | "partial", creationError: string | null) =>
     recordCampaign({

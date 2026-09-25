@@ -2,15 +2,14 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/clients";
 import type { ConversionEvent, Objective } from "./constants";
-import { describeMetaError } from "./meta/errors";
-import { fetchCampaignInsights, fetchCampaignStatuses } from "./meta/insights";
+import { adapterFor } from "./platform";
 import { addDays, todayInBucharest } from "./metrics";
 import type { Plan } from "./plan-schema";
 import { WORKSPACES, workspaceName, type AdsWorkspace } from "./workspaces";
 import { workspaceToken } from "./workspaces.server";
 
 /**
- * Sincronizarea cifrelor: Meta Insights → `ads_metrics_daily`.
+ * Sincronizarea cifrelor: Meta Insights și TikTok Reporting → `ads_metrics_daily`.
  *
  * Rulează zilnic din cron și, la cerere, din „Sincronizează acum". Scrie cu
  * service role; cine o pornește a trecut deja de `CRON_SECRET` sau de
@@ -107,8 +106,7 @@ export async function runAdsSync(options: { trigger: SyncTrigger; workspaceIds?:
   try {
     let query = supabase
       .from("ads_campaigns")
-      .select("id, workspace, ad_account, platform_campaign_id, objective, status, created_at, plan_json")
-      .eq("platform", "meta");
+      .select("id, workspace, ad_account, platform_campaign_id, objective, status, created_at, plan_json");
     if (options.workspaceIds?.length) query = query.in("workspace", options.workspaceIds);
     const { data: campaignRows, error: campaignError } = await query;
     if (campaignError) throw new Error(campaignError.message);
@@ -117,7 +115,8 @@ export async function runAdsSync(options: { trigger: SyncTrigger; workspaceIds?:
     // Pe spațiu, apoi pe cont: o cerere de cifre pe cont, nu una pe campanie.
     for (const workspace of WORKSPACES as readonly AdsWorkspace[]) {
       const own = campaigns.filter((campaign) => campaign.workspace === workspace.id);
-      if (own.length === 0 || workspace.platform !== "meta") continue;
+      if (own.length === 0) continue;
+      const adapter = adapterFor(workspace.platform);
       if (!workspaceToken(workspace)) {
         outcome.skipped.push(`${workspaceName(workspace)}: ${own.length} campanii, dar ${workspace.tokenEnv} nu e setat.`);
         continue;
@@ -136,7 +135,7 @@ export async function runAdsSync(options: { trigger: SyncTrigger; workspaceIds?:
 
         try {
           const byPlatformId = new Map(list.map((campaign) => [campaign.platform_campaign_id, campaign]));
-          const rows = await fetchCampaignInsights(workspace, adAccount, {
+          const rows = await adapter.fetchDaily(workspace, adAccount, {
             campaigns: list.map((campaign) => ({
               platformId: campaign.platform_campaign_id,
               objective: campaign.objective,
@@ -174,8 +173,8 @@ export async function runAdsSync(options: { trigger: SyncTrigger; workspaceIds?:
           }
           outcome.rowsWritten += records.length;
 
-          // Statusul de livrare, cum îl vede Meta acum (după ce omul a pornit-o).
-          const statuses = await fetchCampaignStatuses(workspace, adAccount, [...byPlatformId.keys()]);
+          // Statusul de livrare, cum îl vede platforma acum (după ce omul a pornit-o).
+          const statuses = await adapter.fetchStatuses(workspace, adAccount, [...byPlatformId.keys()]);
           for (const [platformId, status] of statuses) {
             const campaign = byPlatformId.get(platformId);
             if (campaign && status && status !== campaign.status) {
@@ -187,9 +186,9 @@ export async function runAdsSync(options: { trigger: SyncTrigger; workspaceIds?:
         } catch (error) {
           outcome.problems.push(
             `${workspaceName(workspace)} · ${adAccount}: ${
-              error instanceof Error && error.name !== "MetaApiError" && error.name !== "MetaTokenMissingError"
+              error instanceof Error && !/ApiError$|TokenMissingError$/.test(error.name)
                 ? error.message
-                : describeMetaError(error, "citirea cifrelor", workspace.tokenEnv)
+                : adapter.describeError(error, "citirea cifrelor", workspace.tokenEnv)
             }`
           );
         }

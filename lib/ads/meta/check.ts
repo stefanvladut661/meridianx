@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { planFingerprint } from "../fingerprint";
 import { CURRENCY_LABEL, OBJECTIVES_WITH_CONVERSION } from "../constants";
 import type { Plan } from "../plan-schema";
 import { normalizeAdAccount, type PlanProblem } from "../plan-validate";
@@ -17,7 +17,7 @@ import {
   readVideo,
 } from "./lookup";
 import { resolveTargeting, type ResolvedTargeting } from "./targeting";
-import type { MetaAccountInfo, MetaCheck, MetaVideoInfo } from "./types";
+import type { AdAccountInfo, PlatformCheck, VideoInfo } from "../types";
 
 /**
  * Verificarea planului pe contul real, înainte de creare — și din nou, pe
@@ -44,23 +44,13 @@ const EU = new Set([
 export type ThumbnailSource = { kind: "meta"; uri: string } | { kind: "url"; url: string };
 
 export interface MetaCheckContext {
-  check: MetaCheck;
+  check: PlatformCheck;
   resolved: ResolvedTargeting;
-  account: MetaAccountInfo | null;
-  video: MetaVideoInfo | null;
+  account: AdAccountInfo | null;
+  video: VideoInfo | null;
   thumbnail: ThumbnailSource | null;
   /** `null` = publicul nu e în UE. Când e cerut, e complet (altfel e eroare). */
   dsa: Dsa | null;
-}
-
-export function planFingerprint(input: {
-  workspace: string;
-  account: string;
-  plan: Plan;
-  locales: number[];
-  dsa: Dsa | null;
-}): string {
-  return createHash("sha256").update(JSON.stringify(input)).digest("hex");
 }
 
 function targetsEu(plan: Plan): boolean {
@@ -116,7 +106,7 @@ export async function checkOnMeta(workspace: AdsWorkspace, plan: Plan): Promise<
 
   // DSA: beneficiarul și plătitorul ------------------------------------------------
   let dsa: Dsa | null = null;
-  let dsaShown: MetaCheck["dsa"] = null;
+  let dsaShown: PlatformCheck["dsa"] = null;
   if (targetsEu(plan) && account) {
     const defaults = await readAccountDsa(workspace, adAccount);
     const beneficiary = meta?.dsa_beneficiary ?? defaults.beneficiary;
@@ -194,8 +184,8 @@ export async function checkOnMeta(workspace: AdsWorkspace, plan: Plan): Promise<
 
   errors.push(...resolved.errors);
 
-  const check: MetaCheck = {
-    ok: errors.length === 0,
+  const check: PlatformCheck = {
+    platform: "meta",
     fingerprint: planFingerprint({
       workspace: workspace.id,
       account: adAccount,
@@ -204,8 +194,9 @@ export async function checkOnMeta(workspace: AdsWorkspace, plan: Plan): Promise<
       dsa,
     }),
     checkedAt: new Date().toISOString(),
+    ok: errors.length === 0,
     account,
-    page,
+    identity: page,
     instagram,
     pixel,
     video,

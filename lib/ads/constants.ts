@@ -58,6 +58,21 @@ export const RESULT_LABEL: Record<Objective, { plural: string; cost: string; uni
   awareness: { plural: "Acoperire (sumă pe zile)", cost: "Cost pe persoană atinsă", unit: "oameni" },
 };
 
+/**
+ * Unde „rezultatul” de pe TikTok nu e același lucru ca pe Meta: la Trafic,
+ * campania TikTok optimizează pe clicuri (nu pe vizualizarea paginii, care
+ * ar depinde de pixel — și pixelul pornește doar după acordul cookie); la
+ * video, TikTok numără vizionările de cel puțin 6 secunde, nu ThruPlay.
+ */
+const TIKTOK_RESULT_LABEL: Partial<Record<Objective, { plural: string; cost: string; unit: string }>> = {
+  traffic: { plural: "Clicuri", cost: "Cost pe click", unit: "clicuri" },
+  video_views: { plural: "Vizionări de 6 s", cost: "Cost pe vizionare", unit: "vizionări" },
+};
+
+export function resultLabel(objective: Objective, platform: Platform): { plural: string; cost: string; unit: string } {
+  return (platform === "tiktok" ? TIKTOK_RESULT_LABEL[objective] : undefined) ?? RESULT_LABEL[objective];
+}
+
 /** Obiectivele care optimizează pe un eveniment de pe site, deci cer pixel. */
 export const OBJECTIVES_WITH_CONVERSION: readonly Objective[] = ["leads", "sales"];
 
@@ -212,6 +227,9 @@ export type VideoUploadType = (typeof VIDEO_UPLOAD_TYPES)[number];
 
 /** TikTok taie textul reclamei la 100 de caractere; Meta îl ascunde după ~125. */
 export const TIKTOK_AD_TEXT_MAX = 100;
+
+/** Bugetul minim pe zi al unui grup de reclame TikTok: 20, la fel în RON, EUR și USD. */
+export const TIKTOK_MIN_DAILY_BUDGET = 20;
 export const META_PRIMARY_TEXT_VISIBLE = 125;
 export const META_HEADLINE_VISIBLE = 40;
 
@@ -293,8 +311,15 @@ export const META_ENHANCEMENT_LABEL: Record<MetaEnhancement, { title: string; bo
 export const TIKTOK_IDENTITY_TYPES = ["CUSTOMIZED_USER", "TT_USER", "BC_AUTH_TT"] as const;
 export type TikTokIdentityType = (typeof TIKTOK_IDENTITY_TYPES)[number];
 
+/**
+ * Pe plasarea TikTok, reclama apare în numele unui cont TikTok real (Spark
+ * Ads): identitatea personalizată (nume + avatar, fără cont) nu mai e
+ * acceptată de TikTok nici la conturile vechi, nici la cele noi. Rămâne în
+ * listă ca planul care o cere să primească explicația, nu un „valoare
+ * necunoscută".
+ */
 export const TIKTOK_IDENTITY_LABEL: Record<TikTokIdentityType, string> = {
-  CUSTOMIZED_USER: "Identitate personalizată (nume + avatar, fără cont TikTok)",
+  CUSTOMIZED_USER: "Identitate personalizată — TikTok n-o mai acceptă",
   TT_USER: "Contul TikTok legat de contul de reclame",
   BC_AUTH_TT: "Cont TikTok autorizat în Business Center",
 };
@@ -322,11 +347,11 @@ export const TIKTOK_ENHANCEMENT_LABEL: Record<TikTokEnhancement, { title: string
   },
   auto_add_assets: {
     title: "Auto-add assets",
-    body: "TikTok adaugă singur materiale noi în campanie cât timp rulează.",
+    body: "TikTok adaugă singur materiale noi în campanie cât timp rulează. Există doar în campaniile Smart+; portalul face campanii manuale, deci rămâne oprit.",
   },
   translate_and_dub: {
     title: "Translate and dub",
-    body: "TikTok traduce și dublează vocea în alte limbi.",
+    body: "TikTok traduce și dublează vocea în alte limbi. Există doar în campaniile Smart+; portalul face campanii manuale, deci rămâne oprit.",
   },
   music_refresh: {
     title: "Music refresh",

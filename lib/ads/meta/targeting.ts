@@ -5,7 +5,7 @@ import type { Plan } from "../plan-schema";
 import type { PlanProblem } from "../plan-validate";
 import type { AdsWorkspace } from "../workspaces";
 import { metaGet } from "./graph";
-import type { ResolvedName } from "./types";
+import type { ResolvedName } from "../types";
 
 /**
  * Numele din plan traduse în cheile Meta: orașe, regiuni, limbi, interese,

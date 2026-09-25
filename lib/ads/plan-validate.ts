@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { PIXEL_ID as SITE_META_PIXEL_ID } from "@/lib/meta-pixel";
+import { TIKTOK_PIXEL_ID as SITE_TIKTOK_PIXEL_CODE } from "@/lib/tiktok-pixel";
 import { SITE_URL } from "@/lib/site-url";
 import {
   CONVERSION_EVENTS,
@@ -21,6 +22,7 @@ import {
   TIKTOK_AD_TEXT_MAX,
   TIKTOK_ENHANCEMENT_LABEL,
   TIKTOK_IDENTITY_LABEL,
+  TIKTOK_MIN_DAILY_BUDGET,
   TIKTOK_PLACEMENT_LABEL,
   VARIANT_MODE_LABEL,
   type ConversionEvent,
@@ -153,6 +155,7 @@ const LABELS: Record<string, string> = {
   tiktok: "Secțiunea tiktok",
   "tiktok.identity_type": "Tipul identității TikTok",
   "tiktok.identity_id": "Id-ul identității TikTok",
+  "tiktok.identity_bc_id": "Business Center-ul identității (identity_bc_id)",
   "tiktok.placements": "Plasările TikTok",
   "tiktok.enhancements": "Îmbunătățirile automate TikTok",
 };
@@ -180,8 +183,9 @@ const MISSING_HINT: Record<string, string> = {
   "creative.primary_texts": "Cel puțin un text: \"primary_texts\": [\"…\"].",
   "creative.cta": `Variante: ${Object.keys(CTA_LABEL).join(", ")}.`,
   "meta.page_id": "Id-ul paginii de Facebook în numele căreia apare reclama.",
-  "tiktok.identity_type": "Variante: CUSTOMIZED_USER, TT_USER, BC_AUTH_TT.",
-  "tiktok.identity_id": "Id-ul identității din TikTok Ads Manager → Assets → Identities.",
+  "tiktok.identity_type": "Variante: TT_USER (contul TikTok legat de contul de reclame) sau BC_AUTH_TT (cont TikTok autorizat în Business Center).",
+  "tiktok.identity_id": "Id-ul identității (Identities, în TikTok Ads Manager). Verificarea portalului îți arată identitățile pe care le vede contul.",
+  "tiktok.identity_bc_id": "Id-ul Business Center-ului care a autorizat contul TikTok — cerut doar la BC_AUTH_TT.",
 };
 
 /** Etichetele valorilor, pentru „variante: leads (Lead-uri), …". */
@@ -205,7 +209,7 @@ const UNION_HINT: Record<string, string> = {
   "meta.placements": `Plasările Meta pot fi "automatic" sau o listă: ${Object.keys(META_PLACEMENT_LABEL).join(", ")}.`,
 };
 
-const ID_FIELDS = /(^|\.)(ad_account|pixel_id|page_id|instagram_account_id|video_id|identity_id|id|key)$/;
+const ID_FIELDS = /(^|\.)(ad_account|pixel_id|page_id|instagram_account_id|video_id|identity_id|identity_bc_id|id|key)$/;
 
 /** Ordinea secțiunilor în plan — erorile se afișează în aceeași ordine. */
 const SECTION_ORDER = [
@@ -522,6 +526,58 @@ export function normalizeAdAccount(platform: Platform, value: string): string {
   return platform === "meta" && /^\d+$/.test(trimmed) ? `act_${trimmed}` : trimmed;
 }
 
+/**
+ * Ce refuză TikTok la creare (API v1.3), prins înainte — altfel campania
+ * s-ar crea, iar grupul sau reclamele ar pica.
+ */
+function tiktokRules(raw: Record<string, unknown>): PlanProblem[] {
+  const errors: PlanProblem[] = [];
+
+  const identity = getIn(raw, "tiktok.identity_type");
+  if (identity === "CUSTOMIZED_USER") {
+    errors.push({
+      path: "tiktok.identity_type",
+      message:
+        "TikTok nu mai acceptă identitatea personalizată (nume + avatar, fără cont) pe plasarea TikTok. Reclama trebuie să apară în numele unui cont TikTok: TT_USER (contul legat de contul de reclame) sau BC_AUTH_TT (cont autorizat în Business Center). Verificarea portalului îți arată identitățile pe care le vede tokenul.",
+    });
+  }
+  if (identity === "BC_AUTH_TT" && getIn(raw, "tiktok.identity_bc_id") === undefined) {
+    errors.push({
+      path: "tiktok.identity_bc_id",
+      message:
+        "La BC_AUTH_TT, TikTok cere și Business Center-ul care a autorizat contul: \"identity_bc_id\": \"…\" (id-ul din Business Center → Business info).",
+    });
+  }
+
+  const budget = asNumber(getIn(raw, "campaign.daily_budget"));
+  const currency = getIn(raw, "campaign.currency");
+  if (budget !== null && budget < TIKTOK_MIN_DAILY_BUDGET) {
+    errors.push({
+      path: "campaign.daily_budget",
+      message: `TikTok cere cel puțin ${TIKTOK_MIN_DAILY_BUDGET}${isCurrency(currency) ? ` ${currency}` : ""} pe zi pe grupul de reclame.`,
+    });
+  }
+
+  if (asArray(getIn(raw, "audience.behaviors")).length > 0) {
+    errors.push({
+      path: "audience.behaviors",
+      message:
+        "Pe TikTok, comportamentele se targetează altfel (acțiuni pe video, pe creatori, într-un interval de zile), iar portalul nu le traduce. Scoate-le din plan sau pune în loc interese — a le sări ar lărgi publicul fără să știe nimeni.",
+    });
+  }
+
+  for (const key of ["auto_add_assets", "translate_and_dub"] as const) {
+    if (getIn(raw, `tiktok.enhancements.${key}`) === true) {
+      errors.push({
+        path: `tiktok.enhancements.${key}`,
+        message: `${TIKTOK_ENHANCEMENT_LABEL[key].title} există doar în campaniile Smart+, iar portalul face campanii manuale. Pune false.`,
+      });
+    }
+  }
+
+  return errors;
+}
+
 /** Raza minimă a unui oraș pe Meta (10 mile). */
 const META_CITY_RADIUS_MIN = 17;
 
@@ -602,7 +658,7 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
     errors.push({
       path: "tiktok",
       message:
-        "Secțiunea tiktok lipsește. Pe TikTok, reclama are nevoie de identitatea care apare pe ea: \"tiktok\": { \"identity_type\": \"CUSTOMIZED_USER\", \"identity_id\": \"…\" }.",
+        "Secțiunea tiktok lipsește. Pe TikTok, reclama apare în numele unui cont TikTok: \"tiktok\": { \"identity_type\": \"TT_USER\", \"identity_id\": \"…\" }.",
     });
   }
 
@@ -627,6 +683,14 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
     errors.push({
       path: "conversion",
       message: `Obiectivul ${OBJECTIVE_LABEL[objective]} optimizează pe un eveniment de pe site, deci are nevoie de pixel: "conversion": { "pixel_id": "…", "event": "lead" }.`,
+    });
+  }
+
+  const pixelValue = asString(getIn(raw, "conversion.pixel_id"));
+  if (platform === "meta" && pixelValue && !/^\d{5,25}$/.test(pixelValue)) {
+    errors.push({
+      path: "conversion.pixel_id",
+      message: "Id-ul pixelului Meta conține doar cifre (Events Manager → setările dataset-ului).",
     });
   }
 
@@ -665,6 +729,7 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
           "Pe TikTok, portalul face câte o reclamă pentru fiecare text: alternarea automată ține de optimizările creative ale TikTok, pe care portalul nu le pornește. Folosește \"one_ad_per_text\".",
       });
     }
+    errors.push(...tiktokRules(raw));
   }
 
   if (platform === "meta") errors.push(...metaRules(raw));
@@ -806,6 +871,14 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
     warnings.push({
       path: "conversion.pixel_id",
       message: `Site-ul nostru trimite evenimentele către pixelul ${SITE_META_PIXEL_ID}, nu către ${pixel}. Cu alt pixel, campania nu vede niciun lead.`,
+    });
+  }
+  // Pe TikTok, planul poate da codul pixelului; un id numeric se compară abia
+  // la verificarea pe TikTok, care știe ce cod are.
+  if (onOwnSite && platform === "tiktok" && pixel && !/^\d+$/.test(pixel) && pixel !== SITE_TIKTOK_PIXEL_CODE) {
+    warnings.push({
+      path: "conversion.pixel_id",
+      message: `Site-ul nostru trimite evenimentele către pixelul TikTok ${SITE_TIKTOK_PIXEL_CODE}, nu către ${pixel}. Cu alt pixel, campania nu vede niciun lead.`,
     });
   }
 

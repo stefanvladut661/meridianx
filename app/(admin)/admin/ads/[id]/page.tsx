@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CTA_LABEL, CURRENCY_LABEL, OBJECTIVE_LABEL, RESULT_LABEL } from "@/lib/ads/constants";
+import { CTA_LABEL, CURRENCY_LABEL, OBJECTIVE_LABEL, PLATFORM_LABEL, resultLabel } from "@/lib/ads/constants";
 import { addDays, fillDays, formatAmount, formatCount, periodRange, todayInBucharest, totalsOf } from "@/lib/ads/metrics";
-import { adsManagerCampaignUrl } from "@/lib/ads/meta/links";
-import { PAUSED } from "@/lib/ads/meta/paused";
+import { campaignUrl, managerName } from "@/lib/ads/links";
 import { buildFinalUrl, countOf } from "@/lib/ads/plan-derive";
 import { summarizePlan } from "@/lib/ads/plan-summary";
 import { readCampaignDays } from "@/lib/ads/stats";
@@ -16,7 +15,7 @@ import { PauseGlyph } from "@/components/ads/pause-seal";
 import { StatTiles } from "@/components/ads/stat-tiles";
 import { DaysTable, buildTiles } from "@/components/ads/stats-parts";
 import { WARNING_TEXT } from "@/components/ads/tone";
-import { campaignStatusLabel } from "@/components/ads/campaign-status";
+import { campaignStatusLabel, isPausedStatus } from "@/components/ads/campaign-status";
 import { formatLeadDateTime } from "../../_components/format-date";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +54,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   const rows = days.ok ? days.data : [];
 
   const workspace = listWorkspaces().find((item) => item.id === campaign.workspace) ?? null;
-  const names = RESULT_LABEL[campaign.objective];
+  const names = resultLabel(campaign.objective, campaign.platform);
   const today = todayInBucharest();
   const createdOn = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Bucharest" }).format(new Date(campaign.createdAt));
   const chartFrom = [createdOn, addDays(today, -(CHART_DAYS - 1))].sort()[1];
@@ -72,7 +71,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   const plan = campaign.plan;
   const summary = summarizePlan(plan as unknown as Record<string, unknown>, campaign.platform);
   const finalUrl = buildFinalUrl(plan.destination.url, plan.destination.utm ?? null) ?? plan.destination.url;
-  const paused = campaign.status === PAUSED;
+  const paused = isPausedStatus(campaign.status);
 
   return (
     <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
@@ -109,12 +108,12 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
         <a
-          href={adsManagerCampaignUrl(campaign.adAccount, campaign.platformCampaignId)}
+          href={campaignUrl(campaign.platform, campaign.adAccount, campaign.platformCampaignId)}
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn-light shrink-0"
         >
-          Deschide în Ads Manager<span aria-hidden> ↗</span>
+          Deschide în {managerName(campaign.platform)}<span aria-hidden> ↗</span>
           <span className="sr-only"> (se deschide într-o filă nouă)</span>
         </a>
       </div>
@@ -128,7 +127,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           <p className="font-md-display text-[1.25rem] font-semibold text-bone">Nicio cifră încă.</p>
           <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-bone/70">
             {paused
-              ? "Campania e oprită, deci n-a cheltuit nimic. După ce o pornești din Ads Manager, cifrele vin la sincronizarea zilnică."
+              ? `Campania e oprită, deci n-a cheltuit nimic. După ce o pornești din ${managerName(campaign.platform)}, cifrele vin la sincronizarea zilnică.`
               : "Cifrele vin la sincronizarea zilnică — sau acum, din Statistici → „Sincronizează acum”."}
           </p>
         </section>
@@ -219,7 +218,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               <span aria-hidden className="mr-2 inline-block transition-transform duration-150 group-open:rotate-90">
                 ›
               </span>
-              Planul JSON, cu cheile găsite de Meta
+              Planul JSON, cu cheile găsite de {PLATFORM_LABEL[campaign.platform]}
             </summary>
             <pre className="mt-3 max-h-[28rem] overflow-auto rounded-panel-lg border border-hair bg-ink/60 p-4 font-md-mono text-[12px] leading-relaxed text-bone/85">
               {JSON.stringify(plan, null, 2)}

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { VIDEO_UPLOAD_MAX_BYTES, VIDEO_UPLOAD_TYPES } from "@/lib/ads/constants";
-import type { UploadActions, UploadStatus } from "@/lib/ads/meta/types";
+import { PLATFORM_LABEL, VIDEO_UPLOAD_MAX_BYTES, VIDEO_UPLOAD_TYPES, type Platform } from "@/lib/ads/constants";
+import type { UploadActions, UploadStatus } from "@/lib/ads/types";
 import { asString, getIn } from "@/lib/ads/plan-path";
 import { cn } from "@/lib/utils";
 import { usePlanForm } from "./fields";
@@ -14,11 +14,11 @@ import { ERROR_TEXT, LABEL, OK_DOT, WARNING_TEXT } from "./tone";
  * Drumul are patru pași reali, în ordine, și interfața îi arată pe toți —
  * altfel un fișier de 40 MB pare o pagină blocată:
  *   1. urcarea în stocarea temporară a portalului (progres real, în MB);
- *   2. Meta copiază fișierul de acolo;
- *   3. Meta îl procesează;
+ *   2. platforma (Meta sau TikTok) copiază fișierul de acolo;
+ *   3. platforma îl procesează;
  *   4. gata — planul trece singur pe video-ul din bibliotecă.
  *
- * Browserul nu vede niciun token Meta: urcă printr-un URL semnat, valabil
+ * Browserul nu vede niciun token de platformă: urcă printr-un URL semnat, valabil
  * pentru un singur fișier. Restul îl face serverul.
  */
 
@@ -29,12 +29,14 @@ type Phase =
   | { step: "processing"; videoId: string; progress: number | null; startedAt: number }
   | { step: "failed"; message: string; retry: "upload" | "status"; videoId?: string; stagingName?: string };
 
-const STEPS = [
-  { key: "uploading", label: "Urcare în portal" },
-  { key: "copying", label: "Meta copiază fișierul" },
-  { key: "processing", label: "Meta procesează" },
-  { key: "done", label: "Gata" },
-] as const;
+function steps(label: string) {
+  return [
+    { key: "uploading", label: "Urcare în portal" },
+    { key: "copying", label: `${label} copiază fișierul` },
+    { key: "processing", label: `${label} procesează` },
+    { key: "done", label: "Gata" },
+  ] as const;
+}
 
 const POLL_MS = 3000;
 const POLL_LIMIT_MS = 15 * 60 * 1000;
@@ -84,13 +86,16 @@ function putFile(
 
 export function VideoUpload({
   actions,
+  platform,
   onReady,
 }: {
   actions: UploadActions;
+  platform: Platform;
   /** Video-ul e gata în bibliotecă: planul trece pe el. */
   onReady: (video: { id: string; fileName: string }) => void;
 }) {
   const { draft } = usePlanForm();
+  const label = PLATFORM_LABEL[platform];
   const adAccount = asString(getIn(draft, "ad_account"));
   const expectedName = asString(getIn(draft, "creative.video.file_name"));
 
@@ -131,7 +136,7 @@ export function VideoUpload({
           retry: "status",
           videoId,
           stagingName,
-          message: `Meta procesează de peste 15 minute. Video-ul e în bibliotecă (id ${videoId}); verifică din nou peste câteva minute sau alege-l din bibliotecă.`,
+          message: `${label} procesează de peste 15 minute. Video-ul e în bibliotecă (id ${videoId}); verifică din nou peste câteva minute sau alege-l din bibliotecă.`,
         });
         return;
       }
@@ -157,7 +162,7 @@ export function VideoUpload({
         setPhase({
           step: "failed",
           retry: "upload",
-          message: `Meta n-a putut procesa video-ul: ${status.message ?? "fără detalii"}. Verifică fișierul (MP4, H.264, sunet AAC) și urcă-l din nou.`,
+          message: `${label} n-a putut procesa video-ul: ${status.message ?? "fără detalii"}. Verifică fișierul (MP4, H.264, sunet AAC) și urcă-l din nou.`,
         });
         return;
       }
@@ -215,7 +220,7 @@ export function VideoUpload({
       xhrRef.current = null;
     }
 
-    setAnnouncement("Fișierul e urcat. Meta îl copiază.");
+    setAnnouncement(`Fișierul e urcat. ${label} îl copiază.`);
     setPhase({ step: "copying", videoId: null, progress: null });
     const sent = await actions.send({ stagingName: prepared.name, fileName: file.name }).catch(() => null);
     if (cancelled.current) return;
@@ -223,12 +228,12 @@ export function VideoUpload({
       setPhase({
         step: "failed",
         retry: "upload",
-        message: sent?.message ?? "Serverul n-a răspuns în timp ce Meta copia fișierul. Încearcă din nou.",
+        message: sent?.message ?? `Serverul n-a răspuns în timp ce ${label} copia fișierul. Încearcă din nou.`,
       });
       return;
     }
 
-    setAnnouncement("Meta a primit linkul. Urmează copierea și procesarea.");
+    setAnnouncement(`${label} a primit linkul. Urmează copierea și procesarea.`);
     setPhase({ step: "copying", videoId: sent.videoId, progress: null });
     await poll(sent.videoId, file.name, prepared.name, Date.now());
   };
@@ -268,7 +273,7 @@ export function VideoUpload({
         </label>
         <p id={`${inputId}-hint`} className="mt-2 text-[12.5px] leading-snug text-dim">
           MP4 sau MOV, cel mult {megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Fișierul trece printr-o stocare temporară a
-          portalului și se șterge imediat ce Meta îl are.
+          portalului și se șterge imediat ce {label} îl are.
         </p>
         {file ? (
           <p className="mt-2 text-[13.5px] text-bone/85">
@@ -300,7 +305,7 @@ export function VideoUpload({
       {activeIndex >= 0 ? (
         <div className="rounded-panel border border-hair bg-ink/40 px-4 py-4">
           <ol className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {STEPS.map((step, index) => (
+            {steps(label).map((step, index) => (
               <li
                 key={step.key}
                 aria-current={index === activeIndex ? "step" : undefined}
@@ -345,7 +350,7 @@ export function VideoUpload({
             </div>
           ) : phase.step === "copying" ? (
             <p className="mt-4 text-[13.5px] leading-snug text-bone/80">
-              Meta descarcă fișierul din stocarea portalului
+              {label} descarcă fișierul din stocarea portalului
               {phase.progress !== null ? (
                 <span className="font-md-mono text-[12px] tabular-nums"> · {phase.progress}%</span>
               ) : null}
@@ -353,7 +358,7 @@ export function VideoUpload({
             </p>
           ) : phase.step === "processing" ? (
             <p className="mt-4 text-[13.5px] leading-snug text-bone/80">
-              Meta pregătește video-ul pentru reclame
+              {label} pregătește video-ul pentru reclame
               {phase.progress !== null ? (
                 <span className="font-md-mono text-[12px] tabular-nums"> · {phase.progress}%</span>
               ) : null}

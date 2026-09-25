@@ -1,4 +1,4 @@
-import { RESULT_LABEL, type Objective } from "@/lib/ads/constants";
+import { resultLabel, type Objective, type Platform } from "@/lib/ads/constants";
 import {
   deltaOf,
   formatAmount,
@@ -22,9 +22,9 @@ import type { StatTile } from "./stat-tiles";
  * `null`: lead-urile adunate cu vizitele pe pagină nu înseamnă nimic, iar
  * costul „pe rezultat” al sumei, și mai puțin.
  */
-export function resultNames(objectives: Objective[]): { plural: string; cost: string } | null {
+export function resultNames(objectives: Objective[], platform: Platform): { plural: string; cost: string } | null {
   const unique = [...new Set(objectives)];
-  return unique.length === 1 ? RESULT_LABEL[unique[0]] : null;
+  return unique.length === 1 ? resultLabel(unique[0], platform) : null;
 }
 
 /**

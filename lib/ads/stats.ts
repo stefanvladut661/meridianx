@@ -6,7 +6,7 @@ import type { DayFigures } from "./metrics";
 import { STORE_FAILURE_MESSAGE, type StoreFailure } from "./store";
 
 /**
- * Cifrele pentru ecrane — DOAR din bază, niciodată direct din API-ul Meta:
+ * Cifrele pentru ecrane — DOAR din bază, niciodată direct din API-ul platformei:
  * paginile rămân rapide, nu consumă din limita de cereri a contului și
  * istoricul rămâne după ce platforma îl uită.
  *

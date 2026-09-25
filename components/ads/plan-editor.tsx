@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { EXAMPLE_PLAN } from "@/lib/ads/example-plan";
+import { examplePlanFor } from "@/lib/ads/example-plan";
 import { OBJECTIVE_LABEL, PLATFORM_LABEL, type Platform } from "@/lib/ads/constants";
 import { parsePlanText, replaceSmartQuotes, type PlanTextResult } from "@/lib/ads/plan-json";
 import { getIn, setIn } from "@/lib/ads/plan-path";
@@ -11,16 +11,16 @@ import { validatePlan, type PlanProblem } from "@/lib/ads/plan-validate";
 import type {
   CreateResponse,
   LibraryResponse,
-  MetaCheck,
-  MetaCheckResponse,
+  PlatformCheck,
+  CheckResponse,
   UploadActions,
-} from "@/lib/ads/meta/types";
+} from "@/lib/ads/types";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { cn } from "@/lib/utils";
 import { AdsPreview } from "./ads-preview";
 import { CreateResult } from "./create-result";
 import { PlanFormProvider, groupByPath } from "./fields";
-import { MetaCheckPanel } from "./meta-check";
+import { CheckPanel } from "./check-panel";
 import { PauseSeal } from "./pause-seal";
 import { PlanForm } from "./plan-form";
 import { ProblemList } from "./problem-list";
@@ -35,7 +35,7 @@ import { ERROR_TEXT, FIELD, OK_TEXT } from "./tone";
  * înapoi în conversația din care a venit. Comentariile din JSON nu
  * supraviețuiesc rescrierii, și interfața spune asta.
  *
- * Apoi, pe Meta: „Verifică în Meta" citește contul real (cont, monedă,
+ * Apoi, pe platformă: „Verifică în Meta / TikTok" citește contul real (cont, monedă,
  * pagină, pixel, video, fiecare nume din targetare) și abia după o
  * verificare fără erori, pe EXACT planul de pe ecran, se deblochează
  * „Creează pe pauză". O corectură după verificare o face veche.
@@ -98,7 +98,7 @@ function PlanSentence({
 
 export interface PlanEditorActions {
   chooseWorkspace: (formData: FormData) => Promise<void>;
-  checkPlan: (input: { plan: unknown; workspace: string }) => Promise<MetaCheckResponse>;
+  checkPlan: (input: { plan: unknown; workspace: string }) => Promise<CheckResponse>;
   createPaused: (input: {
     plan: unknown;
     workspace: string;
@@ -117,10 +117,15 @@ export interface PlanEditorActions {
     stagingName: string;
     fileName: string;
   }) => ReturnType<UploadActions["send"]>;
-  uploadStatus: (input: { workspace: string; videoId: string; stagingName: string }) => ReturnType<UploadActions["status"]>;
+  uploadStatus: (input: {
+    workspace: string;
+    adAccount: string;
+    videoId: string;
+    stagingName: string;
+  }) => ReturnType<UploadActions["status"]>;
 }
 
-const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Nu s-a trimis nimic spre Meta. Încearcă din nou.";
+const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Nu s-a trimis nimic spre platformă. Încearcă din nou.";
 
 export function PlanEditor({
   workspaces,
@@ -132,6 +137,7 @@ export function PlanEditor({
   actions: PlanEditorActions;
 }) {
   const current = workspaces.find((workspace) => workspace.id === currentWorkspaceId) ?? workspaces[0];
+  const platformLabel = PLATFORM_LABEL[current.platform];
 
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
@@ -141,9 +147,9 @@ export function PlanEditor({
   const [restored, setRestored] = useState(false);
   const [switching, startSwitch] = useTransition();
 
-  // Verificarea pe Meta ține de EXACT planul verificat (`key`): orice
+  // Verificarea pe platformă ține de EXACT planul verificat (`key`): orice
   // corectură o face „veche", iar crearea se blochează până la o nouă verificare.
-  const [check, setCheck] = useState<{ key: string; check: MetaCheck } | null>(null);
+  const [check, setCheck] = useState<{ key: string; check: PlatformCheck } | null>(null);
   const [checkFailure, setCheckFailure] = useState<{ message: string; problems: PlanProblem[] } | null>(null);
   const [result, setResult] = useState<CreateResponse | null>(null);
   const [checking, startCheck] = useTransition();
@@ -267,19 +273,20 @@ export function PlanEditor({
   };
 
   const loadLibrary =
-    current.platform === "meta" && current.tokenConfigured
+    current.tokenConfigured
       ? (adAccount: string) => actions.listLibrary({ workspace: current.id, adAccount })
       : undefined;
 
   // Contul se citește la momentul apelului: omul îl poate corecta între pași.
   const accountNow = () => String(getIn(draftRef.current ?? {}, "ad_account") ?? "");
   const upload: UploadActions | undefined =
-    current.platform === "meta" && current.tokenConfigured
+    current.tokenConfigured
       ? {
           prepare: (file) => actions.prepareUpload({ workspace: current.id, adAccount: accountNow(), file }),
           send: ({ stagingName, fileName }) =>
             actions.sendUpload({ workspace: current.id, adAccount: accountNow(), stagingName, fileName }),
-          status: ({ videoId, stagingName }) => actions.uploadStatus({ workspace: current.id, videoId, stagingName }),
+          status: ({ videoId, stagingName }) =>
+            actions.uploadStatus({ workspace: current.id, adAccount: accountNow(), videoId, stagingName }),
         }
       : undefined;
 
@@ -329,9 +336,7 @@ export function PlanEditor({
       ? { action: "none", reason: "Repară întâi JSON-ul din stânga." }
       : errorCount > 0
         ? { action: "none", reason: `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat mai sus.` }
-        : current.platform !== "meta"
-          ? { action: "none", reason: `Planul e valid. Conectarea la ${PLATFORM_LABEL.tiktok} vine în faza 5 — deocamdată portalul doar verifică.` }
-          : !current.tokenConfigured
+        : !current.tokenConfigured
             ? {
                 action: "none",
                 reason: `Planul e valid, dar spațiul ${current.name} nu are token: setează ${current.tokenEnv} în Vercel și fă redeploy.`,
@@ -339,7 +344,7 @@ export function PlanEditor({
             : videoSource === "upload"
               ? {
                   action: "none",
-                  reason: "Planul e valid. Urcă întâi video-ul, la „Materialul”: când Meta termină de procesat, planul trece singur pe el și se poate verifica.",
+                  reason: `Planul e valid. Urcă întâi video-ul, la „Materialul”: când ${platformLabel} termină de procesat, planul trece singur pe el și se poate verifica.`,
                 }
               : created
                 ? { action: "none", reason: "Creată. Pentru încă o campanie, schimbă planul și verifică din nou." }
@@ -353,7 +358,7 @@ export function PlanEditor({
                   : !freshCheck.ok
                     ? {
                         action: "check",
-                        reason: `Meta: ${freshCheck.errors.length === 1 ? "un lucru" : countOf(freshCheck.errors.length, "lucruri")} de corectat mai sus.`,
+                        reason: `${platformLabel}: ${freshCheck.errors.length === 1 ? "un lucru" : countOf(freshCheck.errors.length, "lucruri")} de corectat mai sus.`,
                       }
                     : {
                         action: "create",
@@ -444,7 +449,7 @@ export function PlanEditor({
           <button
             type="button"
             onClick={() => {
-              setText(EXAMPLE_PLAN);
+              setText(examplePlanFor(current));
               setRewritten(false);
             }}
             className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[13px]"
@@ -496,13 +501,13 @@ export function PlanEditor({
             </p>
             <button
               type="button"
-              onClick={() => setText(EXAMPLE_PLAN)}
+              onClick={() => setText(examplePlanFor(current))}
               className="btn btn-light mt-6"
             >
               Încarcă exemplul comentat
             </button>
             <p className="mt-3 text-[13px] text-dim">
-              O campanie de {OBJECTIVE_LABEL.leads.toLowerCase()} pe Meta, cu destinație website.
+              O campanie de {OBJECTIVE_LABEL.leads.toLowerCase()} pe {platformLabel}, cu destinație website.
             </p>
           </div>
         ) : (
@@ -556,14 +561,14 @@ export function PlanEditor({
               />
             </section>
 
-            {check ? <MetaCheckPanel check={check.check} stale={check.key !== planKey} /> : null}
+            {check ? <CheckPanel check={check.check} stale={check.key !== planKey} /> : null}
           </div>
         )}
 
         {checkFailure ? (
           <div role="alert" className="mt-2 space-y-3">
             <div className="rounded-panel-lg border border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05] px-5 py-4">
-              <p className={cn("text-[15px] font-semibold", ERROR_TEXT)}>Verificarea pe Meta n-a mers.</p>
+              <p className={cn("text-[15px] font-semibold", ERROR_TEXT)}>Verificarea pe {platformLabel} n-a mers.</p>
               <p className="mt-1.5 text-[14px] leading-relaxed text-bone/80">{checkFailure.message}</p>
             </div>
             <ProblemList title="De corectat" problems={checkFailure.problems} tone="error" />
@@ -572,7 +577,12 @@ export function PlanEditor({
 
         {result ? (
           <div className="mt-2">
-            <CreateResult result={result} pending={creating} onCreateAnyway={() => runCreate(true)} />
+            <CreateResult
+              result={result}
+              platform={current.platform}
+              pending={creating}
+              onCreateAnyway={() => runCreate(true)}
+            />
           </div>
         ) : null}
 
@@ -589,7 +599,7 @@ export function PlanEditor({
                   aria-describedby="create-reason"
                   className="btn btn-light disabled:cursor-wait disabled:opacity-60"
                 >
-                  {checking ? "Se verifică în Meta…" : check ? "Verifică din nou" : "Verifică în Meta"}
+                  {checking ? `Se verifică în ${platformLabel}…` : check ? "Verifică din nou" : `Verifică în ${platformLabel}`}
                 </button>
               ) : null}
               <button
@@ -618,7 +628,7 @@ export function PlanEditor({
             </div>
             <p id="create-reason" className="text-[13.5px] leading-snug text-bone/75" aria-live="polite">
               {checking
-                ? "Meta caută contul, pagina, pixelul, video-ul și fiecare nume din targetare…"
+                ? `${platformLabel} caută contul, ${current.platform === "meta" ? "pagina" : "identitatea"}, pixelul, video-ul și fiecare nume din targetare…`
                 : creating
                   ? "Se creează campania, setul și reclamele, una câte una. Nu închide pagina."
                   : step.reason}

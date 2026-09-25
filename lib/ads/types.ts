@@ -1,26 +1,28 @@
-import type { PlanProblem } from "../plan-validate";
+import type { Platform } from "./constants";
+import type { PlanProblem } from "./plan-validate";
 
 /**
- * Ce ajunge în browser din verificarea și crearea pe Meta. Fișier izomorf,
- * doar tipuri: niciun token, nimic din răspunsurile brute ale Meta în afara
+ * Ce ajunge în browser din verificarea și crearea pe platformă (Meta sau
+ * TikTok). Fișier izomorf, doar tipuri: niciun token, nimic din răspunsurile
+ * brute ale platformei în afara
  * câmpurilor alese aici.
  */
 
-/** Un nume din plan și ce a găsit Meta pentru el. */
+/** Un nume din plan și ce a găsit platforma pentru el. */
 export interface ResolvedName {
   /** Calea din plan (`audience.locations.1`) — pentru „du-mă la câmp". */
   path: string;
   /** Ce scria în plan. */
   asked: string;
-  /** Ce a găsit Meta, spus complet („Cluj-Napoca, Cluj County, Romania"). `null` = nimic. */
+  /** Ce a găsit platforma, spus complet („Cluj-Napoca, Cluj County, Romania"). `null` = nimic. */
   found: string | null;
-  /** Cheia/id-ul Meta care intră în targetare. */
+  /** Cheia/id-ul platformei care intră în targetare. */
   key: string | null;
   /** Id-ul sau cheia era deja scrisă în plan — n-a fost nevoie de căutare. */
   given: boolean;
 }
 
-export interface MetaAccountInfo {
+export interface AdAccountInfo {
   id: string;
   name: string;
   currency: string;
@@ -29,7 +31,7 @@ export interface MetaAccountInfo {
   usable: boolean;
 }
 
-export interface MetaVideoInfo {
+export interface VideoInfo {
   id: string;
   title: string | null;
   lengthSeconds: number | null;
@@ -37,20 +39,22 @@ export interface MetaVideoInfo {
   ready: boolean;
 }
 
-export interface MetaCheck {
+export interface PlatformCheck {
+  platform: Platform;
   /** Nicio eroare: se poate crea. */
   ok: boolean;
   /**
-   * Amprenta a ce s-a verificat (plan + ce a găsit Meta). Crearea o
+   * Amprenta a ce s-a verificat (plan + ce a găsit platforma). Crearea o
    * recalculează pe server și refuză dacă diferă: omul creează exact ce a văzut.
    */
   fingerprint: string;
   checkedAt: string;
-  account: MetaAccountInfo | null;
-  page: { id: string; name: string } | null;
+  account: AdAccountInfo | null;
+  /** În numele cui apare reclama: pagina de Facebook (Meta) sau identitatea TikTok. */
+  identity: { id: string; name: string } | null;
   instagram: { id: string; username: string } | null;
   pixel: { id: string; name: string } | null;
-  video: MetaVideoInfo | null;
+  video: VideoInfo | null;
   /**
    * Beneficiarul și plătitorul (DSA), cum vor apărea pe reclamă în UE.
    * `null` = publicul nu e în UE, deci nu se trimit.
@@ -66,11 +70,11 @@ export interface MetaCheck {
   warnings: PlanProblem[];
 }
 
-export type MetaCheckResponse =
-  | { ok: true; check: MetaCheck }
+export type CheckResponse =
+  | { ok: true; check: PlatformCheck }
   | { ok: false; message: string; problems?: PlanProblem[] };
 
-/** Un obiect creat în Meta, cu linkul lui. */
+/** Un obiect creat pe platformă, cu linkul lui. */
 export interface CreatedObject {
   kind: "image" | "campaign" | "adset" | "creative" | "ad";
   id: string;
@@ -84,7 +88,7 @@ export type CreateResponse =
       recordId: string | null;
       adsManagerUrl: string;
       created: CreatedObject[];
-      /** Campania există în Meta, dar n-a putut fi salvată în baza portalului. */
+      /** Campania există pe platformă, dar n-a putut fi salvată în baza portalului. */
       storeWarning: string | null;
     }
   | {
@@ -108,10 +112,10 @@ export interface LibraryVideo {
   ready: boolean;
 }
 
-/** Starea unui video nou în Meta, după ce i-am dat linkul spre fișier. */
+/** Starea unui video nou pe platformă, după ce i-am dat linkul spre fișier. */
 export interface UploadStatus {
   state: "copying" | "processing" | "ready" | "error";
-  /** Procentul procesării, când Meta îl dă. */
+  /** Procentul procesării, când platforma îl dă. */
   progress: number | null;
   /** Motivul, la `error`. */
   message: string | null;

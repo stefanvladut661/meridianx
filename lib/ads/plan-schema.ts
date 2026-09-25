@@ -140,8 +140,18 @@ export const audienceSchema = z.strictObject({
 // Conversie și destinație
 // ---------------------------------------------------------------------------
 
+/**
+ * Pixelul: pe Meta, id-ul numeric; pe TikTok, id-ul numeric SAU codul
+ * pixelului (`DAN9FTJC…`, cel din codul site-ului) — portalul îl traduce în
+ * id la verificare. Regula pe platformă e în `plan-validate.ts`.
+ */
+const pixelId = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9]{5,40}$/, { error: "trebuie să conțină doar litere și cifre (între 5 și 40)." });
+
 export const conversionSchema = z.strictObject({
-  pixel_id: numericId,
+  pixel_id: pixelId,
   event: z.enum(CONVERSION_EVENTS),
 });
 
@@ -240,6 +250,8 @@ export const tiktokEnhancementsSchema = z
 export const tiktokSchema = z.strictObject({
   identity_type: z.enum(TIKTOK_IDENTITY_TYPES),
   identity_id: z.string().trim().min(1).max(64),
+  /** Business Center-ul care a autorizat contul TikTok. Cerut doar la `BC_AUTH_TT`. */
+  identity_bc_id: numericId.optional(),
   placements: z.enum(TIKTOK_PLACEMENTS).default("tiktok_only"),
   enhancements: tiktokEnhancementsSchema,
 });

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import type { CreateResponse, CreatedObject } from "@/lib/ads/meta/types";
+import type { Platform } from "@/lib/ads/constants";
+import { managerName } from "@/lib/ads/links";
+import type { CreateResponse, CreatedObject } from "@/lib/ads/types";
 import { countOf } from "@/lib/ads/plan-derive";
 import { cn } from "@/lib/utils";
 import { PauseGlyph } from "./pause-seal";
@@ -30,12 +32,14 @@ const KIND_LABEL: Record<CreatedObject["kind"], string> = {
   ad: "Reclama",
 };
 
-function CreatedList({ created }: { created: CreatedObject[] }) {
+function CreatedList({ created, platform }: { created: CreatedObject[]; platform: Platform }) {
   return (
     <ul className="mt-4 space-y-1 font-md-mono text-[12px] leading-relaxed text-bone/75">
       {created.map((object) => (
         <li key={`${object.kind}-${object.id}`} className="flex min-w-0 flex-wrap gap-x-2">
-          <span className="text-dim">{KIND_LABEL[object.kind]}</span>
+          <span className="text-dim">
+            {object.kind === "adset" && platform === "tiktok" ? "Grupul de reclame" : KIND_LABEL[object.kind]}
+          </span>
           <span className="min-w-0 truncate text-bone/90">{object.name}</span>
           <span className="text-dim">{object.id}</span>
         </li>
@@ -61,14 +65,17 @@ function ExternalLink({ href, children, light }: { href: string; children: React
 
 export function CreateResult({
   result,
+  platform,
   onCreateAnyway,
   pending,
 }: {
   result: CreateResponse;
+  platform: Platform;
   onCreateAnyway: () => void;
   pending: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const manager = managerName(platform);
   useEffect(() => {
     ref.current?.focus({ preventScroll: false });
   }, [result]);
@@ -89,14 +96,14 @@ export function CreateResult({
               Creată. Oprită.
             </p>
             <p className="mt-2 text-[14.5px] leading-snug text-bone/75">
-              {ads === 1 ? "O reclamă" : countOf(ads, "reclame")} pe pauză. Verific-o în Ads Manager și pornește-o de
+              {ads === 1 ? "O reclamă" : countOf(ads, "reclame")} pe pauză. Verific-o în {manager} și pornește-o de
               acolo, când e gata.
             </p>
           </div>
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
           <ExternalLink href={result.adsManagerUrl} light>
-            Deschide în Ads Manager
+            Deschide în {manager}
           </ExternalLink>
           <Link href="/admin/ads" className="btn btn-ghost !min-h-11">
             Lista de campanii
@@ -105,7 +112,7 @@ export function CreateResult({
         {result.storeWarning ? (
           <p className={cn("mt-4 text-[13.5px] leading-snug", WARNING_TEXT)}>{result.storeWarning}</p>
         ) : null}
-        <CreatedList created={result.created} />
+        <CreatedList created={result.created} platform={platform} />
       </div>
     );
   }
@@ -148,12 +155,12 @@ export function CreateResult({
         </p>
         <p className="mt-2 text-[14px] leading-relaxed text-bone/80">{result.message}</p>
         <p className="mt-2 text-[14px] leading-relaxed text-bone/80">
-          Completează ce lipsește din Ads Manager sau șterge campania de acolo și creeaz-o din nou după corectură.
+          Completează ce lipsește din {manager} sau șterge campania de acolo și creeaz-o din nou după corectură.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <ExternalLink href={result.partial.adsManagerUrl}>Deschide în Ads Manager</ExternalLink>
+          <ExternalLink href={result.partial.adsManagerUrl}>Deschide în {manager}</ExternalLink>
         </div>
-        <CreatedList created={result.partial.created} />
+        <CreatedList created={result.partial.created} platform={platform} />
       </div>
     );
   }

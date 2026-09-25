@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AdsWorkspace } from "../workspaces";
 import { MetaApiError, metaGet, metaGetAll } from "./graph";
-import type { LibraryVideo, MetaAccountInfo, MetaVideoInfo } from "./types";
+import type { LibraryVideo, AdAccountInfo, VideoInfo } from "../types";
 
 /**
  * Citirile de pe Meta: conturile tokenului, obiectele din plan (pagină,
@@ -40,7 +40,7 @@ const ACCOUNT_STATE: Record<number, { label: string; usable: boolean }> = {
  * conturile atribuite lui în Business Settings — izolarea între portofolii
  * o garantează platforma, nu lista noastră.
  */
-export async function listAdAccounts(workspace: AdsWorkspace): Promise<MetaAccountInfo[]> {
+export async function listAdAccounts(workspace: AdsWorkspace): Promise<AdAccountInfo[]> {
   const raw = await metaGetAll<RawAdAccount>(
     workspace,
     "/me/adaccounts",
@@ -165,7 +165,7 @@ function isReady(video: RawVideo): boolean {
   return status === undefined || status === "ready";
 }
 
-export async function readVideo(workspace: AdsWorkspace, videoId: string): Promise<MetaVideoInfo | null> {
+export async function readVideo(workspace: AdsWorkspace, videoId: string): Promise<VideoInfo | null> {
   const video = await readVisible<RawVideo>(
     workspace,
     videoId,

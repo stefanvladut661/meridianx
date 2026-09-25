@@ -1,16 +1,15 @@
 import Link from "next/link";
-import { OBJECTIVE_LABEL, RESULT_LABEL } from "@/lib/ads/constants";
+import { OBJECTIVE_LABEL, resultLabel } from "@/lib/ads/constants";
 import { formatAmount, formatCount, type Totals } from "@/lib/ads/metrics";
 import { formatMoney } from "@/lib/ads/plan-derive";
-import { adsManagerCampaignUrl } from "@/lib/ads/meta/links";
-import { PAUSED } from "@/lib/ads/meta/paused";
+import { campaignUrl, managerName } from "@/lib/ads/links";
 import type { AdsCampaign } from "@/lib/ads/store";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { formatLeadDateTime } from "@/app/(admin)/admin/_components/format-date";
 import { cn } from "@/lib/utils";
 import { PauseGlyph } from "./pause-seal";
 import { WARNING_TEXT } from "./tone";
-import { campaignStatusLabel } from "./campaign-status";
+import { campaignStatusLabel, isPausedStatus } from "./campaign-status";
 
 /**
  * Campaniile create din portal, cele mai noi primele, din toate spațiile.
@@ -38,8 +37,8 @@ export function CampaignList({
     <ol className="divide-y divide-hair overflow-hidden rounded-panel-lg border border-hair bg-char">
       {campaigns.map((campaign) => {
         const workspace = workspaces.find((item) => item.id === campaign.workspace) ?? null;
-        const paused = campaign.status === PAUSED;
-        const url = adsManagerCampaignUrl(campaign.adAccount, campaign.platformCampaignId);
+        const paused = isPausedStatus(campaign.status);
+        const url = campaignUrl(campaign.platform, campaign.adAccount, campaign.platformCampaignId);
         const spent = totals.get(campaign.id);
         return (
           <li
@@ -103,7 +102,7 @@ export function CampaignList({
                   <>
                     <span className="font-semibold text-bone">{formatAmount(spent.spend, campaign.currency)}</span>{" "}
                     <span className="text-dim">cheltuiți ·</span> {formatCount(spent.results)}{" "}
-                    <span className="text-dim">{RESULT_LABEL[campaign.objective].unit}</span>
+                    <span className="text-dim">{resultLabel(campaign.objective, campaign.platform).unit}</span>
                   </>
                 ) : (
                   <span className="text-dim">încă nimic cheltuit</span>
@@ -118,7 +117,7 @@ export function CampaignList({
                 rel="noopener noreferrer"
                 className="text-[13.5px] font-medium text-bone underline underline-offset-4 hover:text-bone/80"
               >
-                Ads Manager<span aria-hidden> ↗</span>
+                {managerName(campaign.platform)}<span aria-hidden> ↗</span>
                 <span className="sr-only"> (se deschide într-o filă nouă)</span>
               </Link>
             </div>

@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { PlanEditor } from "@/components/ads/plan-editor";
 import {
-  checkPlanOnMeta,
+  checkPlan,
   checkVideoUploadStatus,
   chooseWorkspace,
   createPausedCampaign,
   listLibraryVideos,
   prepareVideoUpload,
-  sendStagedVideoToMeta,
+  sendStagedVideo,
 } from "../actions";
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /**
- * Acțiunile paginii rulează în funcția ei. Copierea unui video de către Meta
+ * Acțiunile paginii rulează în funcția ei. Copierea unui video de către platformă
  * (faza 3) poate dura mai mult decât un apel obișnuit.
  */
 export const maxDuration = 60;
@@ -50,11 +50,11 @@ export default async function NewPlanPage() {
           currentWorkspaceId={currentId}
           actions={{
             chooseWorkspace,
-            checkPlan: checkPlanOnMeta,
+            checkPlan,
             createPaused: createPausedCampaign,
             listLibrary: listLibraryVideos,
             prepareUpload: prepareVideoUpload,
-            sendUpload: sendStagedVideoToMeta,
+            sendUpload: sendStagedVideo,
             uploadStatus: checkVideoUploadStatus,
           }}
         />

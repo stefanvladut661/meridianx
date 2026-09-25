@@ -1,22 +1,23 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
-import type { LibraryResponse, LibraryVideo } from "@/lib/ads/meta/types";
+import type { Platform } from "@/lib/ads/constants";
+import type { LibraryResponse, LibraryVideo } from "@/lib/ads/types";
 import { asString, getIn } from "@/lib/ads/plan-path";
 import { cn } from "@/lib/utils";
 import { usePlanForm } from "./fields";
-import { formatDuration } from "./meta-check";
+import { formatDuration } from "./check-panel";
 import { ERROR_TEXT, LABEL, WARNING_TEXT } from "./tone";
 
 /**
  * „Alege un video deja urcat" — biblioteca contului de reclame din plan.
  *
- * Lista se cere la server doar când omul o deschide (un apel la Meta, cu
+ * Lista se cere la server doar când omul o deschide (un apel la platformă, cu
  * tokenul spațiului, pentru contul scris în plan). Alegerea scrie id-ul în
  * plan, ca orice altă corectură: JSON-ul din stânga se rescrie singur.
  *
  * Grupul e un set de butoane radio native: săgețile se mișcă între
- * video-uri, Tab iese din listă. Un video pe care Meta încă îl procesează
+ * video-uri, Tab iese din listă. Un video pe care platforma încă îl procesează
  * se vede, dar nu se poate alege — o reclamă cu el ar pica la creare.
  */
 
@@ -24,8 +25,10 @@ const date = new Intl.DateTimeFormat("ro-RO", { day: "2-digit", month: "2-digit"
 
 export function VideoLibrary({
   load,
+  platform,
 }: {
   load: (adAccount: string) => Promise<LibraryResponse>;
+  platform: Platform;
 }) {
   const { draft, update } = usePlanForm();
   const adAccount = asString(getIn(draft, "ad_account"));
@@ -102,8 +105,9 @@ export function VideoLibrary({
 
       {state.videos.length === 0 ? (
         <p className="mt-3 rounded-panel border border-dashed border-hair-strong px-4 py-5 text-[14px] leading-relaxed text-bone/75">
-          Contul n-are încă niciun video. Urcă unul din Ads Manager → Media library (sau așteaptă încărcarea
-          din portal), apoi apasă Reîncarcă.
+          Contul n-are încă niciun video. Urcă unul din portal („Fișier nou”) sau din{" "}
+          {platform === "tiktok" ? "biblioteca de creative din TikTok Ads Manager" : "Ads Manager → Media library"}, apoi
+          apasă Reîncarcă.
         </p>
       ) : (
         <div className="mt-3 grid max-h-[26rem] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
@@ -129,7 +133,7 @@ export function VideoLibrary({
                   className="sr-only"
                 />
                 {video.thumbnailUrl ? (
-                  // Miniatură de pe CDN-ul Meta, URL semnat și temporar.
+                  // Miniatură de pe CDN-ul platformei, URL semnat și temporar.
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={video.thumbnailUrl}

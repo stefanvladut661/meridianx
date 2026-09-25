@@ -81,3 +81,59 @@ export function assertPaused(edge: string, payload: Record<string, unknown>): vo
   }
   walk(payload, "");
 }
+
+// ---------------------------------------------------------------------------
+// TikTok: aceeași regulă, alt vocabular
+// ---------------------------------------------------------------------------
+
+/**
+ * Pe TikTok, „oprit” se scrie `operation_status: "DISABLE"`. Singura valoare
+ * de status pe care o scrie portalul pe TikTok e cea de mai jos.
+ */
+export const TIKTOK_DISABLED = "DISABLE" as const;
+
+/** Singurele căi TikTok pe care portalul scrie. Niciuna nu modifică un obiect existent. */
+export const TIKTOK_CREATE_PATHS = [
+  "/campaign/create/",
+  "/adgroup/create/",
+  "/ad/create/",
+  "/file/video/ad/upload/",
+  "/file/image/ad/upload/",
+] as const;
+export type TikTokCreatePath = (typeof TIKTOK_CREATE_PATHS)[number];
+
+const TIKTOK_PATHS_WITH_STATUS: readonly string[] = ["/campaign/create/", "/adgroup/create/", "/ad/create/"];
+const TIKTOK_STATUS_KEYS = new Set(["operation_status", "opt_status", "status", "secondary_status"]);
+
+function walkTikTok(value: unknown, path: string): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => walkTikTok(item, `${path}[${index}]`));
+    return;
+  }
+  if (value && typeof value === "object") {
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      const itemPath = path ? `${path}.${key}` : key;
+      if (TIKTOK_STATUS_KEYS.has(key) && item !== TIKTOK_DISABLED) {
+        throw new NotPausedError(`${itemPath} trebuie să fie ${TIKTOK_DISABLED}, nu ${JSON.stringify(item)}.`);
+      }
+      walkTikTok(item, itemPath);
+    }
+    return;
+  }
+  if (typeof value === "string") {
+    const parsed = parseMaybeJson(value);
+    if (parsed !== undefined) walkTikTok(parsed, path);
+  }
+}
+
+export function assertTikTokDisabled(path: string, payload: Record<string, unknown>): void {
+  if (!(TIKTOK_CREATE_PATHS as readonly string[]).includes(path)) {
+    throw new NotPausedError(`Calea TikTok „${path}” nu e una de creare a portalului.`);
+  }
+  if (TIKTOK_PATHS_WITH_STATUS.includes(path) && payload.operation_status !== TIKTOK_DISABLED) {
+    throw new NotPausedError(
+      `${path}: operation_status lipsă sau diferit de ${TIKTOK_DISABLED} (${JSON.stringify(payload.operation_status)}). Portalul creează doar oprit.`
+    );
+  }
+  walkTikTok(payload, "");
+}

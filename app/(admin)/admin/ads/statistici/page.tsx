@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CURRENCY_LABEL, OBJECTIVES, OBJECTIVE_LABEL, RESULT_LABEL, type Currency, type Objective } from "@/lib/ads/constants";
+import { CURRENCY_LABEL, OBJECTIVES, OBJECTIVE_LABEL, resultLabel, type Currency, type Objective } from "@/lib/ads/constants";
 import {
   PERIODS,
   fillDays,
@@ -128,7 +128,7 @@ export default async function StatsPage({
   const current = totalsOf(currentRows);
   const previous = totalsOf(previousRows);
   const daily = fillDays(currentRows, range.from, range.to);
-  const names = resultNames(scoped.map((campaign) => campaign.objective));
+  const names = resultNames(scoped.map((campaign) => campaign.objective), workspace.platform);
 
   const hrefWith = (next: { zile?: number; moneda?: string; obiectiv?: string | null }) => {
     const query = new URLSearchParams();
@@ -307,7 +307,7 @@ export default async function StatsPage({
                       <td className="px-4 py-3 text-right text-bone">
                         {formatCount(totals.results)}{" "}
                         <span className="text-[12px] text-dim">
-                          {RESULT_LABEL[campaign.objective].unit}
+                          {resultLabel(campaign.objective, workspace.platform).unit}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right text-bone/85">{formatAmount(totals.costPerResult, campaign.currency)}</td>

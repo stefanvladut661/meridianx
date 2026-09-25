@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AdsWorkspace } from "../workspaces";
 import { metaGet, metaUploadVideoFromUrl } from "./graph";
-import type { UploadStatus } from "./types";
+import type { UploadStatus } from "../types";
 
 /**
  * Video nou în biblioteca contului: Meta îl descarcă singur, de la un link

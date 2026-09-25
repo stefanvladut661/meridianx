@@ -19,6 +19,7 @@ import {
   OBJECTIVES,
   OBJECTIVES_WITH_CONVERSION,
   OBJECTIVE_LABEL,
+  PLATFORM_LABEL,
   TIKTOK_AD_TEXT_MAX,
   TIKTOK_ENHANCEMENTS,
   TIKTOK_ENHANCEMENT_LABEL,
@@ -35,7 +36,7 @@ import { asArray, asRecord, asString, getIn } from "@/lib/ads/plan-path";
 import type { PlanSummary } from "@/lib/ads/plan-summary";
 import { UTM_KEYS } from "@/lib/ads/plan-derive";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
-import type { LibraryResponse, UploadActions } from "@/lib/ads/meta/types";
+import type { LibraryResponse, UploadActions } from "@/lib/ads/types";
 import { cn } from "@/lib/utils";
 import {
   FieldMessages,
@@ -461,9 +462,9 @@ export function PlanForm({
   workspaces: WorkspaceSummary[];
   currentWorkspace: WorkspaceSummary;
   onSwitchWorkspace: (id: string) => void;
-  /** Biblioteca video a contului din plan — doar pe Meta, cu token setat. */
+  /** Biblioteca video a contului din plan — cu token setat. */
   loadLibrary?: (adAccount: string) => Promise<LibraryResponse>;
-  /** Urcarea unui video nou — doar pe Meta, cu token setat. */
+  /** Urcarea unui video nou — cu token setat. */
   upload?: UploadActions;
 }) {
   const { draft, update } = usePlanForm();
@@ -570,8 +571,8 @@ export function PlanForm({
           emptyText="Fără comportamente."
         />
         <p className="text-[12.5px] leading-snug text-dim">
-          Interesele, comportamentele, orașele și limbile fără id se caută după nume la verificarea în
-          Meta, iar portalul îți arată ce a găsit înainte să creeze ceva.
+          Interesele, comportamentele, orașele și limbile fără id se caută după nume la verificarea pe
+          platformă, iar portalul îți arată ce a găsit înainte să creeze ceva.
         </p>
       </Section>
 
@@ -635,25 +636,24 @@ export function PlanForm({
               label="Id video"
               mono
               hint={
-                loadLibrary && platform === "meta"
+                loadLibrary
                   ? "Din biblioteca de media a contului de reclame — scris aici sau ales din listă."
-                  : platform === "meta"
-                    ? "Din biblioteca de media a contului de reclame. Lista se poate deschide după ce spațiul are token."
-                    : "Din biblioteca contului TikTok. Alegerea din listă vine odată cu conectarea TikTok."
+                  : "Din biblioteca de media a contului de reclame. Lista se poate deschide după ce spațiul are token."
               }
             />
             {uploaded && uploaded.id === asString(getIn(draft, "creative.video.video_id")) ? (
               <p className={cn("flex items-center gap-2 text-[13.5px]", OK_TEXT)}>
                 <span aria-hidden className={cn("h-2 w-2 rounded-full", OK_DOT)} />
-                Urcat acum: {uploaded.fileName} — Meta l-a procesat, e în biblioteca contului.
+                Urcat acum: {uploaded.fileName} — {PLATFORM_LABEL[platform]} l-a procesat, e în biblioteca contului.
               </p>
             ) : null}
-            {loadLibrary && platform === "meta" ? <VideoLibrary load={loadLibrary} /> : null}
+            {loadLibrary ? <VideoLibrary load={loadLibrary} platform={platform} /> : null}
           </>
         ) : videoSource === "upload" ? (
-          upload && platform === "meta" ? (
+          upload ? (
             <VideoUpload
               actions={upload}
+              platform={platform}
               onReady={(video) => {
                 setUploaded(video);
                 update("creative.video", { source: "library", video_id: video.id });
@@ -664,11 +664,7 @@ export function PlanForm({
               path="creative.video.file_name"
               label="Numele fișierului (opțional)"
               mono
-              hint={
-                platform === "meta"
-                  ? "Fișierul se urcă de aici după ce spațiul are token."
-                  : "Urcarea pe TikTok vine odată cu conectarea TikTok."
-              }
+              hint="Fișierul se urcă de aici după ce spațiul are token."
             />
           )
         ) : null}
@@ -823,6 +819,9 @@ export function PlanForm({
             />
             <TextField path="tiktok.identity_id" label="Id identitate" mono />
           </Grid>
+          {getIn(draft, "tiktok.identity_type") === "BC_AUTH_TT" ? (
+            <TextField path="tiktok.identity_bc_id" label="Id Business Center (al identității)" mono />
+          ) : null}
           <SelectField
             path="tiktok.placements"
             label="Plasări"
