@@ -219,6 +219,13 @@ export const metaSchema = z.strictObject({
     .union([z.literal("automatic"), z.array(z.enum(META_PLACEMENTS)).min(1)])
     .default("automatic"),
   enhancements: metaEnhancementsSchema,
+  /**
+   * DSA (UE): cine beneficiază de reclamă și cine o plătește — apar în
+   * „De ce văd reclama asta”. Obligatorii pe Meta când publicul e în UE.
+   * Lipsă = valorile implicite ale contului de reclame, dacă sunt setate.
+   */
+  dsa_beneficiary: shortText(512).optional(),
+  dsa_payor: shortText(512).optional(),
 });
 
 export const tiktokEnhancementsSchema = z

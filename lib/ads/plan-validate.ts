@@ -148,6 +148,8 @@ const LABELS: Record<string, string> = {
   "meta.placements": "Plasările Meta",
   "meta.placements.#": "Plasarea {n}",
   "meta.enhancements": "Îmbunătățirile automate Meta",
+  "meta.dsa_beneficiary": "Beneficiarul reclamei (dsa_beneficiary)",
+  "meta.dsa_payor": "Plătitorul reclamei (dsa_payor)",
   tiktok: "Secțiunea tiktok",
   "tiktok.identity_type": "Tipul identității TikTok",
   "tiktok.identity_id": "Id-ul identității TikTok",
@@ -520,6 +522,60 @@ export function normalizeAdAccount(platform: Platform, value: string): string {
   return platform === "meta" && /^\d+$/.test(trimmed) ? `act_${trimmed}` : trimmed;
 }
 
+/** Raza minimă a unui oraș pe Meta (10 mile). */
+const META_CITY_RADIUS_MIN = 17;
+
+/**
+ * Ce refuză Meta la creare, prins înainte: altfel campania s-ar crea, iar
+ * setul de reclame ar pica — o campanie goală, pe jumătate.
+ */
+function metaRules(raw: Record<string, unknown>): PlanProblem[] {
+  const errors: PlanProblem[] = [];
+
+  asArray(getIn(raw, "audience.locations")).forEach((location, index) => {
+    const record = asRecord(location);
+    const radius = asNumber(record?.radius_km);
+    if (record?.type === "city" && radius !== null && radius < META_CITY_RADIUS_MIN) {
+      errors.push({
+        path: `audience.locations.${index}.radius_km`,
+        message: `Raza locației ${index + 1} e ${radius} km. Pe Meta, raza unui oraș e între ${META_CITY_RADIUS_MIN} și 80 km; fără rază se ia doar orașul.`,
+      });
+    }
+  });
+
+  const placements = getIn(raw, "meta.placements");
+  if (Array.isArray(placements) && placements.includes("facebook_stories")) {
+    if (!placements.includes("facebook_feed") && !placements.includes("instagram_stories")) {
+      errors.push({
+        path: "meta.placements",
+        message:
+          "Facebook Stories nu poate sta singur: Meta îl acceptă doar împreună cu Facebook — flux sau Instagram — Stories. Adaugă una dintre ele.",
+      });
+    }
+  }
+
+  if (getIn(raw, "meta.advantage_audience") === true) {
+    const ageMin = asNumber(getIn(raw, "audience.age_min")) ?? 18;
+    const ageMax = asNumber(getIn(raw, "audience.age_max")) ?? 65;
+    if (ageMax !== 65 || ageMin > 25) {
+      errors.push({
+        path: "meta.advantage_audience",
+        message: `Cu Advantage+ audience pornit, Meta cere vârsta maximă 65 și vârsta minimă cel mult 25 (planul: ${ageLabel(ageMin, ageMax)}). Oprește-l sau lărgește vârsta.`,
+      });
+    }
+  }
+
+  const objective = getIn(raw, "campaign.objective");
+  if (getIn(raw, "creative.variants") === "platform_rotates" && isObjective(objective) && !OBJECTIVES_WITH_CONVERSION.includes(objective)) {
+    errors.push({
+      path: "creative.variants",
+      message: `Pe Meta, alternarea textelor (dynamic creative) merge doar la obiectivele cu pixel — Lead-uri și Vânzări. Pentru ${OBJECTIVE_LABEL[objective]}, folosește "one_ad_per_text".`,
+    });
+  }
+
+  return errors;
+}
+
 function crossRules(raw: Record<string, unknown>, context: ValidationContext): PlanProblem[] {
   const workspace = findWorkspace(raw.workspace);
   if (!workspace) return []; // schema spune deja de ce
@@ -611,6 +667,8 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
     }
   }
 
+  if (platform === "meta") errors.push(...metaRules(raw));
+
   const currency = getIn(raw, "campaign.currency");
   const budget = asNumber(getIn(raw, "campaign.daily_budget"));
   if (isCurrency(currency)) {
@@ -687,6 +745,22 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
       path: "meta.advantage_audience",
       message:
         "Advantage+ audience e pornit: Meta tratează vârsta și interesele din plan ca sugestii și poate livra în afara lor.",
+    });
+  }
+
+  // Meta extinde interesele singur pe obiectivele de conversie și trafic,
+  // iar extinderea nu se poate opri din API. Vârsta, genul și locația rămân limite.
+  const objectiveForExpansion = getIn(raw, "campaign.objective");
+  if (
+    platform === "meta" &&
+    getIn(raw, "meta.advantage_audience") !== true &&
+    (objectiveForExpansion === "leads" || objectiveForExpansion === "sales" || objectiveForExpansion === "traffic") &&
+    (asArray(getIn(raw, "audience.interests")).length > 0 || asArray(getIn(raw, "audience.behaviors")).length > 0)
+  ) {
+    warnings.push({
+      path: "audience.interests",
+      message:
+        "La Lead-uri, Vânzări și Trafic, Meta poate livra și în afara intereselor din plan (extinderea targetării detaliate nu se poate opri din API). Vârsta, genul și locațiile rămân limite stricte.",
     });
   }
 

@@ -250,12 +250,13 @@ export type MetaEnhancement = (typeof META_ENHANCEMENTS)[number];
 export const META_ENHANCEMENT_LABEL: Record<MetaEnhancement, { title: string; body: string }> = {
   advantage_creative: {
     title: "Advantage+ creative enhancements",
-    body: "Meta retușează imaginea, adaugă muzică, rescrie sau mută textul, animă cadrele.",
+    body: "Meta decupează sau extinde cadrul, adaugă muzică și subtitrări, rescrie, traduce sau dublează textul, generează butoane și rezumate.",
   },
   ad_sources: {
     title: "Ad sources",
-    // TODO faza 2: câmpul exact din Marketing API, verificat pe documentația curentă.
-    body: "Setarea „Ad sources” din Ads Manager. Rămâne oprită; câmpul exact din API se confirmă la conectarea Meta.",
+    // Nu are un câmp propriu în Marketing API: portalul refuză, una câte una,
+    // funcțiile pe care le alimentează (lib/ads/meta/build.ts → AD_SOURCES_FEATURES).
+    body: "Meta ia informații de pe site-ul sau pagina ta și le adaugă pe reclamă: linkuri spre alte pagini, rezumate, detalii care apar treptat, locații de magazin.",
   },
   multi_advertiser_ads: {
     title: "Multi-advertiser ads",

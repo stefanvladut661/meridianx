@@ -35,6 +35,7 @@ import { asArray, asRecord, asString, getIn } from "@/lib/ads/plan-path";
 import type { PlanSummary } from "@/lib/ads/plan-summary";
 import { UTM_KEYS } from "@/lib/ads/plan-derive";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
+import type { LibraryResponse } from "@/lib/ads/meta/types";
 import { cn } from "@/lib/utils";
 import {
   FieldMessages,
@@ -49,6 +50,7 @@ import {
   usePlanForm,
 } from "./fields";
 import { ERROR_DOT, ERROR_TEXT, FIELD, LABEL, OK_DOT, OK_TEXT, WARNING_DOT, WARNING_TEXT } from "./tone";
+import { VideoLibrary } from "./video-library";
 
 /**
  * Previzualizarea editabilă, pe secțiuni — fișa de ordin a campaniei.
@@ -450,12 +452,15 @@ export function PlanForm({
   workspaces,
   currentWorkspace,
   onSwitchWorkspace,
+  loadLibrary,
 }: {
   platform: Platform;
   summary: PlanSummary;
   workspaces: WorkspaceSummary[];
   currentWorkspace: WorkspaceSummary;
   onSwitchWorkspace: (id: string) => void;
+  /** Biblioteca video a contului din plan — doar pe Meta, cu token setat. */
+  loadLibrary?: (adAccount: string) => Promise<LibraryResponse>;
 }) {
   const { draft, update } = usePlanForm();
   const planWorkspace = workspaces.find((workspace) => workspace.id === draft.workspace) ?? null;
@@ -560,8 +565,8 @@ export function PlanForm({
           emptyText="Fără comportamente."
         />
         <p className="text-[12.5px] leading-snug text-dim">
-          Interesele, comportamentele, orașele și limbile fără id se caută după nume la creare, iar
-          portalul îți arată ce a găsit înainte să trimită ceva.
+          Interesele, comportamentele, orașele și limbile fără id se caută după nume la verificarea în
+          Meta, iar portalul îți arată ce a găsit înainte să creeze ceva.
         </p>
       </Section>
 
@@ -619,12 +624,21 @@ export function PlanForm({
         <PathMessages path="creative.video" />
         <PathMessages path="creative.video.source" />
         {videoSource === "library" ? (
-          <TextField
-            path="creative.video.video_id"
-            label="Id video"
-            mono
-            hint="Din biblioteca de media a contului de reclame. Alegerea din listă vine odată cu conectarea platformei."
-          />
+          <>
+            <TextField
+              path="creative.video.video_id"
+              label="Id video"
+              mono
+              hint={
+                loadLibrary && platform === "meta"
+                  ? "Din biblioteca de media a contului de reclame — scris aici sau ales din listă."
+                  : platform === "meta"
+                    ? "Din biblioteca de media a contului de reclame. Lista se poate deschide după ce spațiul are token."
+                    : "Din biblioteca contului TikTok. Alegerea din listă vine odată cu conectarea TikTok."
+              }
+            />
+            {loadLibrary && platform === "meta" ? <VideoLibrary load={loadLibrary} /> : null}
+          </>
         ) : videoSource === "upload" ? (
           <TextField
             path="creative.video.file_name"
@@ -711,6 +725,20 @@ export function PlanForm({
           <Grid>
             <TextField path="meta.page_id" label="Pagina de Facebook" mono placeholder="id pagină" />
             <TextField path="meta.instagram_account_id" label="Instagram (opțional)" mono placeholder="id cont" />
+          </Grid>
+          <Grid>
+            <TextField
+              path="meta.dsa_beneficiary"
+              label="Beneficiar (DSA)"
+              placeholder="implicit: setarea contului"
+              hint="Firma care beneficiază de reclamă. Obligatoriu în UE."
+            />
+            <TextField
+              path="meta.dsa_payor"
+              label="Plătitor (DSA)"
+              placeholder="implicit: setarea contului"
+              hint="Cine plătește reclama. Apare pe reclamă, ca beneficiarul."
+            />
           </Grid>
           <CheckboxGrid
             legend="Categorie specială"

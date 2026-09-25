@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { PlanEditor } from "@/components/ads/plan-editor";
-import { chooseWorkspace } from "../actions";
+import { checkPlanOnMeta, chooseWorkspace, createPausedCampaign, listLibraryVideos } from "../actions";
 
 export const metadata: Metadata = {
   title: "Plan nou — MERIDIAN Reclame",
@@ -31,7 +31,16 @@ export default async function NewPlanPage() {
       </p>
 
       <div className="mt-8">
-        <PlanEditor workspaces={workspaces} currentWorkspaceId={currentId} chooseWorkspace={chooseWorkspace} />
+        <PlanEditor
+          workspaces={workspaces}
+          currentWorkspaceId={currentId}
+          actions={{
+            chooseWorkspace,
+            checkPlan: checkPlanOnMeta,
+            createPaused: createPausedCampaign,
+            listLibrary: listLibraryVideos,
+          }}
+        />
       </div>
     </main>
   );

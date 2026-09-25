@@ -4,17 +4,21 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { EXAMPLE_PLAN } from "@/lib/ads/example-plan";
 import { OBJECTIVE_LABEL, PLATFORM_LABEL, type Platform } from "@/lib/ads/constants";
 import { parsePlanText, replaceSmartQuotes, type PlanTextResult } from "@/lib/ads/plan-json";
-import { setIn } from "@/lib/ads/plan-path";
+import { getIn, setIn } from "@/lib/ads/plan-path";
 import { countOf } from "@/lib/ads/plan-derive";
 import { joinRo, summarizePlan, type PlanSummary } from "@/lib/ads/plan-summary";
 import { validatePlan, type PlanProblem } from "@/lib/ads/plan-validate";
+import type { CreateResponse, LibraryResponse, MetaCheck, MetaCheckResponse } from "@/lib/ads/meta/types";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { cn } from "@/lib/utils";
 import { AdsPreview } from "./ads-preview";
-import { PlanFormProvider, fieldId, groupByPath } from "./fields";
+import { CreateResult } from "./create-result";
+import { PlanFormProvider, groupByPath } from "./fields";
+import { MetaCheckPanel } from "./meta-check";
 import { PauseSeal } from "./pause-seal";
 import { PlanForm } from "./plan-form";
-import { ERROR_DOT, ERROR_TEXT, FIELD, OK_TEXT, WARNING_DOT, WARNING_TEXT } from "./tone";
+import { ProblemList } from "./problem-list";
+import { ERROR_TEXT, FIELD, OK_TEXT } from "./tone";
 
 /**
  * /admin/ads/nou — planul lipit, citit în română, corectat pe loc.
@@ -25,8 +29,10 @@ import { ERROR_DOT, ERROR_TEXT, FIELD, OK_TEXT, WARNING_DOT, WARNING_TEXT } from
  * înapoi în conversația din care a venit. Comentariile din JSON nu
  * supraviețuiesc rescrierii, și interfața spune asta.
  *
- * FAZA 1: nimic de aici nu vorbește cu o platformă. Butonul de creare
- * există, dezactivat, cu motivul scris lângă el.
+ * Apoi, pe Meta: „Verifică în Meta" citește contul real (cont, monedă,
+ * pagină, pixel, video, fiecare nume din targetare) și abia după o
+ * verificare fără erori, pe EXACT planul de pe ecran, se deblochează
+ * „Creează pe pauză". O corectură după verificare o face veche.
  */
 
 const STORAGE_KEY = "meridian_ads_plan";
@@ -37,66 +43,6 @@ type SyntaxProblem = Extract<PlanTextResult, { ok: false }>;
 /** Comentarii `//` la început de rând sau după spațiu — nu `https://`. */
 function hasComments(text: string): boolean {
   return /(^|\s)\/\/|\/\*/m.test(text);
-}
-
-/** Primul element existent pe drumul căii în sus: câmpul, mesajul lui, apoi părinții. */
-function jumpTo(path: string) {
-  const parts = path.split(".");
-  for (let length = parts.length; length >= 1; length -= 1) {
-    const candidate = parts.slice(0, length).join(".");
-    const element =
-      document.getElementById(fieldId(candidate)) ??
-      document.getElementById(`${fieldId(candidate)}-msg`);
-    if (element) {
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      element.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
-      if (!element.matches("input, select, textarea, button")) element.setAttribute("tabindex", "-1");
-      element.focus({ preventScroll: true });
-      return;
-    }
-  }
-}
-
-function ProblemList({
-  title,
-  problems,
-  tone,
-}: {
-  title: string;
-  problems: PlanProblem[];
-  tone: "error" | "warning";
-}) {
-  if (problems.length === 0) return null;
-  return (
-    <section
-      aria-label={title}
-      className={cn(
-        "rounded-panel-lg border px-5 py-4",
-        tone === "error" ? "border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05]" : "border-[#f0b429]/30 bg-[#f0b429]/[0.04]"
-      )}
-    >
-      <h3 className={cn("flex items-center gap-2 text-[14.5px] font-semibold", tone === "error" ? ERROR_TEXT : WARNING_TEXT)}>
-        <span aria-hidden className={cn("h-2 w-2 rounded-full", tone === "error" ? ERROR_DOT : WARNING_DOT)} />
-        {title}
-      </h3>
-      <ul className="mt-3 space-y-2">
-        {problems.map((problem, index) => (
-          <li key={index}>
-            <button
-              type="button"
-              onClick={() => jumpTo(problem.path)}
-              className="group flex w-full items-start gap-3 rounded-panel-sm px-1 py-0.5 text-left text-[14px] leading-snug text-bone/85 hover:text-bone"
-            >
-              <span aria-hidden className="mt-[3px] font-md-mono text-[11px] text-dim group-hover:text-bone">
-                →
-              </span>
-              <span>{problem.message}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
 }
 
 function PlanSentence({
@@ -144,14 +90,28 @@ function PlanSentence({
   );
 }
 
+export interface PlanEditorActions {
+  chooseWorkspace: (formData: FormData) => Promise<void>;
+  checkPlan: (input: { plan: unknown; workspace: string }) => Promise<MetaCheckResponse>;
+  createPaused: (input: {
+    plan: unknown;
+    workspace: string;
+    fingerprint: string;
+    allowDuplicate: boolean;
+  }) => Promise<CreateResponse>;
+  listLibrary: (input: { workspace: string; adAccount: string }) => Promise<LibraryResponse>;
+}
+
+const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Nu s-a trimis nimic spre Meta. Încearcă din nou.";
+
 export function PlanEditor({
   workspaces,
   currentWorkspaceId,
-  chooseWorkspace,
+  actions,
 }: {
   workspaces: WorkspaceSummary[];
   currentWorkspaceId: string;
-  chooseWorkspace: (formData: FormData) => Promise<void>;
+  actions: PlanEditorActions;
 }) {
   const current = workspaces.find((workspace) => workspace.id === currentWorkspaceId) ?? workspaces[0];
 
@@ -162,6 +122,14 @@ export function PlanEditor({
   const [copied, setCopied] = useState(false);
   const [restored, setRestored] = useState(false);
   const [switching, startSwitch] = useTransition();
+
+  // Verificarea pe Meta ține de EXACT planul verificat (`key`): orice
+  // corectură o face „veche", iar crearea se blochează până la o nouă verificare.
+  const [check, setCheck] = useState<{ key: string; check: MetaCheck } | null>(null);
+  const [checkFailure, setCheckFailure] = useState<{ message: string; problems: PlanProblem[] } | null>(null);
+  const [result, setResult] = useState<CreateResponse | null>(null);
+  const [checking, startCheck] = useTransition();
+  const [creating, startCreate] = useTransition();
 
   const draftRef = useRef<Record<string, unknown> | null>(null);
   const skipParse = useRef(false);
@@ -238,8 +206,52 @@ export function PlanEditor({
   const switchWorkspace = (id: string) => {
     const formData = new FormData();
     formData.set("workspace", id);
-    startSwitch(() => chooseWorkspace(formData));
+    startSwitch(() => actions.chooseWorkspace(formData));
   };
+
+  // Cheia planului verificat: JSON-ul lui, stabil cât timp nu se schimbă nimic.
+  const planKey = useMemo(() => (draft ? JSON.stringify(draft) : ""), [draft]);
+  const freshCheck = check && check.key === planKey ? check.check : null;
+
+  const runCheck = () => {
+    if (!draft) return;
+    const key = planKey;
+    setResult(null);
+    setCheckFailure(null);
+    startCheck(async () => {
+      try {
+        const response = await actions.checkPlan({ plan: draft, workspace: current.id });
+        if (response.ok) setCheck({ key, check: response.check });
+        else setCheckFailure({ message: response.message, problems: response.problems ?? [] });
+      } catch {
+        setCheckFailure({ message: UNREACHABLE, problems: [] });
+      }
+    });
+  };
+
+  const runCreate = (allowDuplicate: boolean) => {
+    if (!draft || !freshCheck) return;
+    startCreate(async () => {
+      try {
+        const response = await actions.createPaused({
+          plan: draft,
+          workspace: current.id,
+          fingerprint: freshCheck.fingerprint,
+          allowDuplicate,
+        });
+        setResult(response);
+        // Verificarea veche nu mai e de încredere: s-a schimbat ceva de atunci.
+        if (!response.ok && response.recheck) setCheck(null);
+      } catch {
+        setResult({ ok: false, message: UNREACHABLE });
+      }
+    });
+  };
+
+  const loadLibrary =
+    current.platform === "meta" && current.tokenConfigured
+      ? (adAccount: string) => actions.listLibrary({ workspace: current.id, adAccount })
+      : undefined;
 
   const goToLine = (line: number, column: number) => {
     const area = textareaRef.current;
@@ -276,15 +288,50 @@ export function PlanEditor({
         ? `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat${warningCount ? `, ${warningCount} de citit` : ""}.`
         : `Planul e valid${warningCount ? `, cu ${warningCount === 1 ? "un lucru" : countOf(warningCount, "lucruri")} de citit` : ""}.`;
 
-  const createReason = !draft
-    ? "Lipește un plan ca să-l poți verifica."
+  const videoSource = draft ? getIn(draft, "creative.video.source") : undefined;
+  const created = result?.ok === true && freshCheck !== null;
+
+  /* Ce se poate face acum, într-un singur loc: pasul următor, dacă e
+     disponibil, și propoziția care spune de ce (sau ce urmează). */
+  const step: { action: "none" | "check" | "create"; reason: string } = !draft
+    ? { action: "none", reason: "Lipește un plan ca să-l poți verifica." }
     : syntax
-      ? "Repară întâi JSON-ul din stânga."
+      ? { action: "none", reason: "Repară întâi JSON-ul din stânga." }
       : errorCount > 0
-        ? `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat mai sus.`
-        : !current.tokenConfigured
-          ? `Planul e valid. Spațiul ${current.name} nu are token (${current.tokenEnv}), iar conectarea la platformă vine în faza 2.`
-          : `Planul e valid. Conectarea la ${PLATFORM_LABEL[platform]} vine în faza 2 — deocamdată portalul doar verifică.`;
+        ? { action: "none", reason: `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat mai sus.` }
+        : current.platform !== "meta"
+          ? { action: "none", reason: `Planul e valid. Conectarea la ${PLATFORM_LABEL.tiktok} vine în faza 5 — deocamdată portalul doar verifică.` }
+          : !current.tokenConfigured
+            ? {
+                action: "none",
+                reason: `Planul e valid, dar spațiul ${current.name} nu are token: setează ${current.tokenEnv} în Vercel și fă redeploy.`,
+              }
+            : videoSource === "upload"
+              ? {
+                  action: "none",
+                  reason: "Planul e valid. Încărcarea unui video nou vine în faza 3 — până atunci, alege un video deja urcat.",
+                }
+              : created
+                ? { action: "none", reason: "Creată. Pentru încă o campanie, schimbă planul și verifică din nou." }
+                : !freshCheck
+                  ? {
+                      action: "check",
+                      reason: check
+                        ? "Planul s-a schimbat de la verificare. Verifică din nou înainte de creare."
+                        : "Întâi verificarea pe contul real: contul, pagina, pixelul, video-ul și fiecare nume din targetare.",
+                    }
+                  : !freshCheck.ok
+                    ? {
+                        action: "check",
+                        reason: `Meta: ${freshCheck.errors.length === 1 ? "un lucru" : countOf(freshCheck.errors.length, "lucruri")} de corectat mai sus.`,
+                      }
+                    : {
+                        action: "create",
+                        reason: `Se creează în ${freshCheck.account?.name ?? "contul din plan"}: 1 campanie, 1 set, ${
+                          summary?.ads.length === 1 ? "1 reclamă" : countOf(summary?.ads.length ?? 0, "reclame")
+                        } — toate oprite.`,
+                      };
+  const busy = checking || creating;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start xl:gap-12">
@@ -462,6 +509,7 @@ export function PlanEditor({
                   workspaces={workspaces}
                   currentWorkspace={current}
                   onSwitchWorkspace={switchWorkspace}
+                  loadLibrary={loadLibrary}
                 />
               </PlanFormProvider>
             </div>
@@ -476,23 +524,73 @@ export function PlanEditor({
                 className="mt-4"
               />
             </section>
+
+            {check ? <MetaCheckPanel check={check.check} stale={check.key !== planKey} /> : null}
           </div>
         )}
+
+        {checkFailure ? (
+          <div role="alert" className="mt-2 space-y-3">
+            <div className="rounded-panel-lg border border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05] px-5 py-4">
+              <p className={cn("text-[15px] font-semibold", ERROR_TEXT)}>Verificarea pe Meta n-a mers.</p>
+              <p className="mt-1.5 text-[14px] leading-relaxed text-bone/80">{checkFailure.message}</p>
+            </div>
+            <ProblemList title="De corectat" problems={checkFailure.problems} tone="error" />
+          </div>
+        ) : null}
+
+        {result ? (
+          <div className="mt-2">
+            <CreateResult result={result} pending={creating} onCreateAnyway={() => runCreate(true)} />
+          </div>
+        ) : null}
 
         {/* Lipită jos doar pe ecrane mari: pe telefon ar mânca un sfert din
             ecran la fiecare derulare, iar planul se citește oricum până la capăt. */}
         <div className="mt-2 rounded-panel-lg border border-hair bg-ink/92 px-4 py-4 lg:sticky lg:bottom-0 lg:z-10 lg:rounded-b-none lg:backdrop-blur-md sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button
-              type="button"
-              disabled
-              aria-describedby="create-reason"
-              className="btn btn-light shrink-0 disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              Creează pe pauză
-            </button>
-            <p id="create-reason" className="text-[13.5px] leading-snug text-bone/75">
-              {createReason}
+            <div className="flex shrink-0 flex-wrap gap-2">
+              {step.action === "check" ? (
+                <button
+                  type="button"
+                  onClick={runCheck}
+                  disabled={busy}
+                  aria-describedby="create-reason"
+                  className="btn btn-light disabled:cursor-wait disabled:opacity-60"
+                >
+                  {checking ? "Se verifică în Meta…" : check ? "Verifică din nou" : "Verifică în Meta"}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => runCreate(false)}
+                disabled={step.action !== "create" || busy}
+                aria-describedby="create-reason"
+                className={cn(
+                  "btn shrink-0 disabled:cursor-not-allowed disabled:opacity-45",
+                  step.action === "check" ? "btn-ghost" : "btn-light",
+                  creating && "disabled:cursor-wait"
+                )}
+              >
+                {creating ? "Se creează pe pauză…" : "Creează pe pauză"}
+              </button>
+              {step.action === "create" ? (
+                <button
+                  type="button"
+                  onClick={runCheck}
+                  disabled={busy}
+                  className="btn btn-ghost disabled:cursor-wait disabled:opacity-60"
+                >
+                  {checking ? "Se verifică…" : "Verifică din nou"}
+                </button>
+              ) : null}
+            </div>
+            <p id="create-reason" className="text-[13.5px] leading-snug text-bone/75" aria-live="polite">
+              {checking
+                ? "Meta caută contul, pagina, pixelul, video-ul și fiecare nume din targetare…"
+                : creating
+                  ? "Se creează campania, setul și reclamele, una câte una. Nu închide pagina."
+                  : step.reason}
             </p>
           </div>
         </div>

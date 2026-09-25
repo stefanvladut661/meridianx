@@ -118,7 +118,8 @@ export const EXAMPLE_PLAN = `{
     // Reclama unui client care vinde sau închiriază locuințe intră de regulă
     // la "housing" — la dubiu, verifică politica Meta pentru categorii speciale.
     "special_ad_categories": [],
-    // false (implicit): vârsta și interesele sunt limite, nu sugestii.
+    // false (implicit): vârsta, genul și locația sunt limite stricte.
+    // Interesele, la Lead-uri / Vânzări / Trafic, Meta le lărgește oricum.
     "advantage_audience": false,
     // "automatic" sau o listă: facebook_feed, facebook_reels, facebook_stories,
     // instagram_feed, instagram_reels, instagram_stories.
@@ -129,6 +130,11 @@ export const EXAMPLE_PLAN = `{
       "ad_sources": false,
       "multi_advertiser_ads": false
     }
+    // Publicul e în UE, deci Meta cere pe reclamă cine beneficiază și cine
+    // plătește (DSA). Lipsă = setările contului din Ads Manager; dacă nici
+    // contul nu le are, portalul le cere aici:
+    // "dsa_beneficiary": "Firma clientului",
+    // "dsa_payor": "Firma care plătește reclama"
   }
 
   // Pe TikTok, în loc de "meta":

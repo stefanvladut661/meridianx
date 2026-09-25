@@ -22,6 +22,15 @@ function readToken(workspace: AdsWorkspace): string | null {
   return value ? value : null;
 }
 
+/**
+ * Tokenul UNUI spațiu. Îl cheamă doar clienții de platformă
+ * (`lib/ads/meta/graph.ts`), în funcția care face apelul — nu se ține în
+ * variabile de modul, nu se loghează, nu se întoarce spre browser.
+ */
+export function workspaceToken(workspace: AdsWorkspace): string | null {
+  return readToken(workspace);
+}
+
 /** Lista pentru interfață: configurație publică + dacă tokenul e setat. */
 export function listWorkspaces(): WorkspaceSummary[] {
   return WORKSPACES.map((workspace) => ({
