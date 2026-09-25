@@ -4,6 +4,8 @@ import { listWorkspaces, currentWorkspaceId } from "@/lib/ads/workspaces.server"
 import { PauseGlyph } from "@/components/ads/pause-seal";
 import { CampaignList } from "@/components/ads/campaign-list";
 import { STORE_FAILURE_MESSAGE, listCampaigns } from "@/lib/ads/store";
+import { readLifetimeTotals } from "@/lib/ads/stats";
+import { totalsOf, type Totals } from "@/lib/ads/metrics";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -26,6 +28,9 @@ export default async function AdsCampaignsPage() {
   const currentId = await currentWorkspaceId();
   const campaigns = await listCampaigns();
   const hasCampaigns = campaigns.ok && campaigns.data.length > 0;
+  const lifetime = hasCampaigns ? await readLifetimeTotals(campaigns.data.map((campaign) => campaign.id)) : null;
+  const totals = new Map<string, Totals>();
+  if (lifetime?.ok) for (const [id, days] of lifetime.data) totals.set(id, totalsOf(days));
 
   return (
     <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
@@ -51,11 +56,15 @@ export default async function AdsCampaignsPage() {
             </Link>
           </div>
           <div className="mt-4">
-            <CampaignList campaigns={campaigns.data} workspaces={workspaces} currentId={currentId} />
+            <CampaignList campaigns={campaigns.data} workspaces={workspaces} currentId={currentId} totals={totals} />
           </div>
           <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-dim">
-            Statusul e cel de la creare. Cheltuiala și rezultatele apar aici după ce pornește
-            sincronizarea zilnică a cifrelor.
+            Statusul și cifrele (de la creare) vin din sincronizarea zilnică. Pe zile și comparate
+            între perioade: în{" "}
+            <Link href="/admin/ads/statistici" className="text-bone underline underline-offset-4">
+              Statistici
+            </Link>
+            .
           </p>
         </section>
       ) : (

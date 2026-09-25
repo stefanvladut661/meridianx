@@ -17,6 +17,7 @@ import type { CreateResponse, LibraryResponse, MetaCheckResponse, UploadStatus }
 import { readVideoUploadStatus, sendVideoToMeta } from "@/lib/ads/meta/video";
 import { createStagingDownload, createStagingUpload, isStagingNameOf, removeStaged } from "@/lib/ads/staging";
 import { STORE_FAILURE_MESSAGE, findRecentDuplicate } from "@/lib/ads/store";
+import { runAdsSync } from "@/lib/ads/sync";
 
 /**
  * Acțiunile portalului de reclame.
@@ -282,6 +283,41 @@ export async function checkVideoUploadStatus(input: {
     return { ok: true, status };
   } catch (error) {
     return { ok: false, message: describeMetaError(error, "citirea stării video-ului", workspace.tokenEnv) };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sincronizarea cifrelor, la cerere
+// ---------------------------------------------------------------------------
+
+export async function syncAdsNow(): Promise<
+  { ok: true; status: "ok" | "partial" | "failed"; message: string } | Failure
+> {
+  const user = await getAdminUser();
+  if (!user) return { ok: false, message: SESSION_EXPIRED };
+  const currentId = await currentWorkspaceId();
+  const workspace = findWorkspace(currentId);
+  if (!workspace) return { ok: false, message: "Spațiul de lucru nu există." };
+  if (workspace.platform !== "meta") return { ok: false, message: "Cifrele TikTok vin în faza 5." };
+
+  try {
+    const outcome = await runAdsSync({ trigger: "manual", workspaceIds: [workspace.id] });
+    revalidatePath("/admin/ads", "layout");
+    const counted = `${outcome.campaignsSynced === 1 ? "o campanie" : `${outcome.campaignsSynced} campanii`}, ${outcome.rowsWritten === 1 ? "o zi de cifre" : `${outcome.rowsWritten} zile de cifre`}`;
+    if (outcome.status === "ok") {
+      return {
+        ok: true,
+        status: "ok",
+        message: outcome.skipped.length > 0 ? outcome.skipped.join(" ") : `Gata: ${counted}.`,
+      };
+    }
+    return {
+      ok: true,
+      status: outcome.status,
+      message: `${outcome.status === "partial" ? `Parțial (${counted}). ` : ""}${outcome.problems.join(" ")}`,
+    };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Sincronizarea n-a pornit." };
   }
 }
 

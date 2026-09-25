@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { OBJECTIVE_LABEL } from "@/lib/ads/constants";
+import { OBJECTIVE_LABEL, RESULT_LABEL } from "@/lib/ads/constants";
+import { formatAmount, formatCount, type Totals } from "@/lib/ads/metrics";
 import { formatMoney } from "@/lib/ads/plan-derive";
 import { adsManagerCampaignUrl } from "@/lib/ads/meta/links";
 import { PAUSED } from "@/lib/ads/meta/paused";
@@ -9,6 +10,7 @@ import { formatLeadDateTime } from "@/app/(admin)/admin/_components/format-date"
 import { cn } from "@/lib/utils";
 import { PauseGlyph } from "./pause-seal";
 import { WARNING_TEXT } from "./tone";
+import { campaignStatusLabel } from "./campaign-status";
 
 /**
  * Campaniile create din portal, cele mai noi primele, din toate spațiile.
@@ -17,17 +19,20 @@ import { WARNING_TEXT } from "./tone";
  * ori se strânge până nu se mai citește. Fiecare campanie e un rând care
  * se rearanjează — numele și spațiul întâi, apoi bugetul, apoi linkul.
  *
- * Coloanele de cheltuială și rezultate NU apar încă: vin din sincronizarea
- * zilnică (faza 4). O coloană plină de liniuțe ar arăta ca o eroare.
+ * Cifrele (cheltuiala și rezultatele de la creare) vin din sincronizarea
+ * zilnică; o campanie fără cifre spune „încă nimic cheltuit”, nu „0”.
  */
 export function CampaignList({
   campaigns,
   workspaces,
   currentId,
+  totals,
 }: {
   campaigns: AdsCampaign[];
   workspaces: WorkspaceSummary[];
   currentId: string;
+  /** Cifrele de la creare, pe id de campanie. */
+  totals: Map<string, Totals>;
 }) {
   return (
     <ol className="divide-y divide-hair overflow-hidden rounded-panel-lg border border-hair bg-char">
@@ -35,6 +40,7 @@ export function CampaignList({
         const workspace = workspaces.find((item) => item.id === campaign.workspace) ?? null;
         const paused = campaign.status === PAUSED;
         const url = adsManagerCampaignUrl(campaign.adAccount, campaign.platformCampaignId);
+        const spent = totals.get(campaign.id);
         return (
           <li
             key={campaign.id}
@@ -44,11 +50,16 @@ export function CampaignList({
             )}
           >
             <div className="flex min-w-0 gap-4">
-              <span className="mt-0.5 shrink-0 text-bone/85" title={paused ? "Oprită" : campaign.status}>
+              <span className="mt-0.5 shrink-0 text-bone/85" title={campaignStatusLabel(campaign.status)}>
                 <PauseGlyph className={cn("h-9 w-9", !paused && "opacity-30")} />
               </span>
               <div className="min-w-0">
-                <p className="text-[16px] font-semibold leading-snug text-bone">{campaign.name}</p>
+                <Link
+                  href={`/admin/ads/${campaign.id}`}
+                  className="text-[16px] font-semibold leading-snug text-bone underline-offset-4 hover:underline"
+                >
+                  {campaign.name}
+                </Link>
                 <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-dim">
                   <span
                     className={cn(
@@ -87,8 +98,19 @@ export function CampaignList({
                 </span>{" "}
                 <span className="text-dim">pe zi</span>
               </p>
+              <p className="text-[13.5px] tabular-nums text-bone/85">
+                {spent && spent.spend > 0 ? (
+                  <>
+                    <span className="font-semibold text-bone">{formatAmount(spent.spend, campaign.currency)}</span>{" "}
+                    <span className="text-dim">cheltuiți ·</span> {formatCount(spent.results)}{" "}
+                    <span className="text-dim">{RESULT_LABEL[campaign.objective].unit}</span>
+                  </>
+                ) : (
+                  <span className="text-dim">încă nimic cheltuit</span>
+                )}
+              </p>
               <p className="font-md-mono text-[11.5px] uppercase tracking-[0.18em] text-bone/80">
-                {paused ? "Oprită" : campaign.status.toLowerCase()}
+                {campaignStatusLabel(campaign.status)}
               </p>
               <Link
                 href={url}

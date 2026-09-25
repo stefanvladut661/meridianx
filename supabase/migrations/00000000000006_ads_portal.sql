@@ -93,9 +93,10 @@ create table public.ads_metrics_daily (
 
 create index ads_metrics_daily_date_idx on public.ads_metrics_daily (date desc);
 
--- Istoricul înghețat: platformele atribuie conversiile cu întârziere (până
--- la 7 zile după clic), deci ultimele 7 zile se mai pot actualiza. Ce e
--- mai vechi rămâne cum a fost scris — și baza refuză, nu doar codul.
+-- Istoricul înghețat: platformele își mai corectează cifrele câteva zile
+-- după (Meta: „o pereche de zile”, niciodată după 28), deci ultimele 7 zile
+-- se mai pot actualiza. Ce e mai vechi rămâne cum a fost scris — și baza
+-- refuză, nu doar codul.
 create or replace function public.ads_metrics_frozen()
 returns trigger
 language plpgsql

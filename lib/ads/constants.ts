@@ -45,6 +45,19 @@ export const OBJECTIVE_LABEL: Record<Objective, string> = {
   awareness: "Notorietate",
 };
 
+/**
+ * Ce numără „rezultat” la fiecare obiectiv — și cum se cheamă costul lui.
+ * La Notorietate, acoperirea e pe zi: însumată pe mai multe zile, un om
+ * văzut în două zile contează de două ori. Eticheta o spune.
+ */
+export const RESULT_LABEL: Record<Objective, { plural: string; cost: string; unit: string }> = {
+  leads: { plural: "Lead-uri", cost: "Cost pe lead", unit: "lead-uri" },
+  sales: { plural: "Vânzări", cost: "Cost pe vânzare", unit: "vânzări" },
+  traffic: { plural: "Vizite pe pagină", cost: "Cost pe vizită", unit: "vizite" },
+  video_views: { plural: "Vizionări ThruPlay", cost: "Cost pe ThruPlay", unit: "ThruPlay" },
+  awareness: { plural: "Acoperire (sumă pe zile)", cost: "Cost pe persoană atinsă", unit: "oameni" },
+};
+
 /** Obiectivele care optimizează pe un eveniment de pe site, deci cer pixel. */
 export const OBJECTIVES_WITH_CONVERSION: readonly Objective[] = ["leads", "sales"];
 
