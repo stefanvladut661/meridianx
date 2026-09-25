@@ -32,7 +32,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | Fază | Ce | Stare |
 |---|---|---|
 | 1 | Schema JSON + validare + previzualizare, fără apeluri la platforme | ✅ `feat/ads-portal` |
-| 2 | Meta: creare campanie pe pauză, cu video deja urcat | ⬜ |
+| 2 | Meta: creare campanie pe pauză, cu video deja urcat | ✅ `feat/ads-portal` — testat pe Meta fals, încă nu pe contul real |
 | 3 | Meta: încărcare video din browser | ⬜ |
 | 4 | Dashboard + cron pentru Meta | ⬜ |
 | 5 | TikTok, peste structura existentă | ⬜ |
@@ -54,6 +54,19 @@ Commit separat după fiecare fază; nu se trece mai departe fără confirmarea o
 | `plan-derive.ts` | URL-ul final cu UTM, reclamele care ies din texte, grupele de vârstă TikTok. |
 | `plan-summary.ts` | Planul spus în română, din datele brute. |
 | `example-plan.ts` | Exemplul comentat — sursa unică (butonul „Încarcă exemplul" și secțiunea de mai jos). |
+| `store.ts` | `server-only`: tabelele portalului (migrarea 6). Citire prin sesiune (RLS), scriere prin service role. |
+| `meta/graph.ts` | `server-only`: SINGURUL client Graph API. GET-uri + o singură cale de scriere (`metaPost` → `metaCreate`, `metaUploadImage`), cu `assertPaused` înainte de rețea. Fără update, fără delete. |
+| `meta/paused.ts` | Garda: orice câmp de status, la orice adâncime, trebuie să fie `PAUSED`; muchiile de scriere sunt o listă închisă. |
+| `meta/build.ts` | Planul → corpurile de cerere v26 (campanie, set, creativ, reclamă). Funcții pure. |
+| `meta/lookup.ts` | Citiri: conturile tokenului, pagină, Instagram, pixel, video, biblioteca video, DSA-ul contului. |
+| `meta/targeting.ts` | Numele din plan → cheile Meta (orașe, regiuni, limbi, interese, comportamente). |
+| `meta/check.ts` | „Verifică în Meta": tot ce trebuie să existe înainte de creare + amprenta planului. |
+| `meta/create.ts` | Crearea: copertă → campanie → set → (creativ → reclamă) × N, toate pe pauză. |
+| `meta/thumbnail.ts` | Coperta propusă de Meta, descărcată ca s-o urcăm în cont (Meta nu vrea linkuri spre CDN-ul lui). |
+| `meta/errors.ts` | Erorile Meta spuse în română, cu mesajul lor original și `fbtrace_id`. |
+| `meta/links.ts` | Linkurile spre Ads Manager. |
+| `meta/types.ts` | Ce ajunge în browser din verificare și creare. |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză" (21 de verificări, fără rețea). |
 
 ---
 
@@ -112,6 +125,7 @@ câmp `platform` separat, ca să nu se poată contrazice.
 | `meta.page_id` | da pe Meta | |
 | `meta.instagram_account_id` · `special_ad_categories[]` · `advantage_audience` · `placements` | nu | `advantage_audience` implicit `false`; `placements` implicit `"automatic"` |
 | `meta.enhancements` | nu — **toate `false`** | `advantage_creative`, `ad_sources`, `multi_advertiser_ads` |
+| `meta.dsa_beneficiary` · `meta.dsa_payor` | da în UE, dacă contul n-are valori implicite | cine beneficiază și cine plătește reclama (DSA) — apar pe reclamă |
 | `tiktok.identity_type` · `identity_id` | da pe TikTok | `CUSTOMIZED_USER`, `TT_USER`, `BC_AUTH_TT` |
 | `tiktok.placements` | nu (`tiktok_only`) | sau `automatic` |
 | `tiktok.enhancements` | nu — **toate `false`** | `automatic_enhancements`, `auto_add_assets`, `translate_and_dub`, `music_refresh` |
@@ -240,7 +254,8 @@ Sursa: `example-plan.ts`. Se poate lipi direct în portal, cu comentarii cu tot.
     // Reclama unui client care vinde sau închiriază locuințe intră de regulă
     // la "housing" — la dubiu, verifică politica Meta pentru categorii speciale.
     "special_ad_categories": [],
-    // false (implicit): vârsta și interesele sunt limite, nu sugestii.
+    // false (implicit): vârsta, genul și locația sunt limite stricte.
+    // Interesele, la Lead-uri / Vânzări / Trafic, Meta le lărgește oricum.
     "advantage_audience": false,
     // "automatic" sau o listă: facebook_feed, facebook_reels, facebook_stories,
     // instagram_feed, instagram_reels, instagram_stories.
@@ -251,6 +266,11 @@ Sursa: `example-plan.ts`. Se poate lipi direct în portal, cu comentarii cu tot.
       "ad_sources": false,
       "multi_advertiser_ads": false
     }
+    // Publicul e în UE, deci Meta cere pe reclamă cine beneficiază și cine
+    // plătește (DSA). Lipsă = setările contului din Ads Manager; dacă nici
+    // contul nu le are, portalul le cere aici:
+    // "dsa_beneficiary": "Firma clientului",
+    // "dsa_payor": "Firma care plătește reclama"
   }
 }
 ```
@@ -278,13 +298,96 @@ Pe TikTok, în loc de `meta`:
   cel afișat, secțiunea platformei lipsă, formatul contului, pixel lipsă la
   `leads`/`sales`, eveniment fără echivalent pe platformă (Programare pe
   TikTok), buget peste plafonul spațiului, monedă fără plafon, vârstă inversată,
-  texte TikTok peste 100 de caractere, `platform_rotates` pe TikTok.
+  texte TikTok peste 100 de caractere, `platform_rotates` pe TikTok. Pe Meta,
+  în plus (ce ar refuza Meta abia la setul de reclame, după ce campania
+  există deja): rază de oraș sub 17 km, Facebook Stories fără Facebook flux
+  sau Instagram Stories, Advantage+ audience cu vârsta maximă sub 65 sau cea
+  minimă peste 25, `platform_rotates` în afara obiectivelor Lead-uri și Vânzări.
 - **Avertismente (nu blochează):** o îmbunătățire automată pornită, Advantage+
   audience pornit, categorie specială, evenimentul nu e trimis de site-ul
   nostru, alt pixel decât cel al site-ului, UTM-uri duplicate sau pe care
   site-ul nu le salvează pe lead, macro-uri ale celeilalte platforme, texte
   care se taie pe Meta, lipsa titlului, grupele de vârstă TikTok care lărgesc
-  intervalul, rază pe TikTok (ignorată), video nou încă neurcat.
+  intervalul, rază pe TikTok (ignorată), video nou încă neurcat, interese la
+  Lead-uri / Vânzări / Trafic pe Meta (Meta le lărgește oricum — extinderea
+  targetării detaliate nu se poate opri din API).
+
+---
+
+## Faza 2 — crearea pe Meta
+
+### Drumul, pe ecran
+
+1. Planul valid → **Verifică în Meta**. Serverul citește, cu tokenul
+   spațiului: conturile pe care le vede tokenul (planul se respinge dacă
+   `ad_account` nu e printre ele sau dacă moneda contului diferă de
+   `currency`), pagina, Instagramul, pixelul, video-ul (trebuie să fie gata
+   procesat), beneficiarul și plătitorul DSA (din plan sau din setările
+   contului) și caută fiecare nume din targetare.
+2. Panoul **„Ce a găsit Meta"** arată tot: „București (+30 km) → Bucharest,
+   Romania", „Real estate → Real estate (Interests › Business and industry)".
+   Asta intră în targetare, nu textul din plan. Un nume negăsit = eroare.
+3. **Creează pe pauză** se deblochează doar pe o verificare fără erori a
+   EXACT planului de pe ecran. O corectură după verificare o face veche.
+4. Pe server, crearea reface verificarea și compară amprenta (SHA-256 din
+   planul cu cheile rezolvate + cont + DSA). Diferită → „verifică din nou".
+   Același plan creat în ultimele 30 de minute → cere confirmare explicită
+   („Creează încă una, intenționat"): a doua campanie = buget dublu.
+5. Ordinea creării: coperta (urcată în cont) → campania → setul → pentru
+   fiecare reclamă, creativul și reclama. **Toate cu `status: PAUSED`.**
+6. La o eroare după campanie, crearea se oprește. Ce apucase să se creeze
+   rămâne oprit, se arată cu link și se notează în bază ca `partial`.
+   Nimic nu se șterge automat.
+7. Rândul din `ads_campaigns` are planul întreg (cu cheile rezolvate), cine
+   l-a creat și id-urile obiectelor. `/admin/ads` le listează.
+
+Biblioteca video: pe Meta, cu token, **„Alege din biblioteca contului"**
+deschide cele mai noi 60 de video-uri ale contului din plan. Unul încă în
+procesare se vede, dar nu se poate alege.
+
+### Maparea pe Marketing API v26.0
+
+Verificată pe documentația Meta și pe SDK-ul oficial v26.0.2 (2026-09-25).
+v24.0 se oprește pe 2026-10-06; portalul folosește v26.0.
+
+| Plan | Meta |
+|---|---|
+| `leads` | `OUTCOME_LEADS` · set `OFFSITE_CONVERSIONS`, `destination_type: WEBSITE`, `promoted_object {pixel_id, custom_event_type: LEAD}` |
+| `sales` | `OUTCOME_SALES` · la fel, cu `PURCHASE` |
+| `traffic` | `OUTCOME_TRAFFIC` · `LANDING_PAGE_VIEWS` (fără `destination_type`) |
+| `video_views` | `OUTCOME_ENGAGEMENT` · `THRUPLAY`, `destination_type: ON_VIDEO` |
+| `awareness` | `OUTCOME_AWARENESS` · `REACH`, `promoted_object {page_id}` |
+| buget | pe set, în subunități (60 lei → `6000`); campania are `is_adset_budget_sharing_enabled: false` (obligatoriu din v24) |
+| public | `geo_locations` (țări, regiuni, orașe cu rază în km), `age_min/max`, `genders`, `locales`, `flexible_spec` (interese, comportamente), `targeting_automation.advantage_audience` trimis mereu (0/1) |
+| DSA | `dsa_beneficiary`, `dsa_payor` pe set, când publicul e în UE |
+| creativ | `object_story_spec.video_data` (video, `image_hash` al copertei, text, titlu, descriere, buton cu linkul final); Instagram prin `instagram_user_id` |
+| îmbunătățiri | `degrees_of_freedom_spec.creative_features_spec`: 39 de funcții Advantage+ + 5 ale „Ad sources", fiecare `OPT_OUT`; `contextual_multi_ads: OPT_OUT` |
+| `platform_rotates` | dynamic creative: `is_dynamic_creative` pe set + `asset_feed_spec`; doar Lead-uri și Vânzări |
+| reclamă | `adset_id`, `creative_id`, `status: PAUSED`, `conversion_domain` (domeniul destinației) la campaniile cu pixel |
+
+**„Ad sources"** nu are un câmp în API: e sursa (site, pagină, magazin) din
+care Meta alimentează linkurile spre site, rezumatele, detaliile care apar
+treptat și locațiile. Oprit în plan = fiecare dintre ele refuzată explicit
+(`site_extensions`, `show_summary`, `show_destination_blurbs`,
+`reveal_details_over_time`, `local_store_extension`).
+
+**Ce nu se poate opri din API:** la `OFFSITE_CONVERSIONS` și
+`LANDING_PAGE_VIEWS`, Meta extinde singur interesele (Advantage detailed
+targeting). Vârsta, genul și locația rămân limite. Portalul avertizează.
+
+### Neverificat încă — se confirmă la prima campanie reală
+
+1. Linkul spre Ads Manager (`adsmanager.facebook.com/adsmanager/manage/campaigns?act=…&selected_campaign_ids=…`) — format observat, nedocumentat.
+2. `/me/adaccounts` pentru un System User — folosit larg, nedocumentat explicit.
+3. Forma exactă a răspunsului `/dsa_recommendations` (se citește tolerant, doar pentru mesaj).
+4. `placement_soft_opt_out` (v24, Lead-uri/Vânzări): până la 5% din buget poate merge în plasări excluse. Valoarea implicită nu e documentată — de citit pe setul creat, în Ads Manager.
+5. Muzica adăugată automat pe video: portalul refuză `music_generation` și `audio`; dacă Meta tot pune muzică, se adaugă `asset_feed_spec.audios` gol.
+6. Bugetul minim zilnic în RON/EUR — nedocumentat; o sumă prea mică o refuză Meta la set (campania rămâne goală, oprită).
+7. Dynamic creative pe video (`platform_rotates`) — documentat, dar netestat pe un cont real.
+
+**Testul recomandat:** prima campanie reală cu bugetul minim, creată pe
+pauză, verificată în Ads Manager (setul, plasările, îmbunătățirile din
+creativ), apoi ștearsă de tine din Ads Manager.
 
 ---
 
@@ -300,6 +403,7 @@ Toate doar pe server; niciuna cu prefix `NEXT_PUBLIC_`.
 | `TIKTOK_TOKEN_CLIENTI` | 5 | token pe termen lung, Business Center clienți |
 | `TIKTOK_APP_ID`, `TIKTOK_APP_SECRET` | 5 | aplicația TikTok for Business (lista de conturi autorizate o cere) — de confirmat în faza 5 |
 | `CRON_SECRET` | 4 | există deja (sonda Supabase); îl folosește și cron-ul de cifre |
+| `META_GRAPH_URL` | test | DOAR pe calculatorul de dezvoltare: un Meta fals local. Ignorată dacă nu e `http://localhost` / `http://127.0.0.1` — **nu se pune în Vercel**. |
 
 Portalul funcționează fără ele: un spațiu fără token se poate folosi pentru
 verificarea planurilor, iar selectorul arată „fără token".
@@ -334,11 +438,19 @@ portofoliu are aplicația lui și tokenul lui. Asta e și izolarea pe care o vre
    - **Instagram accounts** — dacă folosești `instagram_account_id`.
 4. **Tokenul.** Pe System User → *Generate new token* → alegi aplicația de la
    pasul 1 → **Token expiration: Never** → permisiuni:
-   `ads_management`, `ads_read`, `business_management`,
-   `pages_show_list`, `pages_read_engagement`. Lista exactă se confirmă la
-   primul apel real din faza 2: dacă Meta refuză reclama cu o eroare de
-   permisiune pe pagină, se adaugă `pages_manage_ads` și se regenerează
-   tokenul. Copiază tokenul **o singură dată** — Meta nu ți-l mai arată.
+   `ads_management`, `ads_read`, `pages_show_list`,
+   `pages_read_engagement`, `pages_manage_ads`. Obligatorii pentru creare
+   sunt `ads_management` (care le cere pe cele două `pages_*` de citire);
+   `ads_read` e pentru cifre (faza 4); `pages_manage_ads` e plasa de
+   siguranță pentru reclamele în numele paginii. `business_management` nu
+   trebuie. Copiază tokenul **o singură dată** — Meta nu ți-l mai arată.
+   - Meta recomandă de la o vreme tokenuri de System User cu expirare la 60
+     de zile, iar unele portofolii le impun. Dacă „Never" nu apare, alege 60
+     de zile: când expiră, portalul spune „tokenul nu mai e valid" și
+     generezi altul.
+   - În setările aplicației, lasă **„Require App Secret" oprit**. Pornit,
+     Meta cere pe fiecare apel o semnătură cu secretul aplicației, pe care
+     portalul nu o trimite.
 5. **Vercel** → proiectul → *Settings → Environment Variables* →
    `META_TOKEN_MERIDIAN` (respectiv `META_TOKEN_CLIENTI`), pe *Production*
    (și *Preview* doar dacă vrei să creezi campanii din preview-uri), apoi
@@ -392,17 +504,34 @@ Detaliile TikTok se confirmă pe documentația curentă în faza 5, înainte de 
    cu layout propriu (aceeași gardă `getAdminUser()`), ca selectorul de spațiu
    să fie în capul paginii.
 
-## De rezolvat înainte de faza 2 — în afara zonei portalului
+## Decizii luate în faza 2 (de confirmat de om)
 
-- **`is_lead_admin()` nu există încă.** Migrarea 5 (`admin_emails` +
-  `is_lead_admin()`) e planificată în `PLAN.md`, dar n-a fost scrisă. Migrarea
-  portalului are nevoie de ea pentru RLS „exact ca la lead-uri". Variante: o
-  scriu întâi pe ea (migrarea 5, cum e descrisă în `PLAN.md`), apoi migrarea
-  portalului; sau migrarea portalului o creează ea (`create or replace`).
-- **CSP (`next.config.ts`) pentru faza 3:** încărcarea video din browser
-  direct la Meta are nevoie de originile de upload ale Meta în `connect-src`,
-  iar miniaturile video din biblioteca contului de CDN-ul Meta în `img-src`.
-  Azi CSP-ul e doar raportat (`CSP_REPORT_ONLY = true`), deci nu blochează,
-  dar trebuie adăugate înainte să devină activ.
+1. **Migrarea 5 scrisă întâi**, exact cum o descrie `PLAN.md` (propunerea
+   3.1 din `GHID.md`), pe `main`; migrarea portalului e a 6-a și depinde de ea.
+2. **Verificare, apoi creare** — două butoane, nu unul. Crearea refuză o
+   verificare veche și o amprentă diferită.
+3. **Dublura**: același plan verificat, creat în ultimele 30 de minute,
+   cere confirmare explicită.
+4. **DSA**: plan → setările contului → eroare. Portalul nu completează
+   singur un câmp legal (arată doar sugestiile Meta).
+5. **Coperta propusă de Meta se urcă în cont** (`/adimages`), fiindcă Meta
+   cere să nu primească linkuri spre CDN-ul lui. O copertă din plan
+   (`{ "url" }`) o descarcă Meta singur.
+6. **Eroare la jumătate**: nimic nu se șterge automat; totul rămâne oprit,
+   cu link, notat `partial`.
+7. **Istoricul de cifre**: migrarea 6 îngheață în bază zilele mai vechi de 7
+   (propunerea 3.7) — un `update` pe ele e refuzat de un trigger.
+
+## De rezolvat — în afara zonei portalului
+
+- **Migrările 5 și 6 se aplică de om**, în SQL editor, în ordine. Imediat
+  după migrarea 5: `insert into public.admin_emails (email) values (…)` cu
+  aceleași adrese ca în `ADMIN_EMAILS` — altfel panoul de lead-uri arată zero
+  lead-uri (nu se pierde nimic, doar lista e goală).
+- **CSP (`next.config.ts`):** miniaturile din biblioteca video și din
+  verificare vin de pe CDN-ul Meta (`*.fbcdn.net`) — azi CSP-ul doar
+  raportează, deci se văd, dar trebuie adăugate în `img-src` înainte ca
+  CSP-ul să devină activ. Faza 3 va cere, în plus, originea stocării
+  temporare a video-urilor în `connect-src` (vezi `GHID.md`, 4.3).
 - **Legătura din panoul de lead-uri spre reclame:** capul din `(dash)/layout.tsx`
   nu are link spre `/admin/ads` (portalul are link înapoi spre lead-uri).

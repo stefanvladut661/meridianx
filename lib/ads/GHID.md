@@ -1,13 +1,13 @@
-# Ghid — portalul de reclame, după faza 1
+# Ghid — portalul de reclame, după faza 2
 
-*Scris pe 2026-09-23, la finalul fazei 1. Ramura: `feat/ads-portal`.*
+*Actualizat pe 2026-09-25, la finalul fazei 2. Ramura: `feat/ads-portal`.*
 
 Trei documente, în ordinea în care se citesc:
 
 | Fișier | Ce e |
 |---|---|
-| `lib/ads/GHID.md` | **acesta** — ce ai de făcut acum, ce e de hotărât, ce urmează pe faze, raportul fazei 1 |
-| `lib/ads/README.md` | documentația tehnică: formatul planului, exemplul comentat, regulile de validare, variabilele, pașii pentru tokenuri |
+| `lib/ads/GHID.md` | **acesta** — ce ai de făcut acum, ce e de hotărât, ce urmează pe faze, rapoartele fazelor |
+| `lib/ads/README.md` | documentația tehnică: formatul planului, exemplul comentat, regulile de validare, maparea pe Meta, variabilele, pașii pentru tokenuri |
 | `lib/ads/PROMPT.md` | promptul complet al portalului, copiat identic din `e:\._media agentie\prompt-ads-portal.md` |
 
 ---
@@ -16,138 +16,104 @@ Trei documente, în ordinea în care se citesc:
 
 | Fază | Ce | Stare |
 |---|---|---|
-| **1** | Schema JSON + validare + previzualizare, fără apeluri la platforme | ✅ gata — `12bd56d`, `72ec09a`, împinsă pe GitHub, **fără merge în `main`** |
-| 2 | Meta: creare campanie pe pauză, cu video deja urcat | ⬜ așteaptă confirmarea ta |
-| 3 | Meta: încărcare video din browser | ⬜ |
+| **1** | Schema JSON + validare + previzualizare, fără apeluri la platforme | ✅ gata |
+| **2** | Meta: creare campanie pe pauză, cu video deja urcat | ✅ gata pe `feat/ads-portal`, testată pe un Meta fals local — **încă nu pe contul real** |
+| 3 | Meta: încărcare video din browser | ⬜ așteaptă confirmarea ta |
 | 4 | Dashboard + cron pentru Meta | ⬜ |
 | 5 | TikTok, peste structura existentă | ⬜ |
 
-Regula din prompt rămâne: **fază cu fază, commit separat, nu trec mai departe fără
-confirmarea ta, nu fac merge în `main` fără confirmarea ta.**
+Migrarea 5 (`admin_emails` + `is_lead_admin()`) e pe `main`; portalul, tot
+**fără merge în `main`**. Regula din prompt rămâne: fază cu fază, commit
+separat, nu trec mai departe fără confirmarea ta.
 
 ---
 
-## 2. Ce ai de făcut TU acum
+## 2. Ce ai de făcut TU acum — ca să creezi prima campanie reală
 
-### 2.1 Uită-te la faza 1
+### 2.1 Aplică migrările, în ordine (Supabase → SQL editor)
 
-```bash
-git checkout feat/ads-portal
-npm run dev
-```
+- [ ] `supabase/migrations/00000000000005_admin_emails.sql` — un tab, tot
+      fișierul, fără selecție.
+- [ ] **Imediat după**, în alt tab:
+      `insert into public.admin_emails (email) values ('adresa-ta@…');` — aceleași
+      adrese ca în `ADMIN_EMAILS` din Vercel. Până atunci panoul de lead-uri
+      arată zero lead-uri (nu se pierde nimic).
+- [ ] Deschide `/admin`: lead-urile se văd din nou.
+- [ ] `supabase/migrations/00000000000006_ads_portal.sql` — tabelele portalului.
+      Fără ea, portalul refuză crearea înainte să trimită ceva la Meta și spune
+      „aplică migrarea 6”.
 
-Apoi `http://localhost:3000/admin/ads/nou` (te loghezi ca în panoul de lead-uri).
+### 2.2 Tokenul Meta
 
-- [ ] Apasă **„Încarcă exemplul”** și citește previzualizarea: propoziția de sus,
-      secțiunile cu punct verde/galben/roșu, reclamele de la final.
-- [ ] Schimbă ceva în formular (bugetul, un text) și vezi cum se rescrie JSON-ul
-      din stânga.
-- [ ] Cere unei alte conversații un plan real: dă-i secțiunea **„Formatul
-      planului”** din `lib/ads/README.md` (tabelul + exemplul comentat) și cere-i
-      „un JSON în formatul ăsta”. Lipește ce primești în portal.
-- [ ] Încearcă și un plan greșit (buget scris `"50"`, un id scris ca număr, un
-      câmp inventat) — mesajele trebuie să-ți spună exact ce să corectezi.
+Pașii exacți: `lib/ads/README.md` → „Cum generezi tokenurile” (actualizați în faza 2).
 
-> În dezvoltare, cu `ADMIN_EMAILS` gol în `.env.local`, trece orice cont
-> Supabase. În producție, fără `ADMIN_EMAILS`, panoul se blochează intenționat.
+- [ ] Aplicația *Business* și System User-ul în portofoliul Meridian.
+- [ ] *Assign assets*: contul de reclame (*Manage campaigns*), pagina, pixelul
+      (dataset-ul), contul de Instagram.
+- [ ] *Generate new token* → expirare **Never** (sau 60 de zile, dacă Meta nu
+      mai oferă „Never”) → `ads_management`, `ads_read`, `pages_show_list`,
+      `pages_read_engagement`, `pages_manage_ads`.
+- [ ] În setările aplicației, **„Require App Secret” oprit**.
+- [ ] `META_TOKEN_MERIDIAN` **direct în Vercel**, pe *Preview* (ca să testezi pe
+      preview-ul ramurii `feat/ads-portal`) și, la merge, pe *Production*.
+      Nu în chat, nu într-un fișier, nu într-un commit.
 
-### 2.2 Răspunde la deciziile din secțiunea 3
+### 2.3 Beneficiarul și plătitorul (DSA)
 
-Fără răspunsul la **3.1** (`is_lead_admin()`) nu pot scrie migrarea portalului,
-deci nici faza 2.
+Publicul în România = UE, deci Meta cere pe fiecare reclamă cine beneficiază
+și cine o plătește.
 
-### 2.3 Pregătește tokenul Meta (pentru faza 2)
+- [ ] O dată, în Ads Manager → setările contului de reclame → beneficiar și
+      plătitor impliciți. **Sau** în fiecare plan: `"dsa_beneficiary"` și
+      `"dsa_payor"` în secțiunea `meta`.
 
-Pașii exacți sunt în `lib/ads/README.md` → „Cum generezi tokenurile”. Pe scurt:
+Fără ele, „Verifică în Meta” se oprește și spune exact asta (cu sugestiile Meta).
 
-- [ ] O aplicație Meta de tip *Business* **în fiecare portofoliu** (Meridian și
-      Clienți), cu produsul *Marketing API* și acces cel puțin standard pentru
-      `ads_management`. Meta cere ca aplicația și System User-ul să fie în
-      același portofoliu.
-- [ ] Un System User în fiecare portofoliu (*Settings → Users → System users*).
-- [ ] *Assign assets*: conturile de reclame (*Manage campaigns*), paginile,
-      pixelul (dataset-ul), contul de Instagram.
-- [ ] *Generate new token* → aplicația → expirare **Never** → `ads_management`,
-      `ads_read`, `business_management`, `pages_show_list`,
-      `pages_read_engagement`.
-- [ ] Tokenul **direct în Vercel** (`META_TOKEN_MERIDIAN`, `META_TOKEN_CLIENTI`),
-      nu în chat, nu într-un fișier, nu într-un commit.
-- [ ] Verifică în Events Manager că pixelul e legat de contul de reclame în care
-      vei crea campania.
+### 2.4 Prima campanie, de test
 
-### 2.4 Separă terminalele (recomandat)
+- [ ] Deschide preview-ul ramurii `feat/ads-portal` (Vercel → Deployments), apoi
+      `/admin/ads/nou`.
+- [ ] Un plan real, cu **bugetul minim**, cu un video deja urcat în contul de
+      reclame (îl alegi din „Alege din biblioteca contului”).
+- [ ] **Verifică în Meta** → citește „Ce a găsit Meta”: contul, moneda, pagina,
+      pixelul, DSA, fiecare oraș și interes așa cum l-a înțeles Meta.
+- [ ] **Creează pe pauză** → **Deschide în Ads Manager**.
+- [ ] În Ads Manager, verifică: campania, setul și reclamele sunt **oprite**;
+      bugetul pe set; plasările; în reclamă, la „Advantage+ creative”, toate
+      îmbunătățirile oprite; „Multi-advertiser ads” oprit.
+- [ ] Șterge campania de test din Ads Manager.
+- [ ] Spune-mi ce ai văzut — mai ales dacă ceva e pornit deși portalul l-a
+      trimis oprit. Lista a ce n-a putut fi verificat fără un cont real e în
+      `lib/ads/README.md` → „Neverificat încă”.
 
-Dacă terminalul de pe `feat/software-page` lucrează **în același director**
-`E:\meridianx`, orice `git checkout` al unuia schimbă fișierele de sub celălalt,
-iar o ramură nouă creată din ramura greșită ia cu ea commit-urile celeilalte.
-Cel mai sigur: un director separat pentru al doilea terminal.
-
-```bash
-cd /e/meridianx
-git worktree add -b feat/software-page ../meridianx-software main
-cd ../meridianx-software
-npm install
-```
-
-(Dacă `feat/software-page` există deja: `git worktree add ../meridianx-software feat/software-page`.)
-Am lăsat `E:\meridianx` pe `main` la finalul fazei 1, tocmai din motivul ăsta.
+> Pentru Clienți: aceiași pași în portofoliul clienților, cu `META_TOKEN_CLIENTI`.
 
 ---
 
-## 3. Decizii de confirmat
+## 3. Decizii
 
-| # | Ce | Propunerea mea |
+| # | Ce | Stare |
 |---|---|---|
-| 3.1 | **`is_lead_admin()` nu există.** Migrarea 5 (`admin_emails` + `is_lead_admin()`) e descrisă în `PLAN.md`, dar n-a fost scrisă. Portalul are nevoie de ea pentru RLS „exact ca la lead-uri”. | Scriu **întâi migrarea 5** exact cum e descrisă în `PLAN.md` (închide și accesul oricărui cont Supabase la lead-uri), apoi migrarea portalului. După aplicare, inserezi în `admin_emails` aceleași adrese ca în `ADMIN_EMAILS`. |
-| 3.2 | **Lista de conturi de reclame nu stă în `workspaces.ts`** — repo public, id-urile de cont nu intră în cod. | Lista vine din token: System User-ul vede exact conturile atribuite lui. Adăugarea unui portofoliu rămâne „un obiect + o variabilă”. |
-| 3.3 | **Plafoanele de buget** (alese de mine). | 500 lei / 100 € pe zi pentru Meridian, 2.500 lei / 500 € / 500 USD pentru clienți. Spune-mi alte cifre, sau le schimbi în `lib/ads/workspaces.ts`. |
-| 3.4 | **Faza 3 are nevoie de `next.config.ts`** (CSP) — fișier pe care nu-l ating fără voie. | Îți cer voie la începutul fazei 3, cu lista exactă de origini. |
-| 3.5 | **„Ad sources” de pe Meta** — n-am găsit câmpul corespunzător în documentația publică. | Rămâne oprit în schemă; îl mapez în faza 2 pe documentația curentă și îți spun ce am găsit. |
-| 3.6 | **Video „direct din browser” vs. „niciun token în browser”** (faza 3, vezi 4.3). | Varianta A de mai jos. |
-| 3.7 | **Istoricul de metrici** (faza 4, vezi 4.4): promptul spune „se actualizează doar ziua curentă”. | Actualizez ultimele 7 zile, restul rămâne înghețat. |
-| 3.8 | **Cron-ul (faza 4)** stă în `app/api/cron/…` și `vercel.json` — în afara zonei portalului. | Îți cer voie la începutul fazei 4. |
+| 3.1 | `is_lead_admin()` | ✅ **Luată de mine**, pe propunerea din ghid: migrarea 5 scrisă exact ca în `PLAN.md`, pe `main`. O aplici tu (2.1). |
+| 3.2 | Lista de conturi de reclame vine din token, nu din `workspaces.ts` | ✅ așa e construit: tokenul vede conturile, planul se respinge dacă `ad_account` nu e printre ele. Confirmă. |
+| 3.3 | Plafoanele de buget (500 lei / 100 € Meridian, 2.500 lei / 500 € / 500 USD clienți) | ⬜ de confirmat — sau le schimbi în `lib/ads/workspaces.ts`. |
+| 3.4 | Faza 3 are nevoie de `next.config.ts` (CSP) | ⬜ îți cer voie la începutul fazei 3. Între timp, miniaturile de pe CDN-ul Meta apar în raportul CSP (doar raport, nu blochează). |
+| 3.5 | „Ad sources” pe Meta | ✅ **Rezolvat:** n-are câmp în API; portalul refuză, una câte una, cele 5 funcții pe care le alimentează (README → „Faza 2”). |
+| 3.6 | Video „direct din browser” vs. „niciun token în browser” (faza 3) | ⬜ propunerea rămâne varianta A (4.3). |
+| 3.7 | Istoricul de metrici | ✅ **Luată de mine**, pe propunere: migrarea 6 îngheață zilele mai vechi de 7 (trigger în bază). Spune-mi dacă vrei altfel până la faza 4. |
+| 3.8 | Cron-ul (faza 4) în `app/api/cron/…` și `vercel.json` | ⬜ îți cer voie la începutul fazei 4. |
+| 3.9 | **DSA**: plan → setările contului → eroare; portalul nu completează singur un câmp legal | nou, de confirmat |
+| 3.10 | **Dublura**: același plan, creat în ultimele 30 de minute, cere „Creează încă una, intenționat” | nou, de confirmat |
 
 ---
 
 ## 4. Ce mai e de făcut, pe faze
 
-### 4.1 Faza 2 — Meta: creare pe pauză, cu video deja urcat
+### 4.1–4.2 Faza 2 — gata
 
-- **Migrarea** (după 3.1): `ads_campaigns`, `ads_metrics_daily`, `ads_runs`, cu
-  RLS activ și acces doar prin `is_lead_admin()`. Scrierile trec prin service
-  role, după ce acțiunea a verificat sesiunea (la fel ca la lead-uri). Fiecare
-  `update`/`delete` cu `where` explicit (Supabase rulează `safeupdate`).
-- **Clientul Meta** (`lib/ads/meta/…`, `server-only`): `fetch` la Graph API,
-  tokenul citit doar în funcția care face apelul, niciodată logat.
-- **Conturile spațiului** din token (`/me/adaccounts`): planul se respinge dacă
-  `ad_account` nu e printre ele, sau dacă moneda contului diferă de `currency`.
-- **Rezolvarea numelor**: orașe, regiuni, limbi, interese, comportamente fără
-  id → căutare prin Targeting Search. Portalul îți arată ce a găsit (ex.
-  „Cluj-Napoca → Cluj-Napoca, Cluj County, Romania”) **înainte** de creare.
-- **Crearea**, într-o singură acțiune de server, cu planul revalidat pe server:
-  campanie → set de reclame → creative → reclame, **toate cu `status: PAUSED`**.
-  Îmbunătățirile automate trimise explicit ca oprite (nu ne bazăm pe valorile
-  implicite ale Meta).
-- **Garda anti-ACTIVE**: un singur loc construiește obiectele trimise; un test
-  verifică `status === "PAUSED"` la fiecare nivel, iar șirul `ACTIVE` nu apare
-  nicăieri în `lib/ads`.
-- **Eșec la jumătate** (campania s-a creat, reclama nu): nimic nu se pornește.
-  Portalul arată ce s-a creat, cu link, și eroarea Meta în română.
-- **După creare**: rândul în `ads_campaigns` (cu planul întreg în `plan_json`) și
-  linkul direct spre campanie în Ads Manager.
-- **Alegerea video-ului din bibliotecă** (listă din contul de reclame) — cerută
-  explicit în prompt; se poate face tot în faza 2, pentru că nu implică upload.
-- **Ecranul `/admin/ads`** începe să listeze campaniile din `ads_campaigns`.
-
-### 4.2 Faza 2 — ce trebuie să existe ca să creezi prima campanie reală
-
-- [ ] Decizia 3.1 + migrarea aplicată în SQL editor.
-- [ ] `META_TOKEN_MERIDIAN` în Vercel (pașii din 2.3), redeploy.
-- [ ] `ADMIN_EMAILS` setat în Vercel (e deja, pentru lead-uri).
-- [ ] Pagina de Facebook și pixelul accesibile contului de reclame și System User-ului.
-- [ ] Un video deja urcat în biblioteca contului (până la faza 3).
-- [ ] Codul fazei 2, verificat cu o campanie de test creată pe pauză și ștearsă
-      apoi de tine din Ads Manager.
+Ce face, pe scurt, în anexa „Raportul fazei 2” de la final; tehnic, în
+`lib/ads/README.md` → „Faza 2 — crearea pe Meta”. Ce mai trebuie ca să creezi
+prima campanie reală: secțiunea 2 de mai sus.
 
 ### 4.3 Faza 3 — încărcare video din browser
 
@@ -212,9 +178,10 @@ spune că video-ul e gata. Plus CSP-ul din `next.config.ts` (decizia 3.4).
 
 ## 5. Observații
 
-- **Hidratare:** pe build-ul de producție, eroarea React #418 a apărut **o
-  singură dată** și nu s-a mai reprodus în peste 70 de încărcări (inclusiv cu
-  serverul pornit la rece). Cauza nu e cunoscută.
+- **Hidratare:** pe build-ul de producție, eroarea React #418 apare rar și
+  nereprodus: o dată în faza 1 (din peste 70 de încărcări) și o dată în faza 2
+  (din ~170, pe `/admin/ads`, fără să se repete pe aceeași pagină în alte 40
+  de încărcări). Cauza nu e cunoscută.
 - **CSP-ul** e încă doar raportat (`CSP_REPORT_ONLY = true` în `next.config.ts`),
   deci nu blochează nimic azi.
 - **Pixelul din exemplu** e fals (zerouri), deci portalul avertizează că
@@ -224,6 +191,71 @@ spune că video-ul e gata. Plus CSP-ul din `next.config.ts` (decizia 3.4).
   fișierele portalului. La merge, notele de aici se pot trece în `PLAN.md`.
 - **Panoul de lead-uri** nu are încă link spre `/admin/ads` (capul lui e în
   `(dash)/layout.tsx`, în afara zonei). Portalul are link înapoi spre lead-uri.
+
+---
+
+## Anexă — raportul fazei 2
+
+### Ce face portalul acum (Meta, spațiu cu token)
+
+- **„Verifică în Meta”** citește contul real: contul (și moneda lui), pagina,
+  Instagramul, pixelul, video-ul, beneficiarul și plătitorul DSA și fiecare
+  nume din targetare. Panoul „Ce a găsit Meta” arată ce intră efectiv în
+  targetare („București (+30 km) → Bucharest, Romania”).
+- **„Creează pe pauză”** se deblochează doar după o verificare fără erori a
+  exact planului de pe ecran. Pe server, verificarea se reface și se compară
+  amprenta; dacă ceva s-a schimbat între timp, cere o nouă verificare.
+- Crearea: coperta urcată în cont → campania → setul → creativ + reclamă
+  pentru fiecare text. **Toate cu `status: PAUSED`.** La final: „Creată.
+  Oprită.” și linkul direct spre Ads Manager.
+- Toate îmbunătățirile automate pleacă **explicit oprite**: 39 de funcții
+  Advantage+ creative, cele 5 alimentate de „Ad sources”, multi-advertiser,
+  Advantage+ audience.
+- Același plan creat de două ori în 30 de minute → cere confirmare.
+- O eroare la jumătate lasă totul oprit, cu link și mesajul Meta în română
+  (plus textul lor original și `fbtrace_id`, pentru suport).
+- `/admin/ads` listează campaniile create, din toate spațiile.
+- „Alege din biblioteca contului” — video-urile deja urcate, cu miniatură.
+
+### Garda „doar pe pauză”
+
+- O singură cale de scriere spre Meta (`metaPost`), care verifică fiecare
+  corp de cerere înainte de rețea: orice câmp de status, la orice adâncime,
+  trebuie să fie `PAUSED`.
+- Nu există funcție de modificare sau de ștergere a unei campanii.
+- Statusul de pornire nu apare scris nicăieri în codul portalului.
+- `node lib/ads/meta/verify-paused.mjs` verifică toate astea (21 de verificări).
+
+### Verificat
+
+- TypeScript, ESLint, build de producție verzi; `verify-paused` 21/21.
+- Cap-coadă în Chrome, pe un Meta și un Supabase falși, locali, în dev și pe
+  build de producție: verificare → creare (7 cereri: copertă, campanie, set,
+  2 × creativ + reclamă, toate `PAUSED`) → dublură blocată → listă.
+  Tokenul pleacă doar în antet, spre Graph API; descărcarea copertei nu-l
+  primește; nu apare în logul serverului.
+- Erorile: DSA lipsă (cu sugestia Meta), refuz la reclamă (la jumătate,
+  notat `partial`), refuz la campanie (nimic creat), migrarea 6 neaplicată
+  (nimic trimis la Meta), plan schimbat după verificare.
+- 360 și 1440 px fără scroll orizontal; reduced-motion; drumul complet de la
+  tastatură, cu focusul mutat pe rezultatul verificării și al creării.
+- Hidratarea: 170 de încărcări, un singur #418 (vezi „Observații”).
+
+### Neverificat — cere contul real
+
+Lista din `lib/ads/README.md` → „Neverificat încă”. Cel mai important: dacă
+Meta respectă toate opt-out-urile pe un video (muzica, mai ales), linkul spre
+Ads Manager și bugetul minim în lei.
+
+### Surse
+
+- [Graph API — changelog](https://developers.facebook.com/docs/graph-api/changelog/) (v26.0; v24.0 oprită pe 2026-10-06)
+- [Ad set — referință](https://developers.facebook.com/docs/marketing-api/reference/ad-campaign/) (DSA, `targeting_automation`)
+- [Campanie — referință](https://developers.facebook.com/docs/marketing-api/reference/ad-campaign-group/) (`is_adset_budget_sharing_enabled`)
+- [Advantage+ creative](https://developers.facebook.com/docs/marketing-api/creative/advantage-creative/) și [SDK-ul oficial v26.0.2](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/adcreativefeaturesspec.py) (cheile `creative_features_spec`)
+- [Multi-advertiser ads](https://developers.facebook.com/docs/marketing-api/creative/multi-advertiser-ads/)
+- [Targeting search](https://developers.facebook.com/docs/marketing-api/audiences/reference/targeting-search/)
+- [Ad sources — Help Center](https://www.facebook.com/business/help/3787607341463348)
 
 ---
 
