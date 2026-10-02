@@ -1110,3 +1110,27 @@ Proiectul s-a mutat de pe `C:\Users\PC Lenovo\Desktop\meridianx` pe
 - `ffmpeg` tot nu e în PATH; `scripts/portfolio-build.mjs` îl caută la calea
   winget. Pe mașina asta merge cel din CapCut (vezi mai sus).
 
+
+---
+
+## Chestionar de descoperire — /chestionar/diana-filip
+
+Branch `chestionar-diana-filip`. Pagină privată (noindex, nu e în sitemap)
+pentru un client software: 16 întrebări cu răspuns liber, la liniuță, prima
+fiind „Descrieți exact tot ce vreți să fie făcut.". Ciorna rămâne în
+browser până la trimitere.
+
+- **Fișiere noi:** `components/site/questionnaire/` (configurația per client
+  în `diana-filip.ts`, registrul în `registry.ts`), `app/[locale]/(software)/
+  chestionar/[slug]/`, `app/api/chestionar/`, `emails/questionnaire.ts`,
+  `lib/email/questionnaire.ts`. Niciun fișier existent modificat, nicio
+  dependență nouă.
+- **Unde ajung răspunsurile:** lead în dashboard (`source:
+  chestionar-diana-filip`), cu răspunsurile complete în evenimentul
+  `questionnaire_answers`, plus un email cu toate răspunsurile către
+  `LEAD_NOTIFICATION_EMAIL` (implicit cutia de lead-uri). Fără bază, ruta
+  așteaptă emailul; fără nici una, 503 în producție.
+- **Alt client:** un fișier nou ca `diana-filip.ts`, adăugat în
+  `registry.ts`. Pagina și ruta sunt generice.
+- **Verificat:** tsc, eslint, POST valid/gol/slug necunoscut/honeypot,
+  360 și 390 fără overflow, desktop.
