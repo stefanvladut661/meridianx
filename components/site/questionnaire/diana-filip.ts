@@ -34,11 +34,6 @@ export const DIANA_FILIP: QuestionnaireConfig = {
       title: "Ce ar trebui să facă un vizitator după ce intră pe site?",
     },
     {
-      id: "ramane",
-      section: "Site",
-      title: "Ce vă place la site-ul de acum și ar trebui să rămână?",
-    },
-    {
       id: "modele",
       section: "Site",
       title: "Există site-uri care vă plac? Ce anume vă place la ele?",
@@ -107,6 +102,12 @@ export const DIANA_FILIP: QuestionnaireConfig = {
       id: "platforme",
       section: "Secțiunea de cursuri",
       title: "Ați folosit vreo platformă de cursuri care v-a plăcut? Ce anume v-a plăcut?",
+    },
+    {
+      id: "detalii",
+      section: "Detalii suplimentare",
+      title: "Mai este ceva ce ar trebui să știm?",
+      hint: "Orice nu a încăput în întrebările de până acum, oricât de mic.",
     },
   ],
 };
