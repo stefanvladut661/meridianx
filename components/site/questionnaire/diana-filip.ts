@@ -106,8 +106,9 @@ export const DIANA_FILIP: QuestionnaireConfig = {
     {
       id: "detalii",
       section: "Detalii suplimentare",
-      title: "Mai este ceva ce ar trebui să știm?",
-      hint: "Orice nu a încăput în întrebările de până acum, oricât de mic.",
+      title: "Mai sunt și alte lucruri pe care vreți să ni le spuneți?",
+      hint: "Orice nu a încăput în întrebări, oricât de mic. Puteți lăsa câmpul gol.",
+      atSubmit: true,
     },
   ],
 };

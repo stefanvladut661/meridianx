@@ -7,6 +7,8 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ChangeEvent,
+  type FocusEvent,
   type KeyboardEvent,
 } from "react";
 import { Wordmark } from "@/components/site/mark";
@@ -22,7 +24,9 @@ import styles from "./questionnaire.module.css";
    Omul scrie la liniuță: câmpul începe cu „– ", iar fiecare Enter
    deschide un rând nou cu liniuță. Ctrl/⌘ + Enter trece la întrebarea
    următoare. Ce scrie rămâne în localStorage până trimite, ca o
-   întrerupere să nu-l coste răspunsurile.
+   întrerupere să nu-l coste răspunsurile. Întrebarea marcată
+   `atSubmit` nu are pas propriu: e câmpul liber de pe ecranul de
+   trimitere, la fel la liniuță.
 
    Trimite la /api/chestionar, care salvează lead-ul și trimite
    răspunsurile complete pe email. Fără pixel de conversie: e un
@@ -60,7 +64,9 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
   const uid = useId();
-  const total = config.questions.length;
+  const steps = config.questions.filter((q) => !q.atSubmit);
+  const closing = config.questions.find((q) => q.atSubmit) ?? null;
+  const total = steps.length;
   const REVIEW = total + 1;
   const DONE = total + 2;
   const storageKey = `meridian:chestionar:${config.slug}`;
@@ -79,7 +85,8 @@ export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
 
   const fieldRef = useRef<HTMLTextAreaElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const caret = useRef<number | null>(null);
+  /** Unde ajunge cursorul după ce am rescris valoarea unui câmp. */
+  const caret = useRef<{ field: HTMLTextAreaElement; at: number } | null>(null);
 
   /* Ciorna se citește după montare, nu în render: serverul nu are
      localStorage, iar o stare diferită la hidratare ar strica pagina. */
@@ -135,9 +142,10 @@ export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
   }, [step, navigated]);
 
   useIsoLayoutEffect(() => {
-    if (caret.current === null || !fieldRef.current) return;
-    fieldRef.current.selectionStart = caret.current;
-    fieldRef.current.selectionEnd = caret.current;
+    if (!caret.current) return;
+    const { field, at } = caret.current;
+    field.selectionStart = at;
+    field.selectionEnd = at;
     caret.current = null;
   });
 
@@ -149,40 +157,45 @@ export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
     [DONE]
   );
 
-  const question = step >= 1 && step <= total ? config.questions[step - 1] : null;
-  const answered = config.questions.filter((q) => cleanAnswer(answers[q.id] ?? "") !== "");
+  const question = step >= 1 && step <= total ? steps[step - 1] : null;
+  const answered = steps.filter((q) => cleanAnswer(answers[q.id] ?? "") !== "");
+  const closingAnswered = closing !== null && cleanAnswer(answers[closing.id] ?? "") !== "";
 
   function setAnswer(id: string, value: string) {
     setAnswers((current) => ({ ...current, [id]: value }));
   }
 
-  function onFieldFocus() {
-    if (!question) return;
-    if (!answers[question.id]) {
-      caret.current = DASH.length;
-      setAnswer(question.id, DASH);
-    }
-  }
-
-  function onFieldBlur() {
-    if (!question) return;
-    if (cleanAnswer(answers[question.id] ?? "") === "") setAnswer(question.id, "");
-  }
-
-  function onFieldKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (!question || event.key !== "Enter" || event.nativeEvent.isComposing) return;
-    if (event.ctrlKey || event.metaKey) {
-      event.preventDefault();
-      go(step + 1);
-      return;
-    }
-    if (event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    const field = event.currentTarget;
-    const { selectionStart, selectionEnd, value } = field;
-    const insert = `\n${DASH}`;
-    caret.current = selectionStart + insert.length;
-    setAnswer(question.id, value.slice(0, selectionStart) + insert + value.slice(selectionEnd));
+  /** Comportamentul „la liniuță", pentru orice câmp de răspuns. */
+  function dashField(id: string, onAdvance?: () => void) {
+    return {
+      value: answers[id] ?? "",
+      onChange: (event: ChangeEvent<HTMLTextAreaElement>) => setAnswer(id, event.target.value),
+      onFocus: (event: FocusEvent<HTMLTextAreaElement>) => {
+        if (!answers[id]) {
+          caret.current = { field: event.currentTarget, at: DASH.length };
+          setAnswer(id, DASH);
+        }
+      },
+      onBlur: () => {
+        if (cleanAnswer(answers[id] ?? "") === "") setAnswer(id, "");
+      },
+      onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+        if (event.ctrlKey || event.metaKey) {
+          if (!onAdvance) return;
+          event.preventDefault();
+          onAdvance();
+          return;
+        }
+        if (event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        const field = event.currentTarget;
+        const { selectionStart, selectionEnd, value } = field;
+        const insert = `\n${DASH}`;
+        caret.current = { field, at: selectionStart + insert.length };
+        setAnswer(id, value.slice(0, selectionStart) + insert + value.slice(selectionEnd));
+      },
+    };
   }
 
   async function submit() {
@@ -198,7 +211,7 @@ export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
       setError("Adresa de e-mail nu pare completă. Verificați-o sau lăsați câmpul gol.");
       return;
     }
-    if (answered.length === 0) {
+    if (answered.length === 0 && !closingAnswered) {
       setStatus("error");
       setError("Nu ați răspuns încă la nicio întrebare. Începeți cu prima, e suficientă.");
       return;
@@ -273,7 +286,7 @@ export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
       </div>
       <div className="mx-auto flex w-full max-w-3xl items-end gap-4 px-5 pb-3 pt-3 sm:px-8">
         <nav aria-label="Întrebările" className={`${styles.ticks} min-w-0 flex-1`}>
-          {config.questions.map((q, index) => {
+          {steps.map((q, index) => {
             const done = cleanAnswer(answers[q.id] ?? "") !== "";
             const current = step === index + 1;
             return (
@@ -361,11 +374,7 @@ export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
           ref={fieldRef}
           aria-labelledby={`${uid}-q`}
           aria-describedby={hintId}
-          value={answers[question.id] ?? ""}
-          onChange={(event) => setAnswer(question.id, event.target.value)}
-          onFocus={onFieldFocus}
-          onBlur={onFieldBlur}
-          onKeyDown={onFieldKeyDown}
+          {...dashField(question.id, () => go(step + 1))}
           rows={9}
           maxLength={12000}
           placeholder={`${DASH}scrieți aici`}
@@ -404,7 +413,7 @@ export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
         </p>
 
         <ol className="mt-8 divide-y divide-hair border-y border-hair">
-          {config.questions.map((q, index) => {
+          {steps.map((q, index) => {
             const answer = cleanAnswer(answers[q.id] ?? "");
             return (
               <li key={q.id} className="flex items-start gap-4 py-5">
@@ -433,6 +442,31 @@ export function Questionnaire({ config }: { config: QuestionnaireConfig }) {
             );
           })}
         </ol>
+
+        {closing && (
+          <div className="mt-10">
+            <label
+              htmlFor={`${uid}-a-${closing.id}`}
+              className="block text-[17px] font-medium leading-snug text-bone"
+            >
+              {closing.title}
+            </label>
+            {closing.hint && (
+              <p id={`${uid}-closing-hint`} className="mt-2 max-w-[60ch] text-[14.5px] leading-relaxed text-dim">
+                {closing.hint}
+              </p>
+            )}
+            <textarea
+              id={`${uid}-a-${closing.id}`}
+              aria-describedby={closing.hint ? `${uid}-closing-hint` : undefined}
+              {...dashField(closing.id)}
+              rows={5}
+              maxLength={12000}
+              placeholder={`${DASH}scrieți aici`}
+              className="mt-4 block min-h-36 w-full resize-y rounded-panel border border-hair-strong bg-char px-4 py-3.5 text-[16px] leading-[1.65] text-bone outline-none transition-colors duration-200 placeholder:text-dim focus:border-a1"
+            />
+          </div>
+        )}
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2">
           <label className="grid gap-2">

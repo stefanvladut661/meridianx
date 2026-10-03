@@ -1116,9 +1116,12 @@ Proiectul s-a mutat de pe `C:\Users\PC Lenovo\Desktop\meridianx` pe
 ## Chestionar de descoperire — /chestionar/diana-filip
 
 Branch `chestionar-diana-filip`. Pagină privată (noindex, nu e în sitemap)
-pentru un client software: 16 întrebări cu răspuns liber, la liniuță, prima
+pentru un client software: 15 întrebări cu răspuns liber, la liniuță, prima
 fiind „Descrieți exact tot ce vreți să fie făcut.". Ciorna rămâne în
-browser până la trimitere.
+browser până la trimitere. Pe ecranul de trimitere, sub lista de
+răspunsuri, un câmp liber „Mai sunt și alte lucruri pe care vreți să ni le
+spuneți?" (întrebarea cu `atSubmit: true`; în email și în lead apare ca
+ultima întrebare).
 
 - **Fișiere noi:** `components/site/questionnaire/` (configurația per client
   în `diana-filip.ts`, registrul în `registry.ts`), `app/[locale]/(software)/

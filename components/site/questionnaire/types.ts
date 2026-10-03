@@ -15,6 +15,11 @@ export interface QuestionnaireQuestion {
   title: string;
   /** Rândul mic de sub întrebare. */
   hint?: string;
+  /**
+   * Câmp liber pe ecranul de trimitere, sub lista de răspunsuri, nu un
+   * pas separat („Mai sunt și alte lucruri…"). Cel mult unul.
+   */
+  atSubmit?: boolean;
 }
 
 export interface QuestionnaireConfig {
