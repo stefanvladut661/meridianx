@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, X, ZoomIn } from "lucide-react";
 import { PF_CATEGORIES, PORTFOLIO, type PfCategory, type PfItem } from "../data";
 import { FOCUS, MSG, Overlay, PageHero, Reveal, Sprite, pill, useAI } from "../ui";
-import { CtaBanner } from "./home";
 
 /* ============================================================
    Portofoliul — PortfolioPage.tsx: filtre pe categorii, grilă de
@@ -98,8 +97,6 @@ export function Portfolio({ initialCat = "Toate" }: { initialCat?: PfCategory })
           </div>
         </div>
       </section>
-      <CtaBanner />
-
       <Lightbox items={photos} index={open} setIndex={setOpen} />
     </>
   );

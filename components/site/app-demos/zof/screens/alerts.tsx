@@ -56,7 +56,7 @@ export function useAlertTarget() {
   const { go, openLoc } = useZof();
   return (a: Alert) => {
     if (a.kind === "agent") openLoc("campulung");
-    else if (a.kind === "trend" || a.kind === "scadere") go("rapoarte");
+    else if (a.kind === "trend" || a.kind === "scadere") go("vanzari");
     else go("rame");
   };
 }

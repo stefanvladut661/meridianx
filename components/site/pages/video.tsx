@@ -62,12 +62,14 @@ export function VideoScreen() {
         {/* --- capul, de la AURORA --- */}
         <Hero />
         <TrustStrip />
+        {/* Clientul filmat și recenziile scrise vin înaintea materialelor:
+            întâi cine garantează pentru noi, apoi ce am filmat. */}
+        <Social />
         <Work />
         <Problems />
         {/* --- corpul, de la SIGNAL --- */}
         <Process />
         <Services />
-        <Social />
         <Questions />
         <FinalCta />
       </main>
@@ -843,7 +845,7 @@ function ReviewStream() {
 
 function Social() {
   return (
-    <section className="relative px-5 py-24 sm:px-6 lg:py-32">
+    <section id="recenzii" className="relative px-5 py-24 sm:px-6 lg:py-32">
       <SectionHead
         eyebrow="Recenzii"
         title={

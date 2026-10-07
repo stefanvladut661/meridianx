@@ -26,7 +26,9 @@ export const C = {
   shadow: "0 8px 24px -8px rgba(224, 6, 28, 0.25)",
 };
 
-export const FONT = 'var(--font-switzer), "Segoe UI", system-ui, -apple-system, sans-serif';
+/* Aplicația reală nu încarcă niciun font: scrie cu stiva implicită
+   Tailwind, adică fontul sistemului (Segoe UI pe Windows, SF pe Mac). */
+export const FONT = 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
 
 /* ---------- combustibil ---------- */
 export type Fuel = "benzina" | "motorina" | "gpl";

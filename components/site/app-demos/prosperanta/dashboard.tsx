@@ -193,15 +193,13 @@ function TrendCard() {
 }
 
 function TopStations() {
-  const { s, mobile, go, setRepStation } = useDemo();
+  const { s, mobile, notify } = useDemo();
   const rows = STATIONS.map((st) => ({ st, litres: s.totals.monthLitres * stationShare(st.id) }))
     .sort((a, b) => b.litres - a.litres)
     .slice(0, 5);
   const max = rows[0].litres;
-  const open = (id: number) => {
-    setRepStation(id);
-    go("rapoarte");
-  };
+  const open = () =>
+    notify("În demo, raportul pe stație e închis. În aplicația reală, apăsarea deschide cifrele stației pe interval.");
   return (
     <Card>
       <CardHead right={<span className="text-[12px] font-bold" style={{ color: C.mutedFg }}>litri · septembrie</span>}>Top stații</CardHead>
@@ -211,7 +209,7 @@ function TopStations() {
             <li key={r.st.id}>
               <button
                 type="button"
-                onClick={() => open(r.st.id)}
+                onClick={open}
                 className="group flex w-full items-center gap-3 rounded-[12px] px-2 py-[5px] text-left transition-colors hover:bg-[#FAFAFA]"
               >
                 <span className="w-4 shrink-0 text-[12px] font-black" style={{ color: C.soft }}>

@@ -240,7 +240,7 @@ export default function Anunturi() {
         </span>
         <div className="flex-1">
           <p style={{ fontSize: 14.5, fontWeight: 600 }}>Clienți de recuperat</p>
-          <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.45 }}>{num(lume().deSunat.length)} au expirat în ultimele 30 de zile și n-au reînnoit. Lista cu telefoane e pe Dashboard.</p>
+          <p style={{ fontSize: 13, color: C.text2, lineHeight: 1.45 }}>{num(lume().deSunat.length)} au expirat în ultimele 30 de zile și n-au reînnoit. Lista cu telefoane e la Clienți.</p>
         </div>
       </div>
     </Card>

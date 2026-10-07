@@ -10,11 +10,12 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { DemoDevice } from "../types";
+import { useCountUp } from "../kit";
 import type { CalcForm, ProductCategory, PfCategory } from "./data";
 
 /* ============================================================
    Trusa vizuală Art Instal: paleta reală a site-ului (index.css),
-   fonturile (Playfair Display + DM Sans → serif de sistem + Satoshi),
+   fonturile reale (Playfair Display + DM Sans, din fonts.css),
    raza de 12px, butoanele .btn-primary / .btn-outline-white.
    ============================================================ */
 
@@ -35,7 +36,7 @@ export const C = {
 };
 
 export const HEAD = `"Playfair Display", Georgia, "Times New Roman", serif`;
-export const BODY = `var(--font-satoshi), "DM Sans", system-ui, sans-serif`;
+export const BODY = `"DM Sans", system-ui, sans-serif`;
 
 export const IMG = "/software/proiecte/art-install";
 export const SHEETS = {
@@ -50,7 +51,6 @@ export type SheetId = keyof typeof SHEETS;
 export type ContactPrefill = {
   service?: string;
   message?: string;
-  context?: string;
 };
 
 export type Nav = {
@@ -247,6 +247,35 @@ export function Reveal({
   );
 }
 
+/* ---------------- Contor la derulare (CountUp.tsx de pe site) ---------------- */
+export function Count({ to, ms = 2000 }: { to: number; ms?: number }) {
+  const { scroller, reduced } = useAI();
+  const ref = useRef<HTMLSpanElement>(null);
+  const [on, setOn] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (reduced || !el || !scroller || typeof IntersectionObserver === "undefined") {
+      setOn(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setOn(true);
+          io.disconnect();
+        }
+      },
+      { root: scroller, threshold: 0.3 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [scroller, reduced]);
+
+  const v = useCountUp(to, ms, on && !reduced);
+  return <span ref={ref}>{reduced ? to : on ? Math.floor(v) : 0}</span>;
+}
+
 /* ---------------- Fereastră modală (portal în rădăcina demo-ului) ---------------- */
 export function Overlay({
   open,
@@ -366,30 +395,6 @@ export function PageHero({
         {crumb && <p className="mt-2 text-[15px] text-[#F6F3EE]/60">{crumb}</p>}
       </div>
     </section>
-  );
-}
-
-/** Siluetele caselor pentru „regimul de înălțime”. */
-export function HouseGlyph({ kind, size = 44 }: { kind: string; size?: number }) {
-  const floors = kind === "parter" || kind === "p_m" ? 1 : kind === "p_2" ? 3 : 2;
-  const attic = kind === "p_m" || kind === "p_1_m";
-  const fh = 9;
-  const base = 40;
-  const top = base - floors * fh;
-  const roofH = attic ? 12 : 8;
-  return (
-    <svg width={size} height={size} viewBox="0 0 44 44" fill="none" aria-hidden>
-      <path d={`M6 ${top} L22 ${top - roofH} L38 ${top} Z`} fill="currentColor" opacity={0.9} />
-      {attic && <rect x="19" y={top - roofH / 2 - 1} width="6" height="4" rx="0.8" fill="#0E1115" />}
-      {Array.from({ length: floors }).map((_, f) => (
-        <g key={f}>
-          <rect x="9" y={top + f * fh + 1} width="26" height={fh - 1} rx="1" stroke="currentColor" strokeWidth="1.6" />
-          <rect x="13" y={top + f * fh + 3.5} width="4" height="3.2" rx="0.6" fill="currentColor" />
-          <rect x="27" y={top + f * fh + 3.5} width="4" height="3.2" rx="0.6" fill="currentColor" />
-        </g>
-      ))}
-      <line x1="3" y1={base + 0.5} x2="41" y2={base + 0.5} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
   );
 }
 

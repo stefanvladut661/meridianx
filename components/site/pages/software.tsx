@@ -55,15 +55,16 @@ export function SoftwareScreen() {
       <main id="continut">
         <Hero />
         <AudienceStrip />
+        {/* Dovezile vin primele: clientul filmat și citatul lui, apoi
+            proiectele pe care le poți încerca. Abia după ce a văzut ce am
+            livrat, omul citește ce construim, cum lucrăm și ce garantăm.
+            Formularul rămâne ultimul. */}
+        <Reviews />
+        <Projects />
         <Solutions />
         <Process />
         <Guarantees />
         <Questions />
-        {/* Dovezile stau lângă formular: proiectele, care se pot încerca,
-            apoi ce spun clienții. Formularul rămâne ultimul — cine ajunge
-            acolo a văzut deja ce facem, cum lucrăm și ce garantăm. */}
-        <Projects />
-        <Reviews />
         <LeadMagnet />
       </main>
       <Foot />

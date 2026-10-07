@@ -1,36 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DemoProps } from "../types";
 import { StatusBar } from "../kit";
-import {
-  EMPTY_FORM,
-  EXAMPLE_FORM,
-  formInput,
-  type CalcForm,
-  type CalcInput,
-  type PfCategory,
-  type ProductCategory,
-} from "./data";
+import { EMPTY_FORM, type CalcForm, type PfCategory } from "./data";
 import { AICtx, BODY, C, DemoStyles, anim, type ContactPrefill, type Nav } from "./ui";
 import { Fabs, Footer, Navbar } from "./chrome";
 import { Home } from "./screens/home";
 import { Calculator } from "./screens/calculator";
-import { Result } from "./screens/result";
 import { Shop } from "./screens/shop";
 import { Portfolio } from "./screens/portfolio";
 import { Contact } from "./screens/contact";
+import { Reviews } from "./screens/reviews";
+import { About } from "./screens/about";
 
 /* ============================================================
-   Art Instal Suppliers — site HVAC cu calculator de pompe de
-   căldură. Demo pe pânză fixă: ecranul vine din `props.screen`,
-   navigarea trece prin `props.go`. Restul stării e internă.
+   Art Instal Suppliers — replica site-ului confortsolutions.ro,
+   pagină cu pagină, după sursa lui: prima pagină, calculatorul de
+   pompe de căldură (cu recomandarea sub formular, ca pe site),
+   magazinul, portofoliul, recenziile, „Despre noi” și contactul.
+   Demo pe pânză fixă: ecranul vine din `props.screen`, navigarea
+   trece prin `props.go`. Restul stării e internă.
+
+   „recomandare” nu e o pagină separată pe site: e calculatorul cu
+   exemplul completat și rezultatele afișate — pasul din tur pentru
+   cine nu vrea să completeze șapte câmpuri.
    ============================================================ */
 
-const SCREENS = ["home", "calculator", "recomandare", "magazin", "portofoliu", "contact"] as const;
+const SCREENS = ["home", "calculator", "recomandare", "magazin", "portofoliu", "contact", "despre", "recenzii"] as const;
 type Screen = (typeof SCREENS)[number];
-
-const EXAMPLE_INPUT = formInput(EXAMPLE_FORM) as CalcInput;
 
 export default function Demo({ device, screen, go, notify, reducedMotion }: DemoProps) {
   const mobile = device === "mobile";
@@ -39,9 +37,6 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
   const [scroller, setScroller] = useState<HTMLDivElement | null>(null);
   const [overlay, setOverlay] = useState<HTMLDivElement | null>(null);
   const [form, setForm] = useState<CalcForm>(EMPTY_FORM);
-  const [calcStep, setCalcStep] = useState(0);
-  const [computed, setComputed] = useState<{ input: CalcInput; form: CalcForm } | null>(null);
-  const [shopCat, setShopCat] = useState<ProductCategory | "toate">("toate");
   const [pfCat, setPfCat] = useState<PfCategory>("Toate");
   const [prefill, setPrefill] = useState<ContactPrefill>({});
   const [nonce, setNonce] = useState(0);
@@ -53,7 +48,6 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
      venit din turul ghidat (nu din site), filtrele revin la implicit. */
   useEffect(() => {
     if (!viaNav.current) {
-      setShopCat("toate");
       setPfCat("Toate");
       setPrefill({});
     }
@@ -71,10 +65,8 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
     };
     return {
       go: move,
-      shop: (cat = "toate") => {
-        setShopCat(cat);
-        move("magazin");
-      },
+      /* Magazinul real n-are filtre: categoria cerută doar deschide pagina. */
+      shop: () => move("magazin"),
       portfolio: (cat = "Toate") => {
         setPfCat(cat);
         move("portofoliu");
@@ -88,13 +80,6 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
     };
   }, [go, notify]);
 
-  const onComputed = useCallback(() => {
-    const input = formInput(form);
-    if (!input) return;
-    setComputed({ input, form });
-    nav.go("recomandare");
-  }, [form, nav]);
-
   const ctx = useMemo(
     () => ({ device, mobile, reduced: reducedMotion, scroller, overlay, notify, nav, form, setForm }),
     [device, mobile, reducedMotion, scroller, overlay, notify, nav, form]
@@ -105,23 +90,25 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
   let page: React.ReactNode;
   switch (cur) {
     case "calculator":
-      page = <Calculator step={calcStep} setStep={setCalcStep} onComputed={onComputed} />;
+      page = <Calculator />;
       break;
     case "recomandare":
-      page = computed ? (
-        <Result input={computed.input} form={computed.form} isExample={false} />
-      ) : (
-        <Result input={EXAMPLE_INPUT} form={EXAMPLE_FORM} isExample />
-      );
+      page = <Calculator example />;
       break;
     case "magazin":
-      page = <Shop key={`${shopCat}-${nonce}`} initialCat={shopCat} />;
+      page = <Shop />;
       break;
     case "portofoliu":
       page = <Portfolio key={`${pfCat}-${nonce}`} initialCat={pfCat} />;
       break;
     case "contact":
-      page = <Contact key={`c-${nonce}-${prefill.context ?? ""}-${prefill.service ?? ""}`} prefill={prefill} />;
+      page = <Contact key={`c-${nonce}-${prefill.service ?? ""}`} prefill={prefill} />;
+      break;
+    case "despre":
+      page = <About />;
+      break;
+    case "recenzii":
+      page = <Reviews />;
       break;
     default:
       page = <Home />;
@@ -131,7 +118,7 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
     <AICtx.Provider value={ctx}>
       <div
         className="relative h-full w-full overflow-hidden antialiased"
-        style={{ background: C.bg, color: C.fg, fontFamily: BODY }}
+        style={{ background: C.bg, color: C.fg, fontFamily: BODY, colorScheme: "dark" }}
       >
         {mobile && (
           <div className="absolute inset-x-0 top-0 z-50">

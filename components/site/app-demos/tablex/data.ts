@@ -619,38 +619,6 @@ export function ultimele30() {
   return zile;
 }
 
-/* ---------------- rețeaua TableX (panoul echipei) ---------------- */
-
-export const RESTAURANTE_RETEA = [
-  { nume: "Trattoria Nord", oras: "Cluj-Napoca" },
-  { nume: "Bistro Aurora", oras: "Brașov" },
-  { nume: "Casa cu Tei", oras: "Iași" },
-  { nume: "Terasa Parcului", oras: "Timișoara" },
-  { nume: "Pescăria Mică", oras: "Constanța" },
-  { nume: "Grădina Veche", oras: "Sibiu" },
-  { nume: "Cafeneaua Luminii", oras: "București" },
-  { nume: "Osteria Bella", oras: "Oradea" },
-  { nume: "Bucătăria de Cartier", oras: "București" },
-  { nume: "Vinoteca 9", oras: "Cluj-Napoca" },
-  { nume: "Bodega Sud", oras: "Craiova" },
-  { nume: "Hanul din Deal", oras: "Bistrița" },
-  { nume: "Ceainăria Albastră", oras: "Iași" },
-  { nume: "Grill & Co", oras: "Timișoara" },
-  { nume: "Mâncăruri de Casă", oras: "Ploiești" },
-  { nume: "Bistro 1900", oras: "București" },
-];
-
-export const ORASE_RETEA = [
-  { oras: "București", restaurante: 54 },
-  { oras: "Cluj-Napoca", restaurante: 38 },
-  { oras: "Iași", restaurante: 24 },
-  { oras: "Timișoara", restaurante: 21 },
-  { oras: "Brașov", restaurante: 19 },
-  { oras: "Constanța", restaurante: 16 },
-  { oras: "Sibiu", restaurante: 13 },
-  { oras: "Alte 22 de orașe", restaurante: 51 },
-];
-
 let mapClienti: Map<string, Client> | null = null;
 export function clientDupaId(id?: string): Client | undefined {
   if (!id) return undefined;

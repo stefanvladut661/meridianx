@@ -28,22 +28,27 @@ export const meta: AppDemoMeta = {
     {
       screen: "calculator",
       title: "Calculatorul",
-      line: "Șapte întrebări despre casă; panoul din dreapta arată formula cum se completează.",
+      line: "Șapte întrebări despre casă, într-un singur formular, ca pe site.",
     },
     {
       screen: "recomandare",
       title: "Recomandarea",
-      line: "Necesarul în kW, modelul Daikin și alternativa, cu buget și cost anual estimat.",
+      line: "Necesarul în kW, modelul Daikin și alternativa accesibilă, chiar sub formular.",
     },
     {
       screen: "magazin",
       title: "Magazinul",
-      line: "Zece echipamente cu filtre pe categorie, brand și agent frigorific.",
+      line: "Zece echipamente Daikin, Hyundai și TCL, cu variante de putere și cerere de ofertă.",
     },
     {
       screen: "portofoliu",
       title: "Portofoliu",
       line: "Lucrări pe categorii, deschise într-o galerie navigabilă din tastatură.",
+    },
+    {
+      screen: "recenzii",
+      title: "Recenzii",
+      line: "Nota 4.98 pe Google și ce scriu clienții, pe pagina lor.",
     },
     {
       screen: "contact",

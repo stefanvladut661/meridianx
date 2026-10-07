@@ -18,11 +18,13 @@
 export type Placeholderable = { isPlaceholder?: true };
 
 /* ---------- Navigație ---------- */
+/* În ordinea secțiunilor de pe pagină: proiectele vin imediat după
+   recenzii, înaintea descrierii a ce construim. */
 export const SNAV = [
+  { href: "#proiecte", label: "Proiecte" },
   { href: "#solutii", label: "Ce construim" },
   { href: "#proces", label: "Cum lucrăm" },
   { href: "#garantii", label: "Garanții" },
-  { href: "#proiecte", label: "Proiecte" },
   { href: "#configurator", label: "Configurator" },
 ] as const;
 

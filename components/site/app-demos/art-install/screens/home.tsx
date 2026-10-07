@@ -4,24 +4,23 @@ import {
   ArrowRight,
   Award,
   BadgeCheck,
-  Check,
   ChevronDown,
-  ClipboardCheck,
   Phone,
   Shield,
   ShieldCheck,
-  Sparkles,
+  Star,
+  Users,
   Wrench,
   Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { DEMO_PHONE, type PfCategory } from "../data";
+import { PHONE, REVIEWS, STAR_DISTRIBUTION, type PfCategory } from "../data";
 import {
   BTN_OUTLINE_WHITE,
   BTN_PRIMARY,
-  BTN_WIZARD,
   CARD,
   CARD_HOVER,
+  Count,
   FOCUS,
   IMG,
   MSG,
@@ -33,8 +32,11 @@ import {
 } from "../ui";
 
 /* ============================================================
-   Prima pagină — Index.tsx de pe site, cu aceeași ordine:
-   hero, încredere, servicii, lucrări, banda portocalie.
+   Prima pagină — Index.tsx de pe site, secțiune cu secțiune, în
+   aceeași ordine: hero, încredere (TrustSection), „De ce să ne
+   alegi”, servicii, recenzii Google, lucrări, banda portocalie.
+   Pe pânza de 1280 se aplică clasele `lg`/`xl` ale site-ului, pe
+   cea de 390 valorile de bază.
    ============================================================ */
 
 export function Section({
@@ -66,29 +68,19 @@ export function SectionTitle({ children, sub, center = true }: { children: React
       <h2 className={`ai-h font-bold text-[#EBE6E0] ${mobile ? "text-[30px] leading-tight" : "text-[48px] leading-[1.1]"}`}>
         {children}
       </h2>
-      {sub && (
-        <p className={`mt-4 max-w-2xl text-lg text-[#9096A2] ${center ? "mx-auto" : ""}`}>{sub}</p>
-      )}
+      {sub && <p className={`mt-4 max-w-2xl text-lg text-[#9096A2] ${center ? "mx-auto" : ""}`}>{sub}</p>}
     </div>
   );
 }
 
-function fade(reduced: boolean, delay: number) {
-  return anim(reduced, `aiFadeUp .7s ease-out ${delay}s both`);
-}
-
 export function Home() {
-  const { mobile } = useAI();
   return (
     <>
       <Hero />
-      {mobile && (
-        <section className="px-4 pb-4 pt-12">
-          <CalcTeaser />
-        </section>
-      )}
       <Trust />
+      <WhyUs />
       <Services />
+      <GoogleReviews />
       <Works />
       <CtaBanner />
     </>
@@ -99,8 +91,9 @@ export function Home() {
 
 function Hero() {
   const { mobile, nav, notify, reduced } = useAI();
+  const fade = (d: number) => anim(reduced, `aiFadeUp .7s ease-out ${d}s both`);
   return (
-    <section className="relative flex items-center" style={{ minHeight: mobile ? 760 : 800 }}>
+    <section className="relative flex items-center" style={{ minHeight: 800 }}>
       <div className="absolute inset-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -112,51 +105,35 @@ function Hero() {
         <div className="absolute inset-0 bg-[#0A0C0F]" style={{ opacity: 0.75 }} />
       </div>
 
-      <div
-        className={`relative w-full ${
-          mobile ? "px-4 pb-20 pt-28" : "mx-auto flex max-w-[1216px] items-center justify-between gap-12 pb-16 pt-28"
-        }`}
-      >
-        <div className={mobile ? "" : "max-w-[780px]"}>
-          <p
-            className={`mb-6 font-semibold uppercase text-[#F97316] ${mobile ? "text-xs tracking-[3px]" : "text-sm tracking-[3px]"}`}
-            style={fade(reduced, 0.2)}
-          >
-            ✦ Instalatori autorizați HVAC
-          </p>
-          <h1
-            className={`ai-h mb-6 font-black leading-[1.1] text-[#F6F3EE] ${mobile ? "text-[36px]" : "text-[50px]"}`}
-            style={fade(reduced, 0.4)}
-          >
-            Confort termic tot anul —{mobile ? " " : <br />}de la consultanță la service
-          </h1>
-          <p
-            className={`mb-6 max-w-2xl font-light text-[#F6F3EE]/80 ${mobile ? "text-[17px]" : "text-xl"}`}
-            style={fade(reduced, 0.6)}
-          >
-            Pompe de căldură, aer condiționat, centrale termice și panouri solare. Montaj profesional, garanție extinsă, suport real.
-          </p>
-          <div className="mb-8 flex items-center gap-2" style={fade(reduced, 0.7)}>
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#F6F3EE]/20 bg-[#F6F3EE]/10 px-4 py-2 text-sm text-[#F6F3EE]">
-              <ShieldCheck size={16} className="text-[#F97316]" />
-              Partener autorizat Daikin · ANRE + ISCIR
-            </span>
-          </div>
-          <div className={`flex gap-4 ${mobile ? "flex-col" : "flex-wrap"}`} style={fade(reduced, 0.8)}>
-            <button type="button" onClick={() => nav.contact()} className={`${BTN_PRIMARY} px-8 py-3.5`}>
-              Solicită ofertă gratuită
-            </button>
-            <button type="button" onClick={() => notify(MSG.call)} className={`${BTN_OUTLINE_WHITE} px-8 py-3.5`}>
-              <Phone size={18} /> Sună acum: {DEMO_PHONE}
-            </button>
-          </div>
+      <div className={`relative w-full ${mobile ? "px-4 pb-20 pt-32" : "mx-auto max-w-[1216px] pb-20 pt-32"}`}>
+        <p
+          className={`mb-6 font-semibold uppercase tracking-[3px] text-[#F97316] ${mobile ? "text-xs" : "text-sm"}`}
+          style={fade(0.2)}
+        >
+          ✦ Instalatori autorizați HVAC
+        </p>
+        <h1
+          className={`ai-h mb-6 max-w-3xl font-black leading-tight text-[#F6F3EE] ${mobile ? "text-[36px]" : "text-[60px]"}`}
+          style={fade(0.4)}
+        >
+          Confort termic tot anul —{mobile ? " " : <br />}de la consultanță la service
+        </h1>
+        <p className={`mb-6 max-w-2xl font-light text-[#F6F3EE]/80 ${mobile ? "text-lg" : "text-xl"}`} style={fade(0.6)}>
+          Pompe de căldură, aer condiționat, centrale termice și panouri solare. Montaj profesional, garanție extinsă, suport real.
+        </p>
+        <div className="mb-8 flex items-center gap-2" style={fade(0.7)}>
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#F6F3EE]/20 bg-[#F6F3EE]/10 px-4 py-2 text-sm text-[#F6F3EE] backdrop-blur-sm">
+            ⭐ 4.98 / 5 — Recenzii verificate Google
+          </span>
         </div>
-
-        {!mobile && (
-          <div className="w-[372px] shrink-0" style={fade(reduced, 1)}>
-            <CalcTeaser />
-          </div>
-        )}
+        <div className={`flex gap-4 ${mobile ? "flex-col" : "flex-wrap"}`} style={fade(0.8)}>
+          <button type="button" onClick={() => nav.contact()} className={`${BTN_PRIMARY} px-8 py-3.5`}>
+            Solicită ofertă gratuită
+          </button>
+          <button type="button" onClick={() => notify(MSG.call)} className={`${BTN_OUTLINE_WHITE} px-8 py-3.5`}>
+            <Phone size={18} /> Sună acum: {PHONE}
+          </button>
+        </div>
       </div>
 
       <div
@@ -170,52 +147,13 @@ function Hero() {
   );
 }
 
-/** Cardul care duce în calculator — pe desktop stă în hero. */
-function CalcTeaser() {
-  const { nav, mobile } = useAI();
-  return (
-    <div className="rounded-2xl border border-[#A370EB]/35 bg-[#15181E]/95 p-6 shadow-2xl shadow-black/50">
-      <div className="flex items-center gap-3">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[#A370EB]/20">
-          <Sparkles className="text-[#A370EB]" size={22} />
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[#A370EB]">Calculator inteligent</p>
-          <p className="ai-h text-[22px] font-bold leading-tight text-[#EBE6E0]">Ce pompă de căldură să aleg?</p>
-        </div>
-      </div>
-      <p className="mt-4 text-sm leading-relaxed text-[#9096A2]">
-        Șapte întrebări despre casă. Afli necesarul termic și modelul potrivit, fără să lași un număr de telefon.
-      </p>
-      <div className="mt-4 rounded-xl border border-[#272C35] bg-[#0E1115] p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9096A2]">Exemplu · Argeș, 100 m², P+1</p>
-        <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-sm text-[#EBE6E0]">Necesar termic</span>
-          <span className="ai-h text-2xl font-black text-[#A370EB]">6,6 kW</span>
-        </div>
-        <div className="mt-2 flex items-center gap-2 text-[13px] text-[#EBE6E0]">
-          <Check size={14} className="shrink-0 text-[#A370EB]" />
-          Daikin Altherma 3 R F · 8 kW
-        </div>
-        <div className="mt-1 flex items-center gap-2 text-[13px] text-[#9096A2]">
-          <Check size={14} className="shrink-0 text-[#9096A2]" />
-          Alternativă: Hyundai Monobloc · 8 kW
-        </div>
-      </div>
-      <button type="button" onClick={() => nav.go("calculator")} className={`${BTN_WIZARD} mt-5 w-full px-6 ${mobile ? "py-3.5" : "py-3"}`}>
-        <Sparkles size={16} /> Pornește calculatorul
-      </button>
-    </div>
-  );
-}
+/* ---------------- Încredere (TrustSection.tsx) ---------------- */
 
-/* ---------------- Încredere (TrustSection + „De ce să ne alegi”) ---------------- */
-
-const WHY = [
-  { icon: Wrench, title: "Serviciu complet", desc: "Consultanță, livrare, montaj, garanție și service" },
-  { icon: ClipboardCheck, title: "Consultanță gratuită", desc: "Evaluăm nevoile tale și recomandăm soluția optimă" },
-  { icon: Shield, title: "Garanție extinsă", desc: "Produse și instalare cu garanție reală" },
-  { icon: Zap, title: "Intervenție rapidă", desc: "Echipă mobilă disponibilă rapid" },
+const STATS = [
+  { icon: Award, value: 9, suffix: "+", label: "ani experiență", desc: "Pe piața HVAC din România" },
+  { icon: Users, value: 1200, suffix: "+", label: "clienți mulțumiți", desc: "Rezidențial și comercial" },
+  { icon: Star, value: 4.98, suffix: "/5", label: "rating Google", desc: "180+ recenzii verificate", decimal: true },
+  { icon: BadgeCheck, value: 100, suffix: "%", label: "lucrări garantate", desc: "Garanție extinsă reală" },
 ];
 
 const CERTS = [
@@ -229,14 +167,79 @@ function Trust() {
   return (
     <Section bg="rgba(21,24,30,0.3)" border>
       <Reveal>
-        <div className="mx-auto mb-12 max-w-2xl text-center">
+        <div className="mx-auto mb-14 max-w-2xl text-center">
           <span className="text-xs font-semibold uppercase tracking-[3px] text-[#F97316]">De ce ne aleg clienții</span>
           <div className="mt-3">
-            <SectionTitle>De ce să ne alegi</SectionTitle>
+            <SectionTitle>Încrederea se construiește în ani</SectionTitle>
           </div>
         </div>
       </Reveal>
-      <div className={`grid gap-6 ${mobile ? "grid-cols-1" : "grid-cols-4"}`}>
+      <div className={`mb-14 grid ${mobile ? "grid-cols-2 gap-4" : "grid-cols-4 gap-6"}`}>
+        {STATS.map((s, i) => (
+          <Reveal key={s.label} delay={i * 0.08}>
+            <div className={`${CARD} ${CARD_HOVER} h-full text-center ${mobile ? "p-6" : "p-7"}`}>
+              <div
+                className={`mx-auto mb-4 flex items-center justify-center rounded-2xl bg-[#F97316]/10 text-[#F97316] ${
+                  mobile ? "size-12" : "size-14"
+                }`}
+              >
+                <s.icon size={26} />
+              </div>
+              <div className={`ai-h font-black leading-none text-[#EBE6E0] ${mobile ? "text-3xl" : "text-5xl"}`}>
+                {s.decimal ? (
+                  <span>
+                    {s.value.toFixed(2)}
+                    <span className={`text-[#F97316] ${mobile ? "text-2xl" : "text-3xl"}`}>{s.suffix}</span>
+                  </span>
+                ) : (
+                  <>
+                    <Count to={s.value} />
+                    <span className="text-[#F97316]">{s.suffix}</span>
+                  </>
+                )}
+              </div>
+              <p className={`mt-2 font-semibold text-[#EBE6E0] ${mobile ? "text-sm" : "text-base"}`}>{s.label}</p>
+              <p className={`mt-1 text-[#9096A2] ${mobile ? "text-xs" : "text-sm"}`}>{s.desc}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <div className={`mb-12 grid gap-4 ${mobile ? "grid-cols-1" : "grid-cols-3"}`}>
+        {CERTS.map((c, i) => (
+          <Reveal key={c.title} delay={i * 0.08}>
+            <div className="flex items-center gap-4 rounded-xl border border-[#272C35] bg-[#15181E] p-4">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#F97316]/10 text-[#F97316]">
+                <c.icon size={22} />
+              </div>
+              <div>
+                <p className={`ai-h font-bold text-[#EBE6E0] ${mobile ? "text-sm" : "text-base"}`}>{c.title}</p>
+                <p className={`text-[#9096A2] ${mobile ? "text-xs" : "text-sm"}`}>{c.desc}</p>
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/* ---------------- De ce să ne alegi ---------------- */
+
+const WHY = [
+  { icon: Wrench, title: "Serviciu complet", desc: "Consultanță, livrare, montaj, garanție și service" },
+  { icon: Star, title: "4.98 pe Google", desc: "Sute de clienți mulțumiți, recenzii verificate" },
+  { icon: Shield, title: "Garanție extinsă", desc: "Produse și instalare cu garanție reală" },
+  { icon: Zap, title: "Intervenție rapidă", desc: "Echipă mobilă disponibilă rapid" },
+];
+
+function WhyUs() {
+  const { mobile } = useAI();
+  return (
+    <Section>
+      <Reveal>
+        <SectionTitle>De ce să ne alegi</SectionTitle>
+      </Reveal>
+      <div className={`mt-12 grid gap-6 ${mobile ? "grid-cols-1" : "grid-cols-4"}`}>
         {WHY.map((w, i) => (
           <Reveal key={w.title} delay={i * 0.1}>
             <div className={`${CARD} ${CARD_HOVER} h-full p-6 text-center`}>
@@ -245,21 +248,6 @@ function Trust() {
               </div>
               <h3 className="ai-h text-lg font-bold text-[#EBE6E0]">{w.title}</h3>
               <p className="mt-2 text-sm text-[#9096A2]">{w.desc}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-      <div className={`mt-10 grid gap-4 ${mobile ? "grid-cols-1" : "grid-cols-3"}`}>
-        {CERTS.map((c, i) => (
-          <Reveal key={c.title} delay={i * 0.08}>
-            <div className="flex items-center gap-4 rounded-xl border border-[#272C35] bg-[#15181E] p-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#F97316]/10 text-[#F97316]">
-                <c.icon size={22} />
-              </div>
-              <div>
-                <p className="ai-h text-base font-bold text-[#EBE6E0]">{c.title}</p>
-                <p className="text-sm text-[#9096A2]">{c.desc}</p>
-              </div>
             </div>
           </Reveal>
         ))}
@@ -289,8 +277,8 @@ const SERVICES: Svc[] = [
 
 function Services() {
   const { mobile, nav } = useAI();
-  const open = (s: Svc) =>
-    s.go === "pompe" ? nav.shop("pompe-caldura") : s.go === "ac" ? nav.shop("aer-conditionat") : nav.portfolio(s.go);
+  /* Pe site, cardurile duc la paginile de serviciu; în demo, la magazin sau la lucrările din categorie. */
+  const open = (s: Svc) => (s.go === "pompe" || s.go === "ac" ? nav.shop() : nav.portfolio(s.go));
   return (
     <Section bg="#15181E">
       <Reveal>
@@ -304,15 +292,9 @@ function Services() {
             <button
               type="button"
               onClick={() => open(s)}
-              className={`group block w-full overflow-hidden rounded-2xl border border-[#272C35] bg-[#0E1115] text-left ${CARD_HOVER} ${FOCUS}`}
+              className={`group block w-full overflow-hidden rounded-2xl border border-[#272C35] bg-[#15181E] text-left ${CARD_HOVER} ${FOCUS}`}
             >
-              <Sprite
-                sheet={s.sheet}
-                i={s.i}
-                box={16 / 10}
-                alt={s.alt}
-                innerClassName="transition-transform duration-500 ease-out group-hover:scale-105"
-              />
+              <Sprite sheet={s.sheet} i={s.i} box={16 / 10} alt={s.alt} innerClassName="transition-transform duration-500 ease-out group-hover:scale-105" />
               <div className="p-6">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#F97316]">{s.cat}</span>
                 <h3 className="ai-h mt-2 text-xl font-bold text-[#EBE6E0]">{s.title}</h3>
@@ -324,6 +306,99 @@ function Services() {
             </button>
           </Reveal>
         ))}
+      </div>
+    </Section>
+  );
+}
+
+/* ---------------- Recenzii Google ---------------- */
+
+function GoogleG() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden>
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </svg>
+  );
+}
+
+function GoogleReviews() {
+  const { mobile, nav, notify } = useAI();
+  return (
+    <Section bg="#15181E">
+      <Reveal>
+        <div className="mb-4 text-center">
+          <SectionTitle>Ce spun clienții noștri</SectionTitle>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => notify(MSG.external)}
+              aria-label="Vezi recenziile noastre pe Google"
+              className={`inline-flex items-center gap-3 rounded-full border border-[#272C35] bg-[#15181E] py-2 pl-3 pr-4 shadow-sm transition-shadow hover:shadow-md ${FOCUS}`}
+            >
+              <GoogleG />
+              <span className="flex flex-col items-start leading-tight">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9096A2]">Reviews on</span>
+                <span className="ai-h text-sm font-bold text-[#EBE6E0]">Google</span>
+              </span>
+              <span className="h-8 w-px bg-[#272C35]" aria-hidden />
+              <span className="flex flex-col items-start leading-tight">
+                <span className="flex items-center gap-1">
+                  <span className="ai-h text-base font-black text-[#EBE6E0]">4.98</span>
+                  <span className="text-sm text-[#F97316]">★★★★★</span>
+                </span>
+                <span className="text-[10px] text-[#9096A2]">180+ recenzii verificate</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </Reveal>
+
+      <Reveal>
+        <div className="mx-auto mb-10 mt-6 max-w-md space-y-2" aria-label="Distribuția notelor">
+          {STAR_DISTRIBUTION.map((r) => (
+            <div key={r.stars} className="flex items-center gap-2 text-sm text-[#EBE6E0]">
+              <span className="w-8 text-right">{r.stars}★</span>
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#272C35]">
+                <div className="h-full rounded-full bg-[#F97316]" style={{ width: `${r.pct}%` }} />
+              </div>
+              <span className="w-10 text-[#9096A2]">{r.pct}%</span>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
+      <div className={`grid gap-6 ${mobile ? "grid-cols-1" : "grid-cols-3"}`}>
+        {REVIEWS.slice(0, 3).map((r, i) => (
+          <Reveal key={r.name} delay={i * 0.1}>
+            <div className={`${CARD} ${CARD_HOVER} h-full p-6`}>
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#F97316]/10 text-sm font-bold text-[#F97316]">
+                  {r.initials}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#EBE6E0]">{r.name}</p>
+                  <p className="text-xs text-[#F97316]" aria-label="5 stele din 5">
+                    ⭐⭐⭐⭐⭐
+                  </p>
+                </div>
+              </div>
+              <h4 className="ai-h mb-2 text-base font-bold text-[#EBE6E0]">{r.title}</h4>
+              <p className="text-sm leading-relaxed text-[#9096A2]">„{r.short ?? r.text}”</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+      <div className="mt-8 text-center">
+        <button
+          type="button"
+          onClick={() => nav.go("recenzii")}
+          className={`inline-flex items-center gap-1 rounded text-sm font-semibold text-[#F97316] transition-all hover:gap-2 ${FOCUS}`}
+        >
+          Vezi toate recenziile <ArrowRight size={14} />
+        </button>
       </div>
     </Section>
   );
@@ -407,7 +482,7 @@ export function CtaBanner() {
             onClick={() => notify(MSG.call)}
             className={`inline-flex items-center justify-center rounded-lg border-2 border-white/60 px-8 py-3.5 font-semibold text-white transition-all duration-200 hover:scale-[1.03] hover:bg-white/10 ${FOCUS}`}
           >
-            <Phone size={18} className="mr-2" /> Sună acum: {DEMO_PHONE}
+            <Phone size={18} className="mr-2" /> Sună acum: {PHONE}
           </button>
         </div>
       </Reveal>

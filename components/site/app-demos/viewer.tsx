@@ -13,6 +13,7 @@ import { Link } from "@/i18n/navigation";
 import { Mark } from "@/components/site/mark";
 import { Icon } from "@/components/site/ui";
 import { DEMOS } from "./registry";
+import "./fonts.css";
 import css from "./viewer.module.css";
 import {
   DEMO_CANVAS,

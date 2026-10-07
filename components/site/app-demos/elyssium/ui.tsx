@@ -12,9 +12,10 @@ import { useDemo } from "./store";
    apps/staff/src/styles/global.css și componentele din apps/client.
    ============================================================ */
 
-export const FONT = 'var(--font-switzer), Inter, "Helvetica Neue", system-ui, sans-serif';
-/** Sora, fontul de afișaj al aplicației client → Satoshi, tot geometric. */
-export const DISPLAY = 'var(--font-satoshi), var(--font-switzer), system-ui, sans-serif';
+/* Inter, ca în tokens.ts al aplicației reale (încărcat din fonts.css). */
+export const FONT = '"Inter", system-ui, -apple-system, sans-serif';
+/** Aplicația reală are o singură familie; cifrele mari sunt tot Inter, mai gros. */
+export const DISPLAY = FONT;
 export const MONO = 'var(--font-jbmono), ui-monospace, "SF Mono", Menlo, monospace';
 
 export const focus =

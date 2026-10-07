@@ -48,11 +48,6 @@ export const meta: AppDemoMeta = {
       title: "Ziua în cifre",
       line: "Ocupare, persoane așteptate, surse și neprezentări, dintr-o privire.",
     },
-    {
-      screen: "retea",
-      title: "Toată rețeaua",
-      line: "Panoul echipei TableX: restaurantele din toată țara și rezervările lor, live.",
-    },
   ],
   devices: ["desktop", "mobile"],
   defaultDevice: "desktop",

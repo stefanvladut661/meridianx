@@ -24,7 +24,6 @@ export const meta: AppDemoMeta = {
     { screen: "recompense", title: "Recompense", line: "Clientul revendică o recompensă și primește un voucher cu cod unic, validat apoi la casă." },
     { screen: "campanii", title: "Campanii", line: "Managementul scrie o campanie, alege publicul și vede exact cum apare pe telefonul clientului." },
     { screen: "clienti", title: "Clienți", line: "Fișa fiecărui client: istoric, litri, vouchere și ajustări de puncte cu motiv scris." },
-    { screen: "rapoarte", title: "Rapoarte", line: "Cifrele pe stație și pe echipă, plus legătura cu casele de marcat și facturarea." },
   ],
   devices: ["desktop", "mobile"],
   defaultDevice: "desktop",

@@ -23,7 +23,6 @@ export const meta: AppDemoMeta = {
     { screen: "locatie", title: "Un magazin", line: "Un magazin în detaliu: vânzări pe ore, încasări, bonurile care intră și agentul care le aduce." },
     { screen: "rame", title: "Stoc în rețea", line: "Caută „aviator” și vezi, pe loc, în care magazine mai e marfă." },
     { screen: "vanzari", title: "Jurnal vânzări", line: "Fiecare bon din fiecare locație, filtrabil și deschis pe linii." },
-    { screen: "rapoarte", title: "Rapoarte", line: "Venit, profit și marjă pe 12 luni, per magazin și per brand, gata de export." },
   ],
   devices: ["desktop", "mobile"],
   defaultDevice: "desktop",

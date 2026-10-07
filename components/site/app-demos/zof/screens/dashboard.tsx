@@ -239,7 +239,7 @@ export default function Dashboard() {
         />
         <Panel
           title="Financiar"
-          onMore={() => go("rapoarte")}
+          onMore={() => go("vanzari")}
           hero={ron(heroProfit)}
           heroColor={C.greenText}
           caption={`profit estimat · marjă ${(MARGIN * 100).toLocaleString("ro-RO", { maximumFractionDigits: 1 })}% · ${period === "azi" ? "azi" : range}`}

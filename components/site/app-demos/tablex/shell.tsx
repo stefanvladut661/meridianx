@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Bell,
-  Building2,
   Globe,
   House,
   LayoutGrid,
@@ -35,7 +34,6 @@ const NAV: ElementNav[] = [
 ];
 const NAV_ALTE: ElementNav[] = [
   { ecran: "widget", text: "Pagina de rezervare", Icon: Globe },
-  { ecran: "retea", text: "Panoul echipei TableX", Icon: Building2 },
 ];
 
 export function Logo({ marime = 18 }: { marime?: number }) {

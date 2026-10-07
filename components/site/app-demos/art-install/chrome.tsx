@@ -9,11 +9,10 @@ import {
   Menu,
   MessageCircle,
   Phone,
-  ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
-import { DEMO_EMAIL, DEMO_PHONE } from "./data";
+import { ADDRESS, EMAIL, PHONE } from "./data";
 import { BTN_OUTLINE_WHITE, BTN_PRIMARY, FOCUS, Logo, MSG, anim, useAI, type Nav } from "./ui";
 
 /* ---------------- Meniul (Navbar.tsx de pe site) ---------------- */
@@ -32,9 +31,9 @@ const LINKS: (Leaf | { label: "Servicii" })[] = [
   { label: "Acasă", run: (n) => n.go("home"), screen: "home" },
   { label: "Servicii" },
   { label: "Magazin", run: (n) => n.shop(), screen: "magazin" },
-  { label: "Despre noi", run: (n) => n.off("Despre noi") },
+  { label: "Despre noi", run: (n) => n.go("despre"), screen: "despre" },
   { label: "Portofoliu", run: (n) => n.portfolio(), screen: "portofoliu" },
-  { label: "Recenzii", run: (n) => n.off("Recenzii") },
+  { label: "Recenzii", run: (n) => n.go("recenzii"), screen: "recenzii" },
   { label: "Contact", run: (n) => n.contact(), screen: "contact" },
 ];
 
@@ -104,7 +103,7 @@ export function Navbar({
         <button type="button" onClick={() => nav.go("home")} className={`rounded ${FOCUS}`} aria-label="Art Instal — acasă">
           <Logo size={48} />
         </button>
-        <div className="flex items-center gap-[18px]">
+        <div className="flex items-center gap-7">
           {LINKS.map((l) =>
             "run" in l ? (
               <button
@@ -267,10 +266,10 @@ export function Footer() {
   const link = `rounded text-left text-sm text-[#F6F3EE]/70 transition-colors hover:text-[#F97316] ${FOCUS}`;
   const company: [string, () => void][] = [
     ["Acasă", () => nav.go("home")],
-    ["Calculator pompă", () => nav.go("calculator")],
+    ["Serviciile noastre", () => nav.shop("pompe-caldura")],
     ["Portofoliu", () => nav.portfolio()],
-    ["Despre noi", () => nav.off("Despre noi")],
-    ["Recenzii", () => nav.off("Recenzii")],
+    ["Despre noi", () => nav.go("despre")],
+    ["Recenzii", () => nav.go("recenzii")],
     ["Contact", () => nav.contact()],
   ];
   const services: [string, () => void][] = [
@@ -333,11 +332,11 @@ export function Footer() {
               onClick={() => notify(MSG.call)}
               className={`mb-4 flex items-center gap-2 rounded text-xl font-bold transition-colors hover:text-[#F97316] ${FOCUS}`}
             >
-              <Phone size={18} /> {DEMO_PHONE}
+              <Phone size={18} /> {PHONE}
             </button>
             <div className="mb-3 flex items-center gap-2 text-sm text-[#F6F3EE]/70">
-              <MapPin size={14} />
-              <span>Pitești, județul Argeș</span>
+              <MapPin size={14} className="shrink-0" />
+              <span>{ADDRESS}</span>
             </div>
             <p className="mb-1 text-sm text-[#F6F3EE]/60">Trimite un mesaj:</p>
             <button
@@ -345,7 +344,7 @@ export function Footer() {
               onClick={() => notify(MSG.email)}
               className={`flex items-center gap-2 rounded text-sm transition-colors hover:text-[#F97316] ${FOCUS}`}
             >
-              <Mail size={14} /> {DEMO_EMAIL}
+              <Mail size={14} /> {EMAIL}
             </button>
           </div>
         </div>
@@ -363,9 +362,9 @@ export function Footer() {
           </div>
           <div className={`flex items-center justify-between gap-4 ${mobile ? "flex-col" : ""}`}>
             <div className="flex items-center gap-2 text-sm">
-              <ShieldCheck size={16} className="text-[#F97316]" />
-              <span className="font-bold">Partener autorizat Daikin</span>
-              <span className="text-[#F6F3EE]/60">· Autorizație Dealer 2026</span>
+              <span className="text-[#F97316]">⭐</span>
+              <span className="font-bold">4.98 / 5</span>
+              <span className="text-[#F6F3EE]/60">· Recenzii verificate Google</span>
             </div>
             <p className={`text-sm text-[#F6F3EE]/50 ${mobile ? "text-center" : ""}`}>
               Copyright 2026 — Art Instal Suppliers SRL | Toate drepturile rezervate
@@ -421,7 +420,7 @@ export function Fabs({ screen }: { screen: string }) {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-[#EBE6E0]">Sună acum</span>
-                <span className="block text-xs text-[#9096A2]">{DEMO_PHONE}</span>
+                <span className="block text-xs text-[#9096A2]">{PHONE}</span>
               </span>
             </button>
             <button

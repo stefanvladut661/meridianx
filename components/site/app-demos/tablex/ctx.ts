@@ -6,9 +6,9 @@ import type { Toast } from "./ui";
    Un walk-in așezat pe hartă apare în listă; o cerere trimisă din
    pagina publică intră în panou — ca în aplicația reală, prin Realtime. */
 
-export type Ecran = "harta" | "rezervari" | "acasa" | "widget" | "client" | "evenimente" | "retea";
+export type Ecran = "harta" | "rezervari" | "acasa" | "widget" | "client" | "evenimente";
 
-export const ECRANE: Ecran[] = ["harta", "rezervari", "acasa", "widget", "client", "evenimente", "retea"];
+export const ECRANE: Ecran[] = ["harta", "rezervari", "acasa", "widget", "client", "evenimente"];
 
 export type Notificare = {
   id: number;

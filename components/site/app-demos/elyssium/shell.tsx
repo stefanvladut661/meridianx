@@ -34,7 +34,12 @@ import { Avatar, LiveDot, Wordmark, focus, scrollY, useAnim } from "./ui";
 type Item = { k: string; eticheta: string; icon: LucideIcon; screen?: string; badge?: number; msg?: string };
 
 const MENIU: Item[] = [
-  { k: "dashboard", eticheta: "Dashboard", icon: LayoutDashboard, screen: "dashboard" },
+  {
+    k: "dashboard",
+    eticheta: "Dashboard",
+    icon: LayoutDashboard,
+    msg: "Dashboard-ul nu e inclus în demo. În aplicația reală arată vânzările lunii față de luna trecută, intrările pe zi și clienții de sunat.",
+  },
   { k: "receptie", eticheta: "Scanări live", icon: Radio, screen: "receptie" },
   { k: "clienti", eticheta: "Clienți", icon: Users, screen: "clienti" },
   {

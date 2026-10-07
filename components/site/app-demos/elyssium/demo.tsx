@@ -7,7 +7,6 @@ import { FONT } from "./ui";
 import Acasa from "./screens/Acasa";
 import Anunturi from "./screens/Anunturi";
 import Clienti from "./screens/Clienti";
-import Dashboard from "./screens/Dashboard";
 import Facturi from "./screens/Facturi";
 import Receptie from "./screens/Receptie";
 import Scanare from "./screens/Scanare";
@@ -17,7 +16,7 @@ import Scanare from "./screens/Scanare";
    telefon, intrarea cu QR) și panoul recepției (scanări live,
    clienți, vânzări, anunțuri, facturare SmartBill).
 
-   Ecranele: acasa · scanare · receptie · clienti · dashboard ·
+   Ecranele: acasa · scanare · receptie · clienti ·
    anunturi · facturi. Starea comună (clienți, scanări, facturi) stă
    în DemoProvider, deci ce faci pe un ecran se vede pe celelalte.
    ============================================================ */
@@ -30,8 +29,6 @@ function Ecran({ screen }: { screen: string }) {
       return <Receptie />;
     case "clienti":
       return <Clienti />;
-    case "dashboard":
-      return <Dashboard />;
     case "anunturi":
       return <Anunturi />;
     case "facturi":

@@ -42,7 +42,8 @@ export const C = {
   compare: "#4B5670",
 };
 
-export const FONT = "var(--font-switzer), Inter, ui-sans-serif, system-ui, sans-serif";
+/* ca în aplicația reală: stiva implicită Tailwind, fontul sistemului */
+export const FONT = 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
 /* ca font-mono din aplicație (stiva Tailwind implicită) */
 export const MONO = "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
 

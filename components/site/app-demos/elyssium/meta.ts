@@ -22,7 +22,6 @@ export const meta: AppDemoMeta = {
     { screen: "scanare", title: "Intrarea cu QR", line: "Clientul scanează codul, recepția vede pop-up-ul în aceeași secundă." },
     { screen: "receptie", title: "Scanări live", line: "Ecranul recepției: intrările sosesc singure, iar cele cu alegere așteaptă un clic." },
     { screen: "clienti", title: "Clienți", line: "Orice client, găsit după nume sau tag, primește abonament nou în două clicuri." },
-    { screen: "dashboard", title: "Vânzări", line: "Luna față de luna trecută, intrările pe zi și cine trebuie sunat." },
     { screen: "anunturi", title: "Anunțuri", line: "Un anunț scris aici ajunge în aplicație și ca notificare pe telefon." },
     { screen: "facturi", title: "Facturare", line: "Plata Netopia activează abonamentul, iar SmartBill emite factura singur." },
   ],

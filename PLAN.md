@@ -1137,3 +1137,54 @@ ultima întrebare).
   `registry.ts`. Pagina și ruta sunt generice.
 - **Verificat:** tsc, eslint, POST valid/gol/slug necunoscut/honeypot,
   360 și 390 fără overflow, desktop.
+
+## DEMO-URI CU FONTURILE APLICAȚIILOR REALE, ART INSTAL CA SITE-UL LIVE, RECENZIILE SUS (2026-10-07)
+
+Cerut de om, în cuvintele lui: „toate aplicațiile să fie mult mai non-AI,
+par foarte AI de la font; vreau la HVAC să fie exact ca cea reală; șterge
+screen-ul nenecesar la fiecare; la video și la software aș vrea să fie
+review-ul de la client sus, poate înainte să vadă portofoliul". Sesiune pe
+clona proaspătă de pe Desktop (vezi memoria sesiunii).
+
+- **Fonturile demo-urilor.** Toate cinci scriau cu Satoshi/Switzer, fonturile
+  MERIDIAN — de aceea arătau ca o singură aplicație desenată de aceeași mână.
+  Acum fiecare scrie cu literele aplicației reale, luate din repo-ul ei
+  (`gh repo list stefanvladut661`): TableX — Inter + Plus Jakarta Sans;
+  Elyssium — Inter; Art Instal — Playfair Display + DM Sans; Prosperanța și
+  Zof — stiva de sistem (aplicațiile lor nu încarcă niciun font).
+  Fonturile sunt **găzduite local**: `public/software/fonts/*.woff2`
+  (variabile, latin + latin-ext, ~330 KB în total, licențe OFL în
+  `licenses/`), declarate în `components/site/app-demos/fonts.css`, importat
+  doar de `viewer.tsx`. De ce nu `next/font/google`: pe mașina asta procesul
+  Next nu ajunge la fonts.googleapis.com (nici pentru mono-urile vechi din
+  `app/fonts.ts` — cad pe fallback în dev), deși shell-ul ajunge; cu fișiere
+  locale demo-urile nu mai depind de asta nici la build.
+- **Câte un ecran scos din fiecare demo** — interpretarea mea pentru „screen-ul
+  nenecesar la fiecare": pagina care repeta cifrele altei pagini, exact
+  tiparul „dashboard generat". Prosperanța: *Rapoarte* (Dashboard-ul le avea
+  deja; fila rămâne în meniu, închisă, ca Stații/Angajați); TableX: *Panoul
+  echipei TableX* (super-admin-ul nostru, nu produsul restaurantului); Zof:
+  *Rapoarte* (a doua pagină de grafice; alertele de trend duc acum la
+  Vânzări); Elyssium: *Dashboard* (Vânzări — grafice; meniul îl ține cu
+  mesaj, ca Verificări/Setări). Fișierele au fost șterse, nu ascunse.
+  Cealaltă lectură posibilă („screen" = captura de telefon de pe cardurile de
+  proiect) n-a fost aplicată — de confirmat cu omul.
+- **Art Instal, după sursa reală** (`instasuplier`, clonat în scratchpad, și
+  confortsolutions.ro live): hero fără cardul de calculator inventat, cu
+  pastila „4.98 / 5 — Recenzii verificate Google"; secțiunile care lipseau
+  („Încrederea se construiește în ani" cu contoare, „De ce să ne alegi",
+  recenziile Google cu distribuția stelelor); calculatorul într-un singur
+  formular cu rezultatele dedesubt (pe site nu există pagină separată —
+  pasul „Recomandarea" din tur e același formular cu exemplul completat);
+  magazinul fără filtrele și căutarea adăugate în demo; fără estimările de
+  buget și cost anual (nu sunt pe site); paginile *Recenzii* și *Despre noi*
+  adăugate; telefon, email și adresa reale, publice; subsolul ca pe site.
+  Rămân pe toast paginile de serviciu și *Parteneriat*.
+- **Recenziile sus.** `/software`: Hero → bandă → **Recenzii → Proiecte** →
+  Ce construim → Cum lucrăm → Garanții → Întrebări → Configurator (meniul
+  reordonat, Proiecte primul). `/video`: Hero → bandă → **Recenzii** →
+  Materiale → … (secțiunea are acum `id="recenzii"`).
+- **Verificat:** tsc, eslint, ecranele pe desktop (1280) în Chrome, fonturile
+  încărcate (`document.fonts.check`), capturile regenerate cu
+  `scripts/demo-posters.mjs` (Chrome e în `Program Files`, nu în `(x86)` —
+  se dă prin `CHROME=`).

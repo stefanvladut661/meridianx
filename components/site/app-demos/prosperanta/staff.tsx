@@ -18,7 +18,7 @@ const TABS: { id: AdminTab; label: string; locked?: string }[] = [
   { id: "dashboard", label: "Dashboard" },
   { id: "statii", label: "Stații", locked: "În demo, secțiunea Stații e închisă. În aplicația reală, aici se adaugă stațiile noi, cu adresă și coordonate pe hartă." },
   { id: "angajati", label: "Angajați", locked: "În demo, secțiunea Angajați e închisă. În aplicația reală, aici se dau drepturi de angajat și se atribuie fiecare om unei stații." },
-  { id: "rapoarte", label: "Rapoarte" },
+  { id: "rapoarte", label: "Rapoarte", locked: "În demo, Rapoartele sunt închise. În aplicația reală, aici sunt cifrele fiecărei stații pe interval, cu legătura spre casele de marcat și facturare." },
   { id: "clienti", label: "Clienți" },
   { id: "campanii", label: "Campanii" },
   { id: "recompense-admin", label: "Recompense", locked: "În demo, catalogul de recompense e doar de citit. În aplicația reală, adminul adaugă recompense, schimbă pragurile de puncte și vede fiecare voucher folosit." },

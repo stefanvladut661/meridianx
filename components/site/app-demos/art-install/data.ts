@@ -5,9 +5,9 @@
    (repo-ul clientului): aceeași formulă, aceiași factori, aceeași
    „regulă de aur” — modelul afișat are mereu kW ≥ necesarul calculat.
 
-   Ce e adăugat pentru demo (și marcat ca estimare în interfață):
-   bugetul orientativ pe model și costul anual al încălzirii.
-   Cifrele sunt inventate, dar credibile și deterministe.
+   Produsele, lucrările, recenziile și datele de contact sunt cele
+   publice de pe site. Nimic inventat: dacă nu e pe confortsolutions.ro,
+   nu e nici aici.
    ============================================================ */
 
 /* ---------------- Motorul (port din heatPumpCalc.ts) ---------------- */
@@ -253,72 +253,6 @@ export function formInput(f: CalcForm): CalcInput | null {
   };
 }
 
-/** Câte dintre cele 7 întrebări au răspuns (grosimea face parte din 4). */
-export function answered(f: CalcForm) {
-  const a = parseFloat(f.area);
-  return [
-    f.county !== "",
-    f.area !== "" && Number.isFinite(a) && a >= AREA_MIN && a <= AREA_MAX,
-    f.levels !== "",
-    f.insul !== "",
-    f.win !== "",
-    f.heat !== "",
-    true, // 7. destinația e opțională
-  ].filter(Boolean).length;
-}
-
-/* ---------------- Estimări (doar în demo) ---------------- */
-
-/** Buget orientativ, echipament + montaj standard, TVA inclus. Inventat, determinist. */
-export const PRICE_RANGE: Record<string, [number, number]> = {
-  "ERGA04EV + EHVH04S18E6V": [38500, 44000],
-  "ERGA06EV + EHVH08S18E6V": [41500, 47500],
-  "ERGA08EV + EHVH08S18E6V": [44500, 51000],
-  EDLA09DA3V3: [43000, 49500],
-  EDLA11DA3V3: [47500, 54000],
-  EDLA14DA3V3: [53000, 60500],
-  EDLA16DA3V3: [57000, 65000],
-  "TCL Tri-thermal Ultra AI R290 10kW": [27500, 32000],
-  "TCL Tri-thermal R290 14kW": [32500, 37500],
-  "TCL Tri-thermal R290 16kW": [35500, 41000],
-  "Hyundai Monobloc 8kW": [22500, 26500],
-  "Hyundai Monobloc 10kW": [24500, 28500],
-  "Hyundai Monobloc 12kW": [27000, 31500],
-};
-
-/** Ore echivalente la sarcină maximă, pe zonă climatică. */
-const FULL_LOAD_HOURS: Record<ClimateZone, number> = { I: 1500, II: 1650, III: 1800, IV: 1950 };
-/** SCOP estimat după temperatura agentului termic. */
-export const SCOP: Record<Heat, number> = { pardoseala: 4.6, fan: 4.0, radiatoare: 3.4 };
-
-export const TARIFE = {
-  el: 1.35, // lei/kWh, energie electrică
-  elPv: 0.7, // lei/kWh, medie cu autoconsum din fotovoltaice
-  gaz: 0.33, // lei/kWh, gaz natural
-  gazRand: 0.95, // randament centrală în condensare
-  lemne: 0.31, // lei/kWh util, lemn de foc în centrală
-  gpl: 0.52, // lei/kWh util
-};
-
-export type CostRow = { id: string; label: string; lei: number; pump?: boolean };
-
-export function estimate(i: CalcInput, q: number, pv: boolean) {
-  const zone = COUNTY_ZONE[i.county];
-  /* Factorul de sistem e o marjă de dimensionare, nu consum în plus. */
-  const heatKwh = (q / SYSTEM_FACTOR[i.system]) * FULL_LOAD_HOURS[zone];
-  const scop = SCOP[i.system];
-  const elKwh = heatKwh / scop;
-  const price = pv ? TARIFE.elPv : TARIFE.el;
-  const rows: CostRow[] = [
-    { id: "pompa", label: "Pompă de căldură", lei: elKwh * price, pump: true },
-    { id: "gaz", label: "Centrală pe gaz", lei: (heatKwh * TARIFE.gaz) / TARIFE.gazRand },
-    { id: "lemne", label: "Centrală pe lemne", lei: heatKwh * TARIFE.lemne },
-    { id: "gpl", label: "Centrală pe GPL", lei: heatKwh * TARIFE.gpl },
-    { id: "el", label: "Calorifere electrice", lei: heatKwh * TARIFE.el },
-  ];
-  return { heatKwh, elKwh, scop, rows };
-}
-
 /* ---------------- Magazinul (din src/data/products.ts) ---------------- */
 
 export type ProductCategory = "pompe-caldura" | "aer-conditionat";
@@ -500,10 +434,12 @@ export const PORTFOLIO: PfItem[] = [
   { id: "v3", sheet: "a", i: 0, label: "Pompă de căldură — montaj video", cat: "Pompe de căldură", video: true },
 ];
 
-/* ---------------- Contact (date de demo, nu cele reale) ---------------- */
+/* ---------------- Contact — datele publice de pe site ---------------- */
 
-export const DEMO_PHONE = "07xx xxx xxx";
-export const DEMO_EMAIL = "oferte@exemplu.ro";
+export const PHONE = "0771 364 533";
+export const EMAIL = "office@confortsolutions.ro";
+export const ADDRESS = "Bulevardul Nicolae Bălcescu S5, 110087 Pitești";
+export const HOURS = "Luni – Vineri: 08:00 – 18:00";
 
 export const SERVICES = [
   "Pompe de căldură",
@@ -513,3 +449,66 @@ export const SERVICES = [
   "Ventilație",
   "Service & Mentenanță",
 ] as const;
+
+/* ---------------- Recenziile de pe site (Index.tsx + ReviewsPage.tsx) ----------------
+   Primele trei au și titlul și varianta scurtă din prima pagină. Pozele
+   celor două recenzii cu fotografie vin din benzile de lucrări. */
+
+export type Review = {
+  initials: string;
+  name: string;
+  title?: string;
+  short?: string;
+  text: string;
+  img?: { sheet: Sheet; i: number; alt: string };
+};
+
+export const REVIEWS: Review[] = [
+  {
+    initials: "A.P.",
+    name: "A. Popescu",
+    title: "Lucrări executate cu profesionalism",
+    short: "Lucrari executate cu profesionalism, punctualitate si calitate, intr-un cuvant: excelent!",
+    text: "Lucrari executate cu profesionalism, punctualitate si calitate, intr-un cuvant: excelent!",
+    img: { sheet: "a", i: 4, alt: "Aer condiționat Daikin montat într-un dormitor" },
+  },
+  {
+    initials: "M.I.",
+    name: "M. Ionescu",
+    title: "Foarte mulțumită de servicii",
+    short: "Foarte mulțumită de serviciile acestei firme. Au montat 2 centrale +calorifere și instalații și totul a fost impecabil. Recomand cu încredere.",
+    text: "Foarte mulțumită de serviciile acestei firme. Au montat 2 centrale +calorifere și instalații și totul a fost impecabil. Lucrare excelenta executată cu profesionalism. Recomand cu încredere.",
+  },
+  {
+    initials: "C.M.",
+    name: "C. Mihai",
+    title: "Cea mai plăcută experiență",
+    short: "Colaborarea cu ART INSTAL SUPPLIERS a fost una dintre cele mai plăcute experiențe. Echipa organizată, punctuală, atentă la detalii. Recomand din toată inima.",
+    text: "Colaborarea cu ART INSTAL SUPPLIERS S.R.L. a fost una dintre cele mai plăcute și lipsite de griji experiențe pe care le-am avut vreodată cu o companie de instalații! Am apelat la ei pentru a instala o centrală termică, calorifere în toată casa și pentru a realiza întreaga instalație sanitară a băii, iar rezultatul a fost pur și simplu impresionant. De la primul contact, am simțit că am găsit o echipă care pune suflet în ceea ce face, iar profesionalismul lor m-a cucerit pe loc. Echipa a fost incredibil de bine organizată, punctuală și atentă la fiecare detaliu. Au ascultat cu răbdare toate cerințele mele și au venit cu soluții personalizate. Ce m-a impresionat cel mai mult a fost comunicarea lor: mereu amabili, deschiși și gata să explice fiecare pas. Recomand din toată inima.",
+  },
+  {
+    initials: "A.D.",
+    name: "A. Dragomir",
+    text: "Am achiziționat de la ei un aer condiționat anul trecut și mi l-am mutat la casa. M-au programat foarte repede, mi-au demontat aerul condiționat de la bloc și l-au instalat la casa. Băieții sunt profesioniști și au fost foarte rapizi. Sunt foarte mulțumită și de aerul condiționat. Recomand cu încredere atât produsele cât și serviciile lor!",
+  },
+  {
+    initials: "R.P.",
+    name: "R. Popa",
+    text: "Merită toți banii, am achiziționat aparatul de aer condiționat și serviciile de instalare. Băieții de la montaj au fost foarte descurcăreți și au montat în timp util! Recomand cu încredere!",
+  },
+  {
+    initials: "D.S.",
+    name: "Client verificat",
+    text: "Profesionalism, implicare, disponibilitate si calm la telefoane, intrebari... Montat pompa de caldura Daikin, radiatoare. Totul a decurs impecabil, au fost foarte seriosi, punctuali si implicati. Recomand cu incredere pentru un raport calitate-pret bun si corect, in vremuri in care neseriozitatea predomina si schimba oameni. Multumiri D-lui Madalin si echipei.",
+    img: { sheet: "a", i: 1, alt: "Unitate interioară de pompă de căldură Daikin, cu boiler" },
+  },
+];
+
+/** Distribuția stelelor din secțiunea de recenzii a primei pagini. */
+export const STAR_DISTRIBUTION = [
+  { stars: 5, pct: 96 },
+  { stars: 4, pct: 3 },
+  { stars: 3, pct: 1 },
+  { stars: 2, pct: 0 },
+  { stars: 1, pct: 0 },
+];

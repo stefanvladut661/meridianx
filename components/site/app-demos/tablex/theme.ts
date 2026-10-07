@@ -106,8 +106,9 @@ export const ETICHETA_STATUS_MASA: Record<StatusMasa, string> = {
   inactiv: "Indisponibilă",
 };
 
+/* Fonturile din index.css al aplicației reale (încărcate din fonts.css). */
 export const FONT = {
-  sans: "var(--font-switzer), 'Inter', ui-sans-serif, system-ui, sans-serif",
-  display: "var(--font-satoshi), var(--font-switzer), ui-sans-serif, system-ui, sans-serif",
+  sans: "'Inter', ui-sans-serif, system-ui, sans-serif",
+  display: "'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif",
   mono: "var(--font-plexmono), ui-monospace, SFMono-Regular, Menlo, monospace",
 } as const;

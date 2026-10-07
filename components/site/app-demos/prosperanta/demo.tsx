@@ -5,7 +5,6 @@ import { Campanii } from "./campanii";
 import { Clienti } from "./clienti";
 import { Home, Rewards } from "./client";
 import { Dashboard } from "./dashboard";
-import { Rapoarte } from "./rapoarte";
 import { Statie } from "./statie";
 import { DemoProvider } from "./store";
 import { SCOPED_CSS } from "./ui";
@@ -14,11 +13,11 @@ import { SCOPED_CSS } from "./ui";
    Prosperanța — demo interactiv.
    Trei fețe ale aceleiași aplicații: clientul (puncte, recompense),
    angajatul din stație (litri, vouchere) și adminul rețelei
-   (dashboard, clienți, campanii, rapoarte). Toate împart aceeași
+   (dashboard, clienți, campanii). Toate împart aceeași
    stare, deci o acțiune dintr-un rol se vede imediat în celelalte.
    ============================================================ */
 
-const SCREENS = ["dashboard", "home", "statie", "recompense", "campanii", "clienti", "rapoarte"] as const;
+const SCREENS = ["dashboard", "home", "statie", "recompense", "campanii", "clienti"] as const;
 type ScreenId = (typeof SCREENS)[number];
 const START: ScreenId = "dashboard";
 
@@ -34,7 +33,6 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
         {id === "dashboard" && <Dashboard />}
         {id === "clienti" && <Clienti />}
         {id === "campanii" && <Campanii />}
-        {id === "rapoarte" && <Rapoarte />}
       </DemoProvider>
     </div>
   );

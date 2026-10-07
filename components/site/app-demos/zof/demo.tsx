@@ -5,7 +5,6 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
-  FileText,
   Glasses,
   LayoutDashboard,
   LogOut,
@@ -25,7 +24,6 @@ import Locatii from "./screens/locatii";
 import Locatie from "./screens/locatie";
 import Rame from "./screens/rame";
 import Vanzari from "./screens/vanzari";
-import Rapoarte from "./screens/rapoarte";
 
 /* ============================================================
    Zof Stoc Online — demo interactiv.
@@ -41,7 +39,6 @@ const SCREENS: Record<string, ComponentType> = {
   locatie: Locatie,
   rame: Rame,
   vanzari: Vanzari,
-  rapoarte: Rapoarte,
 };
 
 const NAV = [
@@ -49,7 +46,6 @@ const NAV = [
   { id: "locatii", label: "Locații", icon: Store },
   { id: "rame", label: "Rame", icon: Glasses },
   { id: "vanzari", label: "Vânzări", icon: ShoppingCart },
-  { id: "rapoarte", label: "Rapoarte", icon: FileText },
 ] as const;
 
 export default function Demo({ device, screen, go, notify, reducedMotion }: DemoProps) {

@@ -19,7 +19,6 @@ import { EcranAcasa } from "./screens/acasa";
 import { EcranClienti } from "./screens/clienti";
 import { EcranEvenimente } from "./screens/evenimente";
 import { EcranHarta } from "./screens/harta";
-import { EcranRetea } from "./screens/retea";
 import { EcranRezervari } from "./screens/rezervari";
 import { EcranWidget } from "./screens/widget";
 import { FONT, L } from "./theme";
@@ -28,7 +27,7 @@ import { StiluriDemo, Toasturi, type Toast } from "./ui";
 /* ============================================================
    TableX — demo interactiv. Produsul MERIDIAN de rezervări pentru
    HoReCa: harta live a sălii, lista serii, pagina publică de
-   rezervare, fișele de client, evenimentele și panoul echipei.
+   rezervare, fișele de client și evenimentele.
 
    Toate datele sunt inventate și deterministe. Ceasul pornește
    vineri la 19:30 și înaintează un minut la 4 secunde; cererile
@@ -239,9 +238,8 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
         {ecran === "widget" && <EcranWidget />}
         {ecran === "client" && <EcranClienti />}
         {ecran === "evenimente" && <EcranEvenimente />}
-        {ecran === "retea" && <EcranRetea />}
         <Toasturi
-          lista={ecran === "widget" || ecran === "retea" ? [] : toasturi}
+          lista={ecran === "widget" ? [] : toasturi}
           pozitie={mobil ? "sus" : "jos-dreapta"}
           reducedMotion={reducedMotion}
           onInchide={inchideToast}
