@@ -1188,3 +1188,34 @@ clona proaspătă de pe Desktop (vezi memoria sesiunii).
   încărcate (`document.fonts.check`), capturile regenerate cu
   `scripts/demo-posters.mjs` (Chrome e în `Program Files`, nu în `(x86)` —
   se dă prin `CHROME=`).
+
+
+## CARDURILE DE PROIECT, SIMPLIFICATE (2026-10-07, ramura `feat/carduri-proiecte-simple`)
+
+Omul: secțiunea de proiecte de pe `/software` „arată prea mult a landing
+page generat”. Ne-merge-uit: vrea să vadă întâi.
+
+- **Scos** din `components/site/pages/software-projects.tsx`: badge-ul
+  „Demo interactiv” cu punctul care pulsa, pastilele cu funcționalități,
+  degradeul și culoarea de marcă din spatele capturii, rândul cu clientul
+  de sub titlu, rama de browser cu trei buline, carcasa telefonului cu
+  umbră și suprapunerea lui peste desktop, legătura cu săgeată „Încearcă
+  demo-ul”. `software-projects.module.css` (hover-ul pe capturi, pulsul)
+  e șters.
+- **Rămas**, în ordinea asta: categoria (mono), numele, propoziția
+  `headline`, butonul plin `btn btn-primary` „Intră în aplicație”, lat
+  pe telefon. Cardul nu mai e tot o legătură: butonul e legătura, iar
+  captura e o legătură secundară nefocusabilă (`tabIndex={-1}`,
+  `aria-hidden`), ca să nu fie două legături identice pe card.
+- **Captura** (`ProjectVisual`, partajată cu `/software/proiecte`):
+  desktop și telefon una lângă alta, aliniate jos, pe fundalul paginii
+  (`bg-ink`), fiecare cu chenar de 1px (`border-hair`) și colțuri de 4px
+  (`rounded-sm`). Telefonul are 21,7% din lățime ca să iasă la aceeași
+  înălțime cu fereastra 16:10. Pe `/software/proiecte` se schimbă doar
+  imaginea; textul, lista de funcții și butonul „Încearcă demo-ul” de
+  acolo sunt neatinse — de hotărât dacă vrem și acolo „Intră în
+  aplicație”.
+- `AppDemoMeta.brand` nu mai e folosit nicăieri; rămâne în `meta.ts`
+  până hotărâm dacă îl scoatem.
+- Verificat: tsc, eslint, capturi la 1280/768/390 înainte și după, și
+  pagina `/software/proiecte`.

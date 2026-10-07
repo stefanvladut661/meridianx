@@ -9,21 +9,21 @@ import { Icon } from "@/components/site/ui";
 import { DEMOS, demoPoster } from "@/components/site/app-demos/registry";
 import type { AppDemoMeta } from "@/components/site/app-demos/types";
 import { SREVIEWS, SREVIEW_VIDEO } from "@/components/site/software-content";
-import st from "./software-projects.module.css";
 
 /* ============================================================
    Portofoliul de aplicații: cardurile care duc în demo-uri.
 
    Două folosiri:
    - `ProjectsGrid` — secțiunea de pe /software: primul proiect mare,
-     restul în grilă de două. Scurt: nume, ce face, intră în demo.
+     restul în grilă de două. Patru lucruri și atât: categoria, numele,
+     o propoziție, butonul.
    - `ProjectsList` — pagina /software/proiecte: fiecare proiect pe
      rândul lui, cu descrierea și funcțiile, alternând partea.
 
-   Imaginea fiecărui card e o compoziție din capturile reale ale
-   demo-ului (desktop + telefon), pe culoarea mărcii aplicației —
-   fiecare proiect se recunoaște după propria identitate, nu după a
-   noastră.
+   Imaginea fiecărui card e făcută din capturile reale ale demo-ului,
+   desktop și telefon, puse una lângă alta pe fundalul paginii. Fără
+   ramă de browser, fără carcasă de telefon, fără culorile mărcii:
+   două capturi, așa cum arată aplicația.
    ============================================================ */
 
 function R(props: ComponentProps<typeof Reveal>) {
@@ -50,7 +50,11 @@ export function Unbroken({ text }: { text: string }) {
     );
 }
 
-/** Capturile demo-ului, compuse: fereastra de desktop și telefonul peste ea. */
+/**
+ * Capturile demo-ului: fereastra de desktop și, alături, telefonul,
+ * aliniate jos. Lățimea telefonului (21,7%) e aleasă ca la 16:10,
+ * respectiv 390:844, cele două să aibă aceeași înălțime.
+ */
 export function ProjectVisual({
   meta,
   eager = false,
@@ -62,53 +66,36 @@ export function ProjectVisual({
 }) {
   const hasMobile = meta.devices.includes("mobile");
   return (
-    <div
-      className={`${st.visual} relative overflow-hidden rounded-panel-lg ${className}`}
-      style={{ background: meta.brand.bg }}
-    >
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-60"
-        style={{
-          background: `radial-gradient(ellipse 70% 60% at 30% 0%, color-mix(in oklab, ${meta.brand.accent} 45%, transparent), transparent 70%)`,
-        }}
-      />
-      <div className={`${st.desk} absolute left-[6%] top-[9%] w-[80%] overflow-hidden rounded-t-[10px] bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.55)]`}>
-        <div className="flex h-[14px] items-center gap-[3px] bg-[#eef0f0] px-2" aria-hidden>
-          <span className="size-[5px] rounded-full bg-[#ff5f57]" />
-          <span className="size-[5px] rounded-full bg-[#febc2e]" />
-          <span className="size-[5px] rounded-full bg-[#28c840]" />
-        </div>
-        {/* eslint-disable-next-line @next/next/no-img-element -- captură deja
-            generată în WebP la mărimea potrivită (scripts/demo-posters.mjs) */}
-        <img
-          src={demoPoster(meta.slug, "desktop")}
-          alt={`${meta.name}, varianta de desktop`}
-          width={1280}
-          height={800}
-          loading={eager ? "eager" : "lazy"}
-          decoding="async"
-          className="block aspect-[16/10] w-full object-cover object-top"
-        />
-      </div>
-      {hasMobile && (
-        <div className={`${st.phone} absolute bottom-[-14%] right-[5%] w-[23%] rounded-[16%/7.5%] bg-[#0c0d0f] p-[1.6%] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)]`}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- idem */}
+    <div className={`flex items-center bg-ink px-[5%] py-[6%] ${className}`}>
+      <div className="flex w-full items-end gap-[3%]">
+        <div className="min-w-0 flex-1 overflow-hidden rounded-sm border border-hair">
+          {/* eslint-disable-next-line @next/next/no-img-element -- captură deja
+              generată în WebP la mărimea potrivită (scripts/demo-posters.mjs) */}
           <img
-            src={demoPoster(meta.slug, "mobile")}
-            alt={`${meta.name}, varianta de telefon`}
-            width={390}
-            height={844}
+            src={demoPoster(meta.slug, "desktop")}
+            alt={`${meta.name}, varianta de desktop`}
+            width={1280}
+            height={800}
             loading={eager ? "eager" : "lazy"}
             decoding="async"
-            className="block aspect-[390/844] w-full rounded-[13%/6%] object-cover object-top"
+            className="block aspect-[16/10] w-full object-cover object-top"
           />
         </div>
-      )}
-      <span className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 font-md-mono text-[10.5px] uppercase tracking-[0.14em] text-white backdrop-blur-sm">
-        <span className={`${st.live} size-1.5 rounded-full bg-[#4ade80]`} aria-hidden />
-        Demo interactiv
-      </span>
+        {hasMobile && (
+          <div className="w-[21.7%] shrink-0 overflow-hidden rounded-sm border border-hair">
+            {/* eslint-disable-next-line @next/next/no-img-element -- idem */}
+            <img
+              src={demoPoster(meta.slug, "mobile")}
+              alt={`${meta.name}, varianta de telefon`}
+              width={390}
+              height={844}
+              loading={eager ? "eager" : "lazy"}
+              decoding="async"
+              className="block aspect-[390/844] w-full object-cover object-top"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -130,6 +117,9 @@ export function ProjectsGrid() {
   );
 }
 
+/* Butonul e legătura; captura duce în același loc, dar nu intră în
+   ordinea de tabulare și e ascunsă cititoarelor de ecran, ca să nu
+   fie două legături identice pe card. */
 function ProjectCard({
   meta,
   featured = false,
@@ -139,18 +129,20 @@ function ProjectCard({
   featured?: boolean;
   eager?: boolean;
 }) {
+  const href = `/software/proiecte/${meta.slug}`;
   return (
-    <Link
-      href={`/software/proiecte/${meta.slug}`}
-      className={`${st.card} group grid h-full overflow-hidden rounded-panel-lg border border-hair bg-char transition-colors duration-200 hover:border-hair-strong ${
+    <article
+      className={`grid h-full overflow-hidden rounded-panel-lg border border-hair bg-char ${
         featured ? "lg:grid-cols-[1.35fr_1fr]" : ""
       }`}
     >
-      <ProjectVisual
-        meta={meta}
-        eager={eager}
-        className={`aspect-[16/11] !rounded-none ${featured ? "lg:aspect-auto lg:min-h-[380px]" : ""}`}
-      />
+      <Link href={href} tabIndex={-1} aria-hidden className="block">
+        <ProjectVisual
+          meta={meta}
+          eager={eager}
+          className={featured ? "h-full lg:min-h-[380px]" : ""}
+        />
+      </Link>
       <div className={`flex flex-col p-5 sm:p-6 ${featured ? "lg:justify-center lg:p-10" : ""}`}>
         <p className="font-md-mono text-[11px] uppercase tracking-[0.16em] text-dim">
           {meta.kind}
@@ -162,25 +154,17 @@ function ProjectCard({
         >
           {meta.name}
         </h3>
-        <p className="mt-1 text-[13.5px] text-dim">{meta.client}</p>
         <p className={`mt-3 leading-relaxed text-bone/90 ${featured ? "text-[16px]" : "text-[14.5px]"}`}>
           {meta.headline}
         </p>
-        {featured && (
-          <ul className="mt-5 hidden flex-wrap gap-2 sm:flex">
-            {meta.features.slice(0, 4).map((f) => (
-              <li key={f} className="rounded-panel-sm border border-hair px-2.5 py-1 text-[12.5px] text-dim">
-                {f}
-              </li>
-            ))}
-          </ul>
-        )}
-        <span className="mt-5 inline-flex items-center gap-2 text-[14.5px] font-medium text-a1">
-          Încearcă demo-ul
-          <Icon name="arrowRight" size={15} className="transition-transform duration-200 group-hover:translate-x-1" />
-        </span>
+        <Link
+          href={href}
+          className="btn btn-primary mt-6 self-stretch !rounded-panel-sm !px-7 sm:self-start"
+        >
+          Intră în aplicație
+        </Link>
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -290,10 +274,10 @@ export function ProjectsList() {
               <article className="grid items-center gap-7 lg:grid-cols-[1.25fr_1fr] lg:gap-12">
                 <Link
                   href={`/software/proiecte/${m.slug}`}
-                  className={`${st.card} block ${flip ? "lg:order-2" : ""}`}
+                  className={`block ${flip ? "lg:order-2" : ""}`}
                   aria-label={`Deschide demo-ul ${m.name}`}
                 >
-                  <ProjectVisual meta={m} eager={i === 0} className="aspect-[16/11]" />
+                  <ProjectVisual meta={m} eager={i === 0} />
                 </Link>
                 <div>
                   <p className="font-md-mono text-[11px] uppercase tracking-[0.16em] text-dim">
