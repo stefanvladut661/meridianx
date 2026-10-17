@@ -1200,7 +1200,14 @@ permisiunile bifate la autorizare, nu pe toate cele cerute de aplicație.
    portalul. Un cont nebifat = „tokenul nu vede contul”.
 3. **Codul.** TikTok te trimite la redirect URL cu `auth_code=…` în adresă.
    E valabil **o oră** și merge **o singură dată**.
-4. **Tokenul.** Schimbi codul pe token, din terminal:
+4. **Tokenul.** Schimbi codul pe token, dintr-un terminal deschis de tine (nu
+   din conversația cu Claude — răspunsul conține tokenul). Pe Windows, în
+   PowerShell (acolo `curl` e alt program, iar ghilimelele din JSON se pierd):
+   ```powershell
+   $body = @{ app_id = "…"; secret = "…"; auth_code = "…" } | ConvertTo-Json
+   Invoke-RestMethod -Method Post -Uri "https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/" -ContentType "application/json" -Body $body | ConvertTo-Json -Depth 5
+   ```
+   Pe macOS, Linux sau Git Bash:
    ```bash
    curl -X POST https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/ \
      -H "Content-Type: application/json" \
