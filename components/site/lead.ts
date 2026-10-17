@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { pixelTrack } from "@/lib/meta-pixel";
 import { tiktokTrack } from "@/lib/tiktok-pixel";
+import { googleAdsLead } from "@/lib/google-tag";
 import { captureUTM, getStoredUTM } from "@/lib/utm";
 import { leadInputSchema, type LeadInput } from "@/lib/validations/lead";
 
@@ -110,6 +111,10 @@ export async function submitLead(fields: LeadFields): Promise<LeadResult> {
       content_category: fields.division,
       content_name: fields.source,
     });
+    /* Și Google Ads, cu id-ul lead-ului ca `transaction_id`: un lead
+       trimis de două ori numără o singură conversie. Fără eticheta din
+       NEXT_PUBLIC_GOOGLE_ADS_LEAD, funcția nu face nimic. */
+    googleAdsLead(id);
   }
 
   return { ok: true, id };

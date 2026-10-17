@@ -36,6 +36,22 @@ const TIKTOK = "https://analytics.tiktok.com";
 // vine de pe CDN, iar evenimentele pleacă spre *.tiktokw.us.
 const TIKTOK_CDN = "https://*.tiktokcdn.com";
 const TIKTOK_EVENTS = "https://*.tiktokw.us";
+// Tag-ul Google Ads (lib/google-tag.ts), doar după acord și doar cu
+// NEXT_PUBLIC_GOOGLE_ADS_LEAD setat: gtag.js de pe googletagmanager, apoi
+// conversia și remarketingul spre originile din ghidul CSP al Google.
+const GOOGLE_TAG = "https://www.googletagmanager.com";
+const GOOGLE_ADS = [
+  "https://www.googleadservices.com",
+  "https://googleads.g.doubleclick.net",
+  "https://pagead2.googlesyndication.com",
+  "https://www.google.com",
+  "https://www.google.ro",
+];
+// Iframe-urile de măsurare ale tag-ului Google (remarketing, service worker).
+const GOOGLE_FRAMES = ["https://td.doubleclick.net", "https://bid.g.doubleclick.net", GOOGLE_TAG];
+// Miniaturile din portalul de reclame (/admin/ads), servite de platforme:
+// Meta (fbcdn), TikTok și YouTube (copertele video-urilor de pe Google).
+const ADS_THUMBNAILS = ["https://*.fbcdn.net", "https://*.tiktokcdn.com", "https://*.tiktokcdn-eu.com", "https://i.ytimg.com"];
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -117,6 +133,8 @@ function contentSecurityPolicy(profile: CspProfile = "site"): string {
           META_SCRIPT,
           TIKTOK,
           TIKTOK_CDN,
+          GOOGLE_TAG,
+          ...GOOGLE_ADS,
           // Codul nostru nu face eval (verificat în `.next/static/chunks`), dar
           // SDK-ul TikTok (main.*.js) îl cere — fără el pixelul raportează
           // violări și pierde evenimente. În dev îl cere și Turbopack.
@@ -129,7 +147,7 @@ function contentSecurityPolicy(profile: CspProfile = "site"): string {
     // `data:` — CSS-ul construit conține un data:image/svg+xml.
     "img-src": isVault
       ? ["'self'", "data:", "blob:"]
-      : ["'self'", "data:", "blob:", META_PIXEL, TIKTOK],
+      : ["'self'", "data:", "blob:", META_PIXEL, TIKTOK, GOOGLE_TAG, ...GOOGLE_ADS, ...ADS_THUMBNAILS],
 
     // next/font auto-găzduiește totul în /_next/static/media.
     "font-src": ["'self'"],
@@ -147,6 +165,8 @@ function contentSecurityPolicy(profile: CspProfile = "site"): string {
           TIKTOK,
           TIKTOK_CDN,
           TIKTOK_EVENTS,
+          GOOGLE_TAG,
+          ...GOOGLE_ADS,
           ...supabaseOrigins(),
           // HMR-ul lui `next dev` merge pe websocket.
           ...(isProduction ? [] : ["ws:"]),
@@ -161,9 +181,14 @@ function contentSecurityPolicy(profile: CspProfile = "site"): string {
     "form-action": ["'self'"],
     // Perechea modernă a lui X-Frame-Options.
     "frame-ancestors": ["'self'"],
-    // Site-ul nu încorporează nimic. În dev, 'self' lasă loc suprapunerii
-    // de erori a lui Next, dacă versiunea o randează în iframe.
-    "frame-src": isProduction ? ["'none'"] : ["'self'"],
+    // Site-ul nu încorporează nimic al lui; doar tag-ul Google (după acord)
+    // își deschide iframe-urile de măsurare. În dev, 'self' lasă loc
+    // suprapunerii de erori a lui Next, dacă versiunea o randează în iframe.
+    "frame-src": isVault
+      ? isProduction
+        ? ["'none'"]
+        : ["'self'"]
+      : [...(isProduction ? [] : ["'self'"]), ...GOOGLE_FRAMES],
   };
 
   return Object.entries(directives)

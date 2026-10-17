@@ -10,6 +10,7 @@ import { CookieBanner } from "@/components/consent/cookie-banner";
 import { AnalyticsLoader } from "@/components/consent/analytics-loader";
 import { MetaPixel } from "@/components/consent/meta-pixel";
 import { TikTokPixel } from "@/components/consent/tiktok-pixel";
+import { GoogleTag } from "@/components/consent/google-tag";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
 import "@/app/globals.css";
 import { SITE_URL } from "@/lib/site-url";
@@ -139,6 +140,7 @@ export default async function LocaleLayout({
           <AnalyticsLoader />
           <MetaPixel />
           <TikTokPixel />
+          <GoogleTag />
         </NextIntlClientProvider>
         <JsonLd
           schema={[organizationSchema(), websiteSchema(locale as Locale)]}
