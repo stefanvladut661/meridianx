@@ -54,7 +54,13 @@ export interface PlatformCheck {
   identity: { id: string; name: string } | null;
   instagram: { id: string; username: string } | null;
   pixel: { id: string; name: string } | null;
+  /** Primul video din plan (sau singurul). */
   video: VideoInfo | null;
+  /**
+   * Toate video-urile din plan, în ordinea lor. `null` pe poziția unui video
+   * pe care platforma nu-l găsește.
+   */
+  videos: Array<VideoInfo | null>;
   /**
    * Beneficiarul și plătitorul (DSA), cum vor apărea pe reclamă în UE.
    * `null` = publicul nu e în UE, deci nu se trimit.
@@ -119,6 +125,11 @@ export interface UploadStatus {
   progress: number | null;
   /** Motivul, la `error`. */
   message: string | null;
+  /**
+   * Id-ul definitiv al video-ului, când diferă de cel întors la urcare: pe
+   * Google, urcarea are un id, iar video-ul gata are id-ul lui de YouTube.
+   */
+  finalId?: string | null;
 }
 
 type Failure = { ok: false; message: string };

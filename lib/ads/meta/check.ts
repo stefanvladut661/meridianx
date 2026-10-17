@@ -2,6 +2,7 @@ import "server-only";
 
 import { planFingerprint } from "../fingerprint";
 import { CURRENCY_LABEL, OBJECTIVES_WITH_CONVERSION } from "../constants";
+import { videosOf } from "../plan-derive";
 import type { Plan } from "../plan-schema";
 import { normalizeAdAccount, type PlanProblem } from "../plan-validate";
 import type { AdsWorkspace } from "../workspaces";
@@ -47,8 +48,10 @@ export interface MetaCheckContext {
   check: PlatformCheck;
   resolved: ResolvedTargeting;
   account: AdAccountInfo | null;
-  video: VideoInfo | null;
-  thumbnail: ThumbnailSource | null;
+  /** Video-urile planului, în ordine; complete doar când verificarea e fără erori. */
+  videos: VideoInfo[];
+  /** Coperta fiecărui video, pe aceeași poziție. */
+  thumbnails: ThumbnailSource[];
   /** `null` = publicul nu e în UE. Când e cerut, e complet (altfel e eroare). */
   dsa: Dsa | null;
 }
@@ -65,14 +68,15 @@ export async function checkOnMeta(workspace: AdsWorkspace, plan: Plan): Promise<
   const adAccount = normalizeAdAccount("meta", plan.ad_account);
   const meta = plan.meta;
   const needsPixel = OBJECTIVES_WITH_CONVERSION.includes(plan.campaign.objective);
-  const videoId = plan.creative.video.source === "library" ? plan.creative.video.video_id : null;
+  const planned = videosOf(plan.creative);
+  const single = !plan.creative.videos;
 
-  const [accounts, page, instagram, pixel, video, resolved] = await Promise.all([
+  const [accounts, page, instagram, pixel, found, resolved] = await Promise.all([
     listAdAccounts(workspace),
     meta ? readPage(workspace, meta.page_id) : Promise.resolve(null),
     meta?.instagram_account_id ? readInstagram(workspace, meta.instagram_account_id) : Promise.resolve(null),
     needsPixel && plan.conversion ? readPixel(workspace, plan.conversion.pixel_id) : Promise.resolve(null),
-    videoId ? readVideo(workspace, videoId) : Promise.resolve(null),
+    Promise.all(planned.map((video) => (video.source === "library" ? readVideo(workspace, video.video_id) : Promise.resolve(null)))),
     resolveTargeting(workspace, plan),
   ]);
 
@@ -152,35 +156,46 @@ export async function checkOnMeta(workspace: AdsWorkspace, plan: Plan): Promise<
 
   const domain = needsPixel ? conversionDomain(plan.destination.url) : null;
 
-  let thumbnail: ThumbnailSource | null = null;
-  if (plan.creative.video.source === "upload") {
-    errors.push({
-      path: "creative.video",
-      message: "Video-ul nu e încă în contul de reclame. Urcă-l la „Materialul”: când Meta termină de procesat, planul trece singur pe el.",
-    });
-  } else if (!video) {
-    errors.push({
-      path: "creative.video.video_id",
-      message: `Video-ul ${videoId} nu există sau tokenul nu-l vede. Alege-l din biblioteca contului.`,
-    });
-  } else {
+  const videos: VideoInfo[] = [];
+  const thumbnails: ThumbnailSource[] = [];
+  planned.forEach((planVideo, index) => {
+    const path = single ? "creative.video" : `creative.videos.${index}`;
+    const which = single ? "Video-ul" : `Video-ul ${index + 1}`;
+    const video = found[index];
+    if (planVideo.source === "upload") {
+      errors.push({
+        path,
+        message: `${which} nu e încă în contul de reclame. Urcă-l la „Materialul”: când Meta termină de procesat, planul trece singur pe el.`,
+      });
+      return;
+    }
+    if (!video) {
+      errors.push({
+        path: `${path}.video_id`,
+        message: `${which} (${planVideo.video_id}) nu există sau tokenul nu-l vede. Alege-l din biblioteca contului.`,
+      });
+      return;
+    }
     if (!video.ready) {
       errors.push({
-        path: "creative.video.video_id",
-        message: "Meta încă procesează video-ul. Reverifică în câteva minute — o reclamă cu el ar pica acum.",
+        path: `${path}.video_id`,
+        message: `Meta încă procesează ${single ? "video-ul" : `video-ul ${index + 1}`}. Reverifică în câteva minute — o reclamă cu el ar pica acum.`,
       });
     }
+    videos.push(video);
     if (plan.creative.thumbnail !== "auto") {
-      thumbnail = { kind: "url", url: plan.creative.thumbnail.url };
+      thumbnails.push({ kind: "url", url: plan.creative.thumbnail.url });
     } else if (video.thumbnailUrl) {
-      thumbnail = { kind: "meta", uri: video.thumbnailUrl };
+      thumbnails.push({ kind: "meta", uri: video.thumbnailUrl });
     } else {
       errors.push({
-        path: "creative.thumbnail",
-        message: "Meta n-a propus nicio copertă pentru video-ul ăsta. Pune o imagine în creative.thumbnail: { \"url\": \"https://…\" }.",
+        path: single ? "creative.thumbnail" : `${path}.video_id`,
+        message: single
+          ? "Meta n-a propus nicio copertă pentru video-ul ăsta. Pune o imagine în creative.thumbnail: { \"url\": \"https://…\" }."
+          : `Meta n-a propus nicio copertă pentru video-ul ${index + 1}. Alege alt video sau fă din el un plan separat, cu copertă din plan.`,
       });
     }
-  }
+  });
 
   errors.push(...resolved.errors);
 
@@ -199,7 +214,8 @@ export async function checkOnMeta(workspace: AdsWorkspace, plan: Plan): Promise<
     identity: page,
     instagram,
     pixel,
-    video,
+    video: found[0] ?? null,
+    videos: found,
     dsa: dsaShown,
     conversionDomain: domain,
     locations: resolved.locations,
@@ -210,5 +226,5 @@ export async function checkOnMeta(workspace: AdsWorkspace, plan: Plan): Promise<
     warnings,
   };
 
-  return { check, resolved, account, video, thumbnail, dsa };
+  return { check, resolved, account, videos, thumbnails, dsa };
 }

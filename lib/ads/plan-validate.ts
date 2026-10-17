@@ -9,6 +9,13 @@ import {
   CTA_LABEL,
   CURRENCIES,
   GENDER_LABEL,
+  GOOGLE_ASSETS_PER_AD,
+  GOOGLE_CHANNEL_LABEL,
+  GOOGLE_DESCRIPTION_MAX,
+  GOOGLE_ENHANCEMENT_LABEL,
+  GOOGLE_HEADLINE_MAX,
+  GOOGLE_LONG_HEADLINE_MAX,
+  MAX_ADS_PER_PLAN,
   META_ENHANCEMENT_LABEL,
   META_HEADLINE_VISIBLE,
   META_PLACEMENT_LABEL,
@@ -16,6 +23,7 @@ import {
   META_SPECIAL_CATEGORY_LABEL,
   OBJECTIVES_WITH_CONVERSION,
   OBJECTIVE_LABEL,
+  PLATFORMS,
   PLATFORM_LABEL,
   SITE_SENDS,
   SITE_STORED_UTM,
@@ -38,6 +46,9 @@ import {
   countOf,
   foreignMacro,
   formatMoney,
+  googleAgeRanges,
+  macroPlatform,
+  rawVideosOf,
   tiktokAgeGroups,
   utmAlreadyInUrl,
 } from "./plan-derive";
@@ -131,6 +142,11 @@ const LABELS: Record<string, string> = {
   "creative.video.source": "Sursa video-ului",
   "creative.video.video_id": "Id-ul video-ului",
   "creative.video.file_name": "Numele fișierului video",
+  "creative.videos": "Lista de video-uri",
+  "creative.videos.#": "Video-ul {n}",
+  "creative.videos.#.source": "Sursa video-ului {n}",
+  "creative.videos.#.video_id": "Id-ul video-ului {n}",
+  "creative.videos.#.file_name": "Numele fișierului video {n}",
   "creative.thumbnail": "Coperta video-ului",
   "creative.thumbnail.url": "URL-ul copertei",
   "creative.primary_texts": "Lista de texte principale",
@@ -158,6 +174,13 @@ const LABELS: Record<string, string> = {
   "tiktok.identity_bc_id": "Business Center-ul identității (identity_bc_id)",
   "tiktok.placements": "Plasările TikTok",
   "tiktok.enhancements": "Îmbunătățirile automate TikTok",
+  google: "Secțiunea google",
+  "google.business_name": "Numele firmei (business_name)",
+  "google.logo_url": "Sigla (logo_url)",
+  "google.channels": "Canalele Google",
+  "google.channels.#": "Canalul {n}",
+  "google.optimized_targeting": "Lărgirea automată a publicului (optimized_targeting)",
+  "google.enhancements": "Îmbunătățirile automate Google",
 };
 
 /** Ce să scrii când lipsește un câmp obligatoriu. */
@@ -186,6 +209,8 @@ const MISSING_HINT: Record<string, string> = {
   "tiktok.identity_type": "Variante: TT_USER (contul TikTok legat de contul de reclame) sau BC_AUTH_TT (cont TikTok autorizat în Business Center).",
   "tiktok.identity_id": "Id-ul identității (Identities, în TikTok Ads Manager). Verificarea portalului îți arată identitățile pe care le vede contul.",
   "tiktok.identity_bc_id": "Id-ul Business Center-ului care a autorizat contul TikTok — cerut doar la BC_AUTH_TT.",
+  "google.business_name": "Numele firmei, cum apare pe reclamă (cel mult 25 de caractere).",
+  "google.logo_url": "Adresa https a siglei: imagine pătrată, minim 128×128, PNG sau JPEG.",
 };
 
 /** Etichetele valorilor, pentru „variante: leads (Lead-uri), …". */
@@ -201,12 +226,14 @@ const VALUE_LABELS: Record<string, Record<string, string>> = {
   "meta.placements.#": META_PLACEMENT_LABEL,
   "tiktok.identity_type": TIKTOK_IDENTITY_LABEL,
   "tiktok.placements": TIKTOK_PLACEMENT_LABEL,
+  "google.channels.#": GOOGLE_CHANNEL_LABEL,
 };
 
 /** Uniunile care nu au discriminator: ce formă e acceptată. */
 const UNION_HINT: Record<string, string> = {
   "creative.thumbnail": "Coperta video-ului poate fi \"auto\" sau { \"url\": \"https://…\" }.",
   "meta.placements": `Plasările Meta pot fi "automatic" sau o listă: ${Object.keys(META_PLACEMENT_LABEL).join(", ")}.`,
+  "google.channels": `Canalele Google pot fi "all" sau o listă: ${Object.keys(GOOGLE_CHANNEL_LABEL).join(", ")}.`,
 };
 
 const ID_FIELDS = /(^|\.)(ad_account|pixel_id|page_id|instagram_account_id|video_id|identity_id|identity_bc_id|id|key)$/;
@@ -223,6 +250,7 @@ const SECTION_ORDER = [
   "creative",
   "meta",
   "tiktok",
+  "google",
 ];
 
 function patternOf(path: ReadonlyArray<PropertyKey>): { pattern: string; n: number | null } {
@@ -256,6 +284,9 @@ export function labelFor(path: ReadonlyArray<PropertyKey> | string): string {
   }
   if (pattern.startsWith("tiktok.enhancements.") && last in TIKTOK_ENHANCEMENT_LABEL) {
     return TIKTOK_ENHANCEMENT_LABEL[last as keyof typeof TIKTOK_ENHANCEMENT_LABEL].title;
+  }
+  if (pattern.startsWith("google.enhancements.") && last in GOOGLE_ENHANCEMENT_LABEL) {
+    return GOOGLE_ENHANCEMENT_LABEL[last as keyof typeof GOOGLE_ENHANCEMENT_LABEL].title;
   }
 
   return `Câmpul „${pathString(parts)}”`;
@@ -523,6 +554,7 @@ const isCurrency = (value: unknown): value is Currency => isOneOf(CURRENCIES, va
 /** `act_123` pe Meta, oricum ar fi scris în plan. */
 export function normalizeAdAccount(platform: Platform, value: string): string {
   const trimmed = value.trim();
+  if (platform === "google") return trimmed.replace(/[\s-]/g, "");
   return platform === "meta" && /^\d+$/.test(trimmed) ? `act_${trimmed}` : trimmed;
 }
 
@@ -573,6 +605,101 @@ function tiktokRules(raw: Record<string, unknown>): PlanProblem[] {
         message: `${TIKTOK_ENHANCEMENT_LABEL[key].title} există doar în campaniile Smart+, iar portalul face campanii manuale. Pune false.`,
       });
     }
+  }
+
+  return errors;
+}
+
+/**
+ * Ce refuză Google la creare (Demand Gen, API v26), prins înainte. Pe Google
+ * crearea e atomică — nimic nu rămâne pe jumătate —, dar o eroare prinsă aici
+ * vine cu explicația ei, nu cu codul Google.
+ */
+function googleRules(raw: Record<string, unknown>): PlanProblem[] {
+  const errors: PlanProblem[] = [];
+
+  const objective = getIn(raw, "campaign.objective");
+  if (objective === "video_views" || objective === "awareness") {
+    errors.push({
+      path: "campaign.objective",
+      message: `Pe Google, portalul face campanii Demand Gen, care optimizează pe conversii sau pe clicuri. ${OBJECTIVE_LABEL[objective]} pe YouTube (campaniile Video) se fac direct din Google Ads. Alege leads, sales sau traffic.`,
+    });
+  }
+
+  const pixel = asString(getIn(raw, "conversion.pixel_id"));
+  if (pixel && !/^\d{5,20}$/.test(pixel)) {
+    errors.push({
+      path: "conversion.pixel_id",
+      message:
+        "Pe Google, pixel_id e id-ul acțiunii de conversie, doar cifre: Google Ads → Obiective → Conversii → acțiunea → în adresa paginii, după ctId=. Verificarea portalului îți arată acțiunile contului.",
+    });
+  }
+
+  asArray(getIn(raw, "creative.primary_texts")).forEach((text, index) => {
+    if (typeof text === "string" && text.trim().length > GOOGLE_LONG_HEADLINE_MAX) {
+      errors.push({
+        path: `creative.primary_texts.${index}`,
+        message: `Textul principal ${index + 1} are ${countOf(text.trim().length, "caractere")}. Pe Google, textele principale devin titluri lungi: cel mult ${GOOGLE_LONG_HEADLINE_MAX}.`,
+      });
+    }
+  });
+  const headlines = asArray(getIn(raw, "creative.headlines"));
+  if (headlines.length === 0) {
+    errors.push({
+      path: "creative.headlines",
+      message: `Pe Google, reclama video cere cel puțin un titlu scurt (cel mult ${GOOGLE_HEADLINE_MAX} de caractere): "headlines": ["…"].`,
+    });
+  }
+  headlines.forEach((text, index) => {
+    if (typeof text === "string" && text.trim().length > GOOGLE_HEADLINE_MAX) {
+      errors.push({
+        path: `creative.headlines.${index}`,
+        message: `Titlul ${index + 1} are ${countOf(text.trim().length, "caractere")}. Pe Google, cel mult ${GOOGLE_HEADLINE_MAX}.`,
+      });
+    }
+  });
+  const descriptions = asArray(getIn(raw, "creative.descriptions"));
+  if (descriptions.length === 0) {
+    errors.push({
+      path: "creative.descriptions",
+      message: `Pe Google, reclama video cere cel puțin o descriere (cel mult ${GOOGLE_DESCRIPTION_MAX} de caractere): "descriptions": ["…"].`,
+    });
+  }
+  descriptions.forEach((text, index) => {
+    if (typeof text === "string" && text.trim().length > GOOGLE_DESCRIPTION_MAX) {
+      errors.push({
+        path: `creative.descriptions.${index}`,
+        message: `Descrierea ${index + 1} are ${countOf(text.trim().length, "caractere")}. Pe Google, cel mult ${GOOGLE_DESCRIPTION_MAX}.`,
+      });
+    }
+  });
+
+  const videos = rawVideosOf(raw);
+  if (getIn(raw, "creative.variants") === "platform_rotates" && videos.length > GOOGLE_ASSETS_PER_AD) {
+    errors.push({
+      path: "creative.videos",
+      message: `O reclamă video Google ține cel mult ${GOOGLE_ASSETS_PER_AD} video-uri. Cu ${videos.length}, folosește "one_ad_per_text" sau împarte planul.`,
+    });
+  }
+  for (const { path, value } of videos) {
+    const record = asRecord(value);
+    const videoId = record?.source === "library" ? asString(record.video_id) : null;
+    if (!videoId || /^[A-Za-z0-9_-]{11}$/.test(videoId)) continue;
+    const fromLink = /(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{11})/.exec(videoId)?.[1];
+    errors.push({
+      path: `${path}.video_id`,
+      message: fromLink
+        ? `Pune doar id-ul video-ului YouTube, nu linkul: "${fromLink}".`
+        : "Pe Google, video-ul e unul de pe YouTube: id-ul are 11 caractere (din linkul youtube.com/watch?v=…).",
+    });
+  }
+
+  if (asArray(getIn(raw, "audience.behaviors")).length > 0) {
+    errors.push({
+      path: "audience.behaviors",
+      message:
+        "Pe Google, comportamentele Meta nu au echivalent: publicul se țintește cu segmente de interes (interests), ca „Real Estate”. Scoate-le din plan sau mută-le la interese.",
+    });
   }
 
   return errors;
@@ -661,6 +788,13 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
         "Secțiunea tiktok lipsește. Pe TikTok, reclama apare în numele unui cont TikTok: \"tiktok\": { \"identity_type\": \"TT_USER\", \"identity_id\": \"…\" }.",
     });
   }
+  if (platform === "google" && raw.google === undefined) {
+    errors.push({
+      path: "google",
+      message:
+        "Secțiunea google lipsește. Pe Google, reclama video are nevoie de numele firmei și de siglă: \"google\": { \"business_name\": \"…\", \"logo_url\": \"https://…\" }.",
+    });
+  }
 
   const account = asString(raw.ad_account);
   if (account) {
@@ -674,6 +808,12 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
       errors.push({
         path: "ad_account",
         message: `Contul TikTok (advertiser_id) conține doar cifre. „${account}” nu are forma asta.`,
+      });
+    }
+    if (platform === "google" && !/^\d{3}-?\d{3}-?\d{4}$/.test(account)) {
+      errors.push({
+        path: "ad_account",
+        message: `Contul Google Ads are 10 cifre (123-456-7890, cu sau fără cratime), dreapta sus în Google Ads. „${account}” nu are forma asta.`,
       });
     }
   }
@@ -702,15 +842,56 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
     });
   }
 
-  if (getIn(raw, "creative.video.source") === "library") {
-    const videoId = asString(getIn(raw, "creative.video.video_id"));
+  // Video-urile: exact unul dintre `video` și `videos`, fiecare de forma platformei.
+  const creative = asRecord(raw.creative);
+  if (creative) {
+    if (creative.video === undefined && creative.videos === undefined) {
+      errors.push({
+        path: "creative.video",
+        message: `Video-ul lipsește. ${MISSING_HINT["creative.video"]} Pentru mai multe: "videos": [ {…}, {…} ].`,
+      });
+    } else if (creative.video !== undefined && creative.videos !== undefined) {
+      errors.push({
+        path: "creative.videos",
+        message: "Planul are și „video”, și „videos”. Păstrează unul: „video” pentru un singur video, „videos” pentru mai multe.",
+      });
+    }
+  }
+  const videos = rawVideosOf(raw);
+  for (const { path, value } of videos) {
+    const record = asRecord(value);
+    if (record?.source !== "library") continue;
+    const videoId = asString(record.video_id);
     if (videoId && platform === "meta" && !/^\d{5,25}$/.test(videoId)) {
       errors.push({
-        path: "creative.video.video_id",
+        path: `${path}.video_id`,
         message:
           "Id-ul unui video Meta conține doar cifre. Îl găsești în biblioteca de media a contului de reclame.",
       });
     }
+  }
+  const libraryIds = videos
+    .map(({ value }) => asString(asRecord(value)?.video_id))
+    .filter((id): id is string => id !== null);
+  if (new Set(libraryIds).size !== libraryIds.length) {
+    errors.push({
+      path: "creative.videos",
+      message: "Același video apare de două ori în listă. Fiecare video intră o singură dată — reclamele se înmulțesc oricum cu textele.",
+    });
+  }
+  const textCount = asArray(getIn(raw, "creative.primary_texts")).length;
+  const adCount = getIn(raw, "creative.variants") === "platform_rotates" ? 1 : videos.length * textCount;
+  if (adCount > MAX_ADS_PER_PLAN) {
+    errors.push({
+      path: "creative.videos",
+      message: `Planul ar face ${countOf(adCount, "reclame")} (${videos.length} video × ${textCount} texte). Portalul face cel mult ${MAX_ADS_PER_PLAN} pe set: împarte planul în două sau scoate din variante.`,
+    });
+  }
+  if (videos.length > 1 && asRecord(getIn(raw, "creative.thumbnail"))) {
+    errors.push({
+      path: "creative.thumbnail",
+      message: "Cu mai multe video-uri, coperta se ia pentru fiecare video în parte: pune \"thumbnail\": \"auto\" (sau scoate câmpul).",
+    });
   }
 
   if (platform === "tiktok") {
@@ -733,6 +914,7 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
   }
 
   if (platform === "meta") errors.push(...metaRules(raw));
+  if (platform === "google") errors.push(...googleRules(raw));
 
   const currency = getIn(raw, "campaign.currency");
   const budget = asNumber(getIn(raw, "campaign.daily_budget"));
@@ -777,14 +959,20 @@ function hostOf(url: string): string | null {
 
 const OWN_HOST = hostOf(SITE_URL);
 
+const ENHANCEMENT_LABELS: Record<Platform, Record<string, { title: string; body: string }>> = {
+  meta: META_ENHANCEMENT_LABEL,
+  tiktok: TIKTOK_ENHANCEMENT_LABEL,
+  google: GOOGLE_ENHANCEMENT_LABEL,
+};
+
 function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
   const workspace = findWorkspace(raw.workspace);
   if (!workspace) return [];
   const platform = workspace.platform;
-  const other: Platform = platform === "meta" ? "tiktok" : "meta";
   const warnings: PlanProblem[] = [];
 
-  if (raw[other] !== undefined) {
+  for (const other of PLATFORMS) {
+    if (other === platform || raw[other] === undefined) continue;
     warnings.push({
       path: other,
       message: `Secțiunea ${other} se ignoră: spațiul ${workspaceName(workspace)} e pe ${PLATFORM_LABEL[platform]}. Dacă planul era pentru ${PLATFORM_LABEL[other]}, schimbă workspace.`,
@@ -793,8 +981,7 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
 
   // Îmbunătățirile automate — singurele avertismente cu majuscule, intenționat.
   const enhancements = asRecord(getIn(raw, `${platform}.enhancements`)) ?? {};
-  const labels: Record<string, { title: string; body: string }> =
-    platform === "meta" ? META_ENHANCEMENT_LABEL : TIKTOK_ENHANCEMENT_LABEL;
+  const labels: Record<string, { title: string; body: string }> = ENHANCEMENT_LABELS[platform];
   for (const [key, value] of Object.entries(enhancements)) {
     const label = labels[key];
     if (value === true && label) {
@@ -906,10 +1093,11 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
   for (const key of UTM_KEYS) {
     const value = asString(utm[key]);
     const macro = value ? foreignMacro(value, platform) : null;
+    const owner = macro ? macroPlatform(macro) : null;
     if (macro) {
       warnings.push({
         path: `destination.utm.${key}`,
-        message: `${macro} e un macro de ${PLATFORM_LABEL[other]}. Pe ${PLATFORM_LABEL[platform]} nu se înlocuiește și ajunge ca atare în URL.`,
+        message: `${macro} e un macro de ${owner ? PLATFORM_LABEL[owner] : "altă platformă"}. Pe ${PLATFORM_LABEL[platform]} nu se înlocuiește și ajunge ca atare în URL.`,
       });
     }
   }
@@ -936,6 +1124,46 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
       warnings.push({
         path: "creative.headlines",
         message: "Reclamele TikTok nu au titlu și descriere: headlines și descriptions se ignoră.",
+      });
+    }
+  }
+
+  if (platform === "google") {
+    asArray(getIn(raw, "audience.locations")).forEach((location, index) => {
+      if (asRecord(location)?.radius_km !== undefined) {
+        warnings.push({
+          path: `audience.locations.${index}.radius_km`,
+          message: `Campaniile Demand Gen țintesc orașul întreg: locația ${index + 1} se ia fără cei ${String(asRecord(location)?.radius_km)} km.`,
+        });
+      }
+    });
+    const ageMin = asNumber(getIn(raw, "audience.age_min")) ?? 18;
+    const ageMax = asNumber(getIn(raw, "audience.age_max")) ?? 65;
+    const groups = ageMin <= ageMax ? googleAgeRanges(ageMin, ageMax) : null;
+    if (groups?.widened) {
+      warnings.push({
+        path: "audience.age_min",
+        message: `Google targetează pe grupe de vârstă, deci ${ageLabel(ageMin, ageMax)} devine ${ageLabel(groups.min, groups.max)} (${groups.groups.map((group) => group.label).join(", ")}).`,
+      });
+    }
+    if (asRecord(getIn(raw, "creative.thumbnail"))) {
+      warnings.push({
+        path: "creative.thumbnail",
+        message: "Pe Google, coperta e cea a video-ului de pe YouTube: thumbnail se ignoră.",
+      });
+    }
+    if (getIn(raw, "google.optimized_targeting") === true) {
+      warnings.push({
+        path: "google.optimized_targeting",
+        message:
+          "Lărgirea automată a publicului e pornită: Google poate livra și în afara intereselor din plan, la oameni pe care îi crede potriviți.",
+      });
+    }
+    if (getIn(raw, "creative.variants") !== "platform_rotates" && rawVideosOf(raw).length * asArray(getIn(raw, "creative.primary_texts")).length > 1) {
+      warnings.push({
+        path: "creative.variants",
+        message:
+          "Pe Google, o reclamă video primește până la 5 video-uri și 5 texte și le combină singur. Cu \"platform_rotates\", planul face o singură reclamă cu toate — de obicei mai bine decât multe reclame cu câte un text.",
       });
     }
   }
@@ -976,10 +1204,14 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
     });
   }
 
-  if (getIn(raw, "creative.video.source") === "upload") {
+  const uploads = rawVideosOf(raw).filter(({ value }) => asRecord(value)?.source === "upload");
+  if (uploads.length > 0) {
     warnings.push({
-      path: "creative.video",
-      message: "Video-ul e nou: îl urci din calculator la „Materialul”. Campania se poate verifica și crea după ce platforma termină de procesat fișierul.",
+      path: uploads[0].path,
+      message:
+        uploads.length === 1
+          ? "Video-ul e nou: îl urci din calculator la „Materialul”. Campania se poate verifica și crea după ce platforma termină de procesat fișierul."
+          : `${countOf(uploads.length, "video-uri")} sunt noi: le urci din calculator la „Materialul”. Campania se poate verifica după ce platforma le termină de procesat pe toate.`,
     });
   }
 

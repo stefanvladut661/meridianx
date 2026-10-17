@@ -192,9 +192,9 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           </h2>
           <dl className="mt-4 divide-y divide-hair rounded-panel-lg border border-hair px-4 text-[14px]">
             <div className="grid gap-1 py-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
-              <dt className="text-dim">Video</dt>
+              <dt className="text-dim">{summary.videos.length > 1 ? `Video-uri · ${summary.videos.length}` : "Video"}</dt>
               <dd className="font-md-mono text-[12.5px] text-bone/90">
-                {plan.creative.video.source === "library" ? plan.creative.video.video_id : "fișier nou"}
+                {summary.videos.length > 0 ? summary.videos.join(", ") : "—"}
               </dd>
             </div>
             <div className="grid gap-1 py-3 sm:grid-cols-[8rem_minmax(0,1fr)]">

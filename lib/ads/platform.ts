@@ -11,6 +11,7 @@ import { fetchCampaignInsights, fetchCampaignStatuses } from "./meta/insights";
 import { listAdAccounts, listLibrary } from "./meta/lookup";
 import { readVideoUploadStatus, sendVideoToMeta } from "./meta/video";
 import { tiktokAdapter } from "./tiktok/adapter";
+import { googleAdapter } from "./google/adapter";
 
 /**
  * Ce știe să facă fiecare platformă, sub același contract — acțiunile
@@ -90,6 +91,12 @@ const metaAdapter: PlatformAdapter = {
   describeError: describeMetaError,
 };
 
+const ADAPTERS: Record<Platform, PlatformAdapter> = {
+  meta: metaAdapter,
+  tiktok: tiktokAdapter,
+  google: googleAdapter,
+};
+
 export function adapterFor(platform: Platform): PlatformAdapter {
-  return platform === "tiktok" ? tiktokAdapter : metaAdapter;
+  return ADAPTERS[platform];
 }

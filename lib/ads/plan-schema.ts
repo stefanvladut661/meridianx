@@ -4,7 +4,10 @@ import {
   CTAS,
   CURRENCIES,
   GENDERS,
+  GOOGLE_BUSINESS_NAME_MAX,
+  GOOGLE_CHANNELS,
   MAX_TEXT_VARIANTS,
+  MAX_VIDEOS,
   META_PLACEMENTS,
   META_SPECIAL_CATEGORIES,
   OBJECTIVES,
@@ -196,7 +199,10 @@ export const videoSchema = z.discriminatedUnion("source", [
 ]);
 
 export const creativeSchema = z.strictObject({
-  video: videoSchema,
+  /** Un singur video. Exact unul dintre `video` și `videos` — regula e în `plan-validate.ts`. */
+  video: videoSchema.optional(),
+  /** Mai multe video-uri: câte o reclamă pentru fiecare video × text (producția în masă). */
+  videos: z.array(videoSchema).min(1).max(MAX_VIDEOS).optional(),
   /** `auto` = coperta generată de platformă din video. */
   thumbnail: z.union([z.literal("auto"), z.strictObject({ url: httpsUrl })]).default("auto"),
   primary_texts: z.array(shortText(2000)).min(1).max(MAX_TEXT_VARIANTS),
@@ -256,6 +262,29 @@ export const tiktokSchema = z.strictObject({
   enhancements: tiktokEnhancementsSchema,
 });
 
+/** Implicit TOATE oprite: Google nu remixează video-ul și nu scrie texte în locul nostru. */
+export const googleEnhancementsSchema = z
+  .strictObject({
+    video_enhancements: z.boolean().default(false),
+    text_assets: z.boolean().default(false),
+  })
+  .prefault({});
+
+export const googleSchema = z.strictObject({
+  /** Numele firmei de pe reclamă — Demand Gen îl cere pe fiecare reclamă. */
+  business_name: shortText(GOOGLE_BUSINESS_NAME_MAX),
+  /**
+   * Sigla: o imagine pătrată (1:1), minim 128×128, PNG sau JPEG, de la o
+   * adresă https. Portalul o descarcă la verificare și o urcă în cont la creare.
+   */
+  logo_url: httpsUrl,
+  /** Unde apare reclama: `"all"` sau o listă de canale. */
+  channels: z.union([z.literal("all"), z.array(z.enum(GOOGLE_CHANNELS)).min(1)]).default("all"),
+  /** Oprit: vârsta, locațiile și interesele din plan sunt limite, nu sugestii. */
+  optimized_targeting: z.boolean().default(false),
+  enhancements: googleEnhancementsSchema,
+});
+
 // ---------------------------------------------------------------------------
 // Planul
 // ---------------------------------------------------------------------------
@@ -276,12 +305,15 @@ export const planSchema = z.strictObject({
   meta: metaSchema.optional(),
   /** Obligatorie când spațiul e pe TikTok. */
   tiktok: tiktokSchema.optional(),
+  /** Obligatorie când spațiul e pe Google. */
+  google: googleSchema.optional(),
 });
 
 export type Plan = z.output<typeof planSchema>;
 export type PlanInput = z.input<typeof planSchema>;
 export type PlanLocation = z.output<typeof locationSchema>;
 export type PlanCreative = z.output<typeof creativeSchema>;
+export type PlanVideo = z.output<typeof videoSchema>;
 
 // ---------------------------------------------------------------------------
 // Cheile cunoscute — pentru „ai vrut să scrii …?" la câmpurile necunoscute
@@ -304,6 +336,7 @@ export const KNOWN_KEYS: Record<string, string[]> = {
   "destination.utm": Object.keys(utmSchema.shape),
   creative: Object.keys(creativeSchema.shape),
   "creative.video": unionKeys(videoSchema.options),
+  "creative.videos.#": unionKeys(videoSchema.options),
   "creative.thumbnail": ["url"],
   meta: Object.keys(metaSchema.shape),
   "meta.enhancements": ["advantage_creative", "ad_sources", "multi_advertiser_ads"],
@@ -314,4 +347,6 @@ export const KNOWN_KEYS: Record<string, string[]> = {
     "translate_and_dub",
     "music_refresh",
   ],
+  google: Object.keys(googleSchema.shape),
+  "google.enhancements": ["video_enhancements", "text_assets"],
 };

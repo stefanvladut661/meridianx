@@ -31,10 +31,13 @@ export function ProblemList({
   title,
   problems,
   tone,
+  linked = true,
 }: {
   title: string;
   problems: PlanProblem[];
   tone: "error" | "warning";
+  /** Rândurile duc la câmpul lor. Fals acolo unde nu există formular (lotul). */
+  linked?: boolean;
 }) {
   if (problems.length === 0) return null;
   return (
@@ -50,7 +53,18 @@ export function ProblemList({
         {title}
       </h3>
       <ul className="mt-3 space-y-2">
-        {problems.map((problem, index) => (
+        {problems.map((problem, index) =>
+          !linked ? (
+            <li key={index} className="flex items-start gap-3 px-1 py-0.5 text-[14px] leading-snug text-bone/85">
+              <span aria-hidden className="mt-[3px] font-md-mono text-[11px] text-dim">
+                →
+              </span>
+              <span>
+                {problem.path ? <span className="mr-1.5 font-md-mono text-[12px] text-dim">{problem.path}</span> : null}
+                {problem.message}
+              </span>
+            </li>
+          ) : (
           <li key={index}>
             <button
               type="button"
@@ -63,7 +77,8 @@ export function ProblemList({
               <span>{problem.message}</span>
             </button>
           </li>
-        ))}
+          )
+        )}
       </ul>
     </section>
   );

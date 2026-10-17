@@ -12,8 +12,8 @@ import type { TikTokCheckContext } from "./check";
 import { describeTikTokError } from "./errors";
 
 /**
- * Crearea pe TikTok: copertă → campanie → grup de reclame → reclame.
- * Totul cu `operation_status: DISABLE`.
+ * Crearea pe TikTok: copertele (una pe video) → campanie → grup de
+ * reclame → reclame (video-uri × texte). Totul cu `operation_status: DISABLE`.
  *
  * Aceeași ordine și aceeași regulă ca pe Meta: coperta (o imagine în
  * biblioteca contului, nu costă nimic) întâi; campania e primul obiect
@@ -60,32 +60,40 @@ async function uploadCover(workspace: AdsWorkspace, advertiserId: string, imageU
 export async function createPausedOnTikTok(input: TikTokCreateInput): Promise<CreateResponse> {
   const { workspace, context, user } = input;
   const plan: Plan = context.targeting.plan;
-  const { account, video } = context;
-  if (!account || !video || !context.check.ok) {
+  const { account, videos } = context;
+  if (!account || videos.length === 0 || !context.check.ok) {
     return { ok: false, message: "Verificarea pe TikTok nu e completă. Verifică din nou planul.", recheck: true };
   }
   const advertiserId = account.id;
   const created: CreatedObject[] = [];
   const objects: PlatformObjects = { ads: [] };
 
-  // 0. Coperta: cea din plan sau cea propusă de TikTok.
-  let coverImageId: string;
-  try {
-    const coverUrl =
-      plan.creative.thumbnail !== "auto"
-        ? plan.creative.thumbnail.url
-        : (await suggestedCover(workspace, advertiserId, video.id)) ?? video.thumbnailUrl;
-    if (!coverUrl) {
-      return {
-        ok: false,
-        message: "TikTok n-a propus nicio copertă pentru video-ul ăsta. Pune o imagine în creative.thumbnail: { \"url\": \"https://…\" }, cu aceleași proporții ca video-ul.",
-      };
+  // 0. Copertele, câte una pe video: cea din plan sau cea propusă de TikTok.
+  const covered: Array<{ videoId: string; coverImageId: string }> = [];
+  for (const [index, video] of videos.entries()) {
+    const which = videos.length > 1 ? ` video-ului ${index + 1}` : " video-ului";
+    let coverImageId: string;
+    try {
+      const coverUrl =
+        plan.creative.thumbnail !== "auto"
+          ? plan.creative.thumbnail.url
+          : (await suggestedCover(workspace, advertiserId, video.id)) ?? video.thumbnailUrl;
+      if (!coverUrl) {
+        return {
+          ok: false,
+          message:
+            videos.length > 1
+              ? `TikTok n-a propus nicio copertă pentru video-ul ${index + 1}. Alege alt video sau fă din el un plan separat, cu copertă din plan.`
+              : "TikTok n-a propus nicio copertă pentru video-ul ăsta. Pune o imagine în creative.thumbnail: { \"url\": \"https://…\" }, cu aceleași proporții ca video-ul.",
+        };
+      }
+      coverImageId = await uploadCover(workspace, advertiserId, coverUrl, video.id);
+    } catch (error) {
+      return { ok: false, message: describeTikTokError(error, `pregătirea copertei${which}`, workspace.tokenEnv) };
     }
-    coverImageId = await uploadCover(workspace, advertiserId, coverUrl, video.id);
-  } catch (error) {
-    return { ok: false, message: describeTikTokError(error, "pregătirea copertei video-ului", workspace.tokenEnv) };
+    created.push({ kind: "image", id: coverImageId, name: `Coperta${which}` });
+    covered.push({ videoId: video.id, coverImageId });
   }
-  created.push({ kind: "image", id: coverImageId, name: "Coperta video-ului" });
 
   // 1. Campania — dacă pică, nu există nicio campanie în TikTok.
   let campaignId: string | null;
@@ -148,8 +156,7 @@ export async function createPausedOnTikTok(input: TikTokCreateInput): Promise<Cr
   // 3. Reclamele, toate într-o cerere.
   const payload = buildAds(plan, advertiserId, {
     adGroupId,
-    videoId: video.id,
-    coverImageId,
+    videos: covered,
     pixelId: context.pixel?.id ?? null,
   });
   let adIds: string[];

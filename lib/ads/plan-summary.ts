@@ -17,7 +17,9 @@ import {
   buildFinalUrl,
   deriveAds,
   formatMoney,
+  googleAgeRanges,
   monthlyBudget,
+  rawVideosOf,
   tiktokAgeGroups,
   UTM_KEYS,
   type DerivedAd,
@@ -65,16 +67,25 @@ export interface PlanSummary {
   monthly: string | null;
   places: string[];
   age: string;
-  /** Pe TikTok, intervalul real după grupele de vârstă. */
+  /** Pe TikTok și Google, intervalul real după grupele de vârstă. */
   platformAge: string | null;
   gender: string;
   languages: string | null;
   interests: string[];
   behaviors: string[];
   finalUrl: string | null;
+  /** Video-urile planului, cum le citește omul: id-ul din bibliotecă sau „fișier nou". */
+  videos: string[];
   ads: DerivedAd[];
   cta: string | null;
   ctaInvalid: boolean;
+}
+
+function videoLabel(value: unknown): string {
+  const record = asRecord(value);
+  if (record?.source === "library") return asString(record.video_id) ?? "id lipsă";
+  if (record?.source === "upload") return asString(record.file_name) ? `fișier nou: ${asString(record.file_name)}` : "fișier nou";
+  return "de corectat";
 }
 
 export function summarizePlan(raw: Record<string, unknown>, platform: Platform): PlanSummary {
@@ -85,7 +96,14 @@ export function summarizePlan(raw: Record<string, unknown>, platform: Platform):
 
   const ageMin = asNumber(getIn(raw, "audience.age_min")) ?? 18;
   const ageMax = asNumber(getIn(raw, "audience.age_max")) ?? 65;
-  const groups = platform === "tiktok" && ageMin <= ageMax ? tiktokAgeGroups(ageMin, ageMax) : null;
+  const groups =
+    ageMin > ageMax
+      ? null
+      : platform === "tiktok"
+        ? tiktokAgeGroups(ageMin, ageMax)
+        : platform === "google"
+          ? googleAgeRanges(ageMin, ageMax)
+          : null;
 
   const genderRaw = getIn(raw, "audience.gender") ?? "all";
   const languages = asStringList(getIn(raw, "audience.languages"));
@@ -100,6 +118,7 @@ export function summarizePlan(raw: Record<string, unknown>, platform: Platform):
 
   const ctaRaw = getIn(raw, "creative.cta");
   const variants = getIn(raw, "creative.variants");
+  const videos = rawVideosOf(raw);
 
   return {
     objective:
@@ -130,13 +149,16 @@ export function summarizePlan(raw: Record<string, unknown>, platform: Platform):
       .map((item) => asString(asRecord(item)?.name))
       .filter((name): name is string => Boolean(name)),
     finalUrl: url ? buildFinalUrl(url, utmValues) : null,
+    videos: videos.map(({ value }) => videoLabel(value)),
     ads: deriveAds({
       campaignName: asString(getIn(raw, "campaign.name")) ?? "",
       primaryTexts: asStringList(getIn(raw, "creative.primary_texts")),
       // TikTok nu are titlu și descriere — nu le arătăm pe reclame.
-      headlines: platform === "meta" ? asStringList(getIn(raw, "creative.headlines")) : [],
-      descriptions: platform === "meta" ? asStringList(getIn(raw, "creative.descriptions")) : [],
+      headlines: platform !== "tiktok" ? asStringList(getIn(raw, "creative.headlines")) : [],
+      descriptions: platform !== "tiktok" ? asStringList(getIn(raw, "creative.descriptions")) : [],
       mode: (variants === "platform_rotates" ? "platform_rotates" : "one_ad_per_text") as VariantMode,
+      videoCount: videos.length,
+      shareHeadlines: platform === "google",
     }),
     cta:
       typeof ctaRaw === "string" && ctaRaw in CTA_LABEL ? CTA_LABEL[ctaRaw as Cta] : null,

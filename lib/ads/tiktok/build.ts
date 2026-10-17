@@ -179,9 +179,8 @@ export function buildAdGroup(plan: Plan, advertiserId: string, context: AdGroupC
 
 export interface AdsContext {
   adGroupId: string;
-  videoId: string;
-  /** Coperta: `image_id` din biblioteca de imagini a contului. */
-  coverImageId: string;
+  /** Video-urile planului, în ordine, fiecare cu coperta lui (`image_id` din biblioteca contului). */
+  videos: Array<{ videoId: string; coverImageId: string }>;
   pixelId: string | null;
 }
 
@@ -210,12 +209,16 @@ export function buildAds(plan: Plan, advertiserId: string, context: AdsContext):
     headlines: [],
     descriptions: [],
     mode: "one_ad_per_text",
+    videoCount: context.videos.length,
   });
 
   return {
     advertiser_id: advertiserId,
     adgroup_id: context.adGroupId,
-    creatives: ads.map((ad) => ({
+    creatives: ads.map((ad) => {
+      const video = context.videos[ad.videoIndexes[0] ?? 0];
+      if (!video) throw new Error("Video lipsă în contextul creării — verificarea trebuia să-l oprească.");
+      return {
       ad_name: ad.name,
       identity_type: tiktok.identity_type,
       identity_id: tiktok.identity_id,
@@ -223,8 +226,8 @@ export function buildAds(plan: Plan, advertiserId: string, context: AdsContext):
         ? { identity_authorized_bc_id: tiktok.identity_bc_id }
         : {}),
       ad_format: "SINGLE_VIDEO",
-      video_id: context.videoId,
-      image_ids: [context.coverImageId],
+      video_id: video.videoId,
+      image_ids: [video.coverImageId],
       ad_text: ad.primaryTexts[0],
       call_to_action: TIKTOK_CTA[plan.creative.cta],
       landing_page_url: finalUrl(plan),
@@ -239,7 +242,8 @@ export function buildAds(plan: Plan, advertiserId: string, context: AdsContext):
       dark_post_status: "ON",
       promotional_music_disabled: true,
       creative_authorized: false,
-    })),
+      };
+    }),
     operation_status: TIKTOK_DISABLED,
   };
 }

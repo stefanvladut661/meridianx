@@ -1,5 +1,6 @@
 import {
   CURRENCY_LABEL,
+  GOOGLE_AGE_RANGES,
   TIKTOK_AGE_GROUPS,
   type Currency,
   type Platform,
@@ -49,10 +50,17 @@ export function countOf(count: number, word: string): string {
 export const UTM_KEYS = ["source", "medium", "campaign", "content", "term"] as const;
 export type UtmKey = (typeof UTM_KEYS)[number];
 
-/** Macro-urile platformelor rămân necodate, altfel nu se mai înlocuiesc. */
-const MACRO = /(\{\{[a-z_.]+\}\}|__[A-Z_]+__)/;
-const META_MACRO = /\{\{[a-z_.]+\}\}/;
-const TIKTOK_MACRO = /__[A-Z_]+__/;
+/**
+ * Macro-urile platformelor rămân necodate, altfel nu se mai înlocuiesc:
+ * Meta `{{campaign.name}}`, TikTok `__CAMPAIGN_NAME__`, Google (ValueTrack)
+ * `{campaignid}`.
+ */
+const MACRO = /(\{\{[a-z_.]+\}\}|__[A-Z_]+__|\{[a-z_]+\})/;
+const PLATFORM_MACRO: Record<Platform, RegExp> = {
+  meta: /\{\{[a-z_.]+\}\}/,
+  tiktok: /__[A-Z_]+__/,
+  google: /(?<!\{)\{[a-z_]+\}(?!\})/,
+};
 
 function encodeKeepingMacros(value: string): string {
   return value
@@ -61,10 +69,27 @@ function encodeKeepingMacros(value: string): string {
     .join("");
 }
 
-/** Macro-ul aparține celeilalte platforme — nu se va înlocui. */
+/** Macro-ul aparține altei platforme — nu se va înlocui. */
 export function foreignMacro(value: string, platform: Platform): string | null {
-  const pattern = platform === "meta" ? TIKTOK_MACRO : META_MACRO;
-  return pattern.exec(value)?.[0] ?? null;
+  for (const [other, pattern] of Object.entries(PLATFORM_MACRO) as Array<[Platform, RegExp]>) {
+    if (other === platform) continue;
+    const found = pattern.exec(value)?.[0];
+    if (found) return found;
+  }
+  return null;
+}
+
+/** Platforma căreia îi aparține un macro, pentru mesaje. */
+export function macroPlatform(macro: string): Platform | null {
+  return (Object.entries(PLATFORM_MACRO) as Array<[Platform, RegExp]>).find(([, pattern]) => pattern.test(macro))?.[0] ?? null;
+}
+
+/** Parametrii UTM ca șir de interogare, fără `?` — pentru `finalUrlSuffix` pe Google. */
+export function utmQuery(utm: Partial<Record<UtmKey, string>> | null): string {
+  return UTM_KEYS.flatMap((key) => {
+    const value = utm?.[key];
+    return value ? [`utm_${key}=${encodeKeepingMacros(value)}`] : [];
+  }).join("&");
 }
 
 /**
@@ -113,7 +138,16 @@ export function utmAlreadyInUrl(url: string): UtmKey[] {
  * grupelor pe care le atinge — deci poate doar să se lărgească.
  */
 export function tiktokAgeGroups(min: number, max: number) {
-  const groups = TIKTOK_AGE_GROUPS.filter((group) => group.max >= min && group.min <= max);
+  return ageGroupsOf(min, max, TIKTOK_AGE_GROUPS);
+}
+
+/** Grupele de vârstă ale Google (AgeRangeType), la fel: intervalul doar se lărgește. */
+export function googleAgeRanges(min: number, max: number) {
+  return ageGroupsOf(min, max, GOOGLE_AGE_RANGES);
+}
+
+function ageGroupsOf(min: number, max: number, all: ReadonlyArray<{ min: number; max: number; label: string }>) {
+  const groups = all.filter((group) => group.max >= min && group.min <= max);
   if (groups.length === 0) return null;
   const first = groups[0];
   const last = groups[groups.length - 1];
@@ -138,12 +172,18 @@ export interface DerivedAd {
   primaryTexts: string[];
   headlines: string[];
   descriptions: string[];
+  /** Video-urile reclamei, ca poziții în lista din plan (de la 0). */
+  videoIndexes: number[];
 }
 
 /**
- * `one_ad_per_text`: o reclamă pe text principal. Titlul și descrierea
- * merg pe același index; dacă sunt mai puține, se repetă primul.
- * `platform_rotates`: o reclamă cu toate variantele; platforma alege.
+ * `one_ad_per_text`: o reclamă pe fiecare video × text principal. Titlul și
+ * descrierea merg pe indexul textului; dacă sunt mai puține, se repetă primul.
+ * `platform_rotates`: o reclamă cu toate variantele (texte și video-uri);
+ * platforma alege.
+ *
+ * Cu un singur video, numele rămân cele dinainte de producția în masă
+ * („… · text 2"), ca planurile vechi să dea exact aceleași reclame.
  */
 export function deriveAds(input: {
   campaignName: string;
@@ -151,26 +191,70 @@ export function deriveAds(input: {
   headlines: string[];
   descriptions: string[];
   mode: VariantMode;
+  /** Câte video-uri are planul. Implicit unul. */
+  videoCount?: number;
+  /**
+   * Fiecare reclamă primește TOATE titlurile și descrierile (Google le
+   * combină singur), nu doar pe cele de pe indexul textului.
+   */
+  shareHeadlines?: boolean;
 }): DerivedAd[] {
-  const { campaignName, primaryTexts, headlines, descriptions, mode } = input;
+  const { campaignName, primaryTexts, headlines, descriptions, mode, shareHeadlines } = input;
+  const videoCount = Math.max(1, input.videoCount ?? 1);
   const base = campaignName || "Campanie";
+  const allVideos = Array.from({ length: videoCount }, (_, index) => index);
 
   if (mode === "platform_rotates") {
     return primaryTexts.length === 0
       ? []
-      : [{ name: `${base} · reclamă`, primaryTexts, headlines, descriptions }];
+      : [{ name: `${base} · reclamă`, primaryTexts, headlines, descriptions, videoIndexes: allVideos }];
   }
 
-  return primaryTexts.map((text, index) => {
-    const headline = headlines[index] ?? headlines[0];
-    const description = descriptions[index] ?? descriptions[0];
-    return {
-      name: `${base} · text ${index + 1}`,
-      primaryTexts: [text],
-      headlines: headline ? [headline] : [],
-      descriptions: description ? [description] : [],
-    };
-  });
+  return allVideos.flatMap((videoIndex) =>
+    primaryTexts.map((text, index) => {
+      const headline = headlines[index] ?? headlines[0];
+      const description = descriptions[index] ?? descriptions[0];
+      const name =
+        videoCount === 1
+          ? `${base} · text ${index + 1}`
+          : primaryTexts.length === 1
+            ? `${base} · video ${videoIndex + 1}`
+            : `${base} · video ${videoIndex + 1} · text ${index + 1}`;
+      return {
+        name,
+        primaryTexts: [text],
+        headlines: shareHeadlines ? headlines : headline ? [headline] : [],
+        descriptions: shareHeadlines ? descriptions : description ? [description] : [],
+        videoIndexes: [videoIndex],
+      };
+    })
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Video-urile planului
+// ---------------------------------------------------------------------------
+
+export type VideoRef = { source: "library"; video_id: string } | { source: "upload"; file_name?: string };
+
+/** Lista video-urilor din planul validat: `videos`, sau `video` ca listă de unul. */
+export function videosOf(creative: { video?: VideoRef; videos?: VideoRef[] }): VideoRef[] {
+  if (creative.videos && creative.videos.length > 0) return creative.videos;
+  return creative.video ? [creative.video] : [];
+}
+
+/**
+ * Același lucru pe planul BRUT (previzualizare, lot): fiecare video cu calea
+ * lui din plan, ca un mesaj să poată arăta exact câmpul.
+ */
+export function rawVideosOf(raw: unknown): Array<{ path: string; value: unknown }> {
+  const creative = raw && typeof raw === "object" ? (raw as { creative?: unknown }).creative : undefined;
+  if (!creative || typeof creative !== "object") return [];
+  const record = creative as { video?: unknown; videos?: unknown };
+  if (Array.isArray(record.videos)) {
+    return record.videos.map((value, index) => ({ path: `creative.videos.${index}`, value }));
+  }
+  return record.video !== undefined ? [{ path: "creative.video", value: record.video }] : [];
 }
 
 export function adSetName(campaignName: string): string {

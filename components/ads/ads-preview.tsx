@@ -29,6 +29,13 @@ export function AdsPreview({
         <li key={index} className="rounded-panel border border-hair bg-ink/40">
           <p className="border-b border-hair px-4 py-2.5 font-md-mono text-[11.5px] tracking-wide text-dim">
             <span className="text-bone/85">Reclama {index + 1}</span> · {ad.name}
+            {summary.videos.length > 1 ? (
+              <span className="block text-dim">
+                {ad.videoIndexes.length === 1
+                  ? `Video ${ad.videoIndexes[0] + 1}: ${summary.videos[ad.videoIndexes[0]] ?? "—"}`
+                  : `Video-uri: ${ad.videoIndexes.map((videoIndex) => videoIndex + 1).join(", ")} — platforma le alternează`}
+              </span>
+            ) : null}
           </p>
           <div className="space-y-3 px-4 py-4">
             {ad.primaryTexts.map((text, textIndex) => (

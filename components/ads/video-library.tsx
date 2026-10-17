@@ -26,13 +26,16 @@ const date = new Intl.DateTimeFormat("ro-RO", { day: "2-digit", month: "2-digit"
 export function VideoLibrary({
   load,
   platform,
+  path = "creative.video",
 }: {
   load: (adAccount: string) => Promise<LibraryResponse>;
   platform: Platform;
+  /** Video-ul din plan pe care îl schimbă alegerea: `creative.video` sau `creative.videos.2`. */
+  path?: string;
 }) {
   const { draft, update } = usePlanForm();
   const adAccount = asString(getIn(draft, "ad_account"));
-  const selected = asString(getIn(draft, "creative.video.video_id"));
+  const selected = asString(getIn(draft, `${path}.video_id`));
   const [state, setState] = useState<
     | { status: "closed" }
     | { status: "open"; account: string; videos: LibraryVideo[]; truncated: boolean }
@@ -106,7 +109,12 @@ export function VideoLibrary({
       {state.videos.length === 0 ? (
         <p className="mt-3 rounded-panel border border-dashed border-hair-strong px-4 py-5 text-[14px] leading-relaxed text-bone/75">
           Contul n-are încă niciun video. Urcă unul din portal („Fișier nou”) sau din{" "}
-          {platform === "tiktok" ? "biblioteca de creative din TikTok Ads Manager" : "Ads Manager → Media library"}, apoi
+          {platform === "tiktok"
+            ? "biblioteca de creative din TikTok Ads Manager"
+            : platform === "google"
+              ? "YouTube Studio (public sau nelistat) ori Google Ads → Materiale"
+              : "Ads Manager → Media library"}
+          , apoi
           apasă Reîncarcă.
         </p>
       ) : (
@@ -125,11 +133,11 @@ export function VideoLibrary({
               >
                 <input
                   type="radio"
-                  name="library-video"
+                  name={`library-video-${path}`}
                   value={video.id}
                   checked={checked}
                   disabled={!video.ready}
-                  onChange={() => update("creative.video.video_id", video.id)}
+                  onChange={() => update(`${path}.video_id`, video.id)}
                   className="sr-only"
                 />
                 {video.thumbnailUrl ? (

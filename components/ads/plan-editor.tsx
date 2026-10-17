@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { examplePlanFor } from "@/lib/ads/example-plan";
 import { OBJECTIVE_LABEL, PLATFORM_LABEL, type Platform } from "@/lib/ads/constants";
 import { parsePlanText, replaceSmartQuotes, type PlanTextResult } from "@/lib/ads/plan-json";
-import { getIn, setIn } from "@/lib/ads/plan-path";
-import { countOf } from "@/lib/ads/plan-derive";
+import { asRecord, getIn, setIn } from "@/lib/ads/plan-path";
+import { countOf, rawVideosOf } from "@/lib/ads/plan-derive";
 import { joinRo, summarizePlan, type PlanSummary } from "@/lib/ads/plan-summary";
 import { validatePlan, type PlanProblem } from "@/lib/ads/plan-validate";
 import type {
@@ -42,6 +43,8 @@ import { ERROR_TEXT, FIELD, OK_TEXT } from "./tone";
  */
 
 const STORAGE_KEY = "meridian_ads_plan";
+/** Cheia lotului (`batch-editor.tsx`): un lot lipit aici se mută acolo cu un clic. */
+const BATCH_STORAGE_KEY = "meridian_ads_batch";
 const PARSE_DELAY = 200;
 
 type SyntaxProblem = Extract<PlanTextResult, { ok: false }>;
@@ -81,7 +84,7 @@ function PlanSentence({
       </p>
       <p className="mt-3 text-[15.5px] leading-relaxed text-bone/80">
         Pentru oameni de {summary.age}
-        {summary.platformAge ? ` (pe TikTok, ${summary.platformAge})` : ""}, {summary.gender}, din{" "}
+        {summary.platformAge ? ` (pe ${PLATFORM_LABEL[platform]}, ${summary.platformAge})` : ""}, {summary.gender}, din{" "}
         {summary.places.length > 0 ? joinRo(summary.places) : dash}
         {summary.languages ? `, care folosesc aplicația în ${summary.languages}` : ""}.{" "}
         {adCount === 0
@@ -90,6 +93,7 @@ function PlanSentence({
       </p>
       <p className="mt-4 font-md-mono text-[12px] tracking-wide text-dim">
         1 campanie → 1 set de reclame → {adCount === 1 ? "1 reclamă" : countOf(adCount, "reclame")}
+        {summary.videos.length > 1 ? ` (${summary.videos.length} video-uri × texte)` : ""}
         {summary.monthly ? ` · ${summary.monthly}` : ""}
       </p>
     </div>
@@ -138,6 +142,7 @@ export function PlanEditor({
 }) {
   const current = workspaces.find((workspace) => workspace.id === currentWorkspaceId) ?? workspaces[0];
   const platformLabel = PLATFORM_LABEL[current.platform];
+  const router = useRouter();
 
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
@@ -325,7 +330,7 @@ export function PlanEditor({
         ? `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat${warningCount ? `, ${warningCount} de citit` : ""}.`
         : `Planul e valid${warningCount ? `, cu ${warningCount === 1 ? "un lucru" : countOf(warningCount, "lucruri")} de citit` : ""}.`;
 
-  const videoSource = draft ? getIn(draft, "creative.video.source") : undefined;
+  const pendingUpload = draft ? rawVideosOf(draft).some(({ value }) => asRecord(value)?.source === "upload") : false;
   const created = result?.ok === true && freshCheck !== null;
 
   /* Ce se poate face acum, într-un singur loc: pasul următor, dacă e
@@ -341,7 +346,7 @@ export function PlanEditor({
                 action: "none",
                 reason: `Planul e valid, dar spațiul ${current.name} nu are token: setează ${current.tokenEnv} în Vercel și fă redeploy.`,
               }
-            : videoSource === "upload"
+            : pendingUpload
               ? {
                   action: "none",
                   reason: `Planul e valid. Urcă întâi video-ul, la „Materialul”: când ${platformLabel} termină de procesat, planul trece singur pe el și se poate verifica.`,
@@ -426,6 +431,23 @@ export function PlanEditor({
                     className="underline underline-offset-4 hover:text-bone"
                   >
                     Înlocuiește ghilimelele
+                  </button>
+                ) : null}
+                {syntax.fix === "batch" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem(BATCH_STORAGE_KEY, text);
+                        sessionStorage.removeItem(STORAGE_KEY);
+                      } catch {
+                        /* fără stocare, lotul se lipește din nou acolo */
+                      }
+                      router.push("/admin/ads/lot");
+                    }}
+                    className="underline underline-offset-4 hover:text-bone"
+                  >
+                    Deschide lotul
                   </button>
                 ) : null}
               </div>
@@ -628,7 +650,9 @@ export function PlanEditor({
             </div>
             <p id="create-reason" className="text-[13.5px] leading-snug text-bone/75" aria-live="polite">
               {checking
-                ? `${platformLabel} caută contul, ${current.platform === "meta" ? "pagina" : "identitatea"}, pixelul, video-ul și fiecare nume din targetare…`
+                ? current.platform === "google"
+                  ? "Google caută contul, conversia, video-urile și fiecare nume din targetare, apoi verifică toată crearea, fără să creeze nimic…"
+                  : `${platformLabel} caută contul, ${current.platform === "meta" ? "pagina" : "identitatea"}, pixelul, video-ul și fiecare nume din targetare…`
                 : creating
                   ? "Se creează campania, setul și reclamele, una câte una. Nu închide pagina."
                   : step.reason}

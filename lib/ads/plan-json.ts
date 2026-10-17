@@ -14,16 +14,19 @@
  * lipit omul, nu în ce am curățat noi.
  */
 
-export type PlanTextResult =
-  | { ok: true; value: Record<string, unknown> }
-  | {
-      ok: false;
-      message: string;
-      line: number | null;
-      column: number | null;
-      /** Există o reparație sigură pe care interfața o poate oferi cu un clic. */
-      fix: "smart_quotes" | null;
-    };
+export type PlanTextFailure = {
+  ok: false;
+  message: string;
+  line: number | null;
+  column: number | null;
+  /**
+   * Există o reparație sigură pe care interfața o poate oferi cu un clic:
+   * ghilimelele tipografice, sau mutarea unui lot de planuri pe pagina „Lot”.
+   */
+  fix: "smart_quotes" | "batch" | null;
+};
+
+export type PlanTextResult = { ok: true; value: Record<string, unknown> } | PlanTextFailure;
 
 /**
  * Ghilimele tipografice în poziție de STRUCTURĂ JSON: lângă `{ , [ :` sau
@@ -175,7 +178,11 @@ function hintAt(text: string, position: number): string {
   return "Verifică virgulele și ghilimelele din jurul acestui loc.";
 }
 
-export function parsePlanText(raw: string): PlanTextResult {
+/**
+ * Textul lipit, citit ca JSON — orice formă (obiect, listă). Iertările și
+ * mesajele de eroare sunt aceleași pentru un plan și pentru un lot.
+ */
+export function parseJsonText(raw: string): { ok: true; value: unknown } | PlanTextFailure {
   if (raw.trim() === "") {
     return {
       ok: false,
@@ -239,12 +246,41 @@ export function parsePlanText(raw: string): PlanTextResult {
     };
   }
 
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  return { ok: true, value };
+}
+
+/**
+ * Planurile unui lot: o listă `[ {…}, {…} ]` sau `{ "plans": [ … ] }`.
+ * `null` = textul nu e un lot (e un singur plan sau altceva).
+ */
+export function batchPlansOf(value: unknown): unknown[] | null {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object" && Array.isArray((value as { plans?: unknown }).plans)) {
+    return (value as { plans: unknown[] }).plans;
+  }
+  return null;
+}
+
+export function parsePlanText(raw: string): PlanTextResult {
+  const parsed = parseJsonText(raw);
+  if (!parsed.ok) return parsed;
+  const value = parsed.value;
+
+  const batch = batchPlansOf(value);
+  if (batch) {
     return {
       ok: false,
-      message: Array.isArray(value)
-        ? "Planul e o listă [ … ]. Portalul primește O campanie odată, ca obiect { … }."
-        : "Planul trebuie să fie un obiect JSON { … }.",
+      message: `Ai lipit un lot de ${batch.length === 1 ? "un plan" : `${batch.length} planuri`}. Aici se lucrează cu o campanie odată; loturile se verifică și se creează pe pagina „Lot”.`,
+      line: null,
+      column: null,
+      fix: "batch",
+    };
+  }
+
+  if (value === null || typeof value !== "object") {
+    return {
+      ok: false,
+      message: "Planul trebuie să fie un obiect JSON { … }.",
       line: null,
       column: null,
       fix: null,

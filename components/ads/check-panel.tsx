@@ -98,8 +98,10 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
     new Date(check.checkedAt)
   );
   const names = [...check.locations, ...check.languages, ...check.interests, ...check.behaviors];
-  const duration = formatDuration(check.video?.lengthSeconds ?? null);
+  const videos = check.videos.length > 0 ? check.videos : [check.video];
   const meta = check.platform === "meta";
+  const google = check.platform === "google";
+  const identityLabel = meta ? "Pagina" : google ? "Firma" : "Identitatea";
 
   return (
     <section ref={ref} tabIndex={-1} aria-labelledby="platform-check" className="border-t border-hair py-7">
@@ -125,11 +127,11 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
             <span className={ERROR_TEXT}>tokenul nu vede contul din plan</span>
           )}
         </Row>
-        <Row label={meta ? "Pagina" : "Identitatea"} tone={check.identity ? "ok" : "error"}>
+        <Row label={identityLabel} tone={check.identity ? "ok" : "error"}>
           {check.identity ? (
             check.identity.name
           ) : (
-            <span className={ERROR_TEXT}>tokenul nu vede {meta ? "pagina" : "identitatea"} din plan</span>
+            <span className={ERROR_TEXT}>tokenul nu vede {identityLabel.toLowerCase()} din plan</span>
           )}
         </Row>
         {meta ? (
@@ -141,14 +143,14 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
             )}
           </Row>
         ) : null}
-        <Row label="Pixelul" tone={check.pixel ? "ok" : "none"}>
+        <Row label={google ? "Conversia" : "Pixelul"} tone={check.pixel ? "ok" : "none"}>
           {check.pixel ? (
             <>
               {check.pixel.name}
               <span className="ml-2 inline-block font-md-mono text-[12px] text-dim">{check.pixel.id}</span>
             </>
           ) : (
-            <span className="text-dim">obiectivul nu folosește pixel</span>
+            <span className="text-dim">{google ? "obiectivul nu optimizează pe conversii" : "obiectivul nu folosește pixel"}</span>
           )}
         </Row>
         {check.conversionDomain ? (
@@ -171,31 +173,49 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
             </span>
           </Row>
         ) : null}
-        <Row label="Video" tone={check.video ? (check.video.ready ? "ok" : "warning") : "error"}>
-          {check.video ? (
-            <div className="flex items-center gap-3">
-              {check.video.thumbnailUrl ? (
-                // Miniatura vine de pe CDN-ul platformei, cu URL semnat și temporar — next/image n-ar avea ce optimiza.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={check.video.thumbnailUrl}
-                  alt={`Coperta video-ului ${check.video.title ? `„${check.video.title}”` : check.video.id}`}
-                  referrerPolicy="no-referrer"
-                  className="h-14 w-14 shrink-0 rounded-panel-sm border border-hair object-cover"
-                />
-              ) : null}
-              <div className="min-w-0">
-                <p className="truncate">{check.video.title ?? "Video fără titlu"}</p>
-                <p className={cn("font-md-mono text-[12px]", check.video.ready ? "text-dim" : WARNING_TEXT)}>
-                  {[duration, check.video.ready ? "gata de folosit" : `${PLATFORM_LABEL[check.platform]} încă îl procesează`, check.video.id]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <span className={ERROR_TEXT}>video-ul din plan nu e în biblioteca contului</span>
-          )}
+        <Row
+          label={videos.length > 1 ? `Video-uri · ${videos.length}` : "Video"}
+          tone={videos.every((video) => video?.ready) ? "ok" : videos.some((video) => !video) ? "error" : "warning"}
+        >
+          <ul className="space-y-2.5">
+            {videos.map((video, index) => (
+              <li key={video?.id ?? `lipsa-${index}`}>
+                {video ? (
+                  <div className="flex items-center gap-3">
+                    {video.thumbnailUrl ? (
+                      // Miniatura vine de pe CDN-ul platformei, cu URL semnat și temporar — next/image n-ar avea ce optimiza.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={video.thumbnailUrl}
+                        alt={`Coperta video-ului ${video.title ? `„${video.title}”` : video.id}`}
+                        referrerPolicy="no-referrer"
+                        className="h-14 w-14 shrink-0 rounded-panel-sm border border-hair object-cover"
+                      />
+                    ) : null}
+                    <div className="min-w-0">
+                      <p className="truncate">
+                        {videos.length > 1 ? <span className="mr-1.5 font-md-mono text-[11px] text-dim">{index + 1}</span> : null}
+                        {video.title ?? "Video fără titlu"}
+                      </p>
+                      <p className={cn("font-md-mono text-[12px]", video.ready ? "text-dim" : WARNING_TEXT)}>
+                        {[
+                          formatDuration(video.lengthSeconds),
+                          video.ready ? "gata de folosit" : `${PLATFORM_LABEL[check.platform]} încă îl procesează`,
+                          video.id,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <span className={ERROR_TEXT}>
+                    {videos.length > 1 ? `video-ul ${index + 1} din plan` : "video-ul din plan"} nu e în biblioteca contului
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
         </Row>
       </dl>
 

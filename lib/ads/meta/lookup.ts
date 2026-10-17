@@ -181,6 +181,33 @@ export async function readVideo(workspace: AdsWorkspace, videoId: string): Promi
   };
 }
 
+// ---------------------------------------------------------------------------
+// Ce poate folosi un plan — pentru contextul dat conversației cu Claude
+// ---------------------------------------------------------------------------
+
+/** Paginile pe care le vede tokenul (System User-ul vede paginile atribuite lui). */
+export async function listPages(workspace: AdsWorkspace): Promise<Array<{ id: string; name: string }>> {
+  const raw = await metaGetAll<{ id: string; name?: string }>(workspace, "/me/accounts", { fields: "id,name", limit: 100 }, 100);
+  return raw.map((page) => ({ id: page.id, name: page.name ?? page.id }));
+}
+
+/** Conturile de Instagram legate de contul de reclame. */
+export async function listInstagramAccounts(workspace: AdsWorkspace, adAccount: string): Promise<Array<{ id: string; username: string }>> {
+  const raw = await metaGetAll<{ id: string; username?: string }>(
+    workspace,
+    `/${adAccount}/instagram_accounts`,
+    { fields: "id,username", limit: 50 },
+    50
+  );
+  return raw.map((account) => ({ id: account.id, username: account.username ?? account.id }));
+}
+
+/** Pixelii (dataset-urile) contului de reclame. */
+export async function listPixels(workspace: AdsWorkspace, adAccount: string): Promise<Array<{ id: string; name: string }>> {
+  const raw = await metaGetAll<{ id: string; name?: string }>(workspace, `/${adAccount}/adspixels`, { fields: "id,name", limit: 50 }, 50);
+  return raw.map((pixel) => ({ id: pixel.id, name: pixel.name ?? pixel.id }));
+}
+
 const LIBRARY_LIMIT = 60;
 
 /** Biblioteca video a contului, cele mai noi primele. */

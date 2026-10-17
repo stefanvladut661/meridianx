@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { href: "/admin/ads", label: "Campanii", exact: true },
   { href: "/admin/ads/nou", label: "Plan nou", exact: false },
+  { href: "/admin/ads/lot", label: "Lot", exact: false },
+  { href: "/admin/ads/claude", label: "Pentru Claude", exact: false },
   { href: "/admin/ads/statistici", label: "Statistici", exact: false },
 ] as const;
 

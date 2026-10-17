@@ -13,6 +13,9 @@ const LABEL: Record<string, string> = {
   disable: "Oprită",
   active: "Pornită",
   enable: "Pornită",
+  // Google: ENABLED / PAUSED / REMOVED.
+  enabled: "Pornită",
+  removed: "Ștearsă",
   delivery_ok: "Pornită",
   in_process: "Se procesează",
   with_issues: "Cu probleme",

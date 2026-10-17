@@ -88,16 +88,19 @@ export function VideoUpload({
   actions,
   platform,
   onReady,
+  path = "creative.video",
 }: {
   actions: UploadActions;
   platform: Platform;
   /** Video-ul e gata în bibliotecă: planul trece pe el. */
   onReady: (video: { id: string; fileName: string }) => void;
+  /** Video-ul din plan pe care îl înlocuiește urcarea: `creative.video` sau `creative.videos.2`. */
+  path?: string;
 }) {
   const { draft } = usePlanForm();
   const label = PLATFORM_LABEL[platform];
   const adAccount = asString(getIn(draft, "ad_account"));
-  const expectedName = asString(getIn(draft, "creative.video.file_name"));
+  const expectedName = asString(getIn(draft, `${path}.file_name`));
 
   const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<Phase>({ step: "idle" });
@@ -155,7 +158,8 @@ export function VideoUpload({
       if (cancelled.current) return;
       if (status.state === "ready") {
         setAnnouncement("Gata: video-ul e în biblioteca contului și a intrat în plan.");
-        onReady({ id: videoId, fileName });
+        // Pe Google, id-ul definitiv e cel de YouTube, nu cel al urcării.
+        onReady({ id: status.finalId ?? videoId, fileName });
         return;
       }
       if (status.state === "error") {

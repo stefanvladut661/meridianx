@@ -4,7 +4,7 @@ import { adSetName } from "../plan-derive";
 import type { Plan } from "../plan-schema";
 import { recordCampaign, type PlatformObjects } from "../store";
 import type { AdsWorkspace } from "../workspaces";
-import { buildAd, buildAdSet, buildCampaign, buildCreatives, type Thumbnail } from "./build";
+import { buildAd, buildAdSet, buildCampaign, buildCreatives, type CreativeVideo, type Thumbnail } from "./build";
 import type { MetaCheckContext } from "./check";
 import { describeMetaError } from "./errors";
 import { metaCreate, metaUploadImage } from "./graph";
@@ -13,10 +13,10 @@ import { ThumbnailError, downloadThumbnail } from "./thumbnail";
 import type { CreateResponse, CreatedObject } from "../types";
 
 /**
- * Crearea pe Meta: copertă → campanie → set → (creativ → reclamă) × N.
- * Totul pe pauză.
+ * Crearea pe Meta: copertele (una pe video) → campanie → set →
+ * (creativ → reclamă) × N, N = video-uri × texte. Totul pe pauză.
  *
- * Ordinea contează. Coperta se urcă prima: o imagine în biblioteca
+ * Ordinea contează. Copertele se urcă primele: o imagine în biblioteca
  * contului nu e o reclamă și nu costă nimic, deci dacă pică aici, nu există
  * nimic de explicat. Campania e primul obiect „adevărat": dacă pică, nu
  * s-a creat nimic. De la campanie încolo, orice eroare lasă în urmă obiecte
@@ -37,31 +37,37 @@ export interface CreateInput {
 export async function createPausedOnMeta(input: CreateInput): Promise<CreateResponse> {
   const { workspace, context, user } = input;
   const plan: Plan = context.resolved.plan;
-  const { account, video } = context;
-  if (!account || !video || !context.thumbnail || !context.check.ok) {
+  const { account, videos, thumbnails } = context;
+  if (!account || videos.length === 0 || thumbnails.length !== videos.length || !context.check.ok) {
     return { ok: false, message: "Verificarea pe Meta nu e completă. Verifică din nou planul.", recheck: true };
   }
 
   const created: CreatedObject[] = [];
   const objects: PlatformObjects = { creatives: [], ads: [] };
 
-  // 0. Coperta. Cea propusă de Meta se descarcă și se urcă în cont; cea din
-  //    plan (un URL al tău) o descarcă Meta singur.
-  let thumbnail: Thumbnail;
-  if (context.thumbnail.kind === "url") {
-    thumbnail = { url: context.thumbnail.url };
-  } else {
-    try {
-      const image = await downloadThumbnail(context.thumbnail.uri, video.id);
-      thumbnail = await metaUploadImage(workspace, account.id, image);
-    } catch (error) {
-      const message =
-        error instanceof ThumbnailError
-          ? `Coperta video-ului nu s-a putut pregăti: ${error.message}. Pune o imagine în creative.thumbnail: { "url": "https://…" } și verifică din nou.`
-          : describeMetaError(error, "urcarea copertei video-ului", workspace.tokenEnv);
-      return { ok: false, message };
+  // 0. Copertele, câte una pe video. Cea propusă de Meta se descarcă și se
+  //    urcă în cont; cea din plan (un URL al tău) o descarcă Meta singur.
+  const covered: CreativeVideo[] = [];
+  for (const [index, video] of videos.entries()) {
+    const source = thumbnails[index];
+    const which = videos.length > 1 ? ` video-ului ${index + 1}` : " video-ului";
+    let thumbnail: Thumbnail;
+    if (source.kind === "url") {
+      thumbnail = { url: source.url };
+    } else {
+      try {
+        const image = await downloadThumbnail(source.uri, video.id);
+        thumbnail = await metaUploadImage(workspace, account.id, image);
+      } catch (error) {
+        const message =
+          error instanceof ThumbnailError
+            ? `Coperta${which} nu s-a putut pregăti: ${error.message}. ${videos.length > 1 ? "Alege alt video sau verifică din nou." : "Pune o imagine în creative.thumbnail: { \"url\": \"https://…\" } și verifică din nou."}`
+            : describeMetaError(error, `urcarea copertei${which}`, workspace.tokenEnv);
+        return { ok: false, message };
+      }
+      created.push({ kind: "image", id: thumbnail.hash, name: `Coperta${which}` });
     }
-    created.push({ kind: "image", id: thumbnail.hash, name: "Coperta video-ului" });
+    covered.push({ videoId: video.id, thumbnail });
   }
 
   // 1. Campania — dacă pică, nu există nicio campanie în Meta.
@@ -111,7 +117,7 @@ export async function createPausedOnMeta(input: CreateInput): Promise<CreateResp
   created.push({ kind: "adset", id: adSetId, name: adSetName(plan.campaign.name) });
 
   // 3. Creativ + reclamă, pe rând.
-  const planned = buildCreatives(plan, { videoId: video.id, thumbnail });
+  const planned = buildCreatives(plan, { videos: covered });
   for (const [index, ad] of planned.entries()) {
     const which = planned.length > 1 ? ` ${index + 1} din ${planned.length}` : "";
     let creativeId: string;

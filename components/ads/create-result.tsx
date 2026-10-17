@@ -38,7 +38,11 @@ function CreatedList({ created, platform }: { created: CreatedObject[]; platform
       {created.map((object) => (
         <li key={`${object.kind}-${object.id}`} className="flex min-w-0 flex-wrap gap-x-2">
           <span className="text-dim">
-            {object.kind === "adset" && platform === "tiktok" ? "Grupul de reclame" : KIND_LABEL[object.kind]}
+            {object.kind === "adset" && platform === "tiktok"
+              ? "Grupul de reclame"
+              : object.kind === "adset" && platform === "google"
+                ? "Grupul de anunțuri"
+                : KIND_LABEL[object.kind]}
           </span>
           <span className="min-w-0 truncate text-bone/90">{object.name}</span>
           <span className="text-dim">{object.id}</span>

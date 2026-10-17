@@ -7,7 +7,16 @@ import {
   CTA_LABEL,
   CURRENCIES,
   GENDER_LABEL,
+  GOOGLE_BUSINESS_NAME_MAX,
+  GOOGLE_CHANNELS,
+  GOOGLE_CHANNEL_LABEL,
+  GOOGLE_DESCRIPTION_MAX,
+  GOOGLE_ENHANCEMENTS,
+  GOOGLE_ENHANCEMENT_LABEL,
+  GOOGLE_HEADLINE_MAX,
+  GOOGLE_LONG_HEADLINE_MAX,
   MAX_TEXT_VARIANTS,
+  MAX_VIDEOS,
   META_ENHANCEMENTS,
   META_ENHANCEMENT_LABEL,
   META_HEADLINE_VISIBLE,
@@ -445,6 +454,158 @@ function CheckboxGrid({
 }
 
 // ---------------------------------------------------------------------------
+// Video-urile
+// ---------------------------------------------------------------------------
+
+function VideoEntry({
+  path,
+  number,
+  platform,
+  loadLibrary,
+  upload,
+  onRemove,
+}: {
+  path: string;
+  /** Numărul de pe ecran; `null` = singurul video al planului. */
+  number: number | null;
+  platform: Platform;
+  loadLibrary?: (adAccount: string) => Promise<LibraryResponse>;
+  upload?: UploadActions;
+  onRemove?: () => void;
+}) {
+  const { draft, update } = usePlanForm();
+  const [uploaded, setUploaded] = useState<{ id: string; fileName: string } | null>(null);
+  const source = getIn(draft, `${path}.source`);
+  const legend = number === null ? "Video" : `Video ${number}`;
+
+  return (
+    <div className={cn(number !== null && "rounded-panel border border-hair bg-ink/40 p-4")}>
+      <RadioRow
+        name={`video-source-${path}`}
+        legend={legend}
+        value={typeof source === "string" ? source : ""}
+        describedBy={`${fieldId(path)}-msg`}
+        options={[
+          ["library", "Deja urcat în cont"],
+          ["upload", "Fișier nou"],
+        ]}
+        onChange={(value) => update(path, value === "library" ? { source: "library", video_id: "" } : { source: "upload" })}
+      />
+      <PathMessages path={path} />
+      <PathMessages path={`${path}.source`} />
+      <div className="mt-4 space-y-4">
+        {source === "library" ? (
+          <>
+            <TextField
+              path={`${path}.video_id`}
+              label={number === null ? "Id video" : `Id video ${number}`}
+              mono
+              hint={
+                loadLibrary
+                  ? "Din biblioteca de media a contului de reclame — scris aici sau ales din listă."
+                  : "Din biblioteca de media a contului de reclame. Lista se poate deschide după ce spațiul are token."
+              }
+            />
+            {uploaded && uploaded.id === asString(getIn(draft, `${path}.video_id`)) ? (
+              <p className={cn("flex items-center gap-2 text-[13.5px]", OK_TEXT)}>
+                <span aria-hidden className={cn("h-2 w-2 rounded-full", OK_DOT)} />
+                Urcat acum: {uploaded.fileName} — {PLATFORM_LABEL[platform]} l-a procesat, e în biblioteca contului.
+              </p>
+            ) : null}
+            {loadLibrary ? <VideoLibrary load={loadLibrary} platform={platform} path={path} /> : null}
+          </>
+        ) : source === "upload" ? (
+          upload ? (
+            <VideoUpload
+              actions={upload}
+              platform={platform}
+              path={path}
+              onReady={(video) => {
+                setUploaded(video);
+                update(path, { source: "library", video_id: video.id });
+              }}
+            />
+          ) : (
+            <TextField
+              path={`${path}.file_name`}
+              label="Numele fișierului (opțional)"
+              mono
+              hint="Fișierul se urcă de aici după ce spațiul are token."
+            />
+          )
+        ) : null}
+      </div>
+      {onRemove ? <RemoveButton label={`Scoate ${legend.toLowerCase()}`} onClick={onRemove} /> : null}
+    </div>
+  );
+}
+
+/**
+ * Unul sau mai multe video-uri. Cu mai multe, reclamele se înmulțesc:
+ * fiecare video × fiecare text, toate în același set — platforma alege ce
+ * merge. Un plan vechi (`video`) devine listă (`videos`) la primul „+ video".
+ */
+function VideosEditor({
+  platform,
+  loadLibrary,
+  upload,
+}: {
+  platform: Platform;
+  loadLibrary?: (adAccount: string) => Promise<LibraryResponse>;
+  upload?: UploadActions;
+}) {
+  const { draft, update } = usePlanForm();
+  const list = getIn(draft, "creative.videos");
+  const creative = asRecord(getIn(draft, "creative")) ?? {};
+  const blank = { source: "library", video_id: "" };
+  // Planul are și `video`, și `videos` (greșeală de scriere): lista are prioritate, eroarea e afișată.
+
+  if (!Array.isArray(list)) {
+    return (
+      <div className="space-y-3">
+        <VideoEntry path="creative.video" number={null} platform={platform} loadLibrary={loadLibrary} upload={upload} />
+        <AddButton
+          onClick={() => {
+            const next = { ...creative, videos: [creative.video ?? blank, blank] };
+            delete (next as Record<string, unknown>).video;
+            update("creative", next);
+          }}
+        >
+          încă un video
+        </AddButton>
+        <p className="text-[12.5px] leading-snug text-dim">
+          Cu mai multe video-uri, se face câte o reclamă pentru fiecare video × text, în același set.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className={LABEL}>Video-uri · {list.length}</p>
+      <PathMessages path="creative.videos" />
+      <ol className="space-y-3">
+        {list.map((_, index) => (
+          <li key={index}>
+            <VideoEntry
+              path={`creative.videos.${index}`}
+              number={index + 1}
+              platform={platform}
+              loadLibrary={loadLibrary}
+              upload={upload}
+              onRemove={list.length > 1 ? () => update(`creative.videos.${index}`, undefined) : undefined}
+            />
+          </li>
+        ))}
+      </ol>
+      {list.length < MAX_VIDEOS ? (
+        <AddButton onClick={() => update(`creative.videos.${list.length}`, blank)}>video</AddButton>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Formularul
 // ---------------------------------------------------------------------------
 
@@ -468,7 +629,6 @@ export function PlanForm({
   upload?: UploadActions;
 }) {
   const { draft, update } = usePlanForm();
-  const [uploaded, setUploaded] = useState<{ id: string; fileName: string } | null>(null);
   const planWorkspace = workspaces.find((workspace) => workspace.id === draft.workspace) ?? null;
   const mismatch = planWorkspace !== null && planWorkspace.id !== currentWorkspace.id;
 
@@ -477,8 +637,8 @@ export function PlanForm({
     typeof objective === "string" && OBJECTIVES_WITH_CONVERSION.includes(objective as Objective);
   const hasConversion = draft.conversion !== undefined;
 
-  const videoSource = getIn(draft, "creative.video.source");
   const thumbnail = getIn(draft, "creative.thumbnail");
+  const videoCount = Array.isArray(getIn(draft, "creative.videos")) ? asArray(getIn(draft, "creative.videos")).length : 1;
   const placements = getIn(draft, "meta.placements");
   const categories = asArray(getIn(draft, "meta.special_ad_categories")).map(String);
 
@@ -497,8 +657,8 @@ export function PlanForm({
           />
           <TextField
             path="ad_account"
-            label={platform === "meta" ? "Contul de reclame" : "Advertiser id"}
-            placeholder={platform === "meta" ? "act_…" : "cifre"}
+            label={platform === "meta" ? "Contul de reclame" : platform === "google" ? "Contul Google Ads" : "Advertiser id"}
+            placeholder={platform === "meta" ? "act_…" : platform === "google" ? "123-456-7890" : "cifre"}
             mono
             hint="Se verifică la creare: trebuie să fie un cont la care are acces tokenul spațiului."
           />
@@ -580,7 +740,12 @@ export function PlanForm({
         <Section title="Conversia" prefixes={["conversion"]}>
           <PathMessages path="conversion" />
           <Grid>
-            <TextField path="conversion.pixel_id" label="Pixel" mono placeholder="id din Events Manager" />
+            <TextField
+              path="conversion.pixel_id"
+              label={platform === "google" ? "Acțiunea de conversie" : "Pixel"}
+              mono
+              placeholder={platform === "google" ? "id din Google Ads → Conversii" : platform === "tiktok" ? "id sau codul pixelului" : "id din Events Manager"}
+            />
             <SelectField path="conversion.event" label="Eveniment" options={eventOptions} />
           </Grid>
           {!needsConversion ? (
@@ -614,71 +779,23 @@ export function PlanForm({
 
       <Section title="Materialul" prefixes={["creative"]}>
         <PathMessages path="creative" />
-        <RadioRow
-          name="video-source"
-          legend="Video"
-          value={typeof videoSource === "string" ? videoSource : ""}
-          describedBy={`${fieldId("creative.video")}-msg`}
-          options={[
-            ["library", "Deja urcat în cont"],
-            ["upload", "Fișier nou"],
-          ]}
-          onChange={(value) =>
-            update("creative.video", value === "library" ? { source: "library", video_id: "" } : { source: "upload" })
-          }
-        />
-        <PathMessages path="creative.video" />
-        <PathMessages path="creative.video.source" />
-        {videoSource === "library" ? (
-          <>
-            <TextField
-              path="creative.video.video_id"
-              label="Id video"
-              mono
-              hint={
-                loadLibrary
-                  ? "Din biblioteca de media a contului de reclame — scris aici sau ales din listă."
-                  : "Din biblioteca de media a contului de reclame. Lista se poate deschide după ce spațiul are token."
-              }
-            />
-            {uploaded && uploaded.id === asString(getIn(draft, "creative.video.video_id")) ? (
-              <p className={cn("flex items-center gap-2 text-[13.5px]", OK_TEXT)}>
-                <span aria-hidden className={cn("h-2 w-2 rounded-full", OK_DOT)} />
-                Urcat acum: {uploaded.fileName} — {PLATFORM_LABEL[platform]} l-a procesat, e în biblioteca contului.
-              </p>
-            ) : null}
-            {loadLibrary ? <VideoLibrary load={loadLibrary} platform={platform} /> : null}
-          </>
-        ) : videoSource === "upload" ? (
-          upload ? (
-            <VideoUpload
-              actions={upload}
-              platform={platform}
-              onReady={(video) => {
-                setUploaded(video);
-                update("creative.video", { source: "library", video_id: video.id });
-              }}
-            />
-          ) : (
-            <TextField
-              path="creative.video.file_name"
-              label="Numele fișierului (opțional)"
-              mono
-              hint="Fișierul se urcă de aici după ce spațiul are token."
-            />
-          )
-        ) : null}
+        <VideosEditor platform={platform} loadLibrary={loadLibrary} upload={upload} />
 
-        <RadioRow
-          name="thumbnail"
-          legend="Copertă"
-          value={thumbnail === undefined || thumbnail === "auto" ? "auto" : "url"}
-          options={[
-            ["auto", "Propusă de platformă"],
-            ["url", "Imagine de la o adresă"],
-          ]}
-          onChange={(value) => update("creative.thumbnail", value === "auto" ? "auto" : { url: "" })}
-        />
+
+        {videoCount === 1 || asRecord(thumbnail) ? (
+          <RadioRow
+            name="thumbnail"
+            legend="Copertă"
+            value={thumbnail === undefined || thumbnail === "auto" ? "auto" : "url"}
+            options={[
+              ["auto", "Propusă de platformă"],
+              ["url", "Imagine de la o adresă"],
+            ]}
+            onChange={(value) => update("creative.thumbnail", value === "auto" ? "auto" : { url: "" })}
+          />
+        ) : (
+          <p className="text-[13px] leading-snug text-dim">Copertă: cea propusă de platformă, pentru fiecare video.</p>
+        )}
         <PathMessages path="creative.thumbnail" />
         {asRecord(thumbnail) ? (
           <TextField path="creative.thumbnail.url" label="Adresa imaginii" mono placeholder="https://…" />
@@ -686,35 +803,38 @@ export function PlanForm({
 
         <TextListField
           path="creative.primary_texts"
-          label="Texte principale"
+          label={platform === "google" ? "Texte principale (titluri lungi)" : "Texte principale"}
           itemLabel={(index) => `Textul ${index + 1}`}
           max={MAX_TEXT_VARIANTS}
           multiline
           counter={
             platform === "tiktok"
               ? { limit: TIKTOK_AD_TEXT_MAX, hard: true }
-              : { limit: META_PRIMARY_TEXT_VISIBLE }
+              : platform === "google"
+                ? { limit: GOOGLE_LONG_HEADLINE_MAX, hard: true }
+                : { limit: META_PRIMARY_TEXT_VISIBLE }
           }
           addLabel="text"
         />
-        {platform === "meta" ? (
+        {platform !== "tiktok" ? (
           <>
             <TextListField
               path="creative.headlines"
               label="Titluri"
               itemLabel={(index) => `Titlul ${index + 1}`}
               max={MAX_TEXT_VARIANTS}
-              counter={{ limit: META_HEADLINE_VISIBLE }}
+              counter={platform === "google" ? { limit: GOOGLE_HEADLINE_MAX, hard: true } : { limit: META_HEADLINE_VISIBLE }}
               addLabel="titlu"
-              emptyText="Fără titlu."
+              emptyText={platform === "google" ? "Fără titlu — Google cere cel puțin unul." : "Fără titlu."}
             />
             <TextListField
               path="creative.descriptions"
               label="Descrieri"
               itemLabel={(index) => `Descrierea ${index + 1}`}
               max={MAX_TEXT_VARIANTS}
+              counter={platform === "google" ? { limit: GOOGLE_DESCRIPTION_MAX, hard: true } : undefined}
               addLabel="descriere"
-              emptyText="Fără descriere."
+              emptyText={platform === "google" ? "Fără descriere — Google cere cel puțin una." : "Fără descriere."}
             />
           </>
         ) : (
@@ -808,6 +928,57 @@ export function PlanForm({
           ) : null}
           <PathMessages path="meta.placements" />
         </Section>
+      ) : platform === "google" ? (
+        <Section title="Google" prefixes={["google"]} aside="Campanie Demand Gen: reclame video pe YouTube, Discover și Gmail.">
+          <PathMessages path="google" />
+          <Grid>
+            <TextField
+              path="google.business_name"
+              label="Numele firmei"
+              placeholder="MERIDIAN"
+              hint={`Apare pe reclamă. Cel mult ${GOOGLE_BUSINESS_NAME_MAX} de caractere.`}
+            />
+            <TextField
+              path="google.logo_url"
+              label="Sigla (adresă https)"
+              mono
+              placeholder="https://…/sigla.png"
+              hint="Pătrată, minim 128×128, PNG sau JPEG. Portalul o urcă în cont."
+            />
+          </Grid>
+          <RadioRow
+            name="google-channels"
+            legend="Unde apare"
+            value={Array.isArray(getIn(draft, "google.channels")) ? "manual" : "all"}
+            options={[
+              ["all", "Peste tot (YouTube, Discover, Gmail, Display)"],
+              ["manual", "Aleg eu"],
+            ]}
+            onChange={(value) =>
+              update("google.channels", value === "all" ? undefined : ["youtube_in_stream", "youtube_in_feed", "youtube_shorts"])
+            }
+          />
+          {Array.isArray(getIn(draft, "google.channels")) ? (
+            <CheckboxGrid
+              legend="Canalele"
+              options={entries(GOOGLE_CHANNELS, GOOGLE_CHANNEL_LABEL)}
+              selected={asArray(getIn(draft, "google.channels")).map(String)}
+              onToggle={(value, on) => {
+                const current = asArray(getIn(draft, "google.channels")).map(String);
+                update("google.channels", on ? [...current, value] : current.filter((item) => item !== value));
+              }}
+            />
+          ) : null}
+          <PathMessages path="google.channels" />
+          <div className="divide-y divide-hair rounded-panel border border-hair px-4">
+            <ToggleField
+              path="google.optimized_targeting"
+              title="Lărgirea automată a publicului (optimized targeting)"
+              body="Pornită, Google livrează și în afara intereselor din plan."
+              dangerWhenOn
+            />
+          </div>
+        </Section>
       ) : (
         <Section title="TikTok" prefixes={["tiktok"]}>
           <PathMessages path="tiktok" />
@@ -847,15 +1018,25 @@ export function PlanForm({
                   dangerWhenOn
                 />
               ))
-            : TIKTOK_ENHANCEMENTS.map((key) => (
-                <ToggleField
-                  key={key}
-                  path={`tiktok.enhancements.${key}`}
-                  title={TIKTOK_ENHANCEMENT_LABEL[key].title}
-                  body={TIKTOK_ENHANCEMENT_LABEL[key].body}
-                  dangerWhenOn
-                />
-              ))}
+            : platform === "google"
+              ? GOOGLE_ENHANCEMENTS.map((key) => (
+                  <ToggleField
+                    key={key}
+                    path={`google.enhancements.${key}`}
+                    title={GOOGLE_ENHANCEMENT_LABEL[key].title}
+                    body={GOOGLE_ENHANCEMENT_LABEL[key].body}
+                    dangerWhenOn
+                  />
+                ))
+              : TIKTOK_ENHANCEMENTS.map((key) => (
+                  <ToggleField
+                    key={key}
+                    path={`tiktok.enhancements.${key}`}
+                    title={TIKTOK_ENHANCEMENT_LABEL[key].title}
+                    body={TIKTOK_ENHANCEMENT_LABEL[key].body}
+                    dangerWhenOn
+                  />
+                ))}
         </div>
       </Section>
     </div>

@@ -198,6 +198,24 @@ export async function getCampaign(id: string): Promise<StoreResult<AdsCampaign>>
 }
 
 /**
+ * Conturile de reclame folosite deja într-un spațiu — pe TikTok, unde
+ * tokenul nu poate lista singur conturile, de aici pornește contextul dat
+ * conversației cu Claude.
+ */
+export async function knownAccounts(workspaceId: string): Promise<string[]> {
+  const supabase = await createReadOnlySessionClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("ads_campaigns")
+    .select("ad_account, created_at")
+    .eq("workspace", workspaceId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error || !data) return [];
+  return [...new Set((data as Array<{ ad_account: string }>).map((row) => row.ad_account))].slice(0, 10);
+}
+
+/**
  * Ultima campanie creată din EXACT același plan verificat, în ultimele
  * `minutes` minute — sau null. Prinde dublul clic și al doilea tab.
  */

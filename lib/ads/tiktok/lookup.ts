@@ -144,6 +144,19 @@ export interface TikTokPixel {
   events: string[] | null;
 }
 
+/** Pixelii contului — pentru contextul dat conversației cu Claude. */
+export async function listTikTokPixels(workspace: AdsWorkspace, advertiserId: string): Promise<TikTokPixel[]> {
+  const raw = await tiktokGetAll<RawPixel>(workspace, "/pixel/list/", { advertiser_id: advertiserId }, "pixels", 50, 20);
+  return raw
+    .filter((pixel) => pixel.pixel_id !== undefined)
+    .map((pixel) => ({
+      id: String(pixel.pixel_id),
+      code: pixel.pixel_code ?? null,
+      name: pixel.pixel_name?.trim() || String(pixel.pixel_id),
+      events: null,
+    }));
+}
+
 /** Pixelul după id-ul numeric SAU după cod (`DAN9…`, cel din codul site-ului). */
 export async function findPixel(workspace: AdsWorkspace, advertiserId: string, idOrCode: string): Promise<TikTokPixel | null> {
   const raw = await tiktokGetAll<RawPixel>(

@@ -126,6 +126,103 @@ function walkTikTok(value: unknown, path: string): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Google Ads: aceeași regulă, într-o singură cerere atomică
+// ---------------------------------------------------------------------------
+
+/**
+ * Pe Google, „oprit” se scrie `status: "PAUSED"` pe campanie, grup și
+ * reclamă. Implicit Google pornește o campanie nouă (ENABLED), deci câmpul
+ * trebuie trimis, nu lăsat la voia platformei.
+ */
+export const GOOGLE_PAUSED = "PAUSED" as const;
+
+/**
+ * Singurele operații din `googleAds:mutate` pe care le trimite portalul, și
+ * doar ca `create`. Niciuna nu modifică un obiect existent.
+ */
+export const GOOGLE_CREATE_OPERATIONS = [
+  "campaignBudgetOperation",
+  "campaignOperation",
+  "campaignCriterionOperation",
+  "adGroupOperation",
+  "audienceOperation",
+  "adGroupCriterionOperation",
+  "assetOperation",
+  "adGroupAdOperation",
+] as const;
+
+/** Operațiile al căror obiect are status de livrare — acolo trebuie PAUSED. */
+const GOOGLE_OPERATIONS_WITH_STATUS: readonly string[] = ["campaignOperation", "adGroupOperation", "adGroupAdOperation"];
+
+/**
+ * Orice alt câmp `status` e refuzat: pe criterii (locație, vârstă, limbă)
+ * un status „PAUSED” ar OPRI restricția și ar lărgi publicul. Criteriile se
+ * trimit fără status — Google le ia active, adică publicul rămâne cel din plan.
+ */
+function walkGoogle(value: unknown, path: string, statusAllowedHere: boolean): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => walkGoogle(item, `${path}[${index}]`, false));
+    return;
+  }
+  if (value && typeof value === "object") {
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      const itemPath = path ? `${path}.${key}` : key;
+      if (key === "status" && !(statusAllowedHere && item === GOOGLE_PAUSED)) {
+        throw new NotPausedError(
+          statusAllowedHere
+            ? `${itemPath} trebuie să fie ${GOOGLE_PAUSED}, nu ${JSON.stringify(item)}.`
+            : `${itemPath}: portalul nu trimite status aici (${JSON.stringify(item)}) — un criteriu oprit ar lărgi publicul.`
+        );
+      }
+      walkGoogle(item, itemPath, false);
+    }
+    return;
+  }
+  if (typeof value === "string") {
+    const parsed = parseMaybeJson(value);
+    if (parsed !== undefined) walkGoogle(parsed, path, false);
+  }
+}
+
+export function assertGooglePaused(customerId: string, operations: ReadonlyArray<Record<string, unknown>>): void {
+  if (!/^\d{10}$/.test(customerId)) throw new NotPausedError(`Contul Google „${customerId}” nu are forma de 10 cifre.`);
+  if (!Array.isArray(operations) || operations.length === 0) throw new NotPausedError("Nicio operație de trimis spre Google.");
+
+  operations.forEach((operation, index) => {
+    const kinds = Object.keys(operation ?? {});
+    if (kinds.length !== 1) throw new NotPausedError(`Operația ${index}: trebuie să aibă exact un tip, nu ${kinds.length}.`);
+    const kind = kinds[0];
+    if (!(GOOGLE_CREATE_OPERATIONS as readonly string[]).includes(kind)) {
+      throw new NotPausedError(`Operația ${index} („${kind}”) nu e una de creare a portalului.`);
+    }
+    const body = operation[kind];
+    const verbs = body && typeof body === "object" ? Object.keys(body as Record<string, unknown>) : [];
+    if (verbs.length !== 1 || verbs[0] !== "create") {
+      throw new NotPausedError(
+        `${kind} (${index}): portalul doar creează — nu actualizează, nu șterge (${verbs.join(", ") || "gol"}).`
+      );
+    }
+    const created = (body as { create?: unknown }).create;
+    if (!created || typeof created !== "object" || Array.isArray(created)) {
+      throw new NotPausedError(`${kind} (${index}): obiectul de creat lipsește.`);
+    }
+    const resourceName = (created as { resourceName?: unknown }).resourceName;
+    if (typeof resourceName === "string" && !resourceName.startsWith(`customers/${customerId}/`)) {
+      throw new NotPausedError(`${kind} (${index}): resursa ${resourceName} nu e în contul ${customerId}.`);
+    }
+    if (GOOGLE_OPERATIONS_WITH_STATUS.includes(kind)) {
+      const status = (created as { status?: unknown }).status;
+      if (status !== GOOGLE_PAUSED) {
+        throw new NotPausedError(
+          `${kind} (${index}): status lipsă sau diferit de ${GOOGLE_PAUSED} (${JSON.stringify(status)}). Google ar porni-o.`
+        );
+      }
+    }
+    walkGoogle(created, `${kind}.create`, GOOGLE_OPERATIONS_WITH_STATUS.includes(kind));
+  });
+}
+
 export function assertTikTokDisabled(path: string, payload: Record<string, unknown>): void {
   if (!(TIKTOK_CREATE_PATHS as readonly string[]).includes(path)) {
     throw new NotPausedError(`Calea TikTok „${path}” nu e una de creare a portalului.`);

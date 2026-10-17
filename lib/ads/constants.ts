@@ -12,12 +12,13 @@
  * interfața.
  */
 
-export const PLATFORMS = ["meta", "tiktok"] as const;
+export const PLATFORMS = ["meta", "tiktok", "google"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 export const PLATFORM_LABEL: Record<Platform, string> = {
   meta: "Meta",
   tiktok: "TikTok",
+  google: "Google",
 };
 
 /** Moneda contului de reclame. Se compară cu moneda reală la creare. */
@@ -69,8 +70,23 @@ const TIKTOK_RESULT_LABEL: Partial<Record<Objective, { plural: string; cost: str
   video_views: { plural: "Vizionări de 6 s", cost: "Cost pe vizionare", unit: "vizionări" },
 };
 
+/**
+ * Pe Google (Demand Gen), Trafic optimizează pe clicuri, iar Lead-uri și
+ * Vânzări pe conversiile din tag-ul Google — numărul „Conversii" din Google Ads.
+ */
+const GOOGLE_RESULT_LABEL: Partial<Record<Objective, { plural: string; cost: string; unit: string }>> = {
+  traffic: { plural: "Clicuri", cost: "Cost pe click", unit: "clicuri" },
+  leads: { plural: "Conversii (lead-uri)", cost: "Cost pe conversie", unit: "conversii" },
+  sales: { plural: "Conversii (vânzări)", cost: "Cost pe conversie", unit: "conversii" },
+};
+
+const PLATFORM_RESULT_LABEL: Partial<Record<Platform, typeof TIKTOK_RESULT_LABEL>> = {
+  tiktok: TIKTOK_RESULT_LABEL,
+  google: GOOGLE_RESULT_LABEL,
+};
+
 export function resultLabel(objective: Objective, platform: Platform): { plural: string; cost: string; unit: string } {
-  return (platform === "tiktok" ? TIKTOK_RESULT_LABEL[objective] : undefined) ?? RESULT_LABEL[objective];
+  return PLATFORM_RESULT_LABEL[platform]?.[objective] ?? RESULT_LABEL[objective];
 }
 
 /** Obiectivele care optimizează pe un eveniment de pe site, deci cer pixel. */
@@ -156,22 +172,24 @@ export const CONVERSION_EVENT_LABEL: Record<ConversionEvent, string> = {
  * nu are echivalent standard, deci planul se respinge.
  */
 export const CONVERSION_EVENT_NAME: Record<ConversionEvent, Record<Platform, string | null>> = {
-  lead: { meta: "Lead", tiktok: "SubmitForm" },
-  contact: { meta: "Contact", tiktok: "Contact" },
-  schedule: { meta: "Schedule", tiktok: null },
-  complete_registration: { meta: "CompleteRegistration", tiktok: "CompleteRegistration" },
-  purchase: { meta: "Purchase", tiktok: "CompletePayment" },
-  view_content: { meta: "ViewContent", tiktok: "ViewContent" },
+  // Pe Google: categoria acțiunii de conversie (ConversionActionCategory).
+  lead: { meta: "Lead", tiktok: "SubmitForm", google: "SUBMIT_LEAD_FORM" },
+  contact: { meta: "Contact", tiktok: "Contact", google: "CONTACT" },
+  schedule: { meta: "Schedule", tiktok: null, google: "BOOK_APPOINTMENT" },
+  complete_registration: { meta: "CompleteRegistration", tiktok: "CompleteRegistration", google: "SIGNUP" },
+  purchase: { meta: "Purchase", tiktok: "CompletePayment", google: "PURCHASE" },
+  view_content: { meta: "ViewContent", tiktok: "ViewContent", google: "PAGE_VIEW" },
 };
 
 /**
- * Ce trimite EFECTIV site-ul agenției (lib/meta-pixel.ts, lib/tiktok-pixel.ts).
- * Dacă destinația e pe domeniul nostru și evenimentul nu e aici, campania
- * ar optimiza pe ceva ce nu se întâmplă niciodată.
+ * Ce trimite EFECTIV site-ul agenției (lib/meta-pixel.ts, lib/tiktok-pixel.ts,
+ * lib/google-tag.ts). Dacă destinația e pe domeniul nostru și evenimentul nu
+ * e aici, campania ar optimiza pe ceva ce nu se întâmplă niciodată.
  */
 export const SITE_SENDS: Record<Platform, readonly ConversionEvent[]> = {
   meta: ["lead", "contact", "schedule", "view_content"],
   tiktok: ["lead", "contact", "view_content"],
+  google: ["lead"],
 };
 
 /** Parametrii UTM pe care site-ul îi salvează pe lead (lib/utm.ts). */
@@ -215,6 +233,15 @@ export const VARIANT_MODE_LABEL: Record<VariantMode, string> = {
 };
 
 export const MAX_TEXT_VARIANTS = 5;
+
+/**
+ * Producția în masă: un plan poate avea mai multe video-uri, iar reclamele
+ * ies din combinația video × text, toate în același set — platforma
+ * împarte bugetul spre ce merge. 20 de reclame pe set e sub limita
+ * fiecărei platforme și peste ce se poate citi omenește într-o fișă.
+ */
+export const MAX_VIDEOS = 10;
+export const MAX_ADS_PER_PLAN = 20;
 
 /**
  * Video nou urcat din portal. Trece prin stocarea temporară din Supabase
@@ -358,3 +385,63 @@ export const TIKTOK_ENHANCEMENT_LABEL: Record<TikTokEnhancement, { title: string
     body: "TikTok înlocuiește muzica cu piese din biblioteca lui.",
   },
 };
+
+// ---------------------------------------------------------------------------
+// Google (Demand Gen, video pe YouTube)
+// ---------------------------------------------------------------------------
+
+/**
+ * Unde poate apărea o reclamă Demand Gen. „all" = toate; o listă = doar
+ * acolo (pentru un testimonial, de obicei doar YouTube).
+ */
+export const GOOGLE_CHANNELS = [
+  "youtube_in_stream",
+  "youtube_in_feed",
+  "youtube_shorts",
+  "discover",
+  "gmail",
+  "display",
+] as const;
+export type GoogleChannel = (typeof GOOGLE_CHANNELS)[number];
+
+export const GOOGLE_CHANNEL_LABEL: Record<GoogleChannel, string> = {
+  youtube_in_stream: "YouTube — înainte și în timpul video-urilor",
+  youtube_in_feed: "YouTube — în lista de video-uri și căutare",
+  youtube_shorts: "YouTube Shorts",
+  discover: "Google Discover",
+  gmail: "Gmail",
+  display: "Rețeaua de display Google",
+};
+
+/** Grupele de vârstă ale Google (AgeRangeType). 65 = 65 și peste, ca în plan. */
+export const GOOGLE_AGE_RANGES: ReadonlyArray<{ min: number; max: number; label: string; type: string }> = [
+  { min: 18, max: 24, label: "18–24", type: "AGE_RANGE_18_24" },
+  { min: 25, max: 34, label: "25–34", type: "AGE_RANGE_25_34" },
+  { min: 35, max: 44, label: "35–44", type: "AGE_RANGE_35_44" },
+  { min: 45, max: 54, label: "45–54", type: "AGE_RANGE_45_54" },
+  { min: 55, max: 64, label: "55–64", type: "AGE_RANGE_55_64" },
+  { min: 65, max: 65, label: "65+", type: "AGE_RANGE_65_UP" },
+];
+
+/** Limitele de text ale unei reclame video Demand Gen. */
+export const GOOGLE_HEADLINE_MAX = 40;
+export const GOOGLE_LONG_HEADLINE_MAX = 90;
+export const GOOGLE_DESCRIPTION_MAX = 90;
+export const GOOGLE_BUSINESS_NAME_MAX = 25;
+/** Video-uri, titluri, titluri lungi și descrieri într-o singură reclamă video Demand Gen. */
+export const GOOGLE_ASSETS_PER_AD = 5;
+
+export const GOOGLE_ENHANCEMENTS = ["video_enhancements", "text_assets"] as const;
+export type GoogleEnhancement = (typeof GOOGLE_ENHANCEMENTS)[number];
+
+export const GOOGLE_ENHANCEMENT_LABEL: Record<GoogleEnhancement, { title: string; body: string }> = {
+  video_enhancements: {
+    title: "Îmbunătățirile video",
+    body: "Google face singur variante ale video-ului: versiuni verticale sau pătrate, mai scurte, decupate.",
+  },
+  text_assets: {
+    title: "Texte generate automat",
+    body: "Google scrie titluri și descrieri noi din pagina de destinație și le pune lângă ale tale.",
+  },
+};
+

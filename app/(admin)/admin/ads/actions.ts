@@ -7,14 +7,21 @@ import { getAdminUser } from "@/lib/supabase/clients";
 import { PLATFORM_LABEL } from "@/lib/ads/constants";
 import { campaignUrl } from "@/lib/ads/links";
 import { adapterFor, type PlatformAdapter } from "@/lib/ads/platform";
+import { BATCH_DUPLICATE_DAYS } from "@/lib/ads/plan-batch";
 import type { Plan } from "@/lib/ads/plan-schema";
 import { validatePlan } from "@/lib/ads/plan-validate";
 import { createStagingDownload, createStagingUpload, isStagingNameOf, removeStaged } from "@/lib/ads/staging";
-import { STORE_FAILURE_MESSAGE, findRecentDuplicate } from "@/lib/ads/store";
+import { STORE_FAILURE_MESSAGE, findRecentDuplicate, knownAccounts } from "@/lib/ads/store";
 import { runAdsSync } from "@/lib/ads/sync";
 import type { CheckResponse, CreateResponse, LibraryResponse, UploadStatus } from "@/lib/ads/types";
-import { findWorkspace, isWorkspaceId, workspaceName, type AdsWorkspace } from "@/lib/ads/workspaces";
-import { WORKSPACE_COOKIE, currentWorkspaceId } from "@/lib/ads/workspaces.server";
+import { WORKSPACES, findWorkspace, isWorkspaceId, workspaceName, type AdsWorkspace } from "@/lib/ads/workspaces";
+import { WORKSPACE_COOKIE, currentWorkspaceId, workspaceToken } from "@/lib/ads/workspaces.server";
+import { contextForClaude } from "@/lib/ads/claude-brief";
+import { readAccountContext } from "@/lib/ads/claude-context";
+import { PIXEL_ID as SITE_META_PIXEL_ID } from "@/lib/meta-pixel";
+import { TIKTOK_PIXEL_ID as SITE_TIKTOK_PIXEL_CODE } from "@/lib/tiktok-pixel";
+import { GOOGLE_ADS_LEAD_SEND_TO } from "@/lib/google-tag";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * Acțiunile portalului de reclame.
@@ -95,7 +102,9 @@ async function accountSession(workspaceId: string, adAccountInput: string) {
       message:
         context.workspace.platform === "meta"
           ? `„${adAccountInput}” nu e un cont de reclame Meta (act_ urmat de cifre).`
-          : `„${adAccountInput}” nu e un advertiser_id TikTok (doar cifre).`,
+          : context.workspace.platform === "google"
+            ? `„${adAccountInput}” nu e un cont Google Ads (10 cifre, 123-456-7890).`
+            : `„${adAccountInput}” nu e un advertiser_id TikTok (doar cifre).`,
     };
   }
   return { ...context, adAccount };
@@ -124,10 +133,7 @@ async function preparePlan(input: { plan: unknown; workspace: string }): Promise
 // Verificarea pe platformă
 // ---------------------------------------------------------------------------
 
-export async function checkPlan(input: { plan: unknown; workspace: string }): Promise<CheckResponse> {
-  const prepared = await preparePlan(input);
-  if (!prepared.ok) return prepared;
-
+async function checkPrepared(prepared: Extract<Prepared, { ok: true }>): Promise<CheckResponse> {
   try {
     const { check } = await prepared.adapter.prepare(prepared.workspace, prepared.plan);
     return { ok: true, check };
@@ -136,9 +142,24 @@ export async function checkPlan(input: { plan: unknown; workspace: string }): Pr
   }
 }
 
+export async function checkPlan(input: { plan: unknown; workspace: string }): Promise<CheckResponse> {
+  const prepared = await preparePlan(input);
+  if (!prepared.ok) return prepared;
+  return checkPrepared(prepared);
+}
+
 // ---------------------------------------------------------------------------
 // Crearea pe pauză
 // ---------------------------------------------------------------------------
+
+/** „acum 3 minute", „acum 5 ore", „acum 2 zile". */
+function agoLabel(iso: string): string {
+  const minutes = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60_000));
+  if (minutes < 60) return minutes === 1 ? "acum un minut" : `acum ${minutes} minute`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return hours === 1 ? "acum o oră" : `acum ${hours} ore`;
+  return `acum ${Math.round(hours / 24)} zile`;
+}
 
 export async function createPausedCampaign(input: {
   plan: unknown;
@@ -148,6 +169,17 @@ export async function createPausedCampaign(input: {
 }): Promise<CreateResponse> {
   const prepared = await preparePlan(input);
   if (!prepared.ok) return prepared;
+  return createPrepared(prepared, {
+    fingerprint: input.fingerprint,
+    allowDuplicate: input.allowDuplicate,
+    duplicateMinutes: 30,
+  });
+}
+
+async function createPrepared(
+  prepared: Extract<Prepared, { ok: true }>,
+  options: { fingerprint: string; allowDuplicate: boolean; duplicateMinutes: number }
+): Promise<CreateResponse> {
   const { workspace, plan, user, adapter } = prepared;
   const label = PLATFORM_LABEL[workspace.platform];
 
@@ -167,7 +199,7 @@ export async function createPausedCampaign(input: {
       recheck: true,
     };
   }
-  if (creation.check.fingerprint !== input.fingerprint) {
+  if (creation.check.fingerprint !== options.fingerprint) {
     return {
       ok: false,
       message: `Planul sau ce a găsit ${label} s-a schimbat de la verificare. Verifică din nou, ca să creezi exact ce vezi pe ecran.`,
@@ -175,17 +207,16 @@ export async function createPausedCampaign(input: {
     };
   }
 
-  // Dublul clic și al doilea tab: același plan, creat de curând.
-  if (!input.allowDuplicate) {
-    const duplicate = await findRecentDuplicate(creation.check.fingerprint);
+  // Dublul clic, al doilea tab, lotul lipit a doua oară: același plan, creat de curând.
+  if (!options.allowDuplicate) {
+    const duplicate = await findRecentDuplicate(creation.check.fingerprint, options.duplicateMinutes);
     if (!duplicate.ok) {
       return { ok: false, message: STORE_FAILURE_MESSAGE[duplicate.reason] };
     }
     if (duplicate.data) {
-      const minutes = Math.max(1, Math.round((Date.now() - Date.parse(duplicate.data.createdAt)) / 60_000));
       return {
         ok: false,
-        message: `Exact planul ăsta a fost creat acum ${minutes === 1 ? "un minut" : `${minutes} minute`}${duplicate.data.createdByEmail ? `, de ${duplicate.data.createdByEmail}` : ""}. Încă o creare înseamnă a doua campanie cu același buget.`,
+        message: `Exact planul ăsta a fost creat ${agoLabel(duplicate.data.createdAt)}${duplicate.data.createdByEmail ? `, de ${duplicate.data.createdByEmail}` : ""}. Încă o creare înseamnă a doua campanie cu același buget.`,
         duplicate: {
           createdAt: duplicate.data.createdAt,
           adsManagerUrl: campaignUrl(duplicate.data.platform, duplicate.data.adAccount, duplicate.data.platformCampaignId),
@@ -198,6 +229,72 @@ export async function createPausedCampaign(input: {
   const result = await creation.create(user);
   revalidatePath("/admin/ads");
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Lotul: mai multe planuri, același proprietar
+// ---------------------------------------------------------------------------
+
+/**
+ * Un plan din lot: spațiul de pe ecran trebuie să fie cel din cookie (ca la
+ * un plan singur — al doilea tab nu mută nimic), iar spațiul planului
+ * trebuie să fie al ACELUIAȘI proprietar. Platforma poate diferi: fiecare
+ * plan se validează, se verifică și se creează în spațiul scris în el.
+ */
+async function prepareBatchPlan(input: { plan: unknown; screenWorkspace: string }): Promise<Prepared> {
+  const screen = await session(input.screenWorkspace);
+  if (!screen.ok) return screen;
+
+  const record = input.plan && typeof input.plan === "object" ? (input.plan as Record<string, unknown>) : null;
+  const workspace = findWorkspace(record?.workspace);
+  if (!workspace) {
+    return {
+      ok: false,
+      message: "Planul nu spune un spațiu de lucru cunoscut. Corectează câmpul workspace.",
+      problems: [{ path: "workspace", message: "Spațiul de lucru lipsește sau nu există." }],
+    };
+  }
+  if (workspace.owner !== screen.workspace.owner) {
+    return {
+      ok: false,
+      message: `Planul e pentru ${workspaceName(workspace)}, iar lotul e pentru ${workspaceName(screen.workspace)}: un lot nu amestecă banii agenției cu ai clienților. Nu s-a trimis nimic.`,
+    };
+  }
+
+  const validation = validatePlan(input.plan, { currentWorkspace: workspace.id });
+  if (!validation.ok) {
+    return {
+      ok: false,
+      message: "Planul are greșeli — corectează-le și verifică din nou.",
+      problems: validation.errors,
+    };
+  }
+  return { ok: true, user: screen.user, workspace, adapter: adapterFor(workspace.platform), plan: validation.plan };
+}
+
+export async function checkBatchPlan(input: { plan: unknown; screenWorkspace: string }): Promise<CheckResponse> {
+  const prepared = await prepareBatchPlan(input);
+  if (!prepared.ok) return prepared;
+  return checkPrepared(prepared);
+}
+
+/**
+ * Crearea unui plan din lot. Fără „creează încă una, intenționat": un plan
+ * creat în ultimele două săptămâni se sare și se arată cu linkul lui — un
+ * lot lipit a doua oară, după două corecturi, nu dublează celelalte opt.
+ */
+export async function createBatchPlan(input: {
+  plan: unknown;
+  screenWorkspace: string;
+  fingerprint: string;
+}): Promise<CreateResponse> {
+  const prepared = await prepareBatchPlan(input);
+  if (!prepared.ok) return prepared;
+  return createPrepared(prepared, {
+    fingerprint: input.fingerprint,
+    allowDuplicate: false,
+    duplicateMinutes: BATCH_DUPLICATE_DAYS * 24 * 60,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -317,6 +414,63 @@ export async function syncAdsNow(): Promise<
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "Sincronizarea n-a pornit." };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Contextul conturilor, pentru conversația cu Claude
+// ---------------------------------------------------------------------------
+
+export interface ClaudeContextSummary {
+  workspaceId: string;
+  name: string;
+  accounts: number;
+  identities: number;
+  conversions: number;
+  videos: number;
+  notes: string[];
+}
+
+/**
+ * Citește, cu tokenul fiecărui spațiu al proprietarului de pe ecran, ce id-uri
+ * poate folosi un plan, și le pune în textul de dat conversației. Doar citiri.
+ */
+export async function readClaudeContext(input: {
+  screenWorkspace: string;
+  tiktokAccounts: Record<string, string[]>;
+}): Promise<{ ok: true; text: string; summary: ClaudeContextSummary[] } | Failure> {
+  const screen = await session(input.screenWorkspace);
+  if (!screen.ok) return screen;
+
+  const workspaces = WORKSPACES.filter(
+    (workspace) => workspace.owner === screen.workspace.owner && workspaceToken(workspace) !== null
+  ) as AdsWorkspace[];
+  const contexts = [];
+  for (const workspace of workspaces) {
+    const typed = (input.tiktokAccounts[workspace.id] ?? []).map((id) => id.trim()).filter((id) => /^\d{5,25}$/.test(id));
+    const hints = workspace.platform === "tiktok" ? (typed.length > 0 ? typed : await knownAccounts(workspace.id)) : [];
+    contexts.push(await readAccountContext(workspace, hints));
+  }
+
+  const siteNotes = [
+    `Site-ul agenției: ${SITE_URL}. Pentru reclamele care duc pe site, folosește pixelul Meta ${SITE_META_PIXEL_ID}, pixelul TikTok ${SITE_TIKTOK_PIXEL_CODE}${
+      GOOGLE_ADS_LEAD_SEND_TO ? ` și, pe Google, acțiunea de conversie cu eticheta ${GOOGLE_ADS_LEAD_SEND_TO}` : "; pe Google, tag-ul de conversie nu e încă pus pe site (NEXT_PUBLIC_GOOGLE_ADS_LEAD)"
+    }.`,
+    "Site-ul trimite: pe Meta — Lead (formular), Contact, Schedule, ViewContent; pe TikTok — SubmitForm (lead), Contact, ViewContent; pe Google — conversia „Lead” la formular trimis.",
+    "Spațiile fără token nu apar aici: pentru ele, cere-i omului id-urile.",
+  ];
+  return {
+    ok: true,
+    text: contextForClaude(contexts, siteNotes),
+    summary: contexts.map((context) => ({
+      workspaceId: context.workspaceId,
+      name: context.workspaceName,
+      accounts: context.accounts.length,
+      identities: context.identities.length,
+      conversions: context.conversions.length,
+      videos: context.videos.length,
+      notes: context.notes,
+    })),
+  };
 }
 
 // ---------------------------------------------------------------------------

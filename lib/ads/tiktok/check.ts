@@ -1,6 +1,7 @@
 import "server-only";
 
 import { CURRENCY_LABEL, OBJECTIVES_WITH_CONVERSION } from "../constants";
+import { videosOf } from "../plan-derive";
 import { planFingerprint } from "../fingerprint";
 import type { Plan } from "../plan-schema";
 import { normalizeAdAccount, type PlanProblem } from "../plan-validate";
@@ -36,7 +37,8 @@ export interface TikTokCheckContext {
   account: AdAccountInfo | null;
   identity: TikTokIdentity | null;
   pixel: TikTokPixel | null;
-  video: VideoInfo | null;
+  /** Video-urile planului, în ordine; complete doar când verificarea e fără erori. */
+  videos: VideoInfo[];
 }
 
 function targetsEu(plan: Plan): boolean {
@@ -51,7 +53,8 @@ export async function checkOnTikTok(workspace: AdsWorkspace, plan: Plan): Promis
   const advertiserId = normalizeAdAccount("tiktok", plan.ad_account);
   const tiktok = plan.tiktok;
   const conversion = OBJECTIVES_WITH_CONVERSION.includes(plan.campaign.objective) ? plan.conversion : undefined;
-  const videoId = plan.creative.video.source === "library" ? plan.creative.video.video_id : null;
+  const planned = videosOf(plan.creative);
+  const single = !plan.creative.videos;
 
   // Contul întâi: dacă tokenul nu-l vede, restul citirilor ar pica toate
   // cu aceeași eroare de permisiune.
@@ -78,10 +81,12 @@ export async function checkOnTikTok(workspace: AdsWorkspace, plan: Plan): Promis
     });
   }
 
-  const [identities, pixel, video, targeting] = await Promise.all([
+  const [identities, pixel, found, targeting] = await Promise.all([
     tiktok ? listIdentities(workspace, advertiserId, tiktok.identity_type, tiktok.identity_bc_id) : Promise.resolve([]),
     conversion ? findPixel(workspace, advertiserId, conversion.pixel_id) : Promise.resolve(null),
-    videoId ? readVideo(workspace, advertiserId, videoId) : Promise.resolve(null),
+    Promise.all(
+      planned.map((video) => (video.source === "library" ? readVideo(workspace, advertiserId, video.video_id) : Promise.resolve(null)))
+    ),
     resolveTikTokTargeting(workspace, advertiserId, plan),
   ]);
 
@@ -126,23 +131,31 @@ export async function checkOnTikTok(workspace: AdsWorkspace, plan: Plan): Promis
     });
   }
 
-  // Video-ul ----------------------------------------------------------------------
-  if (plan.creative.video.source === "upload") {
-    errors.push({
-      path: "creative.video",
-      message: "Video-ul nu e încă în contul de reclame. Urcă-l la „Materialul”: când TikTok termină de procesat, planul trece singur pe el.",
-    });
-  } else if (!video) {
-    errors.push({
-      path: "creative.video.video_id",
-      message: `Video-ul ${videoId} nu există în contul ăsta. Alege-l din biblioteca contului.`,
-    });
-  } else if (!video.ready) {
-    errors.push({
-      path: "creative.video.video_id",
-      message: "TikTok încă procesează video-ul. Reverifică în câteva minute — o reclamă cu el ar pica acum.",
-    });
-  }
+  // Video-urile -------------------------------------------------------------------
+  const videos: VideoInfo[] = [];
+  planned.forEach((planVideo, index) => {
+    const path = single ? "creative.video" : `creative.videos.${index}`;
+    const which = single ? "Video-ul" : `Video-ul ${index + 1}`;
+    const video = found[index];
+    if (planVideo.source === "upload") {
+      errors.push({
+        path,
+        message: `${which} nu e încă în contul de reclame. Urcă-l la „Materialul”: când TikTok termină de procesat, planul trece singur pe el.`,
+      });
+    } else if (!video) {
+      errors.push({
+        path: `${path}.video_id`,
+        message: `${which} (${planVideo.video_id}) nu există în contul ăsta. Alege-l din biblioteca contului.`,
+      });
+    } else if (!video.ready) {
+      errors.push({
+        path: `${path}.video_id`,
+        message: `TikTok încă procesează ${single ? "video-ul" : `video-ul ${index + 1}`}. Reverifică în câteva minute — o reclamă cu el ar pica acum.`,
+      });
+    } else {
+      videos.push(video);
+    }
+  });
 
   // DSA: TikTok nu are câmp în API pentru plătitor — se setează pe cont.
   if (targetsEu(plan)) {
@@ -173,7 +186,8 @@ export async function checkOnTikTok(workspace: AdsWorkspace, plan: Plan): Promis
     identity: identity ? { id: identity.id, name: identity.name } : null,
     instagram: null,
     pixel: pixel ? { id: pixel.id, name: pixel.code ? `${pixel.name} · ${pixel.code}` : pixel.name } : null,
-    video,
+    video: found[0] ?? null,
+    videos: found,
     dsa: null,
     conversionDomain: null,
     locations: targeting.locations,
@@ -184,7 +198,7 @@ export async function checkOnTikTok(workspace: AdsWorkspace, plan: Plan): Promis
     warnings,
   };
 
-  return { check, targeting, account, identity, pixel, video };
+  return { check, targeting, account, identity, pixel, videos };
 }
 
 /** Contul nu se vede: nimic de citit mai departe, doar eroarea contului. */
@@ -210,6 +224,7 @@ function emptyContext(workspace: AdsWorkspace, plan: Plan, advertiserId: string,
       instagram: null,
       pixel: null,
       video: null,
+      videos: [],
       dsa: null,
       conversionDomain: null,
       locations: [],
@@ -223,6 +238,6 @@ function emptyContext(workspace: AdsWorkspace, plan: Plan, advertiserId: string,
     account: null,
     identity: null,
     pixel: null,
-    video: null,
+    videos: [],
   };
 }

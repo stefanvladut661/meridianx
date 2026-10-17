@@ -351,9 +351,20 @@ export function buildEnhancements(plan: Plan): Record<string, unknown> {
  */
 export type Thumbnail = { hash: string } | { url: string };
 
-export interface CreativeContext {
+export interface CreativeVideo {
   videoId: string;
   thumbnail: Thumbnail;
+}
+
+export interface CreativeContext {
+  /** Video-urile planului, în ordinea lor, fiecare cu coperta lui. */
+  videos: CreativeVideo[];
+}
+
+function videoAt(context: CreativeContext, index: number): CreativeVideo {
+  const video = context.videos[index];
+  if (!video) throw new Error(`Video-ul ${index + 1} lipsește din contextul creării — verificarea trebuia să-l oprească.`);
+  return video;
 }
 
 function finalUrl(plan: Plan): string {
@@ -371,15 +382,16 @@ function identity(plan: Plan): Record<string, unknown> {
   };
 }
 
-/** O reclamă = un text principal (+ titlul și descrierea de pe același index). */
+/** O reclamă = un video × un text principal (+ titlul și descrierea de pe indexul textului). */
 function singleCreative(plan: Plan, ad: DerivedAd, context: CreativeContext): Record<string, unknown> {
+  const video = videoAt(context, ad.videoIndexes[0] ?? 0);
   return {
     name: ad.name,
     object_story_spec: {
       ...identity(plan),
       video_data: {
-        video_id: context.videoId,
-        ...("hash" in context.thumbnail ? { image_hash: context.thumbnail.hash } : { image_url: context.thumbnail.url }),
+        video_id: video.videoId,
+        ...("hash" in video.thumbnail ? { image_hash: video.thumbnail.hash } : { image_url: video.thumbnail.url }),
         message: ad.primaryTexts[0],
         ...(ad.headlines[0] ? { title: ad.headlines[0] } : {}),
         ...(ad.descriptions[0] ? { link_description: ad.descriptions[0] } : {}),
@@ -390,20 +402,19 @@ function singleCreative(plan: Plan, ad: DerivedAd, context: CreativeContext): Re
   };
 }
 
-/** Dynamic creative: o reclamă cu toate variantele; Meta alternează textele. */
+/** Dynamic creative: o reclamă cu toate variantele; Meta alternează textele și video-urile. */
 function rotatingCreative(plan: Plan, ad: DerivedAd, context: CreativeContext): Record<string, unknown> {
   return {
     name: ad.name,
     object_story_spec: identity(plan),
     asset_feed_spec: {
-      videos: [
-        {
-          video_id: context.videoId,
-          ...("hash" in context.thumbnail
-            ? { thumbnail_hash: context.thumbnail.hash }
-            : { thumbnail_url: context.thumbnail.url }),
-        },
-      ],
+      videos: ad.videoIndexes.map((index) => {
+        const video = videoAt(context, index);
+        return {
+          video_id: video.videoId,
+          ...("hash" in video.thumbnail ? { thumbnail_hash: video.thumbnail.hash } : { thumbnail_url: video.thumbnail.url }),
+        };
+      }),
       bodies: ad.primaryTexts.map((text) => ({ text })),
       ...(ad.headlines.length > 0 ? { titles: ad.headlines.map((text) => ({ text })) } : {}),
       ...(ad.descriptions.length > 0 ? { descriptions: ad.descriptions.map((text) => ({ text })) } : {}),
@@ -428,6 +439,7 @@ export function buildCreatives(plan: Plan, context: CreativeContext): PlannedAd[
     headlines: plan.creative.headlines,
     descriptions: plan.creative.descriptions,
     mode: plan.creative.variants,
+    videoCount: context.videos.length,
   });
   return ads.map((ad) => ({
     name: ad.name,

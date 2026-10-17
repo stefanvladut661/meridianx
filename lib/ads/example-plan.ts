@@ -1,4 +1,7 @@
 import type { Platform } from "./constants";
+import { parseJsonText } from "./plan-json";
+import { PLAN_FORMAT } from "./plan-schema";
+import { WORKSPACES, type AdsWorkspace } from "./workspaces";
 
 /**
  * Exemplele complete de plan, comentate: o campanie de tip Leads cu
@@ -248,10 +251,129 @@ export const EXAMPLE_PLAN_TIKTOK = `{
 `;
 
 /**
+ * Același plan, pe Google: o campanie Demand Gen — reclame video pe YouTube
+ * (în fluxul de video-uri, în Shorts, înainte de video-uri). Id-urile sunt
+ * evident false; video-ul e unul public, de test.
+ */
+export const EXAMPLE_PLAN_GOOGLE = `{
+  "format": "meridian-ads/1",
+
+  // Pe Google: google-meridian sau google-clienti — cel din selectorul de sus.
+  "workspace": "google-meridian",
+
+  // Id-ul contului Google Ads: 10 cifre, cu sau fără cratime (dreapta sus în Google Ads).
+  "ad_account": "123-456-7890",
+
+  "campaign": {
+    "name": "Video imobiliare · testimonial · Google · oct 2026",
+    // leads și traffic. Vizualizările și notorietatea pe YouTube se fac din Google Ads.
+    "objective": "leads",
+    // Pe zi, în moneda contului.
+    "daily_budget": 60,
+    "currency": "RON"
+  },
+
+  "audience": {
+    // Țară, regiune sau oraș. Google țintește orașul întreg — fără rază.
+    "locations": [
+      { "type": "city", "name": "București", "country": "RO" },
+      { "type": "city", "name": "Cluj-Napoca", "country": "RO" }
+    ],
+    // Pe Google, vârsta merge pe grupe: 18–24, 25–34, 35–44, 45–54, 55–64, 65+.
+    "age_min": 25,
+    "age_max": 64,
+    "gender": "all",
+    "languages": ["ro"],
+    // Segmentele de public Google („în piață" și „afinitate"), în engleză, ca în Google Ads.
+    "interests": [
+      { "name": "Real Estate" }
+    ]
+  },
+
+  // Obligatorie la leads: acțiunea de conversie din Google Ads (Obiective → Conversii),
+  // cu id-ul ei numeric. Site-ul trimite conversia prin tag-ul Google (lib/google-tag.ts).
+  "conversion": {
+    "pixel_id": "700000001",
+    "event": "lead"
+  },
+
+  "destination": {
+    "type": "website",
+    "url": "https://www.meridianx.ro/video",
+    // ValueTrack ({campaignid}, {creative}) se înlocuiește la clic.
+    "utm": {
+      "source": "google",
+      "medium": "paid_video",
+      "campaign": "video-imobiliare-oct26"
+    }
+  },
+
+  "creative": {
+    // Video-uri de pe YouTube (id-ul de 11 caractere din link), publice sau nelistate.
+    // Sau { "source": "upload" }: portalul îl urcă pe YouTube, nelistat, prin Google Ads.
+    "videos": [
+      { "source": "library", "video_id": "aqz-KE-bpKQ" }
+    ],
+    "thumbnail": "auto",
+    // Pe Google, textele principale devin titluri lungi: cel mult 90 de caractere.
+    "primary_texts": [
+      "Un apartament se vinde din primele trei secunde de video. Noi le filmăm pe alea trei."
+    ],
+    // Titluri scurte (cel puțin unul, maxim 40 de caractere) și descrieri (cel puțin una, maxim 90).
+    "headlines": ["Video pentru proiectul tău", "Filmăm la lumina reală"],
+    "descriptions": ["Testimoniale și tururi video pentru dezvoltatori imobiliari. Ofertă în 24 de ore."],
+    "cta": "get_quote",
+    // platform_rotates (recomandat pe Google): o reclamă cu toate textele și video-urile, Google le combină.
+    "variants": "platform_rotates"
+  },
+
+  // Obligatorie pe Google.
+  "google": {
+    // Numele firmei, cum apare pe reclamă (cel mult 25 de caractere).
+    "business_name": "MERIDIAN",
+    // Sigla: imagine pătrată, minim 128×128, PNG sau JPEG, la o adresă https.
+    "logo_url": "https://www.meridianx.ro/brand/icon-512.png",
+    // "all" sau o listă: youtube_in_stream, youtube_in_feed, youtube_shorts, discover, gmail, display.
+    "channels": ["youtube_in_stream", "youtube_in_feed", "youtube_shorts"],
+    // Lărgirea automată a publicului: oprită — vârsta, locațiile și interesele sunt limite.
+    "optimized_targeting": false,
+    // Implicit oprite: Google nu remixează video-ul și nu scrie texte în locul tău.
+    "enhancements": {
+      "video_enhancements": false,
+      "text_assets": false
+    }
+  }
+}
+`;
+
+/**
  * Exemplul pentru spațiul pe care lucrezi: platforma lui și id-ul lui în
  * `workspace`, ca exemplul să treacă de verificarea „același spațiu”.
  */
 export function examplePlanFor(workspace: { id: string; platform: Platform }): string {
-  const text = workspace.platform === "tiktok" ? EXAMPLE_PLAN_TIKTOK : EXAMPLE_PLAN;
+  const text = EXAMPLE_BY_PLATFORM[workspace.platform];
   return text.replace(/"workspace": "[a-z-]+"/, `"workspace": "${workspace.id}"`);
+}
+
+export const EXAMPLE_BY_PLATFORM: Record<Platform, string> = {
+  meta: EXAMPLE_PLAN,
+  tiktok: EXAMPLE_PLAN_TIKTOK,
+  google: EXAMPLE_PLAN_GOOGLE,
+};
+
+/**
+ * Un lot de exemplu: aceeași campanie pe fiecare platformă, în spațiile
+ * proprietarului ales sus. Fără comentarii — un lot se citește pe rânduri,
+ * iar explicațiile câmpurilor stau în exemplele de mai sus.
+ */
+export function exampleBatchFor(owner: AdsWorkspace["owner"]): string {
+  const plans = WORKSPACES.filter((workspace) => workspace.owner === owner).flatMap((workspace) => {
+    const parsed = parseJsonText(EXAMPLE_BY_PLATFORM[workspace.platform]);
+    if (!parsed.ok || !parsed.value || typeof parsed.value !== "object") return [];
+    const plan = parsed.value as Record<string, unknown>;
+    delete plan.format;
+    plan.workspace = workspace.id;
+    return [plan];
+  });
+  return JSON.stringify({ format: PLAN_FORMAT, plans }, null, 2);
 }

@@ -1,4 +1,4 @@
-import type { Currency, Platform } from "./constants";
+import { PLATFORM_LABEL, type Currency, type Platform } from "./constants";
 
 /**
  * Spațiile de lucru ale portalului de reclame.
@@ -73,6 +73,24 @@ export const WORKSPACES = [
     tokenEnv: "TIKTOK_TOKEN_CLIENTI",
     dailyBudgetCap: { RON: 2500, EUR: 500, USD: 500 },
   },
+  {
+    // Google: „tokenul" e JSON-ul unui cont de serviciu Google Cloud, adăugat
+    // ca utilizator în contul Google Ads (lib/ads/google/api.ts).
+    id: "google-meridian",
+    label: "Meridian",
+    owner: "agentie",
+    platform: "google",
+    tokenEnv: "GOOGLE_ADS_MERIDIAN",
+    dailyBudgetCap: { RON: 500, EUR: 100 },
+  },
+  {
+    id: "google-clienti",
+    label: "Clienți",
+    owner: "clienti",
+    platform: "google",
+    tokenEnv: "GOOGLE_ADS_CLIENTI",
+    dailyBudgetCap: { RON: 2500, EUR: 500, USD: 500 },
+  },
 ] as const satisfies readonly AdsWorkspace[];
 
 export type WorkspaceId = (typeof WORKSPACES)[number]["id"];
@@ -92,7 +110,7 @@ export function isWorkspaceId(id: unknown): id is WorkspaceId {
 
 /** „Meridian · Meta" — cum apare spațiul în selector și în mesaje. */
 export function workspaceName(workspace: Pick<AdsWorkspace, "label" | "platform">): string {
-  return `${workspace.label} · ${workspace.platform === "meta" ? "Meta" : "TikTok"}`;
+  return `${workspace.label} · ${PLATFORM_LABEL[workspace.platform]}`;
 }
 
 /**
