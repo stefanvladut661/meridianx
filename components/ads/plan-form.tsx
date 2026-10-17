@@ -207,7 +207,8 @@ function LocationsEditor({ platform }: { platform: Platform }) {
                       ) : null}
                       {LOCATION_TYPES.map(([value, label]) => (
                         <option key={value} value={value}>
-                          {label}
+                          {/* Raza există doar pe Meta; TikTok și Google țintesc orașul întreg. */}
+                          {value === "city" && platform !== "meta" ? "Oraș" : label}
                         </option>
                       ))}
                     </select>

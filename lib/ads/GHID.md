@@ -1,14 +1,14 @@
-# Ghid — portalul de reclame, după faza 5
+# Ghid — portalul de reclame, după fazele 6–7
 
-*Actualizat pe 2026-09-26, la finalul fazei 5 — toate fazele din prompt sunt scrise. Ramura: `feat/ads-portal`.*
+*Actualizat pe 2026-10-18, la finalul fazelor 6 (Google) și 7 (producția în masă). Ramura: `feat/ads-portal`.*
 
 Trei documente, în ordinea în care se citesc:
 
 | Fișier | Ce e |
 |---|---|
-| `lib/ads/GHID.md` | **acesta** — ce ai de făcut acum, ce e de hotărât, ce urmează pe faze, rapoartele fazelor |
-| `lib/ads/README.md` | documentația tehnică: formatul planului, exemplele comentate (Meta și TikTok), regulile de validare, maparea pe Meta și pe TikTok, variabilele, pașii pentru tokenuri |
-| `lib/ads/PROMPT.md` | promptul complet al portalului, copiat identic din `e:\._media agentie\prompt-ads-portal.md` |
+| `lib/ads/GHID.md` | **acesta** — ce ai de făcut acum, ce e de hotărât, rapoartele fazelor |
+| `lib/ads/README.md` | documentația tehnică: formatul planului, exemplele comentate (Meta, TikTok, Google), maparea pe fiecare API, variabilele, pașii pentru chei și tokenuri |
+| `lib/ads/PROMPT.md` | promptul inițial al portalului (fazele 1–5) |
 
 ---
 
@@ -16,126 +16,100 @@ Trei documente, în ordinea în care se citesc:
 
 | Fază | Ce | Stare |
 |---|---|---|
-| **1** | Schema JSON + validare + previzualizare, fără apeluri la platforme | ✅ gata |
-| **2** | Meta: creare campanie pe pauză, cu video deja urcat | ✅ gata pe `feat/ads-portal`, testată pe un Meta fals local — **încă nu pe contul real** |
-| **3** | Meta: încărcare video din browser | ✅ gata pe `feat/ads-portal`, testată pe Meta și Supabase falși — **încă nu pe contul real** |
-| **4** | Dashboard + cron pentru Meta | ✅ gata pe `feat/ads-portal`, testată pe Meta și Supabase falși — cron-ul cere o linie în `vercel.json` (3.8) |
-| **5** | TikTok, peste structura existentă | ✅ gata pe `feat/ads-portal`, testată pe TikTok și Supabase falși — **încă nu pe contul real** |
+| **1** | Schema JSON + validare + previzualizare | ✅ gata |
+| **2** | Meta: creare campanie pe pauză, cu video deja urcat | ✅ gata, testată pe un Meta fals — **încă nu pe contul real** |
+| **3** | Meta: încărcare video din browser | ✅ gata, testată pe falși — **încă nu pe contul real** |
+| **4** | Dashboard + cron | ✅ gata; cron-ul e acum în `vercel.json` |
+| **5** | TikTok | ✅ gata, testată pe un TikTok fals — **încă nu pe contul real** |
+| **6** | **Google Ads** (Demand Gen, video pe YouTube): verificare cu `validateOnly`, creare atomică pe pauză, video nou urcat pe YouTube, cifre | ✅ gata, testată pe un Google fals (API v26) — **încă nu pe contul real** |
+| **7** | **Producția în masă**: lotul (până la 50 de planuri), mai multe video-uri pe plan (video × text), „Pentru Claude” (instrucțiuni + contextul conturilor), tag-ul Google pe site | ✅ gata, testată cap-coadă pe build de producție |
 
-Migrarea 5 (`admin_emails` + `is_lead_admin()`) e pe `main`; portalul, tot
-**fără merge în `main`** — merge-ul îl faci tu sau mi-l ceri explicit.
+Tot portalul e pe `feat/ads-portal`, împins pe GitHub, **fără merge în `main`**
+(deci nu e pe site încă). Merge-ul îl faci tu sau mi-l ceri explicit.
+
+**Verificat (2026-10-18), pe build de producție, cu Supabase, Meta, TikTok și
+Google falși:** creare pe pauză pe toate trei platformele; un plan cu 3 video-uri
+× 2 texte = 6 reclame (Meta) și 2 × 2 = 4 (TikTok); video nou urcat din portal pe
+Meta și pe YouTube (Google); lotul cu câte un plan pe fiecare platformă — creat,
+apoi lipit a doua oară și sărit în întregime, fără dubluri; contextul pentru
+Claude cu toate id-urile; sincronizarea cifrelor pe toate trei (cron: 401 fără
+secret, 200 cu el); nicio eroare în consolă și nicio derulare laterală pe toate
+paginile portalului, la 1440 și 360 px; niciun status de pornire ajuns la vreun
+fals. Garda fără rețea: 86 de verificări. TypeScript și ESLint fără erori.
 
 ---
 
-## 2. Ce ai de făcut TU acum — ca să creezi prima campanie reală
+## 2. Ce ai de făcut TU — în ordinea asta
 
-### 2.1 Aplică migrările, în ordine (Supabase → SQL editor)
+Totul de aici e un lucru de cont sau de acces, pe care nu-l poate face codul.
+Documentul de dus în conversația cu Claude, pas cu pas, e cel trimis la final
+(„Ce ai de făcut — portalul de reclame”).
 
-- [ ] `supabase/migrations/00000000000005_admin_emails.sql` — un tab, tot
-      fișierul, fără selecție.
-- [ ] **Imediat după**, în alt tab:
-      `insert into public.admin_emails (email) values ('adresa-ta@…');` — aceleași
-      adrese ca în `ADMIN_EMAILS` din Vercel. Până atunci panoul de lead-uri
-      arată zero lead-uri (nu se pierde nimic).
-- [ ] Deschide `/admin`: lead-urile se văd din nou.
-- [ ] `supabase/migrations/00000000000006_ads_portal.sql` — tabelele portalului.
-      Fără ea, portalul refuză crearea înainte să trimită ceva la Meta și spune
-      „aplică migrarea 6”.
-- [ ] `supabase/migrations/00000000000007_ads_uploads.sql` — anticamera
-      video-urilor noi (bucket privat `ads-uploads`, 50 MB pe fișier). Fără ea,
-      urcarea spune „aplică migrarea 7”.
+### 2.1 Baza de date — o singură lipire
 
-### 2.2 Tokenul Meta
+- [ ] Supabase → SQL Editor → tab nou → lipești tot `supabase/portal-reclame.sql`
+      → Run. (Merge oricât de des: aplică ce lipsește din migrările 5–8.)
+- [ ] În alt tab: `insert into public.admin_emails (email) values ('adresa-ta@…') on conflict do nothing;`
+      — aceleași adrese ca în `ADMIN_EMAILS` din Vercel.
 
-Pașii exacți: `lib/ads/README.md` → „Cum generezi tokenurile” (actualizați în faza 2).
+### 2.2 Meta (pașii exacți: README → „Meta — System User token”)
 
-- [ ] Aplicația *Business* și System User-ul în portofoliul Meridian.
-- [ ] *Assign assets*: contul de reclame (*Manage campaigns*), pagina, pixelul
-      (dataset-ul), contul de Instagram.
-- [ ] *Generate new token* → expirare **Never** (sau 60 de zile, dacă Meta nu
-      mai oferă „Never”) → `ads_management`, `ads_read`, `pages_show_list`,
-      `pages_read_engagement`, `pages_manage_ads`.
-- [ ] În setările aplicației, **„Require App Secret” oprit**.
-- [ ] `META_TOKEN_MERIDIAN` **direct în Vercel**, pe *Preview* (ca să testezi pe
-      preview-ul ramurii `feat/ads-portal`) și, la merge, pe *Production*.
-      Nu în chat, nu într-un fișier, nu într-un commit.
+- [ ] Aplicația Business și System User-ul în portofoliul Meridian; *Assign assets*:
+      contul de reclame, pagina, pixelul `3075133136161307` (cel de pe site),
+      Instagramul.
+- [ ] *Generate new token* → **Never** → `ads_management`, `ads_read`,
+      `pages_show_list`, `pages_read_engagement`, `pages_manage_ads`;
+      „Require App Secret” oprit.
+- [ ] Beneficiarul și plătitorul (DSA) în setările contului de reclame.
+- [ ] Vercel: `META_TOKEN_MERIDIAN` (și `META_TOKEN_CLIENTI` pentru portofoliul clienților).
 
-### 2.3 Beneficiarul și plătitorul (DSA)
+### 2.3 TikTok (pașii exacți: README → „TikTok — token pe termen lung”)
 
-Publicul în România = UE, deci Meta cere pe fiecare reclamă cine beneficiază
-și cine o plătește.
+- [ ] Aplicația TikTok for Business cu permisiunile din README (aprobarea: 2–3 zile).
+- [ ] Autorizarea ca admin al Business Center-ului, cu toate conturile bifate →
+      `auth_code` → tokenul (comanda din README, într-o oră).
+- [ ] Pe fiecare cont: Payer information, identitatea Spark (cont TikTok legat, cu
+      „push”), pixelul `DAN9FTJC77U07P78RH10` (cel de pe site).
+- [ ] Vercel: `TIKTOK_TOKEN_MERIDIAN` (și `TIKTOK_TOKEN_CLIENTI`).
 
-- [ ] O dată, în Ads Manager → setările contului de reclame → beneficiar și
-      plătitor impliciți. **Sau** în fiecare plan: `"dsa_beneficiary"` și
-      `"dsa_payor"` în secțiunea `meta`.
+### 2.4 Google (pașii exacți: README → „Google — contul de serviciu”)
 
-Fără ele, „Verifică în Meta” se oprește și spune exact asta (cu sugestiile Meta).
+- [ ] Google Cloud: proiect → activezi „Google Ads API” → aplici pentru acces
+      (Explorer vine de obicei pe loc) → cont de serviciu → cheie JSON.
+- [ ] Google Ads → Admin → Acces și securitate → adaugi adresa contului de
+      serviciu, nivel **Standard** (în contul de reclame sau în MCC).
+- [ ] Vercel: `GOOGLE_ADS_MERIDIAN` = conținutul fișierului JSON (și
+      `GOOGLE_ADS_CLIENTI` cu alt cont de serviciu, pentru clienți).
+- [ ] Conversia „Lead” (Obiective → Conversii → site → „Trimitere formular”,
+      Numărare: Una, **principală**) → eticheta `AW-…/…` în Vercel ca
+      `NEXT_PUBLIC_GOOGLE_ADS_LEAD`. De atunci, site-ul trimite conversia la fiecare
+      lead (doar cu acordul pentru cookie-uri).
+- [ ] Dacă în cont există campanii vechi fără declarația despre publicitatea
+      politică din UE, declară-le („Nu conține”) — altfel Google blochează orice
+      creare din API.
 
-### 2.4 Prima campanie, de test
+### 2.5 Pe preview, înainte de merge
 
-- [ ] Deschide preview-ul ramurii `feat/ads-portal` (Vercel → Deployments), apoi
-      `/admin/ads/nou`.
-- [ ] Un plan real, cu **bugetul minim**, cu un video deja urcat în contul de
-      reclame (îl alegi din „Alege din biblioteca contului”).
-- [ ] **Verifică în Meta** → citește „Ce a găsit Meta”: contul, moneda, pagina,
-      pixelul, DSA, fiecare oraș și interes așa cum l-a înțeles Meta.
-- [ ] **Creează pe pauză** → **Deschide în Ads Manager**.
-- [ ] În Ads Manager, verifică: campania, setul și reclamele sunt **oprite**;
-      bugetul pe set; plasările; în reclamă, la „Advantage+ creative”, toate
-      îmbunătățirile oprite; „Multi-advertiser ads” oprit.
-- [ ] Șterge campania de test din Ads Manager.
+- [ ] Vercel → Deployments → preview-ul ramurii `feat/ads-portal` → `/admin/ads`.
+      Variabilele trebuie puse și pe *Preview*.
+- [ ] Pe fiecare platformă: „Plan nou” → un plan real cu bugetul minim →
+      Verifică → Creează pe pauză → în platformă verifici că TOTUL e oprit
+      (campanie, set/grup, reclame) și că îmbunătățirile automate sunt oprite →
+      ștergi campania de test.
+- [ ] Un video urcat din portal pe fiecare platformă (sub 50 MB).
+- [ ] „Pentru Claude” → Citește conturile → verifici că apar conturile, paginile,
+      pixelii/conversiile și video-urile.
+- [ ] Spune-mi ce ai văzut diferit — mai ales la Google (lista „Neverificat
+      încă” din README → „Faza 6”).
 
-### 2.5 Primul video urcat din portal
+### 2.6 Merge și lucrul de zi cu zi
 
-- [ ] În același plan, la „Materialul”: **Fișier nou** → **Alege fișierul**
-      (MP4, sub 50 MB) → **Urcă în contul …**.
-- [ ] Urmărește pașii: urcare în portal → Meta copiază → Meta procesează →
-      gata. La final planul trece singur pe video-ul din bibliotecă.
-- [ ] În Ads Manager → Media library: video-ul apare cu numele fișierului tău.
-- [ ] În Supabase → Storage → `ads-uploads`: bucket-ul e gol (fișierul se
-      șterge când Meta termină).
-- [ ] Spune-mi dacă s-a oprit undeva — mai ales la „Meta copiază”: e singurul
-      pas pe care documentația Meta nu-l descrie complet.
-- [ ] Spune-mi ce ai văzut — mai ales dacă ceva e pornit deși portalul l-a
-      trimis oprit. Lista a ce n-a putut fi verificat fără un cont real e în
-      `lib/ads/README.md` → „Neverificat încă”.
-
-### 2.6 Primele cifre
-
-- [ ] După ce pornești o campanie din Ads Manager și rulează o zi: **Statistici
-      → Sincronizează acum**. Compară cheltuiala și lead-urile cu Ads Manager, pe
-      aceeași perioadă (atribuirea e cea a setului de reclame, ca acolo).
-- [ ] Spune-mi dacă „Lead-uri” diferă de coloana „Results” din Ads Manager.
-- [ ] La merge (3.8): linia de cron în `vercel.json`; de atunci, sincronizarea
-      rulează singură în fiecare dimineață.
-
-> Pentru Clienți: aceiași pași în portofoliul clienților, cu `META_TOKEN_CLIENTI`.
-
-### 2.7 TikTok
-
-Pașii exacți: `lib/ads/README.md` → „TikTok — token pe termen lung”.
-
-- [ ] Aplicația TikTok for Business, cu permisiunile din tabelul din README;
-      așteaptă aprobarea (2–3 zile lucrătoare).
-- [ ] Autorizarea, logat ca admin al Business Center-ului Meridian, cu **toate
-      conturile de reclame bifate** → `auth_code` → tokenul (comanda `curl` din
-      README, într-o oră de la autorizare).
-- [ ] `TIKTOK_TOKEN_MERIDIAN` direct în Vercel (*Preview* + *Production*).
-      `app_id` și `secret` nu intră în Vercel.
-- [ ] Pe contul de reclame, în TikTok Ads Manager: **Payer information**
-      (plătitorul, pentru UE), **identitatea Spark** (contul TikTok legat, cu
-      drept de a primi video de la agenție) și **pixelul** site-ului legat.
-- [ ] Prima campanie de test: spațiul „Meridian · TikTok” → **Încarcă
-      exemplul** → pui contul, identitatea și un video real → **Verifică în
-      TikTok** → **Creează pe pauză** → în TikTok Ads Manager verifici că
-      totul e oprit, plasarea doar TikTok, fără „Automatic enhancements” și
-      fără „Search” → o ștergi.
-- [ ] Un video urcat din portal (sub 10 MB, ca să fie sigur — README → „Faza 5
-      → Limite”).
-- [ ] Spune-mi ce diferă — mai ales linkul spre campanie și dacă regiunile
-      României apar la TikTok.
-
-> Pentru Clienți: aceiași pași în Business Center-ul clienților, cu `TIKTOK_TOKEN_CLIENTI`.
+- [ ] Spune-mi „fă merge” (sau îl faci tu). De atunci e pe site, iar cron-ul
+      aduce cifrele în fiecare dimineață la 06:30.
+- Lucrul obișnuit: „Pentru Claude” → **Copiază tot** → conversație nouă cu Claude
+  → descrii campaniile → Claude răspunde cu un lot → îl lipești în **Lot** →
+  Verifică tot → Creează pe pauză → le pornești din platforme. Ce nu trece se
+  copiază înapoi la Claude cu „Copiază problemele pentru Claude”.
 
 ---
 
@@ -160,42 +134,33 @@ Pașii exacți: `lib/ads/README.md` → „TikTok — token pe termen lung”.
 | 3.15 | **TikTok doar cu Spark Ads** (`TT_USER` / `BC_AUTH_TT`): TikTok nu mai acceptă identitatea personalizată. Fiecare client pe TikTok are nevoie de un cont TikTok legat de contul de reclame | nou — nu e o alegere, e regula TikTok; de știut la ofertare |
 | 3.16 | **DSA pe TikTok = avertisment**, nu eroare: API-ul n-are câmp; plătitorul se setează o dată pe cont, în TikTok Ads Manager | nou, de confirmat |
 | 3.17 | **Lead-uri pe TikTok = conversii web** (`WEB_CONVERSIONS` + `FORM`), nu obiectivul „Lead generation”: același eveniment ca pe site, comparabil cu Meta | nou, de confirmat |
+| 3.18 | **Google = Demand Gen**; vizualizările și notorietatea (campaniile Video) nu se pot crea din API, deci se refuză pe Google | nou — e regula Google, de știut la ofertare |
+| 3.19 | **Google: cont de serviciu**, nu refresh token (nu expiră, fără 2FA); fără developer token (retras de Google pe 2026-09-09) | nou, de confirmat |
+| 3.20 | **Google: totul oprit** — campania, grupul și reclamele; la activare le bifezi pe toate trei | nou, de confirmat |
+| 3.21 | **Google: conversiile principale ale contului**; verificarea avertizează când contul are mai multe | nou, de confirmat |
+| 3.22 | **Google: vârsta necunoscută rămâne afară** (vârsta din plan e o limită, ca pe Meta și TikTok); costă din acoperire | nou, de confirmat |
+| 3.23 | **Lotul = un proprietar**, orice platformă; un plan creat în ultimele 14 zile se sare | nou, de confirmat |
+| 3.24 | **20 de reclame pe plan, 10 video-uri**; coperta, cea propusă de platformă | nou, de confirmat |
+| 3.25 | **Tag-ul Google pe site** doar după „Acceptă tot” și doar cu eticheta setată; Google trecut în politicile site-ului | ✅ făcut, cu voia dată („fă tot ce îți e în putere”) |
+| 3.26 | **Cron-ul în `vercel.json`** și **CSP-ul** (miniaturi + tag Google) | ✅ făcute — decizia 3.8 e închisă |
 
 ---
 
-## 4. Ce mai e de făcut, pe faze
+## 4. Fazele, pe scurt
 
-### 4.1–4.2 Faza 2 — gata
-
-Ce face, pe scurt, în anexa „Raportul fazei 2” de la final; tehnic, în
-`lib/ads/README.md` → „Faza 2 — crearea pe Meta”. Ce mai trebuie ca să creezi
-prima campanie reală: secțiunea 2 de mai sus.
-
-### 4.3 Faza 3 — gata
-
-Varianta A, pe Supabase Storage. De ce și cum: `lib/ads/README.md` → „Faza 3”.
-Ce ai de făcut: 2.1 (migrarea 7) și 2.5.
+| Fază | Tehnic (README) | Ce ai de făcut |
+|---|---|---|
+| 2 — creare pe Meta | „Faza 2 — crearea pe Meta” | 2.2, apoi 2.5 |
+| 3 — video din browser | „Faza 3” (limita de 50 MB, decizia 3.11) | 2.1 (bucket-ul e în `portal-reclame.sql`) |
+| 4 — cifre și cron | „Faza 4” | nimic — cron-ul e în `vercel.json`, pornește la merge |
+| 5 — TikTok | „Faza 5 — TikTok” | 2.3 |
+| 6 — Google | „Faza 6 — Google Ads” | 2.4 |
+| 7 — producția în masă | „Faza 7 — producția în masă” | 2.6 (lucrul de zi cu zi) |
 
 **Limita de 50 MB** (decizia 3.11): un video de 60 s, 1080p, la ~10 Mbps are
-~75 MB. Pe Free: exportă la 4–6 Mbps sau urcă-l din Ads Manager și alege-l
-din bibliotecă. Pe Pro: o linie în migrare + o constantă în cod.
-
-### 4.4 Faza 4 — gata
-
-Tehnic: `lib/ads/README.md` → „Faza 4”. Ce ai de făcut: 2.6 și decizia 3.8.
-
-### 4.5 Faza 5 — gata
-
-Tehnic: `lib/ads/README.md` → „Faza 5 — TikTok”. Ce ai de făcut: 2.7 și
-deciziile 3.14–3.17. Doar tokenul pe Business Center — fără `TIKTOK_APP_ID`
-și `TIKTOK_APP_SECRET` în Vercel.
-
-### 4.6 La finalul tuturor fazelor (secțiunea 9 din prompt)
-
-1. Variabilele de adăugat în Vercel — lista completă e în README.
-2. Pașii pentru tokenuri — README, verificați pe primul apel real din faza 2.
-3. Exemplul de JSON comentat — README și butonul din portal.
-4. Ce mai lipsește pentru prima campanie reală — lista 4.2.
+~75 MB. Pe Free: exportă la 4–6 Mbps sau urcă-l direct în platformă și alege-l
+din bibliotecă (pe Google: YouTube Studio, nelistat). Pe Supabase Pro: o linie în
+migrare + o constantă în cod.
 
 ---
 
@@ -214,10 +179,9 @@ deciziile 3.14–3.17. Doar tokenul pe Business Center — fără `TIKTOK_APP_ID
 - **Utilitarul de test `cdp.mjs`** din directorul temporar al sesiunii a fost
   suprascris de agentul de documentare TikTok; l-am refăcut din istoricul
   sesiunii. Nu atinge repo-ul.
-- **`PLAN.md` și `.env.example` nu au fost atinse** — promptul limitează zona la
-  fișierele portalului. La merge, notele de aici se pot trece în `PLAN.md`.
-- **Panoul de lead-uri** nu are încă link spre `/admin/ads` (capul lui e în
-  `(dash)/layout.tsx`, în afara zonei). Portalul are link înapoi spre lead-uri.
+- **`.env.example`** are acum variabilele portalului (faza 7). **`PLAN.md`** nu a
+  fost atins; la merge, notele de aici se pot trece acolo.
+- **Panoul de lead-uri** are acum link „Reclame” spre `/admin/ads` (faza 7).
 
 ---
 

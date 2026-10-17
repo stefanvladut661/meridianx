@@ -53,6 +53,12 @@ export default async function AdminDashLayout({
           <span className="eyebrow hidden sm:inline">Lead-uri</span>
 
           <div className="ml-auto flex items-center gap-4">
+            <Link
+              href="/admin/ads"
+              className="text-[13px] text-dim underline-offset-4 hover:text-bone hover:underline"
+            >
+              Reclame
+            </Link>
             <span className="hidden font-md-mono text-[11px] tracking-wide text-dim md:inline">
               {user.email}
             </span>

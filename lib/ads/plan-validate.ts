@@ -1194,7 +1194,9 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
     });
   }
 
+  // Pe Google, alternarea combină și titlurile, descrierile și video-urile — un singur text nu e o problemă.
   if (
+    platform !== "google" &&
     getIn(raw, "creative.variants") === "platform_rotates" &&
     asArray(getIn(raw, "creative.primary_texts")).length === 1
   ) {

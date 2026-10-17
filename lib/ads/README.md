@@ -1,11 +1,14 @@
 # Portalul de reclame — `/admin/ads`
 
-Unealtă internă: lipești un plan de campanie în JSON, îl citești în română, îl
-corectezi și îl creezi **pe pauză** în Meta sau TikTok. Plus un dashboard cu
-cifrele campaniilor.
+Unealtă internă: lipești un plan de campanie în JSON — sau un lot de zeci de
+planuri, scris într-o conversație cu Claude —, îl citești în română, îl
+corectezi și îl creezi **pe pauză** în Meta, TikTok sau Google Ads (video pe
+YouTube). Plus un dashboard cu cifrele campaniilor.
 
 Ramura: `feat/ads-portal`. Zona portalului: `app/(admin)/admin/ads/**`,
-`lib/ads/**`, `components/ads/**` și migrarea lui (din faza 2).
+`lib/ads/**`, `components/ads/**` și migrările lui (6, 7, 8). Din faza 6, cu
+voia omului, și: tag-ul Google Ads pe site (`lib/google-tag.ts`), `vercel.json`
+(cron-ul) și CSP-ul din `next.config.ts`.
 
 **Citește întâi `GHID.md`** — ce e de făcut după fiecare fază și ce e de hotărât.
 Promptul complet al portalului e în `PROMPT.md`.
@@ -15,9 +18,11 @@ Promptul complet al portalului e în `PROMPT.md`.
 ## Regula care nu se negociază
 
 **Portalul creează campanii DOAR în stare PAUSED** (pe TikTok:
-`operation_status: DISABLE`). Nu există cod, rută sau buton care să pornească
-o campanie. Activarea o face omul, în Ads Manager. Dacă o funcție ar putea
-trimite statusul de pornire, designul e greșit.
+`operation_status: DISABLE`; pe Google: `status: PAUSED` pe campanie, grup și
+reclame, într-o singură cerere atomică). Nu există cod, rută sau buton care să
+pornească o campanie. Activarea o face omul, în Ads Manager / TikTok Ads
+Manager / Google Ads. Dacă o funcție ar putea trimite statusul de pornire,
+designul e greșit.
 
 Consecința oricărei erori de cod trebuie să fie o campanie oprită, nu una care
 arde buget. De aici și plafonul de buget pe spațiu de lucru: prinde un zero în
@@ -37,8 +42,11 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 3 | Meta: încărcare video din browser | ✅ `feat/ads-portal` — testat pe Meta și Supabase falși, încă nu pe contul real |
 | 4 | Dashboard + cron pentru Meta | ✅ `feat/ads-portal` — testat pe Meta și Supabase falși; cron-ul cere o linie în `vercel.json` (vezi „Faza 4”) |
 | 5 | TikTok, peste structura existentă | ✅ `feat/ads-portal` — testat pe TikTok și Supabase falși, încă nu pe contul real |
+| 6 | Google Ads (Demand Gen, video pe YouTube), peste aceeași structură | ✅ `feat/ads-portal` — testat pe Google fals (API v26), încă nu pe contul real |
+| 7 | Producția în masă: lotul, mai multe video-uri pe plan, „Pentru Claude”, tag-ul Google pe site | ✅ `feat/ads-portal` — testat cap-coadă pe build de producție, cu toate platformele false |
 
-Commit separat după fiecare fază; nu se trece mai departe fără confirmarea omului.
+Commit separat după fiecare fază. Fazele 6 și 7 au fost cerute împreună („bagă și
+Google, scopul e producția în masă”), deci au mers fără oprire între ele.
 
 ---
 
@@ -86,7 +94,22 @@ Commit separat după fiecare fază; nu se trece mai departe fără confirmarea o
 | `tiktok/insights.ts` | Cifrele zilnice (ferestre de 30 de zile) și statusul campaniilor. |
 | `tiktok/errors.ts` | Erorile TikTok spuse în română, cu mesajul lor și `request_id`. |
 | `tiktok/adapter.ts` | TikTok sub contractul din `platform.ts`. |
-| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", Meta și TikTok (48 de verificări, fără rețea). |
+| `google/api.ts` | `server-only`: SINGURUL client Google Ads (REST v26). Cheia contului de serviciu → token de acces (JWT, o oră, în memorie). Citiri GAQL + exact două scrieri: `googleMutate` (atomic, cu `assertGooglePaused` înainte de rețea) și urcarea video pe YouTube. Fără update, fără delete. |
+| `google/build.ts` | Planul → operațiile `googleAds:mutate` (buget, campanie Demand Gen, grup, public, criterii, materiale, reclame), cu id-uri temporare. Funcții pure. |
+| `google/lookup.ts` | Citiri: contul (direct sau prin managerul MCC), conversiile, video-urile YouTube (oEmbed + materialele contului), biblioteca. |
+| `google/targeting.ts` | Numele din plan → constantele Google (locații, limbi, segmente de interes). |
+| `google/check.ts` | „Verifică în Google": tot ce trebuie să existe + TOATĂ crearea trimisă cu `validateOnly` (Google spune ce ar refuza, fără să creeze nimic). |
+| `google/create.ts` | Crearea: o singură cerere atomică — totul sau nimic, totul pe pauză. |
+| `google/logo.ts` | Sigla din plan (singura adresă din plan pe care o descarcă serverul): doar https public, PNG/JPEG, pătrată, ≥128×128, ≤5 MB. |
+| `google/video.ts` | Video nou pe YouTube (canalul administrat de Google al contului, nelistat) și starea procesării. |
+| `google/insights.ts` | Cifrele zilnice (GAQL pe `campaign`, segmentat pe zi) și statusul campaniilor. |
+| `google/errors.ts` | Erorile Google spuse în română, cu mesajul lor și `requestId`. |
+| `google/brief.ts` | Regulile Google din instrucțiunile pentru Claude. |
+| `google/adapter.ts` | Google sub contractul din `platform.ts`. |
+| `plan-batch.ts` | Lotul: citirea mai multor planuri, regula banilor (un lot = un proprietar), dublurile din lot, mesajul cu probleme pentru Claude. Izomorf. |
+| `claude-brief.ts` | Instrucțiunile pentru conversația cu Claude — compuse din aceleași constante ca validarea — și formatul contextului conturilor. Izomorf. |
+| `claude-context.ts` | `server-only`: contextul conturilor citit din platforme (conturi, pagini, pixeli/conversii, identități, video-uri). Doar citiri. |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă (86 de verificări, fără rețea). |
 
 ---
 
@@ -102,6 +125,13 @@ lui; nicio funcție nu citește două tokenuri în același apel.
 | `meta-clienti` | Clienți · Meta | `META_TOKEN_CLIENTI` | 2.500 lei · 500 € · 500 USD |
 | `tiktok-meridian` | Meridian · TikTok | `TIKTOK_TOKEN_MERIDIAN` | 500 lei · 100 € |
 | `tiktok-clienti` | Clienți · TikTok | `TIKTOK_TOKEN_CLIENTI` | 2.500 lei · 500 € · 500 USD |
+| `google-meridian` | Meridian · Google | `GOOGLE_ADS_MERIDIAN` | 500 lei · 100 € |
+| `google-clienti` | Clienți · Google | `GOOGLE_ADS_CLIENTI` | 2.500 lei · 500 € · 500 USD |
+
+Pe Google, „tokenul" e JSON-ul unui **cont de serviciu** Google Cloud, adăugat
+ca utilizator în contul Google Ads (sau în contul manager de deasupra) — vezi
+„Google — contul de serviciu". Un cont de serviciu pe portofoliu păstrează
+izolarea: cel al clienților nu vede contul agenției.
 
 **Portofoliu nou** = un obiect nou în `WORKSPACES` + variabila lui în Vercel.
 
@@ -119,29 +149,29 @@ respinge, cu două ieșiri: „Treci în …" sau „Scrie … în plan".
 
 ## Formatul planului
 
-O schemă pentru ambele platforme. Ce e comun stă la rădăcină; ce există doar pe
-o platformă stă în `meta` sau `tiktok`. Spațiul spune platforma — nu există
+O schemă pentru toate trei platformele. Ce e comun stă la rădăcină; ce există doar pe
+o platformă stă în `meta`, `tiktok` sau `google`. Spațiul spune platforma — nu există
 câmp `platform` separat, ca să nu se poată contrazice.
 
 | Câmp | Obligatoriu | Ce e |
 |---|---|---|
 | `format` | nu | `"meridian-ads/1"` |
 | `workspace` | da | id din tabelul de mai sus |
-| `ad_account` | da | Meta: `act_` + cifre (sau doar cifrele) · TikTok: advertiser_id |
+| `ad_account` | da | Meta: `act_` + cifre (sau doar cifrele) · TikTok: advertiser_id · Google: 10 cifre (`123-456-7890`) |
 | `campaign.name` · `.objective` · `.daily_budget` · `.currency` | da | obiective: `leads`, `traffic`, `sales`, `video_views`, `awareness`; buget pe zi în unități întregi ale monedei |
 | `audience.locations[]` | da, minim 1 | `country` (code) · `region` (name, country) · `city` (name, country, `radius_km`) |
 | `audience.age_min` / `age_max` | nu (18 / 65) | 18–65; 65 = „65+" |
 | `audience.gender` | nu (`all`) | `all`, `male`, `female` |
 | `audience.languages[]` | nu (orice) | coduri ISO 639-1: `ro`, `hu` |
 | `audience.interests[]` / `behaviors[]` | nu | `{ "name": "…", "id"?: "…" }` — fără id, se caută după nume la creare; `behaviors` doar pe Meta |
-| `conversion.pixel_id` · `.event` | da pentru `leads` și `sales` | evenimente: `lead`, `contact`, `schedule`, `complete_registration`, `purchase`, `view_content` |
+| `conversion.pixel_id` · `.event` | da pentru `leads` și `sales` | pe Google, `pixel_id` = id-ul acțiunii de conversie; evenimente: `lead`, `contact`, `schedule`, `complete_registration`, `purchase`, `view_content` |
 | `destination` | da | `{ "type": "website", "url": "https://…", "utm"?: { source, medium, campaign, content, term } }` |
-| `creative.video` | da | `{ "source": "library", "video_id": "…" }` sau `{ "source": "upload", "file_name"?: "…" }` |
+| `creative.video` sau `creative.videos[]` | exact unul | `{ "source": "library", "video_id": "…" }` sau `{ "source": "upload", "file_name"?: "…" }`; `videos`: 1–10, reclamele = video × text (cel mult 20). Pe Google, `video_id` = id-ul YouTube (11 caractere) |
 | `creative.thumbnail` | nu (`auto`) | `"auto"` sau `{ "url": "https://…" }` |
-| `creative.primary_texts[]` | da, 1–5 | |
-| `creative.headlines[]` / `descriptions[]` | nu, 0–5 | doar Meta |
+| `creative.primary_texts[]` | da, 1–5 | pe TikTok ≤100 de caractere; pe Google devin titluri lungi, ≤90 |
+| `creative.headlines[]` / `descriptions[]` | nu, 0–5 (pe Google: da, 1–5) | Meta și Google (≤40 / ≤90); TikTok nu le are |
 | `creative.cta` | da | `learn_more`, `get_quote`, `contact_us`, `sign_up`, `apply_now`, `subscribe`, `download` |
-| `creative.variants` | nu (`one_ad_per_text`) | sau `platform_rotates` (doar Meta) |
+| `creative.variants` | nu (`one_ad_per_text`) | sau `platform_rotates` (Meta la Lead-uri/Vânzări; Google — recomandat) |
 | `meta.page_id` | da pe Meta | |
 | `meta.instagram_account_id` · `special_ad_categories[]` · `advantage_audience` · `placements` | nu | `advantage_audience` implicit `false`; `placements` implicit `"automatic"` |
 | `meta.enhancements` | nu — **toate `false`** | `advantage_creative`, `ad_sources`, `multi_advertiser_ads` |
@@ -150,6 +180,10 @@ câmp `platform` separat, ca să nu se poată contrazice.
 | `tiktok.identity_bc_id` | da la `BC_AUTH_TT` | Business Center-ul care a autorizat contul TikTok |
 | `tiktok.placements` | nu (`tiktok_only`) | sau `automatic` |
 | `tiktok.enhancements` | nu — **toate `false`** | `automatic_enhancements`, `auto_add_assets`, `translate_and_dub`, `music_refresh` |
+| `google.business_name` · `logo_url` | da pe Google | numele firmei (≤25) și sigla: imagine https pătrată, ≥128×128, PNG/JPEG |
+| `google.channels` | nu (`"all"`) | sau o listă: `youtube_in_stream`, `youtube_in_feed`, `youtube_shorts`, `discover`, `gmail`, `display` |
+| `google.optimized_targeting` | nu (`false`) | lărgirea automată a publicului |
+| `google.enhancements` | nu — **toate `false`** | `video_enhancements`, `text_assets` |
 
 Reguli de citire:
 
@@ -385,6 +419,102 @@ Sursa: `example-plan.ts`. Se poate lipi direct în portal, cu comentarii cu tot.
       "auto_add_assets": false,
       "translate_and_dub": false,
       "music_refresh": false
+    }
+  }
+}
+```
+
+### Exemplul complet, comentat — Google, Leads, video pe YouTube
+
+Sursa: `example-plan.ts` (`EXAMPLE_PLAN_GOOGLE`). Id-urile sunt false; video-ul e unul public, de test.
+
+```jsonc
+{
+  "format": "meridian-ads/1",
+
+  // Pe Google: google-meridian sau google-clienti — cel din selectorul de sus.
+  "workspace": "google-meridian",
+
+  // Id-ul contului Google Ads: 10 cifre, cu sau fără cratime (dreapta sus în Google Ads).
+  "ad_account": "123-456-7890",
+
+  "campaign": {
+    "name": "Video imobiliare · testimonial · Google · oct 2026",
+    // leads și traffic. Vizualizările și notorietatea pe YouTube se fac din Google Ads.
+    "objective": "leads",
+    // Pe zi, în moneda contului.
+    "daily_budget": 60,
+    "currency": "RON"
+  },
+
+  "audience": {
+    // Țară, regiune sau oraș. Google țintește orașul întreg — fără rază.
+    "locations": [
+      { "type": "city", "name": "București", "country": "RO" },
+      { "type": "city", "name": "Cluj-Napoca", "country": "RO" }
+    ],
+    // Pe Google, vârsta merge pe grupe: 18–24, 25–34, 35–44, 45–54, 55–64, 65+.
+    "age_min": 25,
+    "age_max": 64,
+    "gender": "all",
+    "languages": ["ro"],
+    // Segmentele de public Google („în piață" și „afinitate"), în engleză, ca în Google Ads.
+    "interests": [
+      { "name": "Real Estate" }
+    ]
+  },
+
+  // Obligatorie la leads: acțiunea de conversie din Google Ads (Obiective → Conversii),
+  // cu id-ul ei numeric. Site-ul trimite conversia prin tag-ul Google (lib/google-tag.ts).
+  "conversion": {
+    "pixel_id": "700000001",
+    "event": "lead"
+  },
+
+  "destination": {
+    "type": "website",
+    "url": "https://www.meridianx.ro/video",
+    // ValueTrack ({campaignid}, {creative}) se înlocuiește la clic.
+    "utm": {
+      "source": "google",
+      "medium": "paid_video",
+      "campaign": "video-imobiliare-oct26"
+    }
+  },
+
+  "creative": {
+    // Video-uri de pe YouTube (id-ul de 11 caractere din link), publice sau nelistate.
+    // Sau { "source": "upload" }: portalul îl urcă pe YouTube, nelistat, prin Google Ads.
+    "videos": [
+      { "source": "library", "video_id": "aqz-KE-bpKQ" }
+    ],
+    "thumbnail": "auto",
+    // Pe Google, textele principale devin titluri lungi: cel mult 90 de caractere.
+    "primary_texts": [
+      "Un apartament se vinde din primele trei secunde de video. Noi le filmăm pe alea trei."
+    ],
+    // Titluri scurte (cel puțin unul, maxim 40 de caractere) și descrieri (cel puțin una, maxim 90).
+    "headlines": ["Video pentru proiectul tău", "Filmăm la lumina reală"],
+    "descriptions": ["Testimoniale și tururi video pentru dezvoltatori imobiliari. Ofertă în 24 de ore."],
+    "cta": "get_quote",
+    // platform_rotates (recomandat pe Google): o reclamă cu toate textele și video-urile, Google le combină.
+    "variants": "platform_rotates"
+  },
+
+  // Obligatorie pe Google.
+  "google": {
+    // Numele firmei, cum apare pe reclamă (cel mult 25 de caractere).
+    "business_name": "MERIDIAN",
+    // Sigla: imagine pătrată, minim 128×128, PNG sau JPEG, la o adresă https.
+    "logo_url": "https://www.meridianx.ro/brand/icon-512.png",
+    // "all" sau o listă: youtube_in_stream, youtube_in_feed, youtube_shorts, discover, gmail, display.
+    "channels": ["youtube_in_stream", "youtube_in_feed", "youtube_shorts"],
+    // Lărgirea automată a publicului: oprită — vârsta, locațiile și interesele sunt limite.
+    "optimized_targeting": false,
+    // Implicit oprite: Google nu remixează video-ul și nu scrie texte în locul tău.
+    "enhancements": {
+      "video_enhancements": false,
+      "text_assets": false
     }
   }
 }
@@ -798,9 +928,169 @@ creată oprită, verificată în TikTok Ads Manager (grupul, plasările, identit
 
 ---
 
+## Faza 6 — Google Ads
+
+Campanii **Demand Gen** — reclame video pe YouTube (înainte și în timpul
+video-urilor, în fluxul de video-uri, în Shorts), opțional și pe Discover, Gmail
+și rețeaua de display. Google Ads API **v26** (2026-10-14), REST, fără bibliotecă.
+
+### Drumul, pe ecran
+
+Spațiul „Meridian · Google” → „Plan nou” → „Încarcă exemplul” (sau lotul) →
+**Verifică în Google**: contul (direct sau prin managerul MCC al contului de
+serviciu), moneda, acțiunea de conversie (există, e principală, vine de pe site,
+are eticheta pe care o trimite site-ul), video-urile YouTube (publice sau
+nelistate), sigla, fiecare nume din targetare — apoi TOATĂ crearea trimisă cu
+`validateOnly`: Google spune exact ce ar refuza, fără să creeze nimic. Erorile
+Google ajung pe câmpul din plan care le-a produs. **Creează pe pauză** → o
+singură cerere atomică → „Creată. Oprită.” + linkul spre Google Ads.
+
+### Autentificarea — fără developer token
+
+Din **2026-09-09**, Google Ads API nu mai folosește developer token: accesul
+ține de **proiectul Google Cloud** (nivelurile Test / Explorer / Basic /
+Standard). Portalul nu trimite antetul `developer-token`.
+
+Cheia spațiului (`GOOGLE_ADS_MERIDIAN`) = fișierul JSON al unui **cont de
+serviciu** (`"type": "service_account"`), lipit ca atare sau în base64. Contul de
+serviciu se adaugă direct ca utilizator în Google Ads (din 2024, fără Google
+Workspace) — echivalentul System User-ului de la Meta: nu expiră, nu depinde de
+parola cuiva, nu cere 2FA. Merge și JSON-ul `authorized_user` (refresh token)
+dat de `gcloud auth application-default login`. Tokenul de acces (JWT RS256 →
+`oauth2.googleapis.com/token`, o oră) stă doar în memoria procesului.
+
+Contul din plan se găsește singur: dacă cheia îl vede direct, fără
+`login-customer-id`; altfel prin managerii pe care îi vede cheia
+(`customer_client`), cu `login-customer-id` = managerul. Nimic de configurat.
+
+### Maparea pe Google Ads API v26
+
+| Plan | Google |
+|---|---|
+| `campaign.daily_budget` | `CampaignBudget.amountMicros` (multiplu de 10.000), `explicitlyShared: false` (implicit Google l-ar face partajat, iar Demand Gen refuză bugete partajate), `period: DAILY` |
+| `campaign.objective` | `leads`/`sales` → `maximizeConversions` (conversiile principale ale contului); `traffic` → `targetSpend` (Maximize clicks, fără plafon de CPC). `video_views`/`awareness` → **refuzate**: campaniile Video nu se pot crea din API, în nicio formă |
+| — | `advertisingChannelType: DEMAND_GEN`, `status: PAUSED`, `containsEuPoliticalAdvertising: DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING` (obligatoriu în UE), `demandGenCampaignSettings.upgradedTargeting: true` |
+| grupul | `AdGroup` cu `status: PAUSED`, `optimizedTargetingEnabled: false`, `audienceSetting.useAudienceGrouped: true`, `demandGenAdGroupSettings.channelControls` (`ALL_CHANNELS` sau `selectedChannels` cu toate cele 7 canale, `maps: false`) |
+| `audience.locations` / `languages` | criterii pe grup: `location.geoTargetConstant` (țările: 2000 + codul ISO, RO = 2642; orașele și regiunile: `geoTargetConstants:suggest`), `language.languageConstant` (ro = 1032). **Fără rază**: Demand Gen nu are rază pe grup — avertisment |
+| `audience.interests` + vârsta + genul | UN `Audience` pe grup (`audienceSegments.userInterest`, `age.ageRanges` pe grupele Google, `gender`), atașat cu `AdGroupCriterion.audience`. Vârsta necunoscută rămâne afară (`includeUndetermined: false`): vârsta din plan e o limită |
+| `creative.videos` | materiale `youtubeVideoAsset` (refolosite dacă sunt deja în cont), 1–5 pe reclamă |
+| `google.logo_url` | material `imageAsset.data` (base64), refolosit dacă aceeași siglă e deja în cont (după amprenta fișierului) |
+| `creative.cta` | material `callToActionAsset` (toate cele 7 butoane există pe Google) |
+| reclama | `AdGroupAd` cu `status: PAUSED` + `demandGenVideoResponsiveAd`: `primary_texts` → `longHeadlines` (≤90), `headlines` (≤40), `descriptions` (≤90), `businessName` (≤25), `logoImages`, `videos`, `callToActions`; `finalUrls` = pagina, UTM în `finalUrlSuffix` |
+| `google.enhancements` | pe REclamă (pe campanie, setările sunt doar pentru PMax/Search): `adGroupAdAssetAutomationSettings` cu `OPTED_OUT` pentru `GENERATE_VERTICAL_YOUTUBE_VIDEOS`, `GENERATE_SHORTER_YOUTUBE_VIDEOS` (video) și `GENERATE_LANDING_PAGE_TEXT`, `GENERATE_LANDING_PAGE_PREVIEW` (texte) |
+| `variants` | `platform_rotates` (recomandat pe Google) = o reclamă cu toate textele și video-urile; `one_ad_per_text` = video × text, fiecare cu toate titlurile și descrierile |
+
+Garda (`assertGooglePaused`): doar operații `create`, doar tipurile din listă;
+campania, grupul și reclamele trebuie să aibă `PAUSED`; ORICE alt câmp `status`
+e refuzat — un criteriu „oprit” ar lărga publicul; resursele trebuie să fie în
+contul din URL. `partialFailure` nu există în cod.
+
+### Video nou: pe YouTube, prin Google Ads
+
+„Fișier nou” pe Google: browser → anticamera Supabase (ca la Meta/TikTok) →
+serverul ia fișierul (≤50 MB) și îl trimite la `YouTubeVideoUploadService`
+(din v23.1): protocol „resumable”, pe **canalul administrat de Google al
+contului**, **nelistat** — nu trebuie legat niciun canal YouTube. Starea se
+citește din `you_tube_video_upload`; la `PROCESSED`, planul trece singur pe
+id-ul YouTube (11 caractere). Fișierul din anticameră se șterge la final.
+
+### Cifrele pe Google
+
+GAQL pe `campaign`, segmentat pe zi: cheltuiala = `metrics.cost_micros` /
+1.000.000, clicurile, afișările, rezultatele = `metrics.conversions` (Lead-uri,
+Vânzări) sau clicurile (Trafic). Statusul: `campaign.status` (ENABLED / PAUSED /
+REMOVED — Google întoarce și campaniile șterse).
+
+### Limite
+
+- **Explorer** (nivelul primit de obicei imediat): 2.880 de operații pe zi pe
+  conturi reale. O verificare + o creare costă câteva zeci. Pentru volum mare:
+  **Basic** (15.000/zi; cere verificarea mărcii proiectului Google Cloud).
+- O adresă de email (deci un cont de serviciu) poate fi adăugată în cel mult
+  20 de conturi Google Ads; peste, se pune în contul manager (MCC).
+- Organizațiile Google Cloud create după 2024-05-03 blochează implicit cheile
+  conturilor de serviciu (`iam.managed.disableServiceAccountKeyCreation`); un
+  proiect pe un cont Gmail obișnuit nu are blocajul.
+- Din 2026-04-01, o singură campanie fără declarația UE din cont blochează
+  orice creare din API — portalul o declară mereu; campaniile vechi se declară
+  din Google Ads.
+
+### Neverificat încă — se confirmă la prima campanie reală
+
+1. `Audience` cu id temporar în aceeași cerere atomică (nu apare în exemplele
+   oficiale). Dacă Google îl refuză, `validateOnly` spune exact asta.
+2. Linkul spre o campanie anume: Google nu documentează unul (`ocid` nu se poate
+   citi din API). Linkul deschide campaniile contului; dacă ignoră parametrii,
+   campania se caută după nume.
+3. Câte reclame primește un grup Demand Gen (nedocumentat; portalul face cel
+   mult 20) și câte titluri/descrieri primește o reclamă (5, după surse
+   neoficiale).
+4. Bugetul minim zilnic Demand Gen în lei (Google îl refuză la `validateOnly`
+   dacă e prea mic).
+5. Urcarea pe YouTube: calea `/resumable/upload/v26/…` (exemplul oficial) și
+   timpul de procesare.
+6. oEmbed-ul YouTube (folosit ca să spună „privat” / „șters” înainte de Google)
+   nu e documentat; decizia finală o ia `validateOnly`.
+
+---
+
+## Faza 7 — producția în masă
+
+Planurile se scriu într-o conversație cu Claude; portalul le verifică pe conturile
+reale și le creează oprite. Trei piese:
+
+### „Pentru Claude” (`/admin/ads/claude`)
+
+- **Instrucțiunile**: formatul planului, regulile fiecărei platforme, plafoanele,
+  limitele de text, exemplele complete — compuse din aceleași constante ca
+  validarea (`claude-brief.ts`), deci nu pot rămâne în urma codului.
+- **Contextul conturilor**: citit acum, cu tokenul fiecărui spațiu al
+  proprietarului de pe ecran — conturile, paginile și Instagramul (Meta),
+  identitățile TikTok, pixelii, acțiunile de conversie Google, video-urile din
+  biblioteci, cu id-urile lor. TikTok nu-și poate lista conturile: advertiser_id-ul
+  se scrie o dată în pagină (sau vine din campaniile create deja).
+- „Copiază tot” → se lipește la începutul conversației cu Claude.
+
+### Lotul (`/admin/ads/lot`)
+
+- Primește `[ {…}, {…} ]` sau `{ "plans": [ … ] }`, cel mult 50 de planuri.
+- **Regula banilor**: un lot e al UNUI proprietar (Meridian sau Clienți — cel al
+  spațiului de sus); platformele se pot amesteca. Pe server, fiecare plan se
+  validează și se verifică în spațiul scris în el, iar proprietarul se compară
+  cu al cookie-ului.
+- „Verifică tot” → plan cu plan, pe conturile reale. „Creează pe pauză (N)” →
+  confirmare cu numărul de campanii pe spațiu și bugetul zilnic total → creare
+  plan cu plan, cu „Oprește după planul ăsta”.
+- **Dublurile**: un plan identic în lot e o eroare; un plan creat deja în
+  ultimele 14 zile se sare („Creată deja — sărită”), nu se dublează — un lot
+  lipit a doua oară, după două corecturi, nu creează din nou celelalte opt.
+- „Copiază problemele pentru Claude” → mesajul cu toate problemele (validare,
+  verificare, creare), pe planuri, gata de lipit în conversație.
+- Un lot lipit în „Plan nou” se mută aici cu un clic.
+
+### Mai multe video-uri într-un plan
+
+`"videos": [ {…}, {…} ]` în locul lui `"video"` (1–10). Reclamele = video × text,
+toate în același set — platforma împarte bugetul spre ce merge. Cel mult 20 de
+reclame pe plan. Pe Meta și TikTok, fiecare video are coperta lui (propusă de
+platformă); cu mai multe video-uri, `thumbnail` rămâne `"auto"`. În formular,
+„+ încă un video” transformă planul.
+
+### Tag-ul Google Ads pe site
+
+`lib/google-tag.ts` + `<GoogleTag />`: gtag.js se încarcă doar după „Acceptă
+tot” (categoria marketing) și doar cu `NEXT_PUBLIC_GOOGLE_ADS_LEAD` setat
+(`AW-…/eticheta` conversiei Lead). Consent Mode v2, implementarea „basic”:
+starea implicită refuzată, apoi alegerea omului, apoi `config`. La lead
+confirmat de server: `gtag('event', 'conversion', { send_to, transaction_id: id-ul lead-ului })`.
+Retragerea acordului trimite `consent update` cu denied și scoate scriptul.
+Politicile de confidențialitate și cookie-uri (RO + EN) menționează Google.
+
+---
+
 ## Variabile de mediu
 
-Toate doar pe server; niciuna cu prefix `NEXT_PUBLIC_`.
+Toate doar pe server, cu o excepție marcată (`NEXT_PUBLIC_`).
 
 | Variabilă | Faza | Ce |
 |---|---|---|
@@ -808,9 +1098,13 @@ Toate doar pe server; niciuna cu prefix `NEXT_PUBLIC_`.
 | `META_TOKEN_CLIENTI` | 2 | System User token, portofoliul clienților |
 | `TIKTOK_TOKEN_MERIDIAN` | 5 | token pe termen lung, Business Center Meridian |
 | `TIKTOK_TOKEN_CLIENTI` | 5 | token pe termen lung, Business Center clienți |
+| `GOOGLE_ADS_MERIDIAN` | 6 | JSON-ul contului de serviciu Google Cloud (sau același JSON în base64) adăugat în contul Google Ads al agenției |
+| `GOOGLE_ADS_CLIENTI` | 6 | la fel, alt cont de serviciu, adăugat în conturile clienților (sau în MCC-ul lor) |
+| `NEXT_PUBLIC_GOOGLE_ADS_LEAD` | 7 | **publică** (ajunge în pagină, nu e secretă): eticheta conversiei Lead, `AW-123456789/AbCdEf…`. Fără ea, tag-ul Google nu se încarcă deloc |
 | `CRON_SECRET` | 4 | există deja (sonda Supabase); îl folosește și cron-ul de cifre |
 | `META_GRAPH_URL` | test | DOAR pe calculatorul de dezvoltare: un Meta fals local. Ignorată dacă nu e `http://localhost` / `http://127.0.0.1` — **nu se pune în Vercel**. |
 | `TIKTOK_API_URL` | test | La fel, pentru un TikTok fals local. **Nu se pune în Vercel.** |
+| `GOOGLE_ADS_API_URL` | test | La fel, pentru un Google fals local (și oEmbed-ul YouTube fals). **Nu se pune în Vercel.** |
 
 `app_id` și `secret` ale aplicației TikTok **nu** intră în Vercel: se folosesc o
 singură dată, la schimbarea codului pe token (mai jos).
@@ -937,6 +1231,47 @@ Business Center sau cu `POST /oauth2/revoke_token/`), apoi refaci pașii 2–5.
 
 ---
 
+### Google — contul de serviciu (nu expiră)
+
+Fără developer token (retras pe 2026-09-09). Pașii se fac o dată pentru fiecare
+portofoliu (Meridian, Clienți), fiecare cu contul lui de serviciu:
+
+1. **Google Cloud** (console.cloud.google.com) → un proiect nou (de exemplu
+   „meridian-ads-portal”), pe un cont Google al agenției. Proiectul trebuie să
+   aibă facturarea activă sau deloc — cele pe „Free Trial” sunt respinse la
+   accesul Explorer (problemă cunoscută la Google).
+2. **APIs & Services → Library → „Google Ads API” → Enable.**
+3. **Accesul la conturi reale:** pagina „Google Ads API” → Overview
+   (console.cloud.google.com/google/ads-apis/overview) → aplici; acceptă
+   termenii. Explorer (2.880 de operații/zi) vine de obicei pe loc; Basic
+   (15.000/zi) cere verificarea mărcii proiectului (ecranul OAuth pe „External”
+   și „In production”).
+4. **IAM & Admin → Service Accounts → Create**: un nume („portal-meridian”), fără
+   roluri în proiect. Apoi contul → **Keys → Add key → JSON** → se descarcă un
+   fișier `.json`. Dacă Google spune că organizația blochează cheile, un admin
+   al organizației dezactivează politica `iam.managed.disableServiceAccountKeyCreation`
+   pentru proiect (sau proiectul se face pe un cont Gmail, fără organizație).
+5. **Google Ads** → contul de reclame (sau contul manager MCC, dacă există) →
+   **Admin → Acces și securitate → Utilizatori → „+”** → adresa contului de
+   serviciu (`…@….iam.gserviceaccount.com`) → nivelul **Standard** → „Add account”.
+   Pe conturile cu mai mult de 3 admini, Google poate cere aprobarea unui al
+   doilea admin.
+6. **Vercel → Settings → Environment Variables:** `GOOGLE_ADS_MERIDIAN` =
+   conținutul întreg al fișierului `.json` (sau același conținut în base64),
+   pe *Preview* și *Production*. Fișierul se șterge apoi de pe calculator.
+   Nu în chat, nu într-un commit.
+
+Verificarea portalului spune exact ce lipsește: „cheia nu vede contul” (pasul
+5), „proiectul are doar acces de test” (pasul 3), „cheia nu e JSON” (pasul 6).
+
+**Conversia „Lead” și tag-ul de pe site:** Google Ads → Obiective → Conversii →
+„+ Creează acțiune de conversie” → site-ul `www.meridianx.ro` → categoria
+„Trimitere formular pentru clienți potențiali” → „Manual, cu cod” →
+Numărare: **Una** → salvezi → „Configurează eticheta” → copiezi `send_to`
+(`AW-…/…`) în Vercel ca `NEXT_PUBLIC_GOOGLE_ADS_LEAD` → redeploy. Acțiunea
+trebuie să fie **principală**; id-ul ei (din adresa paginii, `ctId=`) e
+`conversion.pixel_id` în planuri — contextul pentru Claude îl arată singur.
+
 ## Decizii luate în faza 1 (de confirmat de om)
 
 1. **Lista de conturi de reclame vine din token, nu din fișier** — cererea
@@ -1020,17 +1355,39 @@ Business Center sau cu `POST /oauth2/revoke_token/`), apoi refaci pașii 2–5.
 9. **Structura comună** (`platform.ts`): `types.ts` și `links.ts` au ieșit
    din `meta/`; acțiunile și sincronizarea aleg adaptorul după spațiu.
 
+## Decizii luate în fazele 6–7 (de confirmat de om)
+
+1. **Google = Demand Gen.** Campaniile Video (vizualizări, acoperire) nu se pot
+   crea din API; `video_views` și `awareness` se refuză pe Google, cu explicația.
+2. **Contul de serviciu**, nu refresh token: recomandarea Google pentru o
+   unealtă pe conturile proprii; nu expiră, nu cere 2FA sau passkey.
+3. **Totul oprit și pe Google**: campania, grupul ȘI reclamele `PAUSED` (exemplul
+   oficial lasă grupul și reclamele pornite sub campania oprită; regula portalului
+   e mai strictă). În Google Ads, la activare: bifezi campania, grupul și
+   reclamele → „Activează”.
+4. **Conversiile pe Google = obiectivele principale ale contului** (fără
+   modificarea obiectivelor campaniei, care ar cere operații de actualizare).
+   Verificarea avertizează când contul are și alte conversii principale.
+5. **Vârsta necunoscută rămâne afară** pe Google, ca vârsta din plan să fie o
+   limită, ca pe Meta și TikTok. Costă din acoperire; se schimbă într-o linie
+   (`google/build.ts`, `includeUndetermined`).
+6. **Lotul = un proprietar** (Meridian sau Clienți), orice platformă; dublurile
+   din ultimele 14 zile se sar.
+7. **20 de reclame pe plan**, 10 video-uri; cu mai multe video-uri, coperta e
+   cea propusă de platformă.
+8. **Tag-ul Google pe site** doar după „Acceptă tot” și doar cu eticheta setată;
+   Google adăugat în politicile site-ului.
+9. **Cron-ul de cifre în `vercel.json`** (`30 3 * * *` UTC = 06:30 la noi; Vercel
+   permite 100 de cron-uri pe proiect, zilnice și pe Hobby).
+
 ## De rezolvat — în afara zonei portalului
 
-- **Migrările 5, 6 și 7 se aplică de om**, în SQL editor, în ordine. Imediat
-  după migrarea 5: `insert into public.admin_emails (email) values (…)` cu
-  aceleași adrese ca în `ADMIN_EMAILS` — altfel panoul de lead-uri arată zero
-  lead-uri (nu se pierde nimic, doar lista e goală).
-- **CSP (`next.config.ts`):** miniaturile din biblioteca video și din
-  verificare vin de pe CDN-ul Meta (`*.fbcdn.net`) și de pe cel TikTok
-  (domeniile apar în raportul CSP la primele miniaturi reale) — azi CSP-ul doar
-  raportează, deci se văd, dar trebuie adăugate în `img-src` înainte ca
-  CSP-ul să devină activ. Urcarea din faza 3 NU cere nimic în plus: merge
-  spre Supabase, deja în `connect-src`.
-- **Legătura din panoul de lead-uri spre reclame:** capul din `(dash)/layout.tsx`
-  nu are link spre `/admin/ads` (portalul are link înapoi spre lead-uri).
+- **Baza de date:** `supabase/portal-reclame.sql` — un singur fișier, rulat o dată
+  în SQL editor (e suma migrărilor 5–8, scrisă să poată rula oricât de des).
+  Apoi `insert into public.admin_emails (email) values (…) on conflict do nothing;`
+  cu aceleași adrese ca în `ADMIN_EMAILS`.
+- **CSP (`next.config.ts`):** făcut în faza 7 — miniaturile Meta, TikTok și
+  YouTube în `img-src`, tag-ul Google în `script-src` / `connect-src` /
+  `frame-src`. CSP-ul e încă doar raportat (`CSP_REPORT_ONLY = true`).
+- **Legătura din panoul de lead-uri spre reclame:** făcută (linkul „Reclame” din
+  capul panoului).

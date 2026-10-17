@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
+import { countOf } from "@/lib/ads/plan-derive";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { cn } from "@/lib/utils";
 import { ERROR_TEXT, FIELD, LABEL, OK_TEXT } from "./tone";
@@ -32,6 +33,18 @@ interface Summary {
 }
 
 const TIKTOK_KEY = "meridian_ads_tiktok_accounts";
+
+/** „1 cont · 2 pagini · 4 pixeli · 5 video-uri" — doar ce are sens pe platforma spațiului. */
+function summaryLine(item: Summary): string {
+  const plural = (count: number, one: string, many: string) => (count === 1 ? `1 ${one}` : countOf(count, many));
+  const platform = item.workspaceId.split("-")[0];
+  const parts = [plural(item.accounts, "cont", "conturi")];
+  if (platform === "meta") parts.push(plural(item.identities, "pagină", "pagini"), plural(item.conversions, "pixel", "pixeli"));
+  if (platform === "tiktok") parts.push(plural(item.identities, "identitate", "identități"), plural(item.conversions, "pixel", "pixeli"));
+  if (platform === "google") parts.push(plural(item.conversions, "conversie", "conversii"));
+  parts.push(plural(item.videos, "video", "video-uri"));
+  return parts.join(" · ");
+}
 
 export function ClaudeHelper({
   brief,
@@ -236,9 +249,7 @@ export function ClaudeHelper({
                 {context.summary.map((item) => (
                   <li key={item.workspaceId} className="rounded-panel border border-hair bg-ink/40 px-4 py-3 text-[13.5px] leading-snug">
                     <p className="font-semibold text-bone">{item.name}</p>
-                    <p className="mt-1 text-bone/75">
-                      {item.accounts} conturi · {item.identities} pagini/identități · {item.conversions} pixeli/conversii · {item.videos} video-uri
-                    </p>
+                    <p className="mt-1 text-bone/75">{summaryLine(item)}</p>
                     {item.notes.map((note) => (
                       <p key={note} className="mt-1.5 text-dim">
                         {note}
