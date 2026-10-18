@@ -17,6 +17,8 @@ const eslintConfig = [
       ".next/**",
       "out/**",
       "build/**",
+      // Proiectul Remotion al reclamelor video, cu tsconfig propriu; nu face parte din site.
+      "reclame-video/**",
       "next-env.d.ts",
     ],
   },

@@ -1,0 +1,26 @@
+# Dependențe (npm install aici, în tools/asr și în tools/icons)
+node_modules/
+
+# Randările: segmentele ProRes 4444 au câțiva GB, iar clipurile finale conțin
+# vocile, filmările și muzica de mai jos. Rămân doar pe disc.
+/out/
+
+# Material brut. Repo-ul e public: vocile, filmările din portofoliu, cadrele
+# extrase din ele și muzica / efectele Mixkit (licența nu permite
+# redistribuirea fișierelor) nu se urcă.
+/public/voci/
+/public/norm/
+/public/footage/
+/public/stills/
+/public/music/
+/public/sfx/
+/tools/asr/wav/
+
+# Analiza referințelor: cadre și pagini salvate din reclame și site-uri terțe.
+/analiza/
+
+# Binarele whisper.cpp: nu merg pe procesorul ăsta (fără AVX2), le-a
+# înlocuit tools/asr.
+/whisper/
+
+*.log

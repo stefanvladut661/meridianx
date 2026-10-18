@@ -1,0 +1,292 @@
+{
+  "note": "Cadre din portofoliul site-ului, până primim filmările noastre.",
+  "stills": [
+    {
+      "src": "stills/e45-burger-film-0_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 0.5,
+      "label": "flacăra",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-2_3.jpg",
+      "clip": "e45-burger-film",
+      "t": 2.3,
+      "label": "foc",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-5_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 5.5,
+      "label": "carnea pe grătar",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-7_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 7.5,
+      "label": "burger la grătar",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-11_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 11.5,
+      "label": "cartofi prăjiți",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-13_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 13.5,
+      "label": "chifla",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-15_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 15.5,
+      "label": "asamblare",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-18_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 18.5,
+      "label": "cheddar",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-21_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 21.5,
+      "label": "prima mușcătură",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-burger-film-23_5.jpg",
+      "clip": "e45-burger-film",
+      "t": 23.5,
+      "label": "burger servit",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-cappuccino-2.jpg",
+      "clip": "e45-cappuccino",
+      "t": 2,
+      "label": "râșnița",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-cappuccino-4_5.jpg",
+      "clip": "e45-cappuccino",
+      "t": 4.5,
+      "label": "tamper",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-cappuccino-7.jpg",
+      "clip": "e45-cappuccino",
+      "t": 7,
+      "label": "espresso",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-cappuccino-13_5.jpg",
+      "clip": "e45-cappuccino",
+      "t": 13.5,
+      "label": "latte art",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/e45-cappuccino-17_5.jpg",
+      "clip": "e45-cappuccino",
+      "t": 17.5,
+      "label": "cappuccino",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-passione-gelato-2_5.jpg",
+      "clip": "allto-passione-gelato",
+      "t": 2.5,
+      "label": "gelato",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-passione-gelato-7.jpg",
+      "clip": "allto-passione-gelato",
+      "t": 7,
+      "label": "portafiltru",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-passione-gelato-17.jpg",
+      "clip": "allto-passione-gelato",
+      "t": 17,
+      "label": "affogato",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-passione-gelato-23.jpg",
+      "clip": "allto-passione-gelato",
+      "t": 23,
+      "label": "affogato servit",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-tiktok-cornete-1.jpg",
+      "clip": "allto-tiktok-cornete",
+      "t": 1,
+      "label": "cornete",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-tiktok-cornete-5_5.jpg",
+      "clip": "allto-tiktok-cornete",
+      "t": 5.5,
+      "label": "înghețată",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-tiktok-cornete-14.jpg",
+      "clip": "allto-tiktok-cornete",
+      "t": 14,
+      "label": "trei cupe",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-tiktok-cornete-18.jpg",
+      "clip": "allto-tiktok-cornete",
+      "t": 18,
+      "label": "cornet",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-tiktok-cafea-2_5.jpg",
+      "clip": "allto-tiktok-cafea",
+      "t": 2.5,
+      "label": "colțul de cafea",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-tiktok-cafea-4_5.jpg",
+      "clip": "allto-tiktok-cafea",
+      "t": 4.5,
+      "label": "cornete crocante",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-tiktok-cafea-9.jpg",
+      "clip": "allto-tiktok-cafea",
+      "t": 9,
+      "label": "fistic",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-tiktok-cafea-13.jpg",
+      "clip": "allto-tiktok-cafea",
+      "t": 13,
+      "label": "gelato galben",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-rosso-2.jpg",
+      "clip": "allto-rosso",
+      "t": 2,
+      "label": "cookie rosso",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-rosso-12.jpg",
+      "clip": "allto-rosso",
+      "t": 12,
+      "label": "cookie verona",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-rosso-22.jpg",
+      "clip": "allto-rosso",
+      "t": 22,
+      "label": "cookie midori",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/allto-rosso-42.jpg",
+      "clip": "allto-rosso",
+      "t": 42,
+      "label": "înghețată și cookie",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-pizza-1.jpg",
+      "clip": "bonami-pizza",
+      "t": 1,
+      "label": "aluat",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-pizza-5.jpg",
+      "clip": "bonami-pizza",
+      "t": 5,
+      "label": "sos",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-pizza-9_5.jpg",
+      "clip": "bonami-pizza",
+      "t": 9.5,
+      "label": "cuptor",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-pizza-11.jpg",
+      "clip": "bonami-pizza",
+      "t": 11,
+      "label": "pizza în cuptor",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-pizza-15.jpg",
+      "clip": "bonami-pizza",
+      "t": 15,
+      "label": "pizza scoasă",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-pizza-22.jpg",
+      "clip": "bonami-pizza",
+      "t": 22,
+      "label": "feliere",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-pizza-27.jpg",
+      "clip": "bonami-pizza",
+      "t": 27,
+      "label": "pizza",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-mana-rotativa-5_5.jpg",
+      "clip": "bonami-mana-rotativa",
+      "t": 5.5,
+      "label": "carbonara în zbor",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-mana-rotativa-12_5.jpg",
+      "clip": "bonami-mana-rotativa",
+      "t": 12.5,
+      "label": "caprese în zbor",
+      "isPlaceholder": true
+    },
+    {
+      "src": "stills/bonami-mana-rotativa-14_5.jpg",
+      "clip": "bonami-mana-rotativa",
+      "t": 14.5,
+      "label": "pizza pe blat",
+      "isPlaceholder": true
+    }
+  ]
+}

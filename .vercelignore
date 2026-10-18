@@ -24,3 +24,7 @@
 *.pem
 npm-debug.log*
 /coverage
+
+# Proiectul Remotion al reclamelor video: nu face parte din site, iar local
+# are câțiva GB de randări și material brut.
+/reclame-video/
