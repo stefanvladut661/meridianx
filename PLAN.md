@@ -1137,3 +1137,68 @@ ultima întrebare).
   `registry.ts`. Pagina și ruta sunt generice.
 - **Verificat:** tsc, eslint, POST valid/gol/slug necunoscut/honeypot,
   360 și 390 fără overflow, desktop.
+
+
+---
+
+## REDESIGN — /home-2, după referințele Larven (2026-10-18)
+
+Branch `redesign-larven`, în worktree-ul `E:\meridianx-redesign` (în
+`E:\meridianx` lucra altă conversație). Promptul e în
+`E:\._media agentie\prompt-site-redesign.md`, iar referințele în folderul
+„redesign site”, care a rămas doar local (vezi mai jos). Omul a cerut ca
+redesign-ul să stea pe o pagină nouă, separată, iar pagina de acum să
+rămână neatinsă.
+
+- **Ce e „pagina principală” din prompt:** /video. E singura pagină cu
+  meniu cu linkuri, filmul de prezentare, clipurile de portofoliu pornite
+  doar la apăsare, secțiunile și formularul cu `Lead`/`SubmitForm`. Poarta
+  de la `/` nu are nimic din toate astea. De confirmat cu omul.
+- **Ruta:** `/home-2`, cu `noindex, nofollow`. Nu e în meniu și nici în
+  sitemap, unde lista de rute e explicită.
+- **Doar fișiere noi:** `app/[locale]/(home2)/home-2/page.tsx` și
+  `components/home2/` (meniul, hero-ul, portofoliul, cinci secțiuni cu
+  grafice, contactul cu formularul, subsolul). Niciun fișier existent nu e
+  modificat. Tokenii `--md-*` sunt redefiniți pe rădăcina paginii, deci
+  utilitarele site-ului și playerul de portofoliu (`VideoCard`, refolosit
+  neschimbat) iau singure paleta nouă.
+- **Font:** Host Grotesk (din `next/font/google`, același ca pe larven.ai).
+  Se încarcă doar pe /home-2.
+- **Formularul:** componentă nouă, cu logica copiată 1:1 din
+  `video-form.tsx`: același `submitLead`, aceeași sursă `video-apel`.
+  Testat cu `/api/leads` interceptat: aceleași mesaje, același payload și
+  aceleași `Lead` + `SubmitForm` ca pe /video. Cât timp există amândouă
+  paginile, orice schimbare de logică se face în ambele formulare.
+- **Filmul din hero:** prima afișare e posterul, care e și elementul LCP.
+  Previzualizarea fără sunet pornește abia după `load` și doar cât rama e pe
+  ecran. Butonul din mijloc reia filmul de la capăt, cu sunet. Sub
+  reduced-motion, Save-Data sau 2G rămâne doar posterul.
+- **Graficele:** construite în cod (CSS și SVG), cu dimensiuni în `cqw`. Se
+  opresc când ies din ecran și au butoane de pauză și „următorul”. Sub
+  reduced-motion fiecare pas apare direct în starea finală.
+- **Verificat pe build de producție:**
+  - 360, 390, 768, 1024 și 1440 px, fără overflow orizontal;
+  - hidratare curată la 12 încărcări din 12;
+  - tastatura: ordinea Tab, iar meniul de telefon se închide cu Escape;
+  - contrast AA și reduced-motion;
+  - LCP pe 4G simulat (CPU ×4): 2,3–2,6 s, față de 4,5 s pentru /video în
+    aceleași condiții. Ajută `content-visibility: auto` pe secțiunile de sub
+    hero.
+- **Preview:**
+  `https://meridianx-git-redesign-larven-stefanvladut661s-projects.vercel.app/home-2`
+  (cere login Vercel).
+
+### Rămas deschis
+- Folderele „redesign site” și „reclame” nu sunt în Git. Repo-ul de pe
+  GitHub e **public**, iar folderele conțin vocile, clipul din hero-ul
+  Larven și o reclamă de pe Facebook. Așteaptă decizia omului.
+- Video-ul de prezentare nu era în „redesign site”. Am folosit
+  `public/video/prezentare.mp4`, filmul de prezentare de acum de pe site.
+- Nu se face merge fără confirmarea omului. După aprobare, același stil se
+  aplică și pe celelalte pagini.
+
+### Observații între faze
+- `next dev -H 127.0.0.1` intră într-o buclă de 307 pe rutele cu i18n.
+  next-intl rescrie cererea spre `localhost`, alt host decât cel al
+  serverului, așa că Next o tratează ca rewrite extern și cererea reintră
+  în middleware. Cu `-H localhost` merge.
