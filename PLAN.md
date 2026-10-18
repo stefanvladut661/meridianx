@@ -1189,9 +1189,11 @@ rămână neatinsă.
   (cere login Vercel).
 
 ### Rămas deschis
-- Folderele „redesign site” și „reclame” nu sunt în Git. Repo-ul de pe
-  GitHub e **public**, iar folderele conțin vocile, clipul din hero-ul
-  Larven și o reclamă de pe Facebook. Așteaptă decizia omului.
+- Folderele „redesign site” și „reclame” sunt pe branch-ul separat
+  `materiale` (commit-ul 0664696, pornit din main), doar ca arhivă: nu sunt
+  în `public/`, deci nu se servesc, și nu intră în cod la un merge. Le-am
+  urcat la cererea explicită a omului cât repo-ul era încă **public**; el
+  îl face privat după.
 - Video-ul de prezentare nu era în „redesign site”. Am folosit
   `public/video/prezentare.mp4`, filmul de prezentare de acum de pe site.
 - Nu se face merge fără confirmarea omului. După aprobare, același stil se
