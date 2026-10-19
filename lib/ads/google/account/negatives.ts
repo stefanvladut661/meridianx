@@ -166,3 +166,106 @@ export function planNegatives(input: {
 export function matchLabel(match: MatchType): string {
   return MATCH_TYPE_LABEL[match];
 }
+
+/** Un negativ ales din termenii de căutare: pe campania termenului. */
+export interface TermNegative {
+  campaignId: string;
+  text: string;
+  match: MatchType;
+}
+
+/** Problema textului unui negativ, sau null — aceleași reguli ca la lista lipită. */
+export function negativeTextProblem(text: string): string | null {
+  const clean = cleanText(text);
+  const forbidden = forbiddenKeywordChars(clean, true);
+  if (forbidden.length > 0) return `Google nu acceptă ${forbidden.map((char) => `„${char}”`).join(", ")} într-un cuvânt cheie.`;
+  if (googleLength(clean) > KEYWORD_MAX_CHARS) return `${countOf(googleLength(clean), "caractere")}, maximum ${KEYWORD_MAX_CHARS}.`;
+  if (keywordWords(clean).length > KEYWORD_MAX_WORDS) return `${countOf(keywordWords(clean).length, "cuvinte")}, maximum ${KEYWORD_MAX_WORDS}.`;
+  return clean === "" ? "Gol." : null;
+}
+
+/**
+ * Negativele bifate din termenii de căutare: fiecare pe campania lui (sau,
+ * toate, într-o listă comună — care se leagă și de campaniile termenilor, dacă
+ * nu era deja). Conflictele: pe fiecare campanie afectată, negativele care
+ * ajung la ea peste cuvintele ei active.
+ */
+export function planTermNegatives(input: {
+  customerId: string;
+  items: TermNegative[];
+  targets: NegativeTarget[];
+  list: { resourceName: string; name: string; keywords: Array<{ text: string; match: MatchType }>; linked: NegativeTarget[] } | null;
+}): NegativesPlan {
+  const operations: Array<Record<string, unknown>> = [];
+  const additions: NegativesPlan["additions"] = [];
+  const conflicts: NegativesPlan["conflicts"] = [];
+  const keyword = (item: { text: string; match: MatchType }) => ({ text: cleanText(item.text), matchType: GOOGLE_MATCH_TYPE[item.match] });
+  const byId = new Map(input.targets.map((target) => [target.id, target]));
+  const check = (target: NegativeTarget, negatives: Array<{ text: string; match: MatchType }>) => {
+    const found = findConflicts(
+      target.positives.map((positive) => ({ ...positive, meta: positive.group })),
+      negatives.map((negative) => ({ ...negative, meta: null }))
+    ).filter((item) => item.certain);
+    for (const conflict of found) {
+      conflicts.push({ campaign: target.name, keyword: keywordNotation(conflict.positive), negative: keywordNotation(conflict.negative), group: conflict.positive.meta });
+    }
+  };
+
+  if (!input.list) {
+    for (const target of input.targets) {
+      const mine = input.items.filter((item) => item.campaignId === target.id);
+      const existing = new Set(target.existing.map(keyOf));
+      const seen = new Set<string>();
+      const added: string[] = [];
+      const skipped: string[] = [];
+      for (const item of mine) {
+        const key = keyOf(item);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (existing.has(key)) {
+          skipped.push(keywordNotation(item));
+          continue;
+        }
+        operations.push({ campaignCriterionOperation: { create: { campaign: `customers/${input.customerId}/campaigns/${target.id}`, negative: true, keyword: keyword(item) } } });
+        added.push(keywordNotation(item));
+      }
+      additions.push({ where: `campania „${target.name}”`, keywords: added, skipped });
+      check(target, mine);
+    }
+    return { operations, additions, conflicts };
+  }
+
+  const list = input.list;
+  const existing = new Set(list.keywords.map(keyOf));
+  const seen = new Set<string>();
+  const added: string[] = [];
+  const skipped: string[] = [];
+  const fresh: Array<{ text: string; match: MatchType }> = [];
+  for (const item of input.items) {
+    const key = keyOf(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (existing.has(key)) {
+      skipped.push(keywordNotation(item));
+      continue;
+    }
+    operations.push({ sharedCriterionOperation: { create: { sharedSet: list.resourceName, keyword: keyword(item) } } });
+    added.push(keywordNotation(item));
+    fresh.push(item);
+  }
+  additions.push({ where: `lista „${list.name}”`, keywords: added, skipped });
+  const linkedIds = new Set(list.linked.map((target) => target.id));
+  const toLink = [...new Set(input.items.map((item) => item.campaignId))]
+    .filter((id) => !linkedIds.has(id))
+    .map((id) => byId.get(id))
+    .filter((target): target is NegativeTarget => Boolean(target));
+  for (const target of toLink) {
+    operations.push({ campaignSharedSetOperation: { create: { campaign: `customers/${input.customerId}/campaigns/${target.id}`, sharedSet: list.resourceName } } });
+  }
+  if (toLink.length > 0) {
+    additions.push({ where: `legarea listei „${list.name}” (campaniile termenilor nu erau legate)`, keywords: toLink.map((target) => `campania „${target.name}”`), skipped: [] });
+  }
+  for (const target of [...list.linked, ...toLink]) check(target, fresh);
+  for (const target of toLink) check(target, list.keywords);
+  return { operations, additions, conflicts };
+}

@@ -259,7 +259,7 @@ export function AccountNegatives({
   );
 }
 
-function PreviewPanel({ preview }: { preview: NegativesPreview }) {
+export function PreviewPanel({ preview }: { preview: NegativesPreview }) {
   const bad = preview.keywords.filter((item) => item.problem);
   return (
     <div className="space-y-4 rounded-panel-lg border border-hair bg-char/60 px-5 py-5 sm:px-6">

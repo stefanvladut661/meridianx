@@ -14,6 +14,7 @@ import { AccountCampaigns } from "@/components/ads/account-campaigns";
 import { AccountNegatives } from "@/components/ads/account-negatives";
 import { AccountAudit } from "@/components/ads/account-audit";
 import { AccountJournal } from "@/components/ads/account-journal";
+import { AccountChooser, formatCustomerId } from "@/components/ads/account-chooser";
 import { cn } from "@/lib/utils";
 import { addAccountNegatives, pauseAccountCampaigns, previewAccountNegatives } from "../actions";
 
@@ -97,36 +98,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     accountsError = describeGoogleError(error, "lista de conturi", workspace.tokenEnv);
   }
 
-  const chooser = (
-    <form method="get" action="/admin/ads/cont" className="mt-8 flex flex-col gap-3 rounded-panel-lg border border-hair bg-char/60 px-5 py-4 sm:flex-row sm:items-end sm:px-6">
-      <div className="min-w-0 flex-1">
-        <label htmlFor="cont-ales" className="eyebrow block !text-[11.5px]">
-          Contul Google Ads
-        </label>
-        <input
-          id="cont-ales"
-          name="cont"
-          list="conturi"
-          defaultValue={accountParam}
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="123-456-7890"
-          className="mt-2 block w-full rounded-panel-sm border border-hair bg-ink/60 px-3.5 py-2.5 font-md-mono text-[14px] text-bone placeholder:text-dim focus:border-hair-strong"
-        />
-        <datalist id="conturi">
-          {accounts.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name} · {item.currency}
-            </option>
-          ))}
-        </datalist>
-      </div>
-      <input type="hidden" name="vedere" value={view} />
-      <button type="submit" className="btn btn-light shrink-0">
-        Deschide contul
-      </button>
-    </form>
-  );
+  const chooser = <AccountChooser action="/admin/ads/cont" value={accountParam} accounts={accounts} hidden={{ vedere: view }} />;
 
   if (!accountParam) {
     return (
@@ -141,7 +113,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 <Link href={`/admin/ads/cont?cont=${item.id}`} className="block px-5 py-4 hover:bg-glass">
                   <span className="block text-[15px] font-semibold text-bone">{item.name}</span>
                   <span className="mt-1 block font-md-mono text-[12px] text-dim">
-                    {item.id.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3")} · {item.currency} · {item.state}
+                    {formatCustomerId(item.id)} · {item.currency} · {item.state}
                   </span>
                 </Link>
               </li>
@@ -199,8 +171,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             {info.name}
           </h2>
           <p className="font-md-mono text-[12px] text-dim">
-            {info.id.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3")} · {info.currency} · {info.state} ·{" "}
-            {info.manager ? `văzut prin managerul ${info.manager.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3")}` : "văzut direct"}
+            {formatCustomerId(info.id)} · {info.currency} · {info.state} ·{" "}
+            {info.manager ? `văzut prin managerul ${formatCustomerId(info.manager)}` : "văzut direct"}
           </p>
         </div>
 

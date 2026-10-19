@@ -32,7 +32,17 @@ import { planFormatOf } from "@/lib/ads/plan-json";
 import type { PlatformCheck } from "@/lib/ads/types";
 import { recordChange } from "@/lib/ads/changes";
 import { findGoogleAccount, type GoogleAccount } from "@/lib/ads/google/lookup";
-import { applyNegatives, pauseCampaigns, prepareNegatives, type NegativesRequest } from "@/lib/ads/google/account/service";
+import {
+  applyNegatives,
+  pauseCampaigns,
+  prepareNegatives,
+  prepareTermNegatives,
+  type NegativesRequest,
+  type TermNegativesRequest,
+} from "@/lib/ads/google/account/service";
+import { runSearchTermsSync } from "@/lib/ads/google/terms/sync";
+import { DEFAULT_COST_THRESHOLD } from "@/lib/ads/google/terms/defaults";
+import { readRules, saveRules } from "@/lib/ads/terms-store";
 import type { NegativesResponse, PauseResponse } from "@/lib/ads/google/account/types";
 import { markPortalPaused } from "@/lib/ads/store";
 
@@ -763,6 +773,114 @@ export async function addAccountNegatives(input: {
       })
     );
     revalidatePath("/admin/ads/cont");
+    return { ok: true, operations, journalWarning: warning };
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "adăugarea negativelor", context.workspace.tokenEnv) };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Termenii de căutare (faza 12): sincronizarea la cerere, regulile, negativele bifate
+// ---------------------------------------------------------------------------
+
+/** Între două sincronizări manuale ale termenilor unui cont. */
+const TERMS_COOLDOWN_MS = 2 * 60 * 1000;
+
+export async function syncTermsNow(input: { workspace: string; adAccount: string }): Promise<{ ok: true; message: string } | Failure> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  const rules = await readRules(context.account.info.id);
+  if (!rules.ok) return { ok: false, message: STORE_FAILURE_MESSAGE[rules.reason] };
+  if (rules.data?.lastSyncedAt && Date.now() - Date.parse(rules.data.lastSyncedAt) < TERMS_COOLDOWN_MS) {
+    return { ok: false, message: "Termenii contului tocmai s-au sincronizat. Mai încearcă peste două minute." };
+  }
+  // Un cont preluat (fără campanii create din portal) intră în sincronizare prin rândul lui de reguli.
+  if (!rules.data) {
+    const saved = await saveRules({
+      workspace: context.workspace.id,
+      adAccount: context.account.info.id,
+      excludeWords: [],
+      costThreshold: DEFAULT_COST_THRESHOLD[context.account.info.currency] ?? 20,
+      syncEnabled: true,
+      user: context.user,
+    });
+    if (!saved.ok) return { ok: false, message: STORE_FAILURE_MESSAGE[saved.reason] };
+  }
+  try {
+    const outcome = await runSearchTermsSync({ adAccounts: [context.account.info.id] });
+    revalidatePath("/admin/ads/termeni");
+    if (outcome.problems.length > 0) return { ok: false, message: outcome.problems.join(" ") };
+    return { ok: true, message: outcome.rows === 0 ? "Gata: niciun termen nou în ultimele zile." : `Gata: ${outcome.rows === 1 ? "un rând" : `${outcome.rows} rânduri`} de termeni pe zile.` };
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : "Sincronizarea termenilor n-a pornit." };
+  }
+}
+
+export async function saveTermRules(input: {
+  workspace: string;
+  adAccount: string;
+  words: string;
+  costThreshold: number;
+  syncEnabled: boolean;
+}): Promise<{ ok: true; words: number } | Failure> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  const words = [...new Set(input.words.split(/\r?\n|,/).map((word) => word.trim().toLocaleLowerCase("ro-RO")).filter(Boolean))].slice(0, 2000);
+  if (words.some((word) => word.length > 80)) return { ok: false, message: "Un cuvânt de regulă are peste 80 de caractere." };
+  if (!Number.isFinite(input.costThreshold) || input.costThreshold < 0 || input.costThreshold > 100_000) {
+    return { ok: false, message: "Pragul de cost trebuie să fie un număr între 0 și 100.000 (0 = fără propuneri după cost)." };
+  }
+  const saved = await saveRules({
+    workspace: context.workspace.id,
+    adAccount: context.account.info.id,
+    excludeWords: words,
+    costThreshold: Math.round(input.costThreshold * 100) / 100,
+    syncEnabled: input.syncEnabled,
+    user: context.user,
+  });
+  if (!saved.ok) return { ok: false, message: STORE_FAILURE_MESSAGE[saved.reason] };
+  revalidatePath("/admin/ads/termeni");
+  return { ok: true, words: words.length };
+}
+
+export async function previewTermNegatives(input: { workspace: string; adAccount: string; request: TermNegativesRequest }): Promise<NegativesResponse> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  try {
+    const prepared = await prepareTermNegatives(context.workspace, context.account, input.request);
+    return { ok: true, preview: prepared.preview };
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "pregătirea negativelor", context.workspace.tokenEnv) };
+  }
+}
+
+export async function addTermNegatives(input: {
+  workspace: string;
+  adAccount: string;
+  request: TermNegativesRequest;
+  fingerprint: string;
+}): Promise<{ ok: true; operations: number; journalWarning: string | null } | { ok: false; message: string; recheck?: boolean }> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  try {
+    const prepared = await prepareTermNegatives(context.workspace, context.account, input.request);
+    if (!prepared.preview.ok) return { ok: false, message: prepared.preview.errors[0] ?? "Previzualizarea are probleme. Previzualizează din nou.", recheck: true };
+    if (prepared.preview.fingerprint !== input.fingerprint) {
+      return { ok: false, message: "Ceva s-a schimbat în cont de la previzualizare. Previzualizează din nou.", recheck: true };
+    }
+    const operations = await applyNegatives(context.workspace, context.account, prepared);
+    const warning = journalWarning(
+      await recordChange({
+        workspace: context.workspace.id,
+        adAccount: context.account.info.id,
+        kind: "negatives",
+        summary: `${operations === 1 ? "O operație" : `${operations} operații`} de negative din termenii de căutare${input.request.listId ? ", în lista comună" : ""}`,
+        detail: { source: "termeni", additions: prepared.preview.additions, listId: input.request.listId },
+        operations,
+        user: context.user,
+      })
+    );
+    revalidatePath("/admin/ads/termeni");
     return { ok: true, operations, journalWarning: warning };
   } catch (error) {
     return { ok: false, message: describeGoogleError(error, "adăugarea negativelor", context.workspace.tokenEnv) };

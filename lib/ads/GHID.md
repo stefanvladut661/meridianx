@@ -27,6 +27,7 @@ Trei documente, în ordinea în care se citesc:
 | **9** | **Garda nouă**: pauza, negativele pe campanii existente, listele de negative, conversiile | ✅ gata — 164 de verificări fără rețea; fără interfață încă |
 | **10** | **Google Search — crearea**: verificarea cu `validateOnly`, crearea pe pauză într-o singură cerere, lotul | ✅ gata, testată pe Google fals — **încă nu pe contul real** |
 | **11** | **Contul existent**: campaniile, pauza, negativele pe campanii existente, auditul | ✅ gata, testată pe Google fals — **încă nu pe contul real** |
+| **12** | **Termenii de căutare**: sincronizarea, propunerile de negative, adăugarea cu bifă | ✅ gata, testată pe Google fals — **încă nu pe contul real** |
 
 Fazele 1–7 sunt pe `feat/ads-portal`; fazele 8–14 pe `feat/ads-google-search` (plecată din ea), împinse pe GitHub, **fără merge**
 (deci nu e pe site încă). Merge-ul îl faci tu sau mi-l ceri explicit.
@@ -64,6 +65,10 @@ Ce face fiecare fază și ce ai de făcut tu după ea. Detaliile tehnice: README
 - **Ce face:** pagina **„Cont”** — toate campaniile unui cont Google (și cele create de altcineva), cu costul pe 30 de zile și de la început; **pauza** pe cele bifate, după o confirmare cu lista și costul; **negative** pe campaniile existente (sau într-o listă comună, sau legarea unei liste), cu conflictele găsite înainte; **auditul**: cine a creat sau schimbat ce în ultimele 30 de zile, cine are acces, facturarea, conversiile, semnalele.
 - **Ce ai de făcut:** rulează **migrarea 10**; contul de serviciu al clienților trebuie să vadă contul clientului (prin MCC — pașii în raportul final).
 - **Pe contul real:** în timpul dezvoltării n-am pus nimic pe pauză și n-am adăugat negative într-un cont real. Prima pauză reală o faci tu, din portal.
+
+### Faza 12
+- **Ce face:** pagina **„Termeni”** — ce au căutat oamenii în ultimele 7 sau 30 de zile, sincronizat zilnic de același cron. Sus, **propunerile de negative**: cuvintele de exclus ale contului, termenii scumpi fără conversii, căutările care țin de altă campanie. Bifezi → previzualizezi (conflicte + Google) → adaugi, pe campanie sau într-o listă comună. Nimic fără bifă.
+- **Ce ai de făcut:** rulează **migrarea 11**; scrie, pe fiecare cont, cuvintele de exclus (pe pagină, la „Regulile propunerilor”). Rezumatul pe email nu e făcut — README → „De făcut de om”.
 
 ---
 

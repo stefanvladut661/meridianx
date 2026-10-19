@@ -57,6 +57,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 9 | Garda nouă: pauza (`googlePause`), negativele pe campanii existente, listele de negative, conversiile; `verify-paused.mjs` extins | ✅ `feat/ads-google-search` — 164 de verificări, fără rețea |
 | 10 | Google Search: verificarea cu `validateOnly` și crearea pe pauză a planului de căutare; planurile de căutare în lot; migrarea 9 | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
 | 11 | Contul existent (`/admin/ads/cont`): campaniile în toate stările, pauza, negativele pe campanii existente, auditul; jurnalul (migrarea 10) | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
+| 12 | Termenii de căutare: sincronizarea zilnică (același cron), propunerile de negative după regulile contului, adăugarea doar cu bifă; migrarea 11 | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
 
 Commit separat după fiecare fază. Fazele 6 și 7 au fost cerute împreună („bagă și
 Google, scopul e producția în masă”), deci au mers fără oprire între ele.
@@ -143,7 +144,11 @@ Google, scopul e producția în masă”), deci au mers fără oprire între ele
 | `google/account/service.ts` | Faza 11. Pauza (`googlePause`, după recitirea statusului) și negativele (pregătire cu `validateOnly` + amprentă, apoi trimitere). |
 | `google/account/signals.ts` · `labels.ts` · `types.ts` | Faza 11. Semnalele auditului; numele în română ale valorilor Google; tipurile pentru browser. |
 | `changes.ts` | Faza 11. Jurnalul modificărilor pe conturile Google (`ads_google_changes`, migrarea 10). |
-| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea, garda fazei 9 și negativele pe conturi existente (168 de verificări, fără rețea). |
+| `google/terms/fetch.ts` · `sync.ts` | Faza 12. Termenii de căutare din Google (`search_term_view`, pe zi) și sincronizarea lor în `ads_search_terms` (cron + la cerere). |
+| `google/terms/proposals.ts` | Faza 12. Propunerile de negative: regula contului, cost fără conversii, altă campanie. Pur. |
+| `google/terms/types.ts` · `defaults.ts` | Faza 12. Tipurile pentru browser; valorile implicite ale regulilor unui cont nou. |
+| `terms-store.ts` | Faza 12. Tabelele termenilor și regulilor (migrarea 11): scrierea (service role), citirea pentru ecran (RLS), paginată. |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea, garda fazei 9, negativele pe conturi existente și termenii (170 de verificări, fără rețea). |
 
 ---
 
@@ -1662,6 +1667,73 @@ când (`ads_google_changes`, migrarea 10).
 
 ---
 
+## Faza 12 — termenii de căutare (`/admin/ads/termeni`)
+
+În meniu, „Termeni” (doar în spațiile Google); și din „Cont”, tabul „Termeni”.
+
+### Sincronizarea
+
+Același cron ca cifrele (`/admin/ads/sincronizare`, deja în `vercel.json`) rulează
+după cifre și `runSearchTermsSync()` — **nicio linie nouă în `vercel.json`**. O
+eroare la termeni nu strică sincronizarea cifrelor; răspunsul cron-ului are și
+numerele termenilor (`terms: { accounts, rows, problems }`), fără id-uri. La
+cerere: „Sincronizează termenii acum” (contul de pe ecran, cel mult o dată la 2
+minute).
+
+- **Ce conturi:** cele cu campanii de căutare create din portal și cele cu un rând
+  de reguli (un cont preluat intră la prima sincronizare manuală), dacă nu s-a
+  oprit sincronizarea din reguli.
+- **Ce interval:** prima dată ultimele 30 de zile; apoi ultimele 7 (Google mai
+  corectează cifrele) plus golul de la ultima zi sincronizată.
+- **Ce se citește** (`search_term_view`, GAQL v26): termenul, starea lui
+  (`ADDED` / `EXCLUDED` / `ADDED_EXCLUDED` / `NONE`), campania, grupul, cuvântul
+  cheie pe care s-a potrivit (`segments.keyword.info.text`), tipul potrivirii
+  (`segments.search_term_match_type`), ziua, afișările, clicurile, costul,
+  conversiile. Google omite termenii cu prea puține căutări.
+- **Unde:** `ads_search_terms` (migrarea 11), un rând pe termen × grup × cuvânt ×
+  zi, cu prima și ultima apariție. Ecranul citește din bază, nu din Google.
+
+### Ecranul
+
+- **Perioada** (7 sau 30 de zile) și **campania** (toate sau una).
+- **Propunerile de negative**, cele mai scumpe primele, fiecare cu motivul:
+  - **regula contului** — un cuvânt „de exclus” apare în termen (și scris fără
+    diacritice) → negativ amplu (de frază, dacă regula are mai multe cuvinte) pe
+    campania termenului; o regulă care ar bloca chiar cuvintele cheie ale campaniei
+    nu se propune acolo;
+  - **cost fără conversii** — termenul a costat cel puțin pragul contului și n-a
+    adus nicio conversie → negativ exact;
+  - **altă campanie** — termenul se potrivește cu un cuvânt cheie al altei campanii
+    de căutare din cont și cu niciunul al campaniei lui (o căutare de aer
+    condiționat în campania de centrale) → negativ exact pe campania lui.
+  Termenii deja excluși nu se propun. Tipul de potrivire se poate schimba înainte
+  de bifă.
+- **Bifezi** → „Previzualizează”: destinația (pe campania fiecărui termen sau,
+  toate, într-o listă comună de negative — care se leagă și de campaniile
+  termenilor, dacă nu era deja), ce e deja acolo, **conflictele** cu cuvintele
+  cheie active, `validateOnly` → „Adaugă negativele”: exact ce s-a văzut, sau
+  nimic (amprenta). **Nimic nu se adaugă fără bifă.** Fiecare trimitere intră în
+  jurnalul contului.
+- **Regulile contului** (`ads_search_term_rules`, migrarea 11), editabile pe pagină:
+  cuvintele de exclus (unul pe rând), pragul de cost (în moneda contului; 0 = fără
+  propuneri după cost), sincronizarea zilnică pornită/oprită. Implicit: nicio
+  regulă de cuvinte, pragul 20 lei (5 € / 5 USD). Cuvintele țin de fiecare client
+  și stau în Supabase — nu în cod.
+- **Toți termenii** perioadei: termenul, campania › grupul, cuvântul cheie și
+  potrivirea, afișările, clicurile, costul, conversiile, starea, prima → ultima
+  apariție (cei mai scumpi primii, primii 500).
+
+### Neverificat încă — pe un cont real
+
+1. Câte rânduri dă `search_term_view` pe zi pe un cont cu ~200 de cuvinte cheie
+   (portalul paginează citirea din bază câte 1.000).
+2. Valorile reale ale `segments.search_term_match_type` (portalul le afișează pe
+   toate cele documentate: exactă, frază, amplă, variantele „near”, AI Max).
+3. Durata cron-ului cu multe conturi: ruta are 60 de secunde (Vercel); peste câteva
+   zeci de conturi, termenii trebuie mutați într-un cron separat.
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server, cu o excepție marcată (`NEXT_PUBLIC_`).
@@ -2046,6 +2118,22 @@ unde a fost de ales, am ales varianta cea mai sigură și mai simplă și am not
 25. **Faza 11 — cifrele contului se citesc pe loc din Google** (nu din
    sincronizarea zilnică): pagina e pentru conturi preluate, cu campanii pe care
    portalul nu le urmărește.
+26. **Faza 12 — termenii, pe zi**: un rând pe termen × grup × cuvânt × zi;
+   ultimele 7 sau 30 de zile se adună la citire, iar prima și ultima apariție se
+   țin pe rând (calculate la scriere din ce e deja în bază).
+27. **Faza 12 — starea sincronizării pe rândul de reguli al contului** (ultima
+   rulare, ultima eroare), nu în `ads_runs`: o rulare de termeni nu trebuie să
+   blocheze „Sincronizează acum” al cifrelor.
+28. **Faza 12 — propunerile „cost” și „altă campanie” sunt negative exacte** (doar
+   acel termen); cele „regulă” sunt amplă (un cuvânt) sau frază (mai multe). Tipul
+   se poate schimba înainte de bifă.
+29. **Faza 12 — o listă comună aleasă ca destinație se leagă și de campaniile
+   termenilor** care nu erau legate (altfel negativele n-ar avea efect acolo);
+   previzualizarea o spune.
+30. **Faza 12 — implicit pragul de cost e 20 lei / 5 € / 5 USD**, iar lista de
+   cuvinte de exclus pornește goală (ține de fiecare client).
+31. **Faza 12 — rezumatul săptămânal pe email nu e făcut** (ar cere `lib/email/`,
+   în afara zonei) — vezi „De făcut de om”.
 
 ## De făcut de om (fazele 8–14)
 
@@ -2068,3 +2156,13 @@ exact ce și de ce.
    **Standard** direct în cont sau în MCC-ul agenției, cu contul clientului legat
    sub MCC (pașii, în raportul final și în „Faza 11”). Pentru blocul „Cine are
    acces” e posibil să fie nevoie de **Admin**; restul merge cu Standard.
+5. **Migrarea 11** (`supabase/migrations/00000000000011_ads_search_terms.sql`):
+   termenii și regulile. Fără ea, pagina „Termeni” spune că lipsesc tabelele, iar
+   cron-ul trece peste termeni (cifrele merg mai departe).
+6. **Rezumatul săptămânal pe email** (în afara zonei: `lib/email/`, `emails/`):
+   un șablon nou, trimis luni dimineața (din același cron, când ziua e luni), cu,
+   pe fiecare cont urmărit: costul și conversiile săptămânii față de cea dinainte,
+   primii 10 termeni după cost, câte propuneri de negative așteaptă și linkul spre
+   `/admin/ads/termeni?cont=…`. Datele există deja: `readTerms` + `buildProposals`
+   (izomorfe) — șablonul doar le pune în pagină. Destinatarii: `ADMIN_EMAILS` sau
+   o variabilă nouă (`ADS_REPORT_EMAILS`).

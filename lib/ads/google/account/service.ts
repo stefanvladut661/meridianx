@@ -4,8 +4,25 @@ import { planFingerprint } from "../../fingerprint";
 import type { AdsWorkspace } from "../../workspaces";
 import { GoogleAdsApiError, googleMutate, googlePause } from "../api";
 import type { GoogleAccount } from "../lookup";
-import { planNegatives, parseNegativeInput, usableNegatives, NEGATIVES_PER_REQUEST_MAX, type NegativesMode, type NegativeTarget } from "./negatives";
-import { readCampaignNegatives, readCampaignStates, readListKeywords, readNegativeLists, readPositiveKeywords } from "./read";
+import {
+  negativeTextProblem,
+  planNegatives,
+  planTermNegatives,
+  parseNegativeInput,
+  usableNegatives,
+  NEGATIVES_PER_REQUEST_MAX,
+  type NegativesMode,
+  type NegativeTarget,
+  type TermNegative,
+} from "./negatives";
+import {
+  readCampaignNegatives,
+  readCampaignStates,
+  readListKeywords,
+  readNegativeLists,
+  readPositiveKeywords,
+  type ExistingKeyword,
+} from "./read";
 import type { NegativesPreview } from "./types";
 
 /**
@@ -165,4 +182,95 @@ export async function applyNegatives(workspace: AdsWorkspace, account: GoogleAcc
     negativeSharedSets: prepared.negativeSharedSets,
   });
   return prepared.operations.length;
+}
+
+// ---------------------------------------------------------------------------
+// Negativele din termenii de căutare (faza 12)
+// ---------------------------------------------------------------------------
+
+export interface TermNegativesRequest {
+  items: TermNegative[];
+  /** null = fiecare pe campania lui; altfel lista comună în care intră toate. */
+  listId: string | null;
+}
+
+export async function prepareTermNegatives(workspace: AdsWorkspace, account: GoogleAccount, request: TermNegativesRequest): Promise<PreparedNegatives> {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const items = request.items.filter((item) => /^\d+$/.test(item.campaignId) && ["broad", "phrase", "exact"].includes(item.match));
+  if (items.length === 0) errors.push("Nicio propunere bifată.");
+  if (items.length > NEGATIVES_PER_REQUEST_MAX) errors.push(`${items.length} de negative; o trimitere primește cel mult ${NEGATIVES_PER_REQUEST_MAX}.`);
+  const parsed = items.map((item, index) => {
+    const problem = negativeTextProblem(item.text);
+    return { line: index + 1, raw: item.text, text: problem ? null : item.text, match: problem ? null : item.match, problem };
+  });
+  const good = items.filter((_, index) => !parsed[index].problem);
+  if (good.length < items.length) {
+    const bad = items.length - good.length;
+    warnings.push(`${bad === 1 ? "Un negativ nu se poate" : `${bad} negative nu se pot`} adăuga — vezi problemele.`);
+  }
+
+  const ids = [...new Set(good.map((item) => item.campaignId))];
+  const [states, lists] = await Promise.all([readCampaignStates(workspace, account, ids), readNegativeLists(workspace, account)]);
+  const list = request.listId ? (lists.find((item) => item.id === request.listId) ?? null) : null;
+  if (request.listId && !list) errors.push("Lista comună aleasă nu mai e în cont (sau nu e o listă de negative).");
+  for (const id of ids) {
+    const state = states.get(id);
+    if (!state) errors.push(`Campania ${id} nu mai e în cont.`);
+    else if (state.type !== "SEARCH" || state.status === "REMOVED") errors.push(`„${state.name}” nu e o campanie de căutare activă sau pe pauză.`);
+  }
+
+  const affected = [...new Set([...ids, ...(list?.campaigns ?? [])])];
+  const [positives, existing, listKeywords, extraStates] = await Promise.all([
+    readPositiveKeywords(workspace, account, affected),
+    list ? Promise.resolve(new Map<string, ExistingKeyword[]>()) : readCampaignNegatives(workspace, account, ids),
+    list ? readListKeywords(workspace, account, list.id) : Promise.resolve([] as ExistingKeyword[]),
+    readCampaignStates(workspace, account, (list?.campaigns ?? []).filter((id) => !ids.includes(id))),
+  ]);
+  const target = (id: string): NegativeTarget => ({
+    id,
+    name: states.get(id)?.name ?? extraStates.get(id)?.name ?? id,
+    existing: (existing.get(id) ?? []).map((item) => ({ text: item.text, match: item.match })),
+    positives: positives.get(id) ?? [],
+  });
+  const plan = planTermNegatives({
+    customerId: account.info.id,
+    items: good,
+    targets: ids.map(target),
+    list: list
+      ? { resourceName: list.resourceName, name: list.name, keywords: listKeywords.map((item) => ({ text: item.text, match: item.match })), linked: list.campaigns.map(target) }
+      : null,
+  });
+  if (plan.conflicts.length > 0) {
+    errors.push(`${plan.conflicts.length === 1 ? "Un cuvânt cheie activ ar fi blocat" : `${plan.conflicts.length} cuvinte cheie active ar fi blocate`} — debifează negativele vinovate.`);
+  }
+  if (errors.length === 0 && plan.operations.length === 0) errors.push("Nimic de adăugat: negativele bifate sunt deja acolo.");
+
+  const negativeSharedSets = lists.map((item) => item.resourceName);
+  if (errors.length === 0) {
+    try {
+      await googleMutate(workspace, account.info.id, plan.operations, { validateOnly: true, loginCustomerId: account.loginCustomerId, negativeSharedSets });
+    } catch (error) {
+      if (!(error instanceof GoogleAdsApiError) || error.info.status === 0 || error.info.status >= 500 || error.info.status === 401) throw error;
+      errors.push(
+        ...error.info.errors
+          .slice(0, 10)
+          .map((item) => `Google refuză operația ${item.operationIndex !== null ? item.operationIndex + 1 : "?"}: ${item.message || item.code}${item.trigger ? ` („${item.trigger}”)` : ""}.`)
+      );
+    }
+  }
+  return {
+    preview: {
+      ok: errors.length === 0,
+      fingerprint: planFingerprint({ workspace: workspace.id, account: account.info.id, request, operations: plan.operations }),
+      keywords: parsed,
+      additions: plan.additions,
+      conflicts: plan.conflicts,
+      operations: plan.operations.length,
+      errors,
+      warnings,
+    },
+    operations: plan.operations,
+    negativeSharedSets,
+  };
 }

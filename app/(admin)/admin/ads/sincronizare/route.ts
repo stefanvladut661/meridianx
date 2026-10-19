@@ -1,9 +1,11 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { runAdsSync } from "@/lib/ads/sync";
+import { runSearchTermsSync } from "@/lib/ads/google/terms/sync";
 
 /**
- * GET /admin/ads/sincronizare — cron-ul zilnic al cifrelor Meta.
+ * GET /admin/ads/sincronizare — cron-ul zilnic al cifrelor (Meta, TikTok,
+ * Google) și, din faza 12, al termenilor de căutare Google.
  *
  * Vercel Cron trimite `Authorization: Bearer <CRON_SECRET>`. Fără secret, în
  * producție ruta refuză tot: o sincronizare deschisă oricui ar consuma din
@@ -40,6 +42,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const outcome = await runAdsSync({ trigger: "cron" });
+    // Faza 12: termenii de căutare, după cifre, în aceeași rulare. O problemă aici
+    // nu strică sincronizarea cifrelor; starea fiecărui cont stă pe rândul lui de reguli.
+    const terms = await runSearchTermsSync().catch((error: unknown) => {
+      console.error("[ads-sync] termenii n-au pornit:", error instanceof Error ? error.message : "necunoscut");
+      return null;
+    });
     return NextResponse.json(
       {
         status: outcome.status,
@@ -47,6 +55,7 @@ export async function GET(request: NextRequest) {
         rows: outcome.rowsWritten,
         problems: outcome.problems.length,
         skipped: outcome.skipped.length,
+        terms: terms ? { accounts: terms.accounts, rows: terms.rows, problems: terms.problems.length } : { failed: true },
       },
       { status: outcome.status === "failed" ? 502 : 200, headers: { "Cache-Control": "no-store" } }
     );
