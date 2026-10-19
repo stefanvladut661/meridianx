@@ -15,6 +15,7 @@ const LINKS: ReadonlyArray<{ href: string; label: string; exact: boolean; google
   { href: "/admin/ads", label: "Campanii", exact: true },
   { href: "/admin/ads/nou", label: "Plan nou", exact: false },
   { href: "/admin/ads/cautare", label: "Căutare", exact: false, google: true },
+  { href: "/admin/ads/cont", label: "Cont", exact: false, google: true },
   { href: "/admin/ads/lot", label: "Lot", exact: false },
   { href: "/admin/ads/claude", label: "Pentru Claude", exact: false },
   { href: "/admin/ads/statistici", label: "Statistici", exact: false },

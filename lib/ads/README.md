@@ -56,6 +56,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 8 | Google Search: formatul `meridian-google-search/1`, validarea (cu conflictele negativelor), previzualizarea | ✅ `feat/ads-google-search` — fără niciun apel la Google |
 | 9 | Garda nouă: pauza (`googlePause`), negativele pe campanii existente, listele de negative, conversiile; `verify-paused.mjs` extins | ✅ `feat/ads-google-search` — 164 de verificări, fără rețea |
 | 10 | Google Search: verificarea cu `validateOnly` și crearea pe pauză a planului de căutare; planurile de căutare în lot; migrarea 9 | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
+| 11 | Contul existent (`/admin/ads/cont`): campaniile în toate stările, pauza, negativele pe campanii existente, auditul; jurnalul (migrarea 10) | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
 
 Commit separat după fiecare fază. Fazele 6 și 7 au fost cerute împreună („bagă și
 Google, scopul e producția în masă”), deci au mers fără oprire între ele.
@@ -137,7 +138,12 @@ Google, scopul e producția în masă”), deci au mers fără oprire între ele
 | `google/search/create.ts` | Faza 10. Crearea: o singură cerere atomică; un rând pe campanie în `ads_campaigns`, legate prin `plan_group_id`. |
 | `google/search/urls.ts` | Faza 10. Adresele finale întrebate scurt (`HEAD`, 6 s, fără redirecționări urmărite, doar https public). |
 | `google/targeting.ts` (faza 10) | `resolveLocations` și `resolveLanguages`, reutilizate de căutare; Demand Gen le folosește la fel ca înainte. |
-| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea și garda fazei 9 (164 de verificări, fără rețea). |
+| `google/account/read.ts` | Faza 11. Citirile pe un cont existent (GAQL): campaniile în toate stările cu cifrele pe 30 de zile și de la început, statusurile, cuvintele pozitive, negativele, listele de negative și cuvintele lor; auditul (`change_event`, utilizatorii, facturarea, conversiile). |
+| `google/account/negatives.ts` | Faza 11. Lista lipită (notația Google Ads Editor), verificată; operațiile negativelor (pe campanii, în listă, legarea listei) și conflictele cu cuvintele active. Pur. |
+| `google/account/service.ts` | Faza 11. Pauza (`googlePause`, după recitirea statusului) și negativele (pregătire cu `validateOnly` + amprentă, apoi trimitere). |
+| `google/account/signals.ts` · `labels.ts` · `types.ts` | Faza 11. Semnalele auditului; numele în română ale valorilor Google; tipurile pentru browser. |
+| `changes.ts` | Faza 11. Jurnalul modificărilor pe conturile Google (`ads_google_changes`, migrarea 10). |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea, garda fazei 9 și negativele pe conturi existente (168 de verificări, fără rețea). |
 
 ---
 
@@ -1583,6 +1589,79 @@ apoi pe rezultat; fără erori în consolă; reduced-motion.
 
 ---
 
+## Faza 11 — contul existent (`/admin/ads/cont`)
+
+În meniu, „Cont” (doar în spațiile Google). Alegi contul — din lista conturilor
+pe care le vede cheia (direct sau sub MCC) sau scriind id-ul — și ai trei vederi
+plus „Termeni” (faza 12):
+
+**Campanii.** Toate campaniile contului, în toate stările (Google le întoarce și
+pe cele șterse; ele stau la final): nume, id, tip, status, strategia de licitare,
+buget pe zi, cost / clicuri / conversii pe ultimele 30 de zile și de la început,
+data de start; „din portal” cu link spre fișă la cele create din portal. Filtre
+pe tip și status, sortare, totalul celor din filtru deasupra tabelului.
+**Pauza:** bifezi campaniile active → „Pune pe pauză (N)” → o fereastră de
+confirmare (dialog nativ, cu focusul prins înăuntru, Escape închide) cu lista
+exactă și costul lor pe 30 de zile → `googlePause`. Pe server, statusul se citește
+din nou chiar înainte: campaniile deja oprite sau șterse se sar, cu motivul.
+Fiecare pauză se notează în jurnal (migrarea 10); rândurile din portal trec pe
+„Oprită” imediat.
+
+**Negative.** Trei moduri:
+
+| Mod | Ce pleacă spre Google |
+|---|---|
+| Pe campaniile alese | `CampaignCriterion { negative: true, keyword }` pe fiecare campanie aleasă × fiecare cuvânt; cele deja existente se sar |
+| Într-o listă comună existentă | `SharedCriterion { sharedSet, keyword }` (cuvintele care nu sunt deja în listă) și, opțional, `CampaignSharedSet` pentru campaniile alese, nelegate încă |
+| Leagă o listă comună de campanii | `CampaignSharedSet { campaign, sharedSet }` |
+
+Lista se lipește câte un cuvânt pe rând, în notația din Google Ads Editor:
+`[exactă]`, `"frază"`, `amplă` (fără semne). Doar campaniile de căutare nesterse
+se pot alege. „Previzualizează” citește cuvintele cheie pozitive active ale
+campaniilor afectate (`ad_group_criterion`), negativele existente
+(`campaign_criterion`), listele de negative și cuvintele lor (`shared_set`,
+`shared_criterion`, `campaign_shared_set`), caută **conflictele** (aceeași
+potrivire ca la faza 8: un negativ care ar bloca un cuvânt activ e eroare, cu
+cuvântul, grupul și campania) și trimite tot cu `validateOnly`. „Adaugă” reface
+totul pe server și trimite doar dacă amprenta e aceeași. Listele comune trec prin
+gardă doar ca liste de negative citite chiar atunci din cont.
+
+**Audit** (doar citire), fiecare bloc citit separat — unul pe care cheia nu-l
+poate citi spune de ce, iar restul rămân:
+
+| Bloc | De unde (GAQL, v26) |
+|---|---|
+| Cine a schimbat ce | `change_event`, ultimele 30 de zile (fereastra maximă), `LIMIT 10000` (obligatoriu), cele mai noi primele: când, cine (email), ce resursă, ce operație, câmpurile, din ce client (interfață, API, scripturi, reguli…). Sus, valurile: „6 campanii create de X pe Y, din API”. Modificările din Google Ads Editor nu apar în `change_event` |
+| Cine are acces | `customer_user_access` (email, rol, de când, cine a invitat) + invitațiile în așteptare (`customer_user_access_invitation`) |
+| Facturarea | `billing_setup` (status, contul de plăți, profilul) și `account_budget` (limita, consumul) |
+| Conversiile | `conversion_action` (nume, tip, categorie, principală/secundară, stare) + conversiile pe 30 de zile pe acțiune (`segments.conversion_action` din `customer` — din `conversion_action` nu se pot cere conversiile) |
+
+**Semnalele**, sus: multe campanii (5+) create de un singur utilizator într-o zi;
+acces de administrator pentru o adresă care nu e printre adminii portalului
+(`ADMIN_EMAILS`) sau contul de serviciu — poate fi clientul, poate fi o agenție
+veche; o conversie principală fără nicio conversie în 30 de zile; nicio
+configurare de facturare aprobată; o campanie activă cu peste 150 lei (30 € /
+30 USD) cheltuiți în 30 de zile și nicio conversie.
+
+**Jurnalul** („Ce a făcut portalul în contul ăsta”), sub fiecare vedere: pauzele,
+negativele, listele legate, acțiunile de conversie trimise din portal, cu cine și
+când (`ads_google_changes`, migrarea 10).
+
+### Neverificat încă — se confirmă pe un cont real
+
+1. Intervalul cifrelor „de la început”: interogarea fără filtru de dată întoarce,
+   observat, tot istoricul; documentația nu-l fixează (Google păstrează 11 ani
+   pentru cifrele nesegmentate).
+2. Dacă un cont de serviciu cu acces **Standard** poate citi `customer_user_access`
+   prin GAQL (documentația cere Admin pentru gestionarea utilizatorilor, interfața
+   arată utilizatorii și rolurilor Standard). Dacă nu, blocul o spune.
+3. Dacă facturarea se poate citi la nivelul Explorer și la conturile plătite cu
+   cardul (probabil fără rânduri; blocul o spune).
+4. Formatul exact al lui `change_date_time` în filtru (portalul trimite
+   `'AAAA-LL-ZZ'` și `'AAAA-LL-ZZ 23:59:59'`).
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server, cu o excepție marcată (`NEXT_PUBLIC_`).
@@ -1950,6 +2029,23 @@ unde a fost de ales, am ales varianta cea mai sigură și mai simplă și am not
    roboții), doar 404/410/5xx sunt erori.
 19. **Faza 10 — planurile de căutare intră în lot**, cu aceleași reguli; cu
    avertismentul despre operațiile zilnice în README.
+20. **Faza 11 — negativele doar pe campanii de căutare**: pe Performance Max și
+   pe celelalte tipuri, negativele de campanie nu se aplică la fel; portalul nu le
+   oferă acolo.
+21. **Faza 11 — „adminii cunoscuți” = `ADMIN_EMAILS` + contul de serviciu**: o
+   listă de adrese „ale clientului” per cont ar fi o setare nouă; semnalul spune
+   „poate fi clientul” și nu blochează nimic.
+22. **Faza 11 — pauza recitește statusul chiar înainte** și trimite doar
+   campaniile active; o campanie oprită între timp se sare, cu motivul.
+23. **Faza 11 — pauza nu trece prin `validateOnly`**: e o singură operație pe
+   campanie, iar garda ei permite doar `status: PAUSED`; dialogul de confirmare
+   ține locul previzualizării.
+24. **Faza 11 — jurnal separat (`ads_google_changes`, migrarea 10)**, nu în
+   `ads_campaigns`: pauzele și negativele se fac și pe campanii pe care portalul
+   nu le-a creat.
+25. **Faza 11 — cifrele contului se citesc pe loc din Google** (nu din
+   sincronizarea zilnică): pagina e pentru conturi preluate, cu campanii pe care
+   portalul nu le urmărește.
 
 ## De făcut de om (fazele 8–14)
 
@@ -1964,3 +2060,11 @@ exact ce și de ce.
    zonei fazelor 8–14, deci nu l-am atins: la merge, migrările 9 și următoarele se
    adaugă la finalul lui (sunt scrise să poată rula de mai multe ori) — sau se
    rulează separat, în ordine.
+3. **Migrarea 10** (`supabase/migrations/00000000000010_ads_google_changes.sql`):
+   jurnalul pauzelor și negativelor. Fără ea, pauza și negativele merg în Google
+   Ads, dar nu se notează (mesajul o spune).
+4. **Accesul contului de serviciu la contul clientului** — pentru „Cont”, contul de
+   serviciu `GOOGLE_ADS_CLIENTI` trebuie să vadă contul: adăugat ca utilizator
+   **Standard** direct în cont sau în MCC-ul agenției, cu contul clientului legat
+   sub MCC (pașii, în raportul final și în „Faza 11”). Pentru blocul „Cine are
+   acces” e posibil să fie nevoie de **Admin**; restul merge cu Standard.

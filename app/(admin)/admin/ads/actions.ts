@@ -30,6 +30,11 @@ import type { SearchCheck, SearchCheckResponse, SearchCreateResponse } from "@/l
 import { validateSearchPlan } from "@/lib/ads/google/search/validate";
 import { planFormatOf } from "@/lib/ads/plan-json";
 import type { PlatformCheck } from "@/lib/ads/types";
+import { recordChange } from "@/lib/ads/changes";
+import { findGoogleAccount, type GoogleAccount } from "@/lib/ads/google/lookup";
+import { applyNegatives, pauseCampaigns, prepareNegatives, type NegativesRequest } from "@/lib/ads/google/account/service";
+import type { NegativesResponse, PauseResponse } from "@/lib/ads/google/account/types";
+import { markPortalPaused } from "@/lib/ads/store";
 
 /**
  * Acțiunile portalului de reclame.
@@ -650,3 +655,116 @@ export async function listLibraryVideos(input: { workspace: string; adAccount: s
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// Contul Google existent (faza 11): pauza și negativele
+// ---------------------------------------------------------------------------
+
+type GoogleAccountSession =
+  | { ok: true; user: { id: string; email: string | null }; workspace: AdsWorkspace; account: GoogleAccount }
+  | Failure;
+
+/** Sesiune + spațiul de pe ecran (Google, cu cheie) + contul, cum îl vede cheia. */
+async function googleAccountSession(workspaceId: string, adAccountInput: string): Promise<GoogleAccountSession> {
+  const context = await session(workspaceId);
+  if (!context.ok) return context;
+  if (context.workspace.platform !== "google") return { ok: false, message: "Contul se întreține doar în spațiile Google. Schimbă spațiul din selectorul de sus." };
+  const adAccount = adAccountInput.replace(/[\s-]/g, "");
+  if (!/^\d{10}$/.test(adAccount)) return { ok: false, message: `„${adAccountInput}” nu e un cont Google Ads (10 cifre).` };
+  try {
+    const account = await findGoogleAccount(context.workspace, adAccount);
+    if (!account) return { ok: false, message: `Cheia spațiului ${workspaceName(context.workspace)} nu vede contul ${adAccount}.` };
+    if (account.manager) return { ok: false, message: `${account.info.name} e un cont manager (MCC); alege contul clientului de sub el.` };
+    return { ok: true, user: context.user, workspace: context.workspace, account };
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "citirea contului", context.workspace.tokenEnv) };
+  }
+}
+
+function journalWarning(result: Awaited<ReturnType<typeof recordChange>>): string | null {
+  return result.ok
+    ? null
+    : `S-a făcut în Google Ads, dar n-a putut fi notat în jurnalul portalului (${STORE_FAILURE_MESSAGE[result.reason]}).`;
+}
+
+export async function pauseAccountCampaigns(input: { workspace: string; adAccount: string; campaignIds: string[] }): Promise<PauseResponse> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  const ids = [...new Set(input.campaignIds.filter((id) => /^\d+$/.test(id)))];
+  if (ids.length === 0) return { ok: false, message: "Nicio campanie aleasă." };
+  if (ids.length > 500) return { ok: false, message: "Cel mult 500 de campanii odată." };
+
+  let outcome: Awaited<ReturnType<typeof pauseCampaigns>>;
+  try {
+    outcome = await pauseCampaigns(context.workspace, context.account, ids);
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "pauza", context.workspace.tokenEnv) };
+  }
+  let warning: string | null = null;
+  if (outcome.paused.length > 0) {
+    await markPortalPaused(context.account.info.id, outcome.paused.map((item) => item.id));
+    warning = journalWarning(
+      await recordChange({
+        workspace: context.workspace.id,
+        adAccount: context.account.info.id,
+        kind: "pause",
+        summary: `${outcome.paused.length === 1 ? "O campanie pusă" : `${outcome.paused.length} campanii puse`} pe pauză`,
+        detail: { paused: outcome.paused, skipped: outcome.skipped },
+        operations: outcome.paused.length,
+        user: context.user,
+      })
+    );
+  }
+  revalidatePath("/admin/ads/cont");
+  return { ok: true, paused: outcome.paused, skipped: outcome.skipped, journalWarning: warning };
+}
+
+export async function previewAccountNegatives(input: { workspace: string; adAccount: string; request: NegativesRequest }): Promise<NegativesResponse> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  try {
+    const prepared = await prepareNegatives(context.workspace, context.account, input.request);
+    return { ok: true, preview: prepared.preview };
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "pregătirea negativelor", context.workspace.tokenEnv) };
+  }
+}
+
+export async function addAccountNegatives(input: {
+  workspace: string;
+  adAccount: string;
+  request: NegativesRequest;
+  fingerprint: string;
+}): Promise<{ ok: true; operations: number; journalWarning: string | null } | { ok: false; message: string; recheck?: boolean }> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  try {
+    // Totul se reface pe server: conflictele, validateOnly, amprenta.
+    const prepared = await prepareNegatives(context.workspace, context.account, input.request);
+    if (!prepared.preview.ok) return { ok: false, message: prepared.preview.errors[0] ?? "Previzualizarea are probleme. Previzualizează din nou.", recheck: true };
+    if (prepared.preview.fingerprint !== input.fingerprint) {
+      return { ok: false, message: "Ceva s-a schimbat în cont sau în listă de la previzualizare. Previzualizează din nou.", recheck: true };
+    }
+    const operations = await applyNegatives(context.workspace, context.account, prepared);
+    const mode = input.request.mode;
+    const added = prepared.preview.additions.reduce((sum, item) => sum + item.keywords.length, 0);
+    const warning = journalWarning(
+      await recordChange({
+        workspace: context.workspace.id,
+        adAccount: context.account.info.id,
+        kind: mode === "link" ? "negative_list_link" : "negatives",
+        summary:
+          mode === "link"
+            ? `Lista de negative legată de ${added === 1 ? "o campanie" : `${added} campanii`}`
+            : `${operations === 1 ? "Un negativ adăugat" : `${operations} negative adăugate`} ${mode === "list" ? "în lista comună" : "pe campanii"}`,
+        detail: { mode, additions: prepared.preview.additions, listId: input.request.listId, campaignIds: input.request.campaignIds },
+        operations,
+        user: context.user,
+      })
+    );
+    revalidatePath("/admin/ads/cont");
+    return { ok: true, operations, journalWarning: warning };
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "adăugarea negativelor", context.workspace.tokenEnv) };
+  }
+}

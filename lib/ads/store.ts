@@ -359,3 +359,34 @@ export async function portalCampaignsByName(adAccount: string, names: string[]):
   for (const row of data as Array<{ name: string; created_at: string }>) if (!found.has(row.name)) found.set(row.name, row.created_at);
   return found;
 }
+
+/** Campaniile create din portal într-un cont Google: id-ul Google → rândul din portal. */
+export async function portalCampaignIds(adAccount: string): Promise<Map<string, string>> {
+  const found = new Map<string, string>();
+  const supabase = await createReadOnlySessionClient();
+  if (!supabase) return found;
+  const { data, error } = await supabase
+    .from("ads_campaigns")
+    .select("id, platform_campaign_id")
+    .eq("platform", "google")
+    .eq("ad_account", adAccount)
+    .limit(2000);
+  if (error || !data) return found;
+  for (const row of data as Array<{ id: string; platform_campaign_id: string }>) found.set(row.platform_campaign_id, row.id);
+  return found;
+}
+
+/**
+ * După o pauză din portal: rândurile campaniilor create din portal trec pe
+ * PAUSED imediat (altfel ar aștepta sincronizarea de a doua zi).
+ */
+export async function markPortalPaused(adAccount: string, platformIds: string[]): Promise<void> {
+  const supabase = createAdminClient();
+  if (!supabase || platformIds.length === 0) return;
+  await supabase
+    .from("ads_campaigns")
+    .update({ status: PAUSED })
+    .eq("platform", "google")
+    .eq("ad_account", adAccount)
+    .in("platform_campaign_id", platformIds);
+}
