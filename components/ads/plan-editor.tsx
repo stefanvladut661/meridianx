@@ -45,6 +45,8 @@ import { ERROR_TEXT, FIELD, OK_TEXT } from "./tone";
 const STORAGE_KEY = "meridian_ads_plan";
 /** Cheia lotului (`batch-editor.tsx`): un lot lipit aici se mută acolo cu un clic. */
 const BATCH_STORAGE_KEY = "meridian_ads_batch";
+/** Cheia planului de căutare (`search-editor.tsx`): la fel, un plan de căutare se mută acolo. */
+const SEARCH_STORAGE_KEY = "meridian_ads_search_plan";
 const PARSE_DELAY = 200;
 
 type SyntaxProblem = Extract<PlanTextResult, { ok: false }>;
@@ -431,6 +433,23 @@ export function PlanEditor({
                     className="underline underline-offset-4 hover:text-bone"
                   >
                     Înlocuiește ghilimelele
+                  </button>
+                ) : null}
+                {syntax.fix === "search" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem(SEARCH_STORAGE_KEY, text);
+                        sessionStorage.removeItem(STORAGE_KEY);
+                      } catch {
+                        /* fără stocare, planul se lipește din nou acolo */
+                      }
+                      router.push("/admin/ads/cautare");
+                    }}
+                    className="underline underline-offset-4 hover:text-bone"
+                  >
+                    Deschide în „Căutare”
                   </button>
                 ) : null}
                 {syntax.fix === "batch" ? (

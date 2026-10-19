@@ -44,12 +44,12 @@ export const PLAN_FORMAT = "meridian-ads/1";
  * Id-urile de platformă se scriu ca TEXT. Ca număr, JavaScript rotunjește
  * orice depășește 16 cifre — un id de pagină de 17 cifre devine alt id.
  */
-const numericId = z
+export const numericId = z
   .string()
   .trim()
   .regex(/^\d{5,25}$/, { error: "trebuie să conțină doar cifre (între 5 și 25)." });
 
-const httpsUrl = z
+export const httpsUrl = z
   .string()
   .trim()
   .refine(
@@ -64,7 +64,7 @@ const httpsUrl = z
     { error: "trebuie să fie o adresă completă, care începe cu https://" }
   );
 
-const shortText = (max: number) => z.string().trim().min(1).max(max);
+export const shortText = (max: number) => z.string().trim().min(1).max(max);
 
 // ---------------------------------------------------------------------------
 // Campanie
@@ -87,7 +87,7 @@ export const campaignSchema = z.strictObject({
 // Public
 // ---------------------------------------------------------------------------
 
-const countryCode = z
+export const countryCode = z
   .string()
   .trim()
   .regex(/^[A-Z]{2}$/, { error: "trebuie să fie un cod de țară din două litere mari: RO, MD, HU." });

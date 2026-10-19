@@ -297,9 +297,9 @@ export function labelFor(path: ReadonlyArray<PropertyKey> | string): string {
 // ---------------------------------------------------------------------------
 
 /** Semn pus de harta de erori: mesajul n-a fost personalizat în schemă. */
-const DEFAULT_MESSAGE = "\u0000implicit";
+export const DEFAULT_MESSAGE = "\u0000implicit";
 
-function describeValue(value: unknown): string {
+export function describeValue(value: unknown): string {
   if (value === null) return "null";
   if (Array.isArray(value)) return "o listă";
   switch (typeof value) {
@@ -316,7 +316,7 @@ function describeValue(value: unknown): string {
   }
 }
 
-function expectedLabel(expected: string): string {
+export function expectedLabel(expected: string): string {
   switch (expected) {
     case "string":
       return "text, între ghilimele";
@@ -350,7 +350,7 @@ function distance(a: string, b: string): number {
   return row[b.length];
 }
 
-function closest(value: string, options: string[]): string | null {
+export function closest(value: string, options: string[]): string | null {
   const lower = value.toLowerCase();
   let best: { option: string; score: number } | null = null;
   for (const option of options) {
@@ -1229,7 +1229,7 @@ function collectWarnings(raw: Record<string, unknown>): PlanProblem[] {
  * `"instagram_account_id": null` pentru „nu am"; tratat altfel, fiecare ar
  * da o eroare de tip fără sens pentru om.
  */
-function dropNulls(value: unknown): unknown {
+export function dropNulls(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(dropNulls);
   if (value && typeof value === "object") {
     return Object.fromEntries(

@@ -14,6 +14,8 @@
  * lipit omul, nu în ce am curățat noi.
  */
 
+import { SEARCH_PLAN_FORMAT } from "./google/search/limits";
+
 export type PlanTextFailure = {
   ok: false;
   message: string;
@@ -21,10 +23,21 @@ export type PlanTextFailure = {
   column: number | null;
   /**
    * Există o reparație sigură pe care interfața o poate oferi cu un clic:
-   * ghilimelele tipografice, sau mutarea unui lot de planuri pe pagina „Lot”.
+   * ghilimelele tipografice, mutarea unui lot de planuri pe pagina „Lot”,
+   * sau mutarea planului pe pagina formatului lui (căutare ↔ video).
    */
-  fix: "smart_quotes" | "batch" | null;
+  fix: "smart_quotes" | "batch" | "search" | "video" | null;
 };
+
+/**
+ * Formatul unui plan, după câmpul `format`: planul de căutare
+ * (`meridian-google-search/1`) are altă formă și altă pagină decât planul
+ * video (`meridian-ads/1`, unde `format` e opțional).
+ */
+export function planFormatOf(value: unknown): "video" | "search" {
+  const format = value && typeof value === "object" && !Array.isArray(value) ? (value as { format?: unknown }).format : undefined;
+  return format === SEARCH_PLAN_FORMAT ? "search" : "video";
+}
 
 export type PlanTextResult = { ok: true; value: Record<string, unknown> } | PlanTextFailure;
 
@@ -287,6 +300,47 @@ export function parsePlanText(raw: string): PlanTextResult {
     };
   }
 
+  if (planFormatOf(value) === "search") {
+    return {
+      ok: false,
+      message:
+        "Ai lipit un plan de căutare (meridian-google-search/1): campanii, grupuri, cuvinte cheie și anunțuri text. Planurile de căutare se citesc, se verifică și se creează pe pagina „Căutare”.",
+      line: null,
+      column: null,
+      fix: "search",
+    };
+  }
+
+  return { ok: true, value: value as Record<string, unknown> };
+}
+
+/** Același text, citit pe pagina „Căutare”: acceptă doar planul de căutare. */
+export function parseSearchPlanText(raw: string): PlanTextResult {
+  const parsed = parseJsonText(raw);
+  if (!parsed.ok) return parsed;
+  const value = parsed.value;
+
+  if (batchPlansOf(value)) {
+    return {
+      ok: false,
+      message: "Ai lipit un lot. Aici se lucrează cu un plan de căutare odată; loturile se verifică și se creează pe pagina „Lot”.",
+      line: null,
+      column: null,
+      fix: "batch",
+    };
+  }
+  if (value === null || typeof value !== "object") {
+    return { ok: false, message: "Planul trebuie să fie un obiect JSON { … }.", line: null, column: null, fix: null };
+  }
+  if (planFormatOf(value) !== "search") {
+    return {
+      ok: false,
+      message: `Asta nu e un plan de căutare: îi lipsește "format": "${SEARCH_PLAN_FORMAT}". Un plan video (YouTube, Meta, TikTok) se lucrează pe pagina „Plan nou”; un plan de căutare începe cu "format": "${SEARCH_PLAN_FORMAT}".`,
+      line: null,
+      column: null,
+      fix: "video",
+    };
+  }
   return { ok: true, value: value as Record<string, unknown> };
 }
 

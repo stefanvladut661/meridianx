@@ -3,12 +3,15 @@
 Unealtă internă: lipești un plan de campanie în JSON — sau un lot de zeci de
 planuri, scris într-o conversație cu Claude —, îl citești în română, îl
 corectezi și îl creezi **pe pauză** în Meta, TikTok sau Google Ads (video pe
-YouTube). Plus un dashboard cu cifrele campaniilor.
+YouTube și, din faza 8, campanii de căutare). Plus un dashboard cu cifrele
+campaniilor și, pe Google, întreținerea unui cont existent.
 
-Ramura: `feat/ads-portal`. Zona portalului: `app/(admin)/admin/ads/**`,
-`lib/ads/**`, `components/ads/**` și migrările lui (6, 7, 8). Din faza 6, cu
-voia omului, și: tag-ul Google Ads pe site (`lib/google-tag.ts`), `vercel.json`
-(cron-ul) și CSP-ul din `next.config.ts`.
+Ramurile: `feat/ads-portal` (fazele 1–7) și `feat/ads-google-search` (fazele
+8–14, plecată din `feat/ads-portal`). Zona portalului: `app/(admin)/admin/ads/**`,
+`lib/ads/**`, `components/ads/**` și migrările lui (6, 7, 8 și, din faza 8,
+9 și următoarele). Din faza 6, cu voia omului, și: tag-ul Google Ads pe site
+(`lib/google-tag.ts`), `vercel.json` (cron-ul) și CSP-ul din `next.config.ts` —
+pe care fazele 8–14 **nu** le mai ating.
 
 **Citește întâi `GHID.md`** — ce e de făcut după fiecare fază și ce e de hotărât.
 Promptul complet al portalului e în `PROMPT.md`.
@@ -28,6 +31,12 @@ Consecința oricărei erori de cod trebuie să fie o campanie oprită, nu una ca
 arde buget. De aici și plafonul de buget pe spațiu de lucru: prinde un zero în
 plus înainte ca planul să ajungă la platformă.
 
+**Pe Google, din faza 9, două excepții strânse, fiecare cu garda ei** (vezi
+„Faza 9”): **pauza** (`googlePause` poate trimite doar `status: PAUSED`, cu
+`updateMask` exact `status`, pe campanii sau grupuri) și **adăugarea care nu
+mărește cheltuiala** pe resurse existente (negative pe campanii, liste de
+negative, acțiuni de conversie). Nimic altceva nu se modifică, nimic nu se șterge.
+
 **Repo-ul e public.** Niciun token, id de cont sau secret în cod, în commit, în
 log sau în răspuns către browser. Datele de test sunt evident false (zerouri).
 
@@ -44,6 +53,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 5 | TikTok, peste structura existentă | ✅ `feat/ads-portal` — testat pe TikTok și Supabase falși, încă nu pe contul real |
 | 6 | Google Ads (Demand Gen, video pe YouTube), peste aceeași structură | ✅ `feat/ads-portal` — testat pe Google fals (API v26), încă nu pe contul real |
 | 7 | Producția în masă: lotul, mai multe video-uri pe plan, „Pentru Claude”, tag-ul Google pe site | ✅ `feat/ads-portal` — testat cap-coadă pe build de producție, cu toate platformele false |
+| 8 | Google Search: formatul `meridian-google-search/1`, validarea (cu conflictele negativelor), previzualizarea | ✅ `feat/ads-google-search` — fără niciun apel la Google |
 
 Commit separat după fiecare fază. Fazele 6 și 7 au fost cerute împreună („bagă și
 Google, scopul e producția în masă”), deci au mers fără oprire între ele.
@@ -109,6 +119,16 @@ Google, scopul e producția în masă”), deci au mers fără oprire între ele
 | `plan-batch.ts` | Lotul: citirea mai multor planuri, regula banilor (un lot = un proprietar), dublurile din lot, mesajul cu probleme pentru Claude. Izomorf. |
 | `claude-brief.ts` | Instrucțiunile pentru conversația cu Claude — compuse din aceleași constante ca validarea — și formatul contextului conturilor. Izomorf. |
 | `claude-context.ts` | `server-only`: contextul conturilor citit din platforme (conturi, pagini, pixeli/conversii, identități, video-uri). Doar citiri. |
+| `google/search/limits.ts` | Faza 8. Limitele planului de căutare (titluri, cuvinte cheie, materiale, program, operații pe cerere), cu sursa în „Faza 8”. Aceleași în validare, previzualizare și instrucțiunile pentru Claude. Izomorf. |
+| `google/search/schema.ts` | Faza 8. Schema Zod a planului de căutare — forma, cu limite largi; obiecte stricte. |
+| `google/search/validate.ts` | Faza 8. Validarea în română: schema, regulile încrucișate (plafonul pe suma bugetelor, nume unice, program, anunțuri, materiale), conflictele negativelor, numărul de operații. Izomorf. |
+| `google/search/negatives.ts` | Faza 8. Simularea potrivirii negativelor (amplă, frază, exactă) peste cuvintele pozitive; citirea listelor lipite în notația Google Ads Editor. Pură. |
+| `google/search/labels.ts` | Faza 8. Locul unei căi din plan, spus cu numele din plan („Campania „Auto” › grupul „Montaj” › anunțul 1”). |
+| `google/search/summary.ts` | Faza 8. Planul spus în română, din datele brute, pentru previzualizare. |
+| `google/search/build.ts` | Faza 8. Planul → operațiile `googleAds:mutate` (liste comune, bugete, campanii SEARCH, criterii, grupuri, cuvinte, anunțuri responsive, materiale), cu id-uri temporare și rol pe fiecare operație. Pur, izomorf (numără și operațiile pentru previzualizare). |
+| `google/search/text.ts` · `phone.ts` | Faza 8. Lungimea textelor cum o numără Google; cuvintele unui cuvânt cheie; caracterele nepermise; telefonul butonului de apel. |
+| `google/search/example.ts` | Faza 8. Exemplul complet, comentat (firmă inventată, `example.com`, id-uri din zerouri). |
+| `google/search/types.ts` | Faza 8. Ce ajunge în browser din verificarea și crearea unui plan de căutare. |
 | `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă (86 de verificări, fără rețea). |
 
 ---
@@ -1088,6 +1108,321 @@ Politicile de confidențialitate și cookie-uri (RO + EN) menționează Google.
 
 ---
 
+## Faza 8 — planul de căutare (`meridian-google-search/1`)
+
+Căutarea are altă formă decât video: mai multe campanii într-un cont, grupuri,
+cuvinte cheie, sute de negative, anunțuri text, materiale. Primește deci **un
+format separat**, cu schema lui (`google/search/`); `planSchema` și căile Meta și
+TikTok nu se schimbă. `plan-json.ts` recunoaște formatul după `format`: un plan
+de căutare lipit în „Plan nou” se mută cu un clic pe pagina **„Căutare”**
+(`/admin/ads/cautare`), iar un plan video lipit acolo se mută înapoi.
+
+**Un plan = un cont = mai multe campanii, create într-o singură cerere atomică**
+(totul sau nimic). Pe ecran: JSON-ul în stânga; în dreapta, sus, totalul
+(campanii, grupuri, cuvinte cheie, negative, anunțuri, operații), suma bugetelor
+față de plafonul spațiului și cât consumă planul din operațiile zilnice ale
+proiectului Google Cloud; apoi listele comune și fiecare campanie — buget,
+licitare, zone și modul de locație, program, rețele, liste legate, negative,
+materiale — cu grupurile strânse: cuvintele cheie cu tipul de potrivire,
+negativele grupului și **anunțul arătat ca rezultat de căutare Google**, cu
+titlurile fixate pe poziția lor și „Altă combinație”. Corecturile se fac în
+JSON (sau în conversația din care a venit planul): un plan cu 200 de cuvinte
+cheie nu se corectează mai repede într-un formular.
+
+### Formatul
+
+Exemplul complet, comentat (sursa: `google/search/example.ts`; se lipește cu
+comentarii cu tot):
+
+```jsonc
+{
+  // Obligatoriu: așa recunoaște portalul un plan de căutare.
+  "format": "meridian-google-search/1",
+
+  // google-meridian sau google-clienti — cel din selectorul de sus.
+  "workspace": "google-clienti",
+
+  // Contul Google Ads al clientului, 10 cifre (dreapta sus în Google Ads).
+  "ad_account": "000-000-0000",
+
+  // RON | EUR | USD — trebuie să fie moneda contului.
+  "currency": "RON",
+
+  // Liste comune de negative: create o dată în cont, legate de oricâte campanii.
+  // "key" e numele lor în plan (îl folosesc campaniile); "name", numele din Google Ads.
+  "shared_negative_lists": [
+    {
+      "key": "irelevante",
+      "name": "NEG - Irelevante",
+      "keywords": [
+        { "text": "angajari", "match": "broad" },
+        { "text": "locuri de munca", "match": "phrase" },
+        { "text": "gratis", "match": "broad" },
+        { "text": "pdf", "match": "broad" },
+        { "text": "second hand", "match": "phrase" }
+      ]
+    }
+  ],
+
+  "campaigns": [
+    {
+      // Cheia campaniei în plan (litere mici, cifre, - și _).
+      "key": "centrale",
+      // Numele din Google Ads — unic în cont.
+      "name": "Termo Exemplu - Centrale termice - Cluj - Search",
+      // Pe zi, în moneda contului. Plafonul spațiului se aplică pe SUMA campaniilor.
+      "daily_budget": 40,
+      // maximize_clicks (cu plafon opțional pe clic) sau manual_cpc (max_cpc = licitarea grupurilor).
+      "bidding": { "strategy": "maximize_clicks", "max_cpc": 2.5 },
+      // Doar căutarea Google: fără parteneri, fără display.
+      "networks": { "search_partners": false, "display": false },
+      // Țară, regiune sau oraș — întregi, fără rază.
+      "locations": [ { "type": "region", "name": "Cluj", "country": "RO" } ],
+      "excluded_locations": [],
+      // presence = oamenii aflați în zonă; presence_or_interest = și cei interesați de ea, de oriunde.
+      "location_mode": "presence",
+      "languages": ["ro"],
+      // Lipsă sau gol = oricând. Orele din 15 în 15 minute; "24:00" = miezul nopții.
+      "schedule": [
+        { "days": ["mon", "tue", "wed", "thu", "fri"], "from": "08:00", "to": "19:00" },
+        { "days": ["sat"], "from": "09:00", "to": "14:00" }
+      ],
+      // Listele comune legate de campanie (cheile de mai sus).
+      "negative_lists": ["irelevante"],
+      // Negative doar pe campania asta: căutările de aer condiționat merg în cealaltă campanie.
+      "negatives": [
+        { "text": "aer conditionat", "match": "phrase" },
+        { "text": "climatizare", "match": "broad" }
+      ],
+      // UTM pe toată campania (inclusiv linkurile suplimentare). Un grup îl poate înlocui.
+      "utm": { "source": "google", "medium": "cpc", "campaign": "centrale-cluj" },
+      "assets": {
+        // Linkuri suplimentare: text ≤25; descrierile (≤35) — amândouă sau niciuna. Recomandat: cel puțin 4.
+        "sitelinks": [
+          { "text": "Programează o revizie", "description1": "Alegi ziua și ora online", "description2": "Confirmăm în aceeași zi", "url": "https://www.example.com/revizie/" },
+          { "text": "Montaj centrale", "description1": "Montaj autorizat ISCIR", "description2": "Probe și punere în funcțiune", "url": "https://www.example.com/montaj/" },
+          { "text": "Prețuri", "description1": "Tarife clare, fără surprize", "description2": "Deplasare inclusă în Cluj", "url": "https://www.example.com/preturi/" },
+          { "text": "Contact", "description1": "Sună sau scrie-ne", "description2": "Răspundem în aceeași zi", "url": "https://www.example.com/contact/" }
+        ],
+        // Mesaje scurte: ≤25 de caractere fiecare.
+        "callouts": ["Autorizați ISCIR", "Deplasare în tot județul", "Garanție la manoperă", "Programări și sâmbăta"],
+        // Fragmente structurate: antetul dintr-o listă fixă (brands, models, services, types…), 3–10 valori ≤25. Se trimite în limba campaniei.
+        "snippets": [
+          { "header": "services", "values": ["Montaj centrale", "Revizii anuale", "Reparații", "Coșuri de fum"] }
+        ],
+        // Butonul de apel: telefonul și, opțional, acțiunea de conversie „apeluri din anunțuri”.
+        "call": { "country": "RO", "phone": "0700 000 000", "conversion_action_id": "000000000" }
+      },
+      "ad_groups": [
+        {
+          // Numele grupului — unic în campanie.
+          "name": "Montaj centrale - Cluj",
+          "final_url": "https://www.example.com/montaj/",
+          // Cuvintele cheie: broad (amplă), phrase (frază), exact (exactă). ≤80 de caractere, ≤10 cuvinte.
+          "keywords": [
+            { "text": "montaj centrala termica cluj", "match": "phrase" },
+            { "text": "montaj centrala termica", "match": "exact" },
+            { "text": "instalare centrala termica cluj", "match": "phrase" }
+          ],
+          "negatives": [],
+          // Până la 3 anunțuri responsive pe grup. Titluri: 3–15, ≤30; descrieri: 2–4, ≤90; căile: ≤15.
+          "ads": [
+            {
+              "headlines": [
+                // "pin": 1 = mereu primul. Fixează doar ce trebuie să apară mereu.
+                { "text": "Montaj Centrale în Cluj", "pin": 1 },
+                { "text": "Instalatori Autorizați ISCIR" },
+                { "text": "Ofertă în Aceeași Zi" },
+                { "text": "Montaj și Punere în Funcțiune" },
+                { "text": "Deplasare în Tot Județul" },
+                { "text": "Garanție la Manoperă" },
+                { "text": "Programează-te Online" },
+                { "text": "Sună Acum pentru Ofertă" },
+                { "text": "Centrale în Condensare" },
+                { "text": "Verificare la Fața Locului" }
+              ],
+              "descriptions": [
+                "Montăm centrala, facem probele și o punem în funcțiune. Totul cu acte, în Cluj.",
+                "Vedem locul înainte de ofertă și îți spunem exact ce trebuie schimbat.",
+                { "text": "Programări de luni până sâmbătă. Sună sau scrie-ne pe site.", "pin": 2 }
+              ],
+              "path1": "montaj",
+              "path2": "cluj"
+            }
+          ]
+        },
+        {
+          "name": "Revizie centrale - Cluj",
+          "final_url": "https://www.example.com/revizie/",
+          "keywords": [
+            { "text": "revizie centrala termica cluj", "match": "phrase" },
+            { "text": "revizie centrala", "match": "exact" },
+            { "text": "service centrala termica cluj", "match": "phrase" }
+          ],
+          "negatives": [ { "text": "montaj", "match": "broad" } ],
+          "ads": [
+            {
+              "headlines": [
+                { "text": "Revizie Centrală în Cluj", "pin": 1 },
+                { "text": "Revizie Anuală cu Acte ISCIR" },
+                { "text": "Programare în 2 Minute" },
+                { "text": "Tehnicieni Autorizați" },
+                { "text": "Verificăm și Coșul de Fum" },
+                { "text": "Deplasare în Tot Județul" },
+                { "text": "Programări și Sâmbăta" },
+                { "text": "Sună Acum" }
+              ],
+              "descriptions": [
+                "Revizia anuală obligatorie, cu procesul-verbal ISCIR. Programezi online sau la telefon.",
+                "Curățăm, reglăm și verificăm siguranța centralei. Îți spunem pe loc ce mai are nevoie."
+              ],
+              "path1": "revizie",
+              "path2": "cluj"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "aer-conditionat",
+      "name": "Termo Exemplu - Aer conditionat - Cluj - Search",
+      "daily_budget": 25,
+      "bidding": { "strategy": "maximize_clicks", "max_cpc": 2 },
+      "locations": [ { "type": "city", "name": "Cluj-Napoca", "country": "RO" } ],
+      "languages": ["ro"],
+      "schedule": [ { "days": ["mon", "tue", "wed", "thu", "fri", "sat"], "from": "08:00", "to": "20:00" } ],
+      "negative_lists": ["irelevante"],
+      "negatives": [ { "text": "centrala", "match": "broad" } ],
+      "assets": {
+        "sitelinks": [
+          { "text": "Montaj aer condiționat", "description1": "Montaj standard într-o zi", "description2": "Fără praf, fără surprize", "url": "https://www.example.com/aer-conditionat/" },
+          { "text": "Igienizare", "description1": "Curățare și dezinfectare", "description2": "Recomandat o dată pe an", "url": "https://www.example.com/igienizare/" },
+          { "text": "Prețuri", "url": "https://www.example.com/preturi/" },
+          { "text": "Contact", "url": "https://www.example.com/contact/" }
+        ],
+        "callouts": ["Montaj într-o zi", "Garanție la manoperă"],
+        "snippets": [
+          { "header": "types", "values": ["Inverter", "Multisplit", "Pe tavan", "Pe perete"] }
+        ],
+        "call": { "country": "RO", "phone": "0700 000 000", "conversion_action_id": "000000000" }
+      },
+      "ad_groups": [
+        {
+          "name": "Montaj aer conditionat - Cluj",
+          "final_url": "https://www.example.com/aer-conditionat/",
+          "utm": { "source": "google", "medium": "cpc", "campaign": "ac-cluj" },
+          "keywords": [
+            { "text": "montaj aer conditionat cluj", "match": "phrase" },
+            { "text": "montaj aer conditionat", "match": "exact" },
+            { "text": "pret montaj aer conditionat", "match": "phrase" }
+          ],
+          "ads": [
+            {
+              "headlines": [
+                { "text": "Montaj Aer Condiționat Cluj", "pin": 1 },
+                { "text": "Montaj Standard într-o Zi" },
+                { "text": "Preț Clar Înainte de Montaj" },
+                { "text": "Garanție la Manoperă" },
+                { "text": "Inverter și Multisplit" },
+                { "text": "Programează-te Online" },
+                { "text": "Sună Acum pentru Ofertă" },
+                { "text": "Fără Praf, Fără Surprize" }
+              ],
+              "descriptions": [
+                "Montăm aparatul într-o zi, cu traseu curat și probe la final. Prețul îl știi dinainte.",
+                "Te ajutăm să alegi puterea potrivită pentru cameră. Programări de luni până sâmbătă."
+              ],
+              "path1": "aer-conditionat",
+              "path2": "cluj"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+| Câmp | Ce e |
+|---|---|
+| `format` | **obligatoriu**: `"meridian-google-search/1"` — așa se recunoaște planul |
+| `workspace` · `ad_account` · `currency` | spațiul Google, contul (10 cifre), moneda contului |
+| `shared_negative_lists[]` | `{ key, name, keywords[] }` — liste comune de negative, create în cont și legate de campanii prin `key` |
+| `campaigns[].key` · `.name` | cheia în plan (litere mici, cifre, `-`, `_`) și numele din Google Ads (unic în cont) |
+| `.daily_budget` | pe zi, în moneda contului; **plafonul spațiului se aplică pe SUMA campaniilor** |
+| `.bidding` | `{ strategy: "maximize_clicks", max_cpc? }` (plafon pe clic, opțional) sau `{ strategy: "manual_cpc", max_cpc }` (licitarea implicită a grupurilor) |
+| `.networks` | `{ search_partners: false, display: false }` — implicit doar căutarea Google |
+| `.locations[]` · `.excluded_locations[]` | țară (`code`), regiune sau oraș (`name`, `country`, `key?`) — întregi, fără rază |
+| `.location_mode` | `presence` (implicit: oamenii din zonă) sau `presence_or_interest` |
+| `.languages[]` | coduri ISO (`ro`); lipsă = toate limbile (avertisment) |
+| `.schedule[]` | `{ days: ["mon"…"sun"], from: "07:30", to: "19:00" }`; lipsă = oricând |
+| `.negative_lists[]` · `.negatives[]` | cheile listelor comune legate; negativele campaniei |
+| `.assets` | `sitelinks[] { text, description1?, description2?, url }`, `callouts[]`, `snippets[] { header, values[] }`, `call { country, phone, conversion_action_id? }` |
+| `.utm` | UTM pe toată campania (inclusiv linkurile suplimentare), în `finalUrlSuffix` |
+| `.ad_groups[]` | `{ name, final_url, utm?, max_cpc?, keywords[], negatives[], ads[] }` |
+| `.ads[]` | `{ headlines[{ text, pin? }], descriptions["…" sau { text, pin? }], path1?, path2?, final_url? }` |
+| cuvinte cheie | `{ text, match }`, cu `match` = `broad` (amplă), `phrase` (frază) sau `exact` (exactă) |
+
+Aceleași reguli de citire ca la planul video: obiecte stricte („ai vrut…?”),
+id-uri ca text, `null` = lipsă, toate problemele odată, în română, cu numele din
+plan în mesaj („Campania „…” › grupul „…” › anunțul 1 › titlul 5 („…”): 34 de
+caractere, maximum 30.”).
+
+### Ce verifică (fără niciun apel la Google)
+
+Limitele vin din `google/search/limits.ts` — aceleași în validare și în
+instrucțiunile pentru Claude. Verificate pe referința v26 (2026-10-19):
+
+| Ce | Regula | Sursa |
+|---|---|---|
+| Anunțul responsive | 3–15 titluri ≤30, 2–4 descrieri ≤90, `path1`/`path2` ≤15, `path2` cere `path1`; fixări doar pe titlurile 1–3 și descrierile 1–2; titluri și descrieri **unice**; pozițiile 1–2 (titluri) și 1 (descrieri) trebuie să poată fi ocupate; cel mult 3 anunțuri pe grup | ResponsiveSearchAdInfo; ghidul „Create responsive search ads” (v26) |
+| Numărarea | doar caracterele „late” (chineză, japoneză, coreeană) contează dublu; diacriticele contează câte unul; textul se aduce la NFC | Google Ads Help 7684791 |
+| Cuvintele cheie | ≤80 de caractere, ≤10 cuvinte; nepermise: `@`, `\`, `^`, `,`, `=`, `!`, backtick, `<`, `>`, `[`, `]`, `(`, `)`, `%`, bara verticală, `?`, `;`, `~`, acoladele, ghilimelele; `*` doar în negative | CriterionError (v26); Google Ads Help 2453981; Search Ads 360 Help 9322598 |
+| Listele comune | 20 de liste pe cont, 5.000 de cuvinte pe listă; 10.000 de negative pe campanie | ghidul Shared sets (v26); Google Ads Help 6372658 |
+| Materialele | link suplimentar: text ≤25, descrieri ≤35, **amândouă sau niciuna**; mesaj scurt ≤25; fragment: antet din lista predefinită, 3–10 valori ≤25; telefon (RO: 10 cifre, fără 09…) | SitelinkAsset, CalloutAsset, StructuredSnippetAsset, CallAsset (v26) |
+| Programul | ore 0–24, minute 00/15/30/45, „24:00” = sfârșitul zilei; cel mult 6 intervale pe zi; fără suprapuneri | AdScheduleInfo (v26) |
+| Cererea | cel mult **10.000 de operații** într-un `googleAds:mutate`; peste = eroare, **fără împărțire** (s-ar pierde „totul sau nimic”) | Quotas; rate sheet (v26) |
+
+**Conflictele cu negativele.** Pe fiecare campanie, negativele grupului, ale
+campaniei și ale listelor legate se potrivesc peste cuvintele cheie pozitive:
+amplă = toate cuvintele negativului apar în cuvânt (orice ordine), frază = apar
+unul după altul, exactă = identic; fără variante apropiate (`pret` nu blochează
+`preț`). Un cuvânt blocat de propriile negative e **eroare**, cu negativul și
+locul lui („… e blocat de lista „NEG - Irelevante”: negativul cluj”). Cu ș/ț
+scrise cu sedilă într-o parte, e doar avertisment.
+
+**Avertismente:** partenerii de căutare sau rețeaua de display pornite, modul
+`presence_or_interest`, fără limbă, „Maximizează clicurile” fără plafon, CPC peste
+20 lei / 5 € (un zero în plus?), un clic mai scump decât bugetul zilei, sub 8
+titluri, prea multe titluri fixate, domenii diferite în aceeași campanie, sub 4
+linkuri suplimentare, buton de apel fără acțiune de conversie, același cuvânt
+cheie în două grupuri ale campaniei.
+
+**Operațiile.** Previzualizarea arată câte operații produce planul (din aceeași
+construcție care pleacă la Google) și cât consumă din cele 2.880 pe zi ale
+nivelului Explorer: verificarea și crearea consumă fiecare numărul întreg. Un
+plan cu 4 campanii și ~750 de operații = ~1.500 pe zi cu o verificare și o creare.
+
+### Antetele fragmentelor structurate
+
+Cheile din plan sunt în engleză (`brands`, `models`, `services`, `types`,
+`amenities`, `courses`, `degree_programs`, `destinations`, `featured_hotels`,
+`insurance_coverage`, `neighborhoods`, `shows`, `styles`); antetul trimis la
+Google e cel din lista oficială, **în limba campaniei**: la o campanie cu prima
+limbă `ro` — „Mărci”, „Modele”, „Servicii”, „Tipuri”, „Dotări”…; altfel cel
+englezesc. (Lista „Structured snippet headers”, v26.)
+
+### Neverificat încă — se confirmă la prima creare reală
+
+1. Dacă un antet românesc e **obligatoriu** pentru anunțurile în română (cele
+   localizate sunt acceptate; portalul le trimite pe ele).
+2. Dacă cererile cu `validateOnly` se numără în operațiile zilnice (nedocumentat;
+   exemplul oficial de limită o sugerează — portalul presupune că da).
+3. Dacă `asset.finalUrls` e strict obligatoriu pe un link suplimentar (exemplul
+   oficial îl pune; portalul îl pune mereu).
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server, cu o excepție marcată (`NEXT_PUBLIC_`).
@@ -1398,3 +1733,42 @@ trebuie să fie **principală**; id-ul ei (din adresa paginii, `ctId=`) e
   `frame-src`. CSP-ul e încă doar raportat (`CSP_REPORT_ONLY = true`).
 - **Legătura din panoul de lead-uri spre reclame:** făcută (linkul „Reclame” din
   capul panoului).
+
+## Decizii luate (fazele 8–14)
+
+Promptul fazelor 8–14 cere lucru de la cap la coadă, fără confirmare între faze;
+unde a fost de ales, am ales varianta cea mai sigură și mai simplă și am notat-o aici.
+
+1. **Faza 8 — o pagină separată, `/admin/ads/cautare`**, nu „Plan nou” cu două
+   formate: previzualizarea, verificarea și rezultatul sunt altele (mai multe
+   campanii, fără video, fără formular de câmpuri). „Plan nou” recunoaște planul
+   de căutare și îl mută acolo cu un clic (și invers).
+2. **Faza 8 — corecturile se fac în JSON**, nu într-un formular: un plan de
+   căutare are sute de rânduri. Erorile duc la locul lor (grupul se deschide).
+3. **Faza 8 — două strategii de licitare**: `maximize_clicks` (cu plafon de CPC
+   opțional) și `manual_cpc` (fără CPC îmbunătățit, oprit oricum de Google pe
+   căutare din 2025). „Maximizează conversiile” nu e în format: un cont refăcut
+   de la zero nu are încă conversii pe care să optimizeze. Se adaugă ușor.
+4. **Faza 8 — `max_cpc` pe grup la „Maximizează clicurile” e eroare**, nu
+   avertisment: Google îl ignoră acolo, iar un plafon ignorat în tăcere ar fi o
+   valoare în care crede cineva. Plafonul stă pe campanie.
+5. **Faza 8 — locațiile de căutare fără rază**: orașe, regiuni, țări întregi
+   (aceeași rezolvare ca la Demand Gen, `google/targeting.ts`). Raza ar cere
+   coordonate; se poate adăuga ca tip nou de locație.
+6. **Faza 8 — UTM pe campanie și pe grup**, în `finalUrlSuffix` (al campaniei
+   acoperă și linkurile suplimentare; al grupului îl înlocuiește pe al campaniei).
+7. **Faza 8 — titlurile și descrierile duplicate se compară fără majuscule**
+   (poate mai strict decât Google): două titluri care diferă doar prin
+   majuscule sunt aproape sigur o greșeală.
+8. **Faza 8 — antetul fragmentului structurat în limba campaniei** (română la
+   prima limbă `ro`), din lista oficială v26.
+9. **Faza 8 — materialele identice din campanii diferite se creează o singură
+   dată** și se leagă de fiecare campanie (același mesaj scurt pe patru campanii
+   = un material, patru legături).
+
+## De făcut de om (fazele 8–14)
+
+Ce nu ține de zona portalului sau nu se poate face din cod. Fiecare punct spune
+exact ce și de ce.
+
+1. **Faza 8: nimic.** Pagina „Căutare” funcționează și fără chei, doar cu validarea.

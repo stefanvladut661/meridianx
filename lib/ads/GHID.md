@@ -1,6 +1,6 @@
-# Ghid — portalul de reclame, după fazele 6–7
+# Ghid — portalul de reclame, fazele 8–14 (Google Search și contul)
 
-*Actualizat pe 2026-10-18, la finalul fazelor 6 (Google) și 7 (producția în masă). Ramura: `feat/ads-portal`.*
+*Actualizat pe 2026-10-19, în fazele 8–14 (Google Search, întreținerea contului, termenii de căutare, conversiile). Ramura: `feat/ads-google-search`, plecată din `feat/ads-portal`.*
 
 Trei documente, în ordinea în care se citesc:
 
@@ -23,8 +23,9 @@ Trei documente, în ordinea în care se citesc:
 | **5** | TikTok | ✅ gata, testată pe un TikTok fals — **încă nu pe contul real** |
 | **6** | **Google Ads** (Demand Gen, video pe YouTube): verificare cu `validateOnly`, creare atomică pe pauză, video nou urcat pe YouTube, cifre | ✅ gata, testată pe un Google fals (API v26) — **încă nu pe contul real** |
 | **7** | **Producția în masă**: lotul (până la 50 de planuri), mai multe video-uri pe plan (video × text), „Pentru Claude” (instrucțiuni + contextul conturilor), tag-ul Google pe site | ✅ gata, testată cap-coadă pe build de producție |
+| **8** | **Google Search — formatul**: planul de căutare, validarea (cu conflictele negativelor), previzualizarea | ✅ gata, fără niciun apel la Google |
 
-Tot portalul e pe `feat/ads-portal`, împins pe GitHub, **fără merge în `main`**
+Fazele 1–7 sunt pe `feat/ads-portal`; fazele 8–14 pe `feat/ads-google-search` (plecată din ea), împinse pe GitHub, **fără merge**
 (deci nu e pe site încă). Merge-ul îl faci tu sau mi-l ceri explicit.
 
 **Verificat (2026-10-18), pe build de producție, cu Supabase, Meta, TikTok și
@@ -36,6 +37,15 @@ Claude cu toate id-urile; sincronizarea cifrelor pe toate trei (cron: 401 fără
 secret, 200 cu el); nicio eroare în consolă și nicio derulare laterală pe toate
 paginile portalului, la 1440 și 360 px; niciun status de pornire ajuns la vreun
 fals. Garda fără rețea: 86 de verificări. TypeScript și ESLint fără erori.
+
+## 1.5 Fazele 8–14, pe scurt
+
+Ce face fiecare fază și ce ai de făcut tu după ea. Detaliile tehnice: README → „Faza N”.
+
+### Faza 8
+- **Ce face:** pagina nouă **„Căutare”** (`/admin/ads/cautare`, în meniu doar în spațiile Google). Lipești un plan `meridian-google-search/1` și îl citești în română: totalurile, suma bugetelor față de plafon, operațiile, fiecare campanie cu grupurile ei, anunțurile arătate ca rezultat de căutare. Găsește conflictele dintre negative și cuvintele cheie, titlurile prea lungi sau duplicate, programul suprapus, telefonul greșit — toate odată.
+- **Ce ai de făcut:** nimic. Fără niciun apel la Google; merge și fără chei.
+- **De citit:** README → „Faza 8” (formatul, exemplul comentat, regulile cu sursa lor).
 
 ---
 

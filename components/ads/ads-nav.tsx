@@ -2,31 +2,35 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Platform } from "@/lib/ads/constants";
 import { cn } from "@/lib/utils";
 
 /**
  * Navigarea portalului. Doar paginile care există — un link spre un ecran
- * care încă nu e construit e un drum înfundat, nu o promisiune.
+ * care încă nu e construit e un drum înfundat, nu o promisiune. Uneltele
+ * doar pentru Google (căutare, contul, termenii, conversiile) apar când
+ * spațiul de sus e unul Google.
  */
-const LINKS = [
+const LINKS: ReadonlyArray<{ href: string; label: string; exact: boolean; google?: true }> = [
   { href: "/admin/ads", label: "Campanii", exact: true },
   { href: "/admin/ads/nou", label: "Plan nou", exact: false },
+  { href: "/admin/ads/cautare", label: "Căutare", exact: false, google: true },
   { href: "/admin/ads/lot", label: "Lot", exact: false },
   { href: "/admin/ads/claude", label: "Pentru Claude", exact: false },
   { href: "/admin/ads/statistici", label: "Statistici", exact: false },
-] as const;
+];
 
-export function AdsNav() {
+export function AdsNav({ platform }: { platform: Platform }) {
   const pathname = usePathname();
 
   return (
-    // Pe telefon, trei linkuri + „Ieși” nu încap la 360px fără să se rupă:
+    // Pe telefon, linkurile + „Ieși” nu încap la 360px fără să se rupă:
     // lista derulează orizontal în locul ei, fiecare link pe un singur rând.
     <nav
       aria-label="Reclame"
       className="-my-1 flex min-w-0 items-center gap-0.5 overflow-x-auto px-1 py-1 [scrollbar-width:none] sm:gap-1"
     >
-      {LINKS.map((link) => {
+      {LINKS.filter((link) => !link.google || platform === "google" || pathname.startsWith(link.href)).map((link) => {
         const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
         return (
           <Link

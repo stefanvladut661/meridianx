@@ -34,6 +34,7 @@ export default async function AdsLayout({
 
   const workspaces = listWorkspaces();
   const currentId = await currentWorkspaceId();
+  const current = workspaces.find((workspace) => workspace.id === currentId) ?? workspaces[0];
 
   return (
     // Hidratarea așteaptă sfârșitul citirii paginii — vezi hydrate-when-parsed.tsx.
@@ -55,7 +56,7 @@ export default async function AdsLayout({
             </Link>
 
             <span aria-hidden className="hidden h-4 w-px shrink-0 bg-hair-strong sm:block" />
-            <AdsNav />
+            <AdsNav platform={current.platform} />
 
             <div className="ml-auto flex shrink-0 items-center gap-4">
               <Link

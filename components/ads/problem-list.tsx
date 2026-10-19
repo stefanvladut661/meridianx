@@ -14,6 +14,10 @@ export function jumpTo(path: string) {
       document.getElementById(fieldId(candidate)) ??
       document.getElementById(`${fieldId(candidate)}-msg`);
     if (element) {
+      // Un câmp dintr-un grup strâns (planul de căutare) se deschide întâi, altfel n-ar avea unde derula.
+      for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+        if (node instanceof HTMLDetailsElement && !node.open) node.open = true;
+      }
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       element.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
       if (!element.matches("input, select, textarea, button")) element.setAttribute("tabindex", "-1");
