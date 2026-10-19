@@ -168,6 +168,25 @@ const GOOGLE_OPERATIONS_WITH_STATUS: readonly string[] = ["campaignOperation", "
 export const GOOGLE_NEGATIVE_LIST_TYPE = "NEGATIVE_KEYWORDS" as const;
 
 /**
+ * Acțiunile de conversie pe care le creează portalul (faza 13): apelul din
+ * anunț, clicul pe telefon de pe site, formularul (pagină web). Doar câmpurile
+ * de mai jos — fără status (Google o pornește singur; o conversie nu cheltuie
+ * bani), fără aplicații, fără importuri.
+ */
+export const GOOGLE_CONVERSION_TYPES = ["AD_CALL", "CLICK_TO_CALL", "WEBPAGE"] as const;
+const GOOGLE_CONVERSION_FIELDS = [
+  "name",
+  "type",
+  "category",
+  "countingType",
+  "primaryForGoal",
+  "clickThroughLookbackWindowDays",
+  "viewThroughLookbackWindowDays",
+  "phoneCallDurationSeconds",
+  "valueSettings",
+];
+
+/**
  * Ce știe garda despre cont, dincolo de cerere: listele comune de negative
  * EXISTENTE, citite chiar înainte de trimitere (`shared_set.type =
  * NEGATIVE_KEYWORDS`). Doar de ele se pot lega campanii și doar în ele se pot
@@ -267,7 +286,8 @@ function createdIn(operations: ReadonlyArray<Record<string, unknown>>, kind: str
  *   - listele comune: doar de negative (`NEGATIVE_KEYWORDS`), create în
  *     cerere sau existente și citite din cont chiar înainte (`context`);
  *     cuvintele din ele, doar cuvinte; legarea lor de campanii, doar a lor;
- *   - acțiunile de conversie se creează fără status (nu cheltuie bani).
+ *   - acțiunile de conversie se creează fără status (nu cheltuie bani), doar
+ *     de tipurile din `GOOGLE_CONVERSION_TYPES` și doar cu câmpurile lor.
  */
 export function assertGooglePaused(
   customerId: string,
@@ -367,6 +387,18 @@ export function assertGooglePaused(
           throw new NotPausedError(`campaignSharedSetOperation (${index}): de o campanie se leagă doar liste de negative (${String(fields.sharedSet)} nu e una verificată).`);
         }
         break;
+      case "conversionActionOperation": {
+        if (!(GOOGLE_CONVERSION_TYPES as readonly unknown[]).includes(fields.type)) {
+          throw new NotPausedError(
+            `conversionActionOperation (${index}): portalul creează doar ${GOOGLE_CONVERSION_TYPES.join(", ")}, nu ${JSON.stringify(fields.type)}.`
+          );
+        }
+        const extra = Object.keys(fields).filter((field) => !GOOGLE_CONVERSION_FIELDS.includes(field));
+        if (extra.length > 0) {
+          throw new NotPausedError(`conversionActionOperation (${index}): câmpuri pe care portalul nu le trimite: ${extra.join(", ")}.`);
+        }
+        break;
+      }
       default:
         break;
     }

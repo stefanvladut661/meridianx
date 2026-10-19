@@ -1,5 +1,6 @@
 import { BILLING_STATUS_LABEL, CHANGE_OPERATION_LABEL, CHANGE_RESOURCE_LABEL, ROLE_LABEL, accountMoney, label } from "@/lib/ads/google/account/labels";
 import { bulkCreations, clientLabel } from "@/lib/ads/google/account/signals";
+import { CATEGORY_LABEL, CONVERSION_TYPE_LABEL } from "@/lib/ads/google/conversions/standard";
 import type { AccountAudit as Audit, AccountCampaign, AuditBlock } from "@/lib/ads/google/account/types";
 import { countOf } from "@/lib/ads/plan-derive";
 import { cn } from "@/lib/utils";
@@ -198,7 +199,7 @@ export function AccountAudit({ audit, currency, campaigns }: { audit: Audit; cur
                         <span className="block font-md-mono text-[11px] text-dim">{action.id}</span>
                       </th>
                       <td className="px-3 py-2 text-bone/80">
-                        {action.type} · {action.category}
+                        {label(CONVERSION_TYPE_LABEL, action.type)} · {label(CATEGORY_LABEL, action.category)}
                       </td>
                       <td className="px-3 py-2 text-bone/80">{action.primary ? "principală" : "secundară"}</td>
                       <td className="px-3 py-2 text-bone/80">{action.status === "ENABLED" ? "activă" : action.status === "HIDDEN" ? "ascunsă" : action.status}</td>

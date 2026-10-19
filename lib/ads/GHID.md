@@ -28,6 +28,7 @@ Trei documente, în ordinea în care se citesc:
 | **10** | **Google Search — crearea**: verificarea cu `validateOnly`, crearea pe pauză într-o singură cerere, lotul | ✅ gata, testată pe Google fals — **încă nu pe contul real** |
 | **11** | **Contul existent**: campaniile, pauza, negativele pe campanii existente, auditul | ✅ gata, testată pe Google fals — **încă nu pe contul real** |
 | **12** | **Termenii de căutare**: sincronizarea, propunerile de negative, adăugarea cu bifă | ✅ gata, testată pe Google fals — **încă nu pe contul real** |
+| **13** | **Conversiile**: acțiunile standard de lead, importul GTM | ✅ gata — testat pe Google fals; importul, încă nu într-un GTM real |
 
 Fazele 1–7 sunt pe `feat/ads-portal`; fazele 8–14 pe `feat/ads-google-search` (plecată din ea), împinse pe GitHub, **fără merge**
 (deci nu e pe site încă). Merge-ul îl faci tu sau mi-l ceri explicit.
@@ -69,6 +70,10 @@ Ce face fiecare fază și ce ai de făcut tu după ea. Detaliile tehnice: README
 ### Faza 12
 - **Ce face:** pagina **„Termeni”** — ce au căutat oamenii în ultimele 7 sau 30 de zile, sincronizat zilnic de același cron. Sus, **propunerile de negative**: cuvintele de exclus ale contului, termenii scumpi fără conversii, căutările care țin de altă campanie. Bifezi → previzualizezi (conflicte + Google) → adaugi, pe campanie sau într-o listă comună. Nimic fără bifă.
 - **Ce ai de făcut:** rulează **migrarea 11**; scrie, pe fiecare cont, cuvintele de exclus (pe pagină, la „Regulile propunerilor”). Rezumatul pe email nu e făcut — README → „De făcut de om”.
+
+### Faza 13
+- **Ce face:** pagina **„Conversii”** — ce numără contul ca lead. Arată id-ul AW-…, acțiunile existente cu eticheta fiecăreia și dacă raportarea apelurilor e pornită. Creează, după „Verifică în Google”, acțiunile standard care lipsesc: apel din anunț (cel puțin 60 s), clic pe telefon, formular trimis. Apoi îți dă **fișierul de import pentru Google Tag Manager**: Conversion Linker, tag-ul Google, conversiile cu declanșatoarele lor.
+- **Ce ai de făcut:** pornește raportarea apelurilor în Google Ads, unde pagina spune că e oprită; importă fișierul în GTM-ul clientului cu „Combinare → Redenumește”, verifică în previzualizare, publică. Portalul nu atinge GTM.
 
 ---
 

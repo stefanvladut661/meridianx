@@ -45,6 +45,8 @@ import { DEFAULT_COST_THRESHOLD } from "@/lib/ads/google/terms/defaults";
 import { readRules, saveRules } from "@/lib/ads/terms-store";
 import type { NegativesResponse, PauseResponse } from "@/lib/ads/google/account/types";
 import { markPortalPaused } from "@/lib/ads/store";
+import { createConversions, prepareConversions } from "@/lib/ads/google/conversions/service";
+import type { ConversionsCreateResponse, ConversionsPreviewResponse } from "@/lib/ads/google/conversions/types";
 
 /**
  * Acțiunile portalului de reclame.
@@ -884,5 +886,54 @@ export async function addTermNegatives(input: {
     return { ok: true, operations, journalWarning: warning };
   } catch (error) {
     return { ok: false, message: describeGoogleError(error, "adăugarea negativelor", context.workspace.tokenEnv) };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Conversiile (faza 13): acțiunile standard de lead, pe contul clientului
+// ---------------------------------------------------------------------------
+
+export async function previewConversionActions(input: { workspace: string; adAccount: string; request: unknown }): Promise<ConversionsPreviewResponse> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  try {
+    const prepared = await prepareConversions(context.workspace, context.account, input.request);
+    return { ok: true, preview: prepared.preview };
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "verificarea acțiunilor de conversie", context.workspace.tokenEnv) };
+  }
+}
+
+export async function createConversionActions(input: {
+  workspace: string;
+  adAccount: string;
+  request: unknown;
+  fingerprint: string;
+}): Promise<ConversionsCreateResponse> {
+  const context = await googleAccountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  try {
+    // Totul se reface pe server: regulile, numele din cont, validateOnly, amprenta.
+    const prepared = await prepareConversions(context.workspace, context.account, input.request);
+    if (!prepared.preview.ok) return { ok: false, message: prepared.preview.errors[0]?.message ?? "Verificarea are probleme. Verifică din nou.", recheck: true };
+    if (prepared.preview.fingerprint !== input.fingerprint) {
+      return { ok: false, message: "Ceva s-a schimbat în cont sau în formular de la verificare. Verifică din nou.", recheck: true };
+    }
+    const created = await createConversions(context.workspace, context.account, prepared);
+    const warning = journalWarning(
+      await recordChange({
+        workspace: context.workspace.id,
+        adAccount: context.account.info.id,
+        kind: "conversion_actions",
+        summary: `${created.length === 1 ? "O acțiune de conversie creată" : `${created.length} acțiuni de conversie create`}`,
+        detail: { created: created.map((item) => ({ id: item.id, name: item.name, type: item.type })), request: prepared.request },
+        operations: prepared.operations.length,
+        user: context.user,
+      })
+    );
+    revalidatePath("/admin/ads/conversii");
+    return { ok: true, created, journalWarning: warning };
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "crearea acțiunilor de conversie", context.workspace.tokenEnv) };
   }
 }

@@ -58,6 +58,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 10 | Google Search: verificarea cu `validateOnly` și crearea pe pauză a planului de căutare; planurile de căutare în lot; migrarea 9 | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
 | 11 | Contul existent (`/admin/ads/cont`): campaniile în toate stările, pauza, negativele pe campanii existente, auditul; jurnalul (migrarea 10) | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
 | 12 | Termenii de căutare: sincronizarea zilnică (același cron), propunerile de negative după regulile contului, adăugarea doar cu bifă; migrarea 11 | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
+| 13 | Conversiile (`/admin/ads/conversii`): acțiunile standard de lead (apel din anunț, clic pe telefon, formular) și fișierul de import GTM; garda strânsă pe acțiunile de conversie | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși; importul GTM, încă nu într-un container real |
 
 Commit separat după fiecare fază. Fazele 6 și 7 au fost cerute împreună („bagă și
 Google, scopul e producția în masă”), deci au mers fără oprire între ele.
@@ -148,7 +149,11 @@ Google, scopul e producția în masă”), deci au mers fără oprire între ele
 | `google/terms/proposals.ts` | Faza 12. Propunerile de negative: regula contului, cost fără conversii, altă campanie. Pur. |
 | `google/terms/types.ts` · `defaults.ts` | Faza 12. Tipurile pentru browser; valorile implicite ale regulilor unui cont nou. |
 | `terms-store.ts` | Faza 12. Tabelele termenilor și regulilor (migrarea 11): scrierea (service role), citirea pentru ecran (RLS), paginată. |
-| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea, garda fazei 9, negativele pe conturi existente și termenii (170 de verificări, fără rețea). |
+| `google/conversions/standard.ts` | Faza 13. Acțiunile standard de lead: tipurile, valorile implicite, regulile Google, schema Zod (browser + server), operațiile, eticheta AW-…/… din fragmentul de cod. Izomorf. |
+| `google/conversions/gtm.ts` | Faza 13. Fișierul de import GTM (Conversion Linker, tag-ul Google, conversiile, declanșatoarele) și verificarea alegerilor. Izomorf, pur. |
+| `google/conversions/read.ts` · `service.ts` | Faza 13. Citirile (setările de conversie ale contului, acțiunile cu etichetele lor), verificarea și crearea acțiunilor. |
+| `google/conversions/types.ts` | Faza 13. Tipurile pentru browser. |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea, garda fazei 9, negativele pe conturi existente, termenii, conversiile și importul GTM (193 de verificări, fără rețea). |
 
 ---
 
@@ -1734,6 +1739,150 @@ minute).
 
 ---
 
+## Faza 13 — conversiile (`/admin/ads/conversii`)
+
+În meniu, „Conversii” (doar în spațiile Google); și din „Cont”, tabul „Conversii”.
+
+### Ce arată (doar citiri, GAQL v26)
+
+- **Id-ul de urmărire** (AW-…): `customer.conversion_tracking_setting.conversion_tracking_id`
+  sau, dacă urmărirea e între conturi, `cross_account_conversion_tracking_id` (al
+  managerului, care îl înlocuiește).
+- **Cine gestionează conversiile**: `google_ads_conversion_customer` și
+  `conversion_tracking_status` (contul însuși, un manager, nimeni încă).
+- **Raportarea apelurilor**: `customer.call_reporting_setting.call_reporting_enabled`
+  și `call_conversion_reporting_enabled` — citite, nu schimbate.
+- **Acțiunile din cont** (nesterse): tipul, categoria, principală / secundară,
+  numărarea, ferestrele, durata minimă a apelului și **eticheta AW-…/…**, citită
+  din `conversion_action.tag_snippets` (fragmentul `event_snippet`, cheia
+  `send_to`). La apeluri nu există etichetă: pagina arată id-ul, cel care intră în
+  planul de căutare la `assets.call.conversion_action_id`.
+
+### Acțiunile standard de lead
+
+| Felul | Tipul (v26) | Categoria implicită | Ce numără |
+|---|---|---|---|
+| Apel din anunț | `AD_CALL` | `PHONE_CALL_LEAD` | apelurile din butonul de apel mai lungi decât durata minimă |
+| Clic pe telefon, pe site | `CLICK_TO_CALL` | `PHONE_CALL_LEAD` | atingerea unui link `tel:` (clicul, nu apelul) — din GTM |
+| Formular trimis | `WEBPAGE` | `SUBMIT_LEAD_FORM` | pagina sau evenimentul de după trimitere — din GTM |
+
+Setările, cu regulile Google din ghidul v26 („Create conversion actions”, verificat
+pe 2026-10-20) — aceeași schemă Zod în browser și pe server
+(`google/conversions/standard.ts`):
+
+- **numele** — unic în cont; implicit fără nimic despre client („Lead - apel din
+  anunț”); cel mult 100 de caractere (limita portalului);
+- **categoria** — formular, apel, cerere de ofertă, programare, contact;
+- **numărarea** — implicit `ONE_PER_CLICK` (o conversie pe clic; Google ar pune
+  `MANY_PER_CLICK` dacă nu se trimite);
+- **fereastra după clic** — implicit 30 de zile; 1–90, la apeluri 1–60;
+- **fereastra după afișare** — implicit 1 zi; 1–30; la apeluri nu se trimite
+  (Google: `VALUE_MUST_BE_UNSET`);
+- **durata minimă a apelului** — implicit 60 s; 0–10.000; doar la apeluri;
+- **valoarea** — opțională, aceeași la fiecare conversie, în moneda contului; la
+  apeluri `value_settings.always_use_default_value: true` e obligatoriu și se
+  trimite mereu;
+- **principală** (`primary_for_goal`) — implicit da.
+
+Nu se trimit: **statusul** (Google pornește acțiunea — o conversie nu cheltuie
+bani, iar una oprită n-ar număra nimic), **modelul de atribuire** (implicit „bazat
+pe date”; cele pe reguli sunt refuzate de Google), `include_in_conversions_metric`
+(Google îl refuză la creare).
+
+**Drumul:** bifate implicit doar felurile care lipsesc din cont → „Verifică în
+Google”: regulile, numele deja folosite în cont, dublurile (o a doua acțiune
+principală de același fel = avertisment), raportarea apelurilor oprită
+(avertisment), `validateOnly` → „Creează”: totul refăcut pe server, aceeași
+amprentă, o singură cerere atomică. După creare: id-ul și eticheta fiecărei acțiuni
+(citite pe loc din cont), iar jurnalul contului notează crearea
+(`conversion_actions`). Erorile Google cad pe câmpul lor (`DUPLICATE_NAME` pe nume,
+`TOO_HIGH` pe fereastră); `CREATION_NOT_SUPPORTED` spune ce faci: acțiunea se
+creează în Google Ads și se alege apoi la importul GTM.
+
+**Conversiile gestionate din manager** (urmărirea conversiilor între conturi):
+portalul nu creează nimic — acțiunile se fac în contul manager, în Google Ads.
+Pagina spune contul și oprește bifele.
+
+### Garda
+
+`assertGooglePaused` primește `conversionActionOperation.create` doar cu tipurile
+`GOOGLE_CONVERSION_TYPES` (`AD_CALL`, `CLICK_TO_CALL`, `WEBPAGE`) și doar cu
+câmpurile `name`, `type`, `category`, `countingType`, `primaryForGoal`,
+`clickThroughLookbackWindowDays`, `viewThroughLookbackWindowDays`,
+`phoneCallDurationSeconds`, `valueSettings`. Orice status (pornit sau ascuns), alt
+tip (`UPLOAD_CLICKS`…), alt câmp (`appId`, atribuirea,
+`includeInConversionsMetric`), o resursă din alt cont, `update` sau `remove` —
+refuzate. `verify-paused.mjs`: **193 de verificări**.
+
+### Importul în Google Tag Manager
+
+Portalul nu are acces la GTM: face **fișierul de import** (`google/conversions/gtm.ts`,
+pur, formatul exportului GTM, `exportFormatVersion: 2`) și scrie pașii pe pagină.
+
+| Ce intră | Tipul în GTM | Când se declanșează |
+|---|---|---|
+| Conversion Linker | `gclidw` | toate paginile (declanșatorul „All Pages”, id `2147479553`) |
+| Tag-ul Google AW-… — doar dacă site-ul nu-l are (bifa „are deja”) | `googtag`, `tagId` | toate paginile |
+| Conversia „clic pe telefon” | `awct` (`conversionId` = cifrele, `conversionLabel`, `enableConversionLinker`) | `LINK_CLICK` („doar linkuri”), Click URL începe cu `tel:` |
+| Conversia „formular” | `awct` | după alegere: **pagina de mulțumire** (`PAGEVIEW`, Page Path `^/cale/?$`), **eveniment dataLayer** (`CUSTOM_EVENT`, `{{_event}}` = numele) sau **trimiterea formularului** (`FORM_SUBMISSION`, opțional Form ID, doar dacă trece validarea) |
+| Variabilele încorporate | Page URL, Page Hostname, Page Path, Referrer, Event, plus Click URL / Form ID când trebuie | — |
+
+Implicit: pagina de mulțumire — merge și cu formularele trimise prin JavaScript
+(cele mai multe azi), pe care declanșatorul „trimiterea formularului” nu le vede
+(pagina o spune). Toate id-urile din fișier încep de la 900 și toate numele încep
+cu „Google Ads ·”: la importul cu **Combinare → Redenumește** nu se calcă nimic din
+containerul clientului, oricum ar detecta GTM conflictele. Fișierul se descarcă
+(`gtm-conversii-google-ads.json`) sau se copiază; verificarea alegerilor (cale
+goală sau „/”, un eveniment cu spații, o etichetă din alt cont) oprește descărcarea.
+
+**Pașii, în GTM** (și pe pagină): Administrator → Importă containerul → fișierul →
+spațiul de lucru → **Combinare + Redenumește** (niciodată „Suprascrie”) →
+rezumatul trebuie să arate doar adăugări → Previzualizare pe site (telefon,
+formular de test) → Trimite → Publică.
+
+### Ce rămâne de mână (și de ce)
+
+- **Raportarea apelurilor** — e o setare a contului (`Customer` update); portalul nu
+  actualizează nimic în afară de pauză. Pagina arată starea și unde se pornește.
+- **Publicarea în GTM** — portalul n-are acces la GTM.
+- **Obiectivele proprii ale unei campanii** (custom goals), **Consent Mode** pe
+  site, **conversiile îmbunătățite** — de mână, scrise pe pagină unde contează.
+
+### Verificat (Chrome headless, Google și Supabase falși)
+
+Contul fals are deja un apel din anunț și un formular: pagina le arată (cu
+eticheta formularului), bifează implicit doar clicul pe telefon. Fereastra de 70 de
+zile la apel e prinsă în browser (câmpul marcat `aria-invalid`); un nume deja
+folosit în cont e prins pe server, pe câmpul lui, fără nicio cerere spre Google.
+Verificarea bună: `validateOnly` cu 2 operații, avertismentele (raportarea
+apelurilor oprită, apelul dublat); crearea: aceeași verificare refăcută, apoi
+cererea reală — în jurnalul Google-ului fals doar `conversionActionOperation`,
+niciuna cu status. Eticheta nouă apare pe loc; importul GTM o alege singur;
+fișierul are Conversion Linker, tag-ul Google, cele două conversii cu id-ul și
+eticheta, declanșatoarele `LINK_CLICK` și `PAGEVIEW`. `CREATION_NOT_SUPPORTED`
+(simulat) dă mesajul cu drumul alternativ; un cont cu conversiile în manager oprește
+crearea și arată id-ul managerului. Fără derulare laterală la 360, 768, 1024 și 1920
+(și pe „Cont”, cu tabul nou), fără erori în consolă.
+
+### Neverificat încă — pe un cont real
+
+1. **`CLICK_TO_CALL` creat prin API.** Ghidul îl pune printre tipurile de site
+   („Phone number clicks”), dar exemplele de creare nu-l pomenesc. Dacă Google
+   răspunde `CREATION_NOT_SUPPORTED`, pagina spune drumul: acțiunea se face în
+   Google Ads și se alege la importul GTM (acolo orice acțiune cu etichetă merge).
+2. **Apelul fără valoare** — `value_settings` doar cu
+   `always_use_default_value: true`: ce valoare implicită pune Google.
+3. **Eticheta imediat după creare** — portalul o citește pe loc din
+   `tag_snippets`; dacă Google o generează cu întârziere, mesajul spune „reîncarcă
+   peste un minut”.
+4. **Importul într-un container real.** Tipurile `awct` și `gclidw`, cheile lor și
+   id-ul „All Pages” sunt cele dintr-un export real; `googtag` cu `tagId` și
+   declanșatorul de formular cu `autoEventFilter` + `checkValidation` urmează
+   referința API-ului GTM, dar nu le-am văzut într-un export. GTM arată rezumatul
+   înainte să aplice ceva — primul import se citește cu atenție.
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server, cu o excepție marcată (`NEXT_PUBLIC_`).
@@ -2134,6 +2283,29 @@ unde a fost de ales, am ales varianta cea mai sigură și mai simplă și am not
    cuvinte de exclus pornește goală (ține de fiecare client).
 31. **Faza 12 — rezumatul săptămânal pe email nu e făcut** (ar cere `lib/email/`,
    în afara zonei) — vezi „De făcut de om”.
+32. **Faza 13 — acțiunile de conversie se creează pornite** (fără status trimis): o
+   conversie nu cheltuie bani, iar una oprită n-ar număra nimic. Regula „totul pe
+   pauză” rămâne pe ce cheltuie: campanii, grupuri, anunțuri.
+33. **Faza 13 — valorile implicite**: o conversie pe clic, 30 de zile după clic, o
+   zi după afișare, apel de cel puțin 60 s, principală, fără valoare. Modelul de
+   atribuire nu se trimite (Google pune „bazat pe date”).
+34. **Faza 13 — bifate implicit doar felurile care lipsesc** din cont (la formular:
+   aceeași categorie); o a doua acțiune principală de același fel e avertisment, nu
+   eroare — uneori chiar se vrea (alt site, alt formular).
+35. **Faza 13 — nume fără nimic despre client** („Lead - apel din anunț”, „Lead -
+   clic pe telefon (site)”, „Lead - formular trimis (site)”); limita de 100 de
+   caractere e a portalului, nu a Google.
+36. **Faza 13 — conversiile gestionate în manager** (urmărire între conturi):
+   portalul nu creează nimic în contul clientului și nici în manager; omul le face
+   în contul manager, în Google Ads.
+37. **Faza 13 — raportarea apelurilor rămâne de mână**: ar fi o actualizare a
+   contului, iar garda permite o singură actualizare, pauza.
+38. **Faza 13 — importul GTM**: declanșatorul implicit al formularului e pagina de
+   mulțumire; tag-ul Google intră implicit (bifa „site-ul îl are deja” îl scoate);
+   tag-urile de pe toate paginile merg pe „All Pages” (id verificat într-un export
+   real), nu pe „Initialization”; id-uri ≥ 900, nume „Google Ads ·”.
+39. **Faza 13 — portalul nu vorbește cu GTM** (nici API, nici acces): face fișierul
+   și scrie pașii; publicarea e a omului.
 
 ## De făcut de om (fazele 8–14)
 
@@ -2166,3 +2338,14 @@ exact ce și de ce.
    `/admin/ads/termeni?cont=…`. Datele există deja: `readTerms` + `buildProposals`
    (izomorfe) — șablonul doar le pune în pagină. Destinatarii: `ADMIN_EMAILS` sau
    o variabilă nouă (`ADS_REPORT_EMAILS`).
+7. **Raportarea apelurilor**, pe fiecare cont cu apeluri din anunțuri: Google Ads →
+   Administrator → Setările contului → Raportarea apelurilor: pornită, cu „Conversii
+   din apeluri”. Pagina „Conversii” arată starea fiecărui cont.
+8. **Importul GTM pe site-ul fiecărui client** (pașii sunt și pe pagină): Combinare
+   + Redenumește, rezumatul doar cu adăugări, previzualizare (un telefon atins, un
+   formular de test), publicare. Primul import se citește cu atenție (vezi „Faza 13
+   → Neverificat”).
+9. **Consent Mode** pe site-urile clienților cu banner de cookie-uri: fără semnalele
+   lui, în UE multe conversii nu se văd.
+10. **Id-ul acțiunii „apel din anunț”** în planurile de căutare, la
+   `assets.call.conversion_action_id` (pagina „Conversii” îl arată, cu „Copiază”).

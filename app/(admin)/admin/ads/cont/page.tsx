@@ -176,26 +176,32 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </p>
         </div>
 
-        <nav aria-label="Vederile contului" className="mt-5 flex gap-1 border-b border-hair">
+        <nav aria-label="Vederile contului" className="mt-5 flex gap-1 overflow-x-auto border-b border-hair [scrollbar-width:none]">
           {VIEWS.map((item) => (
             <Link
               key={item.id}
               href={`/admin/ads/cont?cont=${info.id}&vedere=${item.id}`}
               aria-current={view === item.id ? "page" : undefined}
               className={cn(
-                "-mb-px border-b-2 px-3 py-2.5 text-[14px] font-medium transition-colors duration-150",
+                "-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-[14px] font-medium transition-colors duration-150",
                 view === item.id ? "border-bone text-bone" : "border-transparent text-dim hover:text-bone"
               )}
             >
               {item.label}
             </Link>
           ))}
-          <Link
-            href={`/admin/ads/termeni?cont=${info.id}`}
-            className="-mb-px border-b-2 border-transparent px-3 py-2.5 text-[14px] font-medium text-dim hover:text-bone"
-          >
-            Termeni
-          </Link>
+          {[
+            { href: `/admin/ads/termeni?cont=${info.id}`, label: "Termeni" },
+            { href: `/admin/ads/conversii?cont=${info.id}`, label: "Conversii" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="-mb-px shrink-0 whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-[14px] font-medium text-dim hover:text-bone"
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
       </section>
 
