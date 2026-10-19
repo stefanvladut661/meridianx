@@ -456,7 +456,11 @@ export function BatchEditor({
                 const problems = rowProblems(row);
                 const objective = getIn(row.item.record, "campaign.objective");
                 const facts = [
-                  typeof objective === "string" && objective in OBJECTIVE_LABEL ? OBJECTIVE_LABEL[objective as Objective] : null,
+                  row.item.kind === "search"
+                    ? row.item.searchFacts
+                    : typeof objective === "string" && objective in OBJECTIVE_LABEL
+                      ? OBJECTIVE_LABEL[objective as Objective]
+                      : null,
                   row.item.dailyBudget !== null ? `${formatMoney(row.item.dailyBudget, row.item.currency)} pe zi` : null,
                   row.item.summary ? (row.item.summary.ads.length === 1 ? "1 reclamă" : countOf(row.item.summary.ads.length, "reclame")) : null,
                 ].filter(Boolean);

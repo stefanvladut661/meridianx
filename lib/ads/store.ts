@@ -18,7 +18,13 @@ export type StoreResult<T> =
   | { ok: true; data: T }
   | { ok: false; reason: StoreFailure; detail?: string };
 
-export type StoreFailure = "unconfigured" | "missing_migration" | "missing_admin_migration" | "not_found" | "error";
+export type StoreFailure =
+  | "unconfigured"
+  | "missing_migration"
+  | "missing_admin_migration"
+  | "missing_search_migration"
+  | "not_found"
+  | "error";
 
 export const STORE_FAILURE_MESSAGE: Record<StoreFailure, string> = {
   unconfigured: "Supabase nu e configurat pe server (NEXT_PUBLIC_SUPABASE_URL, cheile).",
@@ -26,6 +32,8 @@ export const STORE_FAILURE_MESSAGE: Record<StoreFailure, string> = {
     "Tabelele portalului lipsesc: aplică migrarea 6 (supabase/migrations/00000000000006_ads_portal.sql) în SQL editor.",
   missing_admin_migration:
     "Lipsește funcția is_lead_admin(): aplică întâi migrarea 5, apoi migrarea 6.",
+  missing_search_migration:
+    "Lipsesc coloanele sau tabelele noi ale portalului: aplică migrările de la 9 în sus (supabase/migrations/00000000000009_… și următoarele) în SQL editor.",
   not_found: "Campania nu există în baza portalului.",
   error: "Baza de date n-a răspuns cum trebuie.",
 };
@@ -39,6 +47,10 @@ function failure(error: { code?: string; message?: string }): { ok: false; reaso
   if (code === "42883" && /is_lead_admin/.test(message)) {
     return { ok: false, reason: "missing_admin_migration", detail: message };
   }
+  // Coloană necunoscută (Postgres 42703, PostgREST PGRST204): o migrare nouă neaplicată.
+  if (code === "42703" || code === "PGRST204" || /column .* does not exist|Could not find the '.*' column/i.test(message)) {
+    return { ok: false, reason: "missing_search_migration", detail: message };
+  }
   return { ok: false, reason: "error", detail: message };
 }
 
@@ -51,6 +63,8 @@ export interface PlatformObjects {
   adset?: string;
   creatives?: string[];
   ads?: string[];
+  /** Căutare: grupurile campaniei. */
+  adGroups?: string[];
 }
 
 export interface AdsCampaign {
@@ -70,6 +84,10 @@ export interface AdsCampaign {
   plan: Plan;
   createdAt: string;
   createdByEmail: string | null;
+  /** `search` = campanie dintr-un plan de căutare (`plan` are altă formă); null = plan video. */
+  channel: "search" | null;
+  /** Rândurile create din același plan de căutare. */
+  planGroupId: string | null;
 }
 
 interface AdsCampaignRow {
@@ -89,11 +107,15 @@ interface AdsCampaignRow {
   plan_json: Plan;
   created_at: string;
   created_by_email: string | null;
+  channel?: "search" | null;
+  plan_group_id?: string | null;
 }
 
-const COLUMNS =
+const BASE_COLUMNS =
   "id, workspace, platform, ad_account, platform_campaign_id, name, objective, daily_budget, currency, " +
   "status, creation, creation_error, platform_objects, plan_json, created_at, created_by_email";
+/** Din migrarea 9. Fără ea, citirile cad pe coloanele vechi — lista nu se strică. */
+const COLUMNS = `${BASE_COLUMNS}, channel, plan_group_id`;
 
 function toCampaign(row: AdsCampaignRow): AdsCampaign {
   return {
@@ -113,7 +135,18 @@ function toCampaign(row: AdsCampaignRow): AdsCampaign {
     plan: row.plan_json,
     createdAt: row.created_at,
     createdByEmail: row.created_by_email,
+    channel: row.channel === "search" ? "search" : null,
+    planGroupId: row.plan_group_id ?? null,
   };
+}
+
+type Query<T> = PromiseLike<{ data: T | null; error: { code?: string; message?: string } | null }>;
+
+/** O citire cu coloanele migrării 9; dacă ea nu e aplicată, aceeași citire fără ele. */
+async function withOptionalColumns<T>(run: (columns: string) => Query<T>): Promise<{ data: T | null; error: { code?: string; message?: string } | null }> {
+  const first = await run(COLUMNS);
+  if (first.error && failure(first.error).reason === "missing_search_migration") return run(BASE_COLUMNS);
+  return first;
 }
 
 // ---------------------------------------------------------------------------
@@ -176,11 +209,9 @@ export async function listCampaigns(limit = 200): Promise<StoreResult<AdsCampaig
   const supabase = await createReadOnlySessionClient();
   if (!supabase) return { ok: false, reason: "unconfigured" };
 
-  const { data, error } = await supabase
-    .from("ads_campaigns")
-    .select(COLUMNS)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const { data, error } = await withOptionalColumns((columns) =>
+    supabase.from("ads_campaigns").select(columns).order("created_at", { ascending: false }).limit(limit)
+  );
 
   if (error) return failure(error);
   return { ok: true, data: ((data ?? []) as unknown as AdsCampaignRow[]).map(toCampaign) };
@@ -191,7 +222,7 @@ export async function getCampaign(id: string): Promise<StoreResult<AdsCampaign>>
   const supabase = await createReadOnlySessionClient();
   if (!supabase) return { ok: false, reason: "unconfigured" };
 
-  const { data, error } = await supabase.from("ads_campaigns").select(COLUMNS).eq("id", id).maybeSingle();
+  const { data, error } = await withOptionalColumns((columns) => supabase.from("ads_campaigns").select(columns).eq("id", id).maybeSingle());
   if (error) return failure(error);
   if (!data) return { ok: false, reason: "not_found" };
   return { ok: true, data: toCampaign(data as unknown as AdsCampaignRow) };
@@ -227,15 +258,104 @@ export async function findRecentDuplicate(
   if (!supabase) return { ok: false, reason: "unconfigured" };
 
   const since = new Date(Date.now() - minutes * 60_000).toISOString();
-  const { data, error } = await supabase
-    .from("ads_campaigns")
-    .select(COLUMNS)
-    .eq("fingerprint", fingerprint)
-    .gte("created_at", since)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const { data, error } = await withOptionalColumns((columns) =>
+    supabase
+      .from("ads_campaigns")
+      .select(columns)
+      .eq("fingerprint", fingerprint)
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+  );
 
   if (error) return failure(error);
   return { ok: true, data: data ? toCampaign(data as unknown as AdsCampaignRow) : null };
+}
+
+// ---------------------------------------------------------------------------
+// Căutare (faza 10): mai multe campanii dintr-un singur plan
+// ---------------------------------------------------------------------------
+
+export interface NewSearchCampaignRecord {
+  platformCampaignId: string;
+  name: string;
+  dailyBudget: number;
+  /** Planul campaniei: cel de căutare, cu doar campania asta și listele ei. */
+  plan: Record<string, unknown>;
+  platformObjects: PlatformObjects;
+}
+
+/**
+ * Rândurile campaniilor create dintr-un plan de căutare, legate prin
+ * `plan_group_id` (migrarea 9). Toate sau niciunul (un singur insert).
+ * Obiectivul e `leads`: rezultatele numărate sunt conversiile contului
+ * (apeluri, formulare), ca la Demand Gen pe Lead-uri. Statusul scris e cel de
+ * la creare: PAUSED.
+ */
+export async function recordSearchCampaigns(input: {
+  workspace: string;
+  adAccount: string;
+  currency: string;
+  fingerprint: string;
+  groupId: string;
+  campaigns: NewSearchCampaignRecord[];
+  createdBy: { id: string; email: string | null };
+}): Promise<StoreResult<Array<{ id: string; platformCampaignId: string }>>> {
+  const supabase = createAdminClient();
+  if (!supabase) return { ok: false, reason: "unconfigured" };
+
+  const { data, error } = await supabase
+    .from("ads_campaigns")
+    .insert(
+      input.campaigns.map((campaign) => ({
+        workspace: input.workspace,
+        platform: "google",
+        ad_account: input.adAccount,
+        platform_campaign_id: campaign.platformCampaignId,
+        name: campaign.name,
+        objective: "leads",
+        daily_budget: campaign.dailyBudget,
+        currency: input.currency,
+        status: PAUSED,
+        creation: "complete",
+        creation_error: null,
+        platform_objects: campaign.platformObjects,
+        plan_json: campaign.plan,
+        fingerprint: input.fingerprint,
+        created_by: input.createdBy.id,
+        created_by_email: input.createdBy.email,
+        channel: "search",
+        plan_group_id: input.groupId,
+      }))
+    )
+    .select("id, platform_campaign_id");
+
+  if (error || !data) return failure(error ?? { message: "fără rânduri întoarse" });
+  return {
+    ok: true,
+    data: (data as Array<{ id: string; platform_campaign_id: string }>).map((row) => ({ id: row.id, platformCampaignId: row.platform_campaign_id })),
+  };
+}
+
+/**
+ * Campaniile create din portal într-un cont, după nume — ca verificarea unui
+ * plan de căutare să spună „creată din portal acum 3 minute”, nu doar „numele
+ * e ocupat”. Citire prin service role (verificarea rulează după sesiune).
+ */
+export async function portalCampaignsByName(adAccount: string, names: string[]): Promise<Map<string, string>> {
+  const found = new Map<string, string>();
+  const supabase = createAdminClient();
+  if (!supabase || names.length === 0) return found;
+  const { data, error } = await supabase
+    .from("ads_campaigns")
+    .select("name, created_at")
+    .eq("platform", "google")
+    .eq("ad_account", adAccount)
+    .in("name", names)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error || !data) return found;
+  for (const row of data as Array<{ name: string; created_at: string }>) if (!found.has(row.name)) found.set(row.name, row.created_at);
+  return found;
 }

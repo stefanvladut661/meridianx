@@ -40,7 +40,7 @@ type SyntaxProblem = Extract<PlanTextResult, { ok: false }>;
 
 export interface SearchEditorActions {
   checkPlan: (input: { plan: unknown; workspace: string }) => Promise<SearchCheckResponse>;
-  createPaused: (input: { plan: unknown; workspace: string; fingerprint: string; allowDuplicate: boolean }) => Promise<SearchCreateResponse>;
+  createPaused: (input: { plan: unknown; workspace: string; fingerprint: string }) => Promise<SearchCreateResponse>;
 }
 
 export function SearchEditor({
@@ -127,11 +127,11 @@ export function SearchEditor({
     });
   };
 
-  const runCreate = (allowDuplicate: boolean) => {
+  const runCreate = () => {
     if (!draft || !freshCheck || !actions) return;
     startCreate(async () => {
       try {
-        const response = await actions.createPaused({ plan: draft, workspace: current.id, fingerprint: freshCheck.fingerprint, allowDuplicate });
+        const response = await actions.createPaused({ plan: draft, workspace: current.id, fingerprint: freshCheck.fingerprint });
         setResult(response);
         if (!response.ok && response.recheck) setCheck(null);
       } catch {
@@ -355,7 +355,7 @@ export function SearchEditor({
 
         {result ? (
           <div className="mt-4">
-            <SearchCreateResult result={result} pending={creating} onCreateAnyway={() => runCreate(true)} />
+            <SearchCreateResult result={result} />
           </div>
         ) : null}
 
@@ -369,7 +369,7 @@ export function SearchEditor({
               ) : null}
               <button
                 type="button"
-                onClick={() => runCreate(false)}
+                onClick={runCreate}
                 disabled={step.action !== "create" || busy}
                 aria-describedby="search-reason"
                 className={cn(

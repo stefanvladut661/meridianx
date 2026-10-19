@@ -17,6 +17,11 @@ import { ERROR_DOT, ERROR_TEXT, WARNING_TEXT } from "./tone";
  * strânse — un plan real are zeci —, iar o eroare deschide grupul ei.
  */
 
+/** „1 grup”, „2 grupuri”, „20 de grupuri”. */
+function counted(count: number, one: string, many: string): string {
+  return count === 1 ? `1 ${one}` : countOf(count, many);
+}
+
 const MATCH_HINT = Object.fromEntries(Object.entries(MATCH_TYPE_LABEL).map(([key, label]) => [key, `potrivire ${label}`]));
 
 function hasErrorUnder(errorPaths: ReadonlySet<string>, path: string): boolean {
@@ -82,7 +87,7 @@ function CampaignBlock({ campaign, errorPaths }: { campaign: SummaryCampaign; er
           ) : null}
         </h3>
         <p className="font-md-mono text-[12px] text-dim">
-          {campaign.budget ?? "fără buget"} · {countOf(campaign.adGroups.length, "grupuri")} · {countOf(keywords, "cuvinte cheie")}
+          {campaign.budget ?? "fără buget"} · {counted(campaign.adGroups.length, "grup", "grupuri")} · {counted(keywords, "cuvânt cheie", "cuvinte cheie")}
         </p>
       </header>
 
@@ -116,7 +121,7 @@ function CampaignBlock({ campaign, errorPaths }: { campaign: SummaryCampaign; er
               {campaign.lists.map((list) => (
                 <li key={list.key}>
                   {list.name ? `„${list.name}”` : <span className={ERROR_TEXT}>lista „{list.key}” nu există în plan</span>}
-                  {list.name ? <span className="ml-2 font-md-mono text-[12px] text-dim">{countOf(list.count, "cuvinte")}</span> : null}
+                  {list.name ? <span className="ml-2 font-md-mono text-[12px] text-dim">{counted(list.count, "cuvânt", "cuvinte")}</span> : null}
                 </li>
               ))}
             </ul>
@@ -179,7 +184,7 @@ function CampaignBlock({ campaign, errorPaths }: { campaign: SummaryCampaign; er
                   {broken ? <span className="sr-only"> (de corectat)</span> : null}
                 </span>
                 <span className="font-md-mono text-[11.5px] text-dim">
-                  {countOf(group.keywords.length, "cuvinte")} · {group.ads.length === 1 ? "1 anunț" : countOf(group.ads.length, "anunțuri")}
+                  {counted(group.keywords.length, "cuvânt", "cuvinte")} · {counted(group.ads.length, "anunț", "anunțuri")}
                   {group.maxCpc ? ` · ${group.maxCpc}` : ""}
                 </span>
               </summary>
@@ -229,22 +234,26 @@ function CampaignBlock({ campaign, errorPaths }: { campaign: SummaryCampaign; er
 export function SearchPreview({
   summary,
   operations,
-  errorPaths,
+  errorPaths = new Set<string>(),
   accountLabel,
+  sent = false,
 }: {
   summary: SearchSummary;
   operations: number | null;
-  errorPaths: ReadonlySet<string>;
+  /** Căile cu erori — grupul lor se deschide și se marchează. Lipsă pe fișa unei campanii create. */
+  errorPaths?: ReadonlySet<string>;
   accountLabel: string | null;
+  /** Fișa unei campanii deja create: fără numărătoarea de operații. */
+  sent?: boolean;
 }) {
   const { totals } = summary;
   const ledger = [
-    countOf(totals.campaigns, "campanii"),
-    countOf(totals.adGroups, "grupuri"),
-    countOf(totals.keywords, "cuvinte cheie"),
-    countOf(totals.negatives, "negative"),
-    countOf(totals.ads, "anunțuri"),
-    operations !== null ? countOf(operations, "operații") : "operații: după corecturi",
+    counted(totals.campaigns, "campanie", "campanii"),
+    counted(totals.adGroups, "grup", "grupuri"),
+    counted(totals.keywords, "cuvânt cheie", "cuvinte cheie"),
+    counted(totals.negatives, "negativ", "negative"),
+    counted(totals.ads, "anunț", "anunțuri"),
+    ...(operations !== null ? [counted(operations, "operație", "operații")] : sent ? [] : ["operațiile: după corecturi"]),
   ];
 
   return (
@@ -287,7 +296,7 @@ export function SearchPreview({
             {summary.lists.map((list, index) => (
               <li key={list.key} id={fieldId(`shared_negative_lists.${index}`)} className="grid gap-x-6 gap-y-1 py-2.5 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <span className="min-w-0 text-[14.5px] text-bone [overflow-wrap:anywhere]">
-                  „{list.name}” <span className="ml-1 font-md-mono text-[12px] text-dim">{countOf(list.count, "cuvinte")}</span>
+                  „{list.name}” <span className="ml-1 font-md-mono text-[12px] text-dim">{counted(list.count, "cuvânt", "cuvinte")}</span>
                 </span>
                 <span className={cn("text-[13px]", list.usedBy.length === 0 ? WARNING_TEXT : "text-dim")}>
                   {list.usedBy.length === 0 ? "nelegată de nicio campanie" : `pe ${list.usedBy.length === 1 ? "o campanie" : countOf(list.usedBy.length, "campanii")}`}

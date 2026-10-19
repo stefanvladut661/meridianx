@@ -15,6 +15,11 @@ import { ERROR_TEXT, WARNING_TEXT } from "./tone";
  * jumătate”. Panoul primește focus când apare.
  */
 
+/** „1 grup”, „2 grupuri”, „20 de grupuri”. */
+function counted(count: number, one: string, many: string): string {
+  return count === 1 ? `1 ${one}` : countOf(count, many);
+}
+
 function ExternalLink({ href, children, light }: { href: string; children: React.ReactNode; light?: boolean }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className={cn("btn !min-h-11", light ? "btn-light" : "btn-ghost")}>
@@ -25,15 +30,7 @@ function ExternalLink({ href, children, light }: { href: string; children: React
   );
 }
 
-export function SearchCreateResult({
-  result,
-  pending,
-  onCreateAnyway,
-}: {
-  result: SearchCreateResponse;
-  pending: boolean;
-  onCreateAnyway: () => void;
-}) {
+export function SearchCreateResult({ result }: { result: SearchCreateResponse }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     ref.current?.focus({ preventScroll: false });
@@ -50,9 +47,9 @@ export function SearchCreateResult({
               {single ? "Creată pe pauză." : "Create pe pauză."}
             </p>
             <p className="mt-2 text-[14.5px] leading-snug text-bone/75">
-              {single ? "O campanie" : countOf(result.campaigns.length, "campanii")}, {countOf(result.counts.adGroups, "grupuri")},{" "}
-              {countOf(result.counts.keywords, "cuvinte cheie")} și {countOf(result.counts.ads, "anunțuri")} — toate oprite. Verifică-le în
-              Google Ads și pornește-le de acolo, când sunt gata.
+              {single ? "O campanie" : countOf(result.campaigns.length, "campanii")}, {counted(result.counts.adGroups, "grup", "grupuri")},{" "}
+              {counted(result.counts.keywords, "cuvânt cheie", "cuvinte cheie")} și {counted(result.counts.ads, "anunț", "anunțuri")} — toate
+              oprite. Verifică-le în Google Ads și pornește-le de acolo, când sunt gata.
             </p>
           </div>
         </div>
@@ -78,7 +75,8 @@ export function SearchCreateResult({
           ))}
         </ul>
         <p className="mt-3 font-md-mono text-[11.5px] text-dim">
-          {countOf(result.counts.operations, "operații")} într-o singură cerere · {countOf(result.counts.negatives, "negative")} · {countOf(result.counts.assets, "materiale")}
+          {counted(result.counts.operations, "operație", "operații")} într-o singură cerere · {counted(result.counts.negatives, "negativ", "negative")} ·{" "}
+          {counted(result.counts.assets, "material", "materiale")}
         </p>
       </div>
     );
@@ -91,14 +89,9 @@ export function SearchCreateResult({
         <p className="mt-2 text-[14px] leading-relaxed text-bone/80">{result.message}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <ExternalLink href={result.duplicate.adsManagerUrl}>Deschide campaniile existente</ExternalLink>
-          <button
-            type="button"
-            onClick={onCreateAnyway}
-            disabled={pending}
-            className="btn btn-ghost !min-h-11 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            {pending ? "Se creează…" : "Creează încă o dată, intenționat"}
-          </button>
+          <Link href={`/admin/ads/${result.duplicate.recordId}`} className="btn btn-ghost !min-h-11">
+            Fișa din portal
+          </Link>
         </div>
       </div>
     );

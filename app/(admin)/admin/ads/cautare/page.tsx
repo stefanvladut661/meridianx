@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { SearchEditor } from "@/components/ads/search-editor";
+import { checkSearchPlan, createSearchPlan } from "../actions";
 
 export const metadata: Metadata = {
   title: "Căutare — MERIDIAN Reclame",
@@ -8,6 +9,9 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
+
+/** Verificarea întreabă contul, locațiile, conversiile și adresele, apoi trimite tot planul cu validateOnly. */
+export const maxDuration = 60;
 
 /**
  * /admin/ads/cautare — planul de căutare (`meridian-google-search/1`):
@@ -36,7 +40,11 @@ export default async function SearchPlanPage() {
       ) : null}
 
       <div className="mt-8">
-        <SearchEditor workspaces={workspaces} currentWorkspaceId={currentId} />
+        <SearchEditor
+          workspaces={workspaces}
+          currentWorkspaceId={currentId}
+          actions={{ checkPlan: checkSearchPlan, createPaused: createSearchPlan }}
+        />
       </div>
     </main>
   );

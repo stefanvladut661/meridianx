@@ -55,6 +55,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 7 | Producția în masă: lotul, mai multe video-uri pe plan, „Pentru Claude”, tag-ul Google pe site | ✅ `feat/ads-portal` — testat cap-coadă pe build de producție, cu toate platformele false |
 | 8 | Google Search: formatul `meridian-google-search/1`, validarea (cu conflictele negativelor), previzualizarea | ✅ `feat/ads-google-search` — fără niciun apel la Google |
 | 9 | Garda nouă: pauza (`googlePause`), negativele pe campanii existente, listele de negative, conversiile; `verify-paused.mjs` extins | ✅ `feat/ads-google-search` — 164 de verificări, fără rețea |
+| 10 | Google Search: verificarea cu `validateOnly` și crearea pe pauză a planului de căutare; planurile de căutare în lot; migrarea 9 | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
 
 Commit separat după fiecare fază. Fazele 6 și 7 au fost cerute împreună („bagă și
 Google, scopul e producția în masă”), deci au mers fără oprire între ele.
@@ -132,6 +133,10 @@ Google, scopul e producția în masă”), deci au mers fără oprire între ele
 | `google/search/types.ts` | Faza 8. Ce ajunge în browser din verificarea și crearea unui plan de căutare. |
 | `meta/paused.ts` (faza 9) | Garda Google extinsă: listele comune (doar negative), legăturile, materialele pe campanii noi, conversiile fără status, criteriile pe campanii existente doar negative; plus `assertGooglePauseOnly`, garda pauzei. |
 | `google/api.ts` (faza 9) | `googlePause`: singura actualizare (`status: PAUSED`, `updateMask: "status"`), după garda ei; cererea `googleAds:mutate` stă într-o singură funcție privată (`sendMutate`). |
+| `google/search/check.ts` | Faza 10. „Verifică în Google” pentru planul de căutare: contul și moneda, numele ocupate, conversiile de apel, locațiile și limbile, adresele, apoi tot planul cu `validateOnly`; amprenta. |
+| `google/search/create.ts` | Faza 10. Crearea: o singură cerere atomică; un rând pe campanie în `ads_campaigns`, legate prin `plan_group_id`. |
+| `google/search/urls.ts` | Faza 10. Adresele finale întrebate scurt (`HEAD`, 6 s, fără redirecționări urmărite, doar https public). |
+| `google/targeting.ts` (faza 10) | `resolveLocations` și `resolveLanguages`, reutilizate de căutare; Demand Gen le folosește la fel ca înainte. |
 | `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea și garda fazei 9 (164 de verificări, fără rețea). |
 
 ---
@@ -1466,6 +1471,118 @@ pauza pe campanii și grupuri, toate cele 81 de operații ale exemplului de cău
 
 ---
 
+## Faza 10 — planul de căutare: verificarea și crearea pe pauză
+
+### Drumul, pe ecran
+
+Spațiul Google → **„Căutare”** → lipești planul (sau „Încarcă exemplul”) → îl
+citești → **„Verifică în Google”** → panoul „Ce a găsit Google” → **„Creează pe
+pauză”** → **„Create pe pauză.”** (sau „Creată pe pauză.” pentru o singură
+campanie), cu linkul spre lista de campanii a contului și câte un link pe
+campanie. Crearea se deblochează doar pe o verificare fără erori a EXACT
+planului de pe ecran; pe server, verificarea se reface și amprenta trebuie să
+fie aceeași.
+
+### Ce verifică (`google/search/check.ts`)
+
+1. **Contul** — cheia îl vede direct sau prin managerul MCC (același
+   `findGoogleAccount` ca la Demand Gen, cu `login-customer-id`); nu e manager;
+   e activ; **moneda contului = `currency`**.
+2. **Numele** — campaniile (nesterse) și listele comune (active) cu același nume
+   din cont: eroare pe câmpul din plan. Dacă o campanie cu numele ăla a fost
+   creată chiar din portal, mesajul spune când — un plan lipit a doua oară nu se
+   creează a doua oară.
+3. **Butoanele de apel** — acțiunea `conversion_action_id` există și e activă;
+   alt tip decât `AD_CALL` = avertisment.
+4. **Locațiile și limbile** — rezolvate cu `google/targeting.ts`
+   (`resolveLocations`, `resolveLanguages`, scoase din Demand Gen fără să-i
+   schimbe comportamentul); aceeași regiune în mai multe campanii se caută o
+   dată. Panoul arată „Cluj → Cluj County, Romania (21289)” pe fiecare campanie.
+5. **Adresele finale** (grupuri, anunțuri, linkuri suplimentare), fiecare o
+   singură dată, câte 8 în paralel, `HEAD` (sau `GET` fără corp, la serverele
+   care nu știu `HEAD`), 6 secunde, fără să urmărească redirecționările: 404/410
+   = eroare, redirecționare = avertisment (cu ținta; alt domeniu e spus
+   explicit), fără răspuns = avertisment. Doar https pe domenii publice — ca la
+   siglă.
+6. **Google însuși** — dacă nu e nicio eroare până aici, TOT planul pleacă cu
+   `validateOnly`, prin `googleMutate` (deci prin gardă). Fiecare refuz Google
+   ajunge pe câmpul din plan care l-a produs, cu numele lui („Google refuză
+   anunțul 1 din grupul „Montaj”: …”).
+
+### Maparea pe Google Ads API v26
+
+| Plan | Google |
+|---|---|
+| `shared_negative_lists[]` | `SharedSet { name, type: NEGATIVE_KEYWORDS }` + `SharedCriterion { sharedSet, keyword { text, matchType } }` |
+| `daily_budget` | `CampaignBudget { amountMicros, deliveryMethod: STANDARD, period: DAILY, explicitlyShared: false }` — implicit Google l-ar face partajat |
+| campania | `Campaign { advertisingChannelType: SEARCH, status: PAUSED, campaignBudget, containsEuPoliticalAdvertising: DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING, finalUrlSuffix? }` (declarația UE rămâne obligatorie pentru România în v26) |
+| `networks` | `networkSettings { targetGoogleSearch: true, targetSearchNetwork, targetContentNetwork, targetPartnerSearchNetwork: false }` |
+| `bidding` | `maximize_clicks` → `targetSpend { cpcBidCeilingMicros? }` (`targetSpendMicros` e învechit, nu se trimite); `manual_cpc` → `manualCpc { enhancedCpcEnabled: false }` + `AdGroup.cpcBidMicros` |
+| `location_mode` | `geoTargetTypeSetting { positiveGeoTargetType: PRESENCE / PRESENCE_OR_INTEREST, negativeGeoTargetType: PRESENCE }` |
+| `locations` · `excluded_locations` · `languages` | `CampaignCriterion { location { geoTargetConstant } }` (cu `negative: true` la excluderi), `{ language { languageConstant } }` |
+| `schedule` | câte un `CampaignCriterion { adSchedule { dayOfWeek, startHour, startMinute, endHour, endMinute } }` pe zi (`MinuteOfHour`: ZERO / FIFTEEN / THIRTY / FORTY_FIVE; 24:00 = `endHour: 24, ZERO`) |
+| `negatives` (campanie) | `CampaignCriterion { negative: true, keyword }` |
+| `negative_lists` | `CampaignSharedSet { campaign, sharedSet }` |
+| grupul | `AdGroup { status: PAUSED, type: SEARCH_STANDARD, campaign, cpcBidMicros?, finalUrlSuffix? }` |
+| `keywords` · `negatives` (grup) | `AdGroupCriterion { keyword }` / `{ negative: true, keyword }` — fără status |
+| `ads[]` | `AdGroupAd { status: PAUSED, ad { finalUrls, responsiveSearchAd { headlines[{ text, pinnedField: HEADLINE_n }], descriptions[{ text, pinnedField: DESCRIPTION_n }], path1, path2 } } }` |
+| `assets` | `Asset { finalUrls, sitelinkAsset }`, `{ calloutAsset }`, `{ structuredSnippetAsset { header, values } }`, `{ callAsset { countryCode, phoneNumber, callConversionReportingState, callConversionAction? } }` — fiecare material identic creat o dată; `CampaignAsset { campaign, asset, fieldType: SITELINK / CALLOUT / STRUCTURED_SNIPPET / CALL }` |
+
+Ordinea în cerere: listele și cuvintele lor → pe fiecare campanie bugetul,
+campania, criteriile ei, legăturile listelor, grupurile, cuvintele, anunțurile →
+materialele → legăturile materialelor. Id-urile temporare sunt negative, unice
+în cerere, și fiecare e creat înainte să fie folosit (`verify-paused.mjs` o
+verifică).
+
+### Crearea (`google/search/create.ts`)
+
+O singură cerere atomică — totul sau nimic, fără „creat pe jumătate”. În
+`ads_campaigns`, câte un rând pe campanie (migrarea 9: `channel = 'search'`,
+`plan_group_id` comun), cu planul ei (campania + listele comune pe care le
+folosește), id-urile grupurilor și ale anunțurilor. Obiectivul rândului e
+`leads`: rezultatele numărate de sincronizare sunt conversiile contului
+(apeluri, formulare), ca la Demand Gen pe Lead-uri. Lista de campanii scrie
+„Căutare” în dreptul lor, iar fișa (`/admin/ads/[id]`) arată campania exact cum a
+fost trimisă, cu aceeași previzualizare ca la creare.
+
+**Dublura:** același plan (aceeași amprentă), creat în ultimele 30 de minute
+(14 zile în lot), nu se mai trimite: rezultatul spune când și de cine a fost
+creat. Oricum, Google n-ar primi a doua oară aceleași nume de campanii.
+
+### Lotul
+
+Planurile de căutare intră în lot (`/admin/ads/lot`) — regulile lotului li se
+potrivesc: un lot e al unui singur proprietar (Meridian sau Clienți), fiecare
+plan se verifică și se creează în spațiul scris în el, un plan identic e
+eroare, un plan creat în ultimele 14 zile se sare. Pe rând apare „Căutare · N
+campanii · M grupuri · K cuvinte cheie · X operații”, iar suma bugetelor intră
+în totalul lotului. **De știut:** fiecare plan de căutare consumă din operațiile
+zilnice ale proiectului Google Cloud (verificarea și crearea, fiecare câte un
+plan întreg); la nivelul Explorer (2.880/zi), un lot cu mai multe planuri mari
+nu încape într-o zi.
+
+### Verificat (Chrome headless, Google și Supabase falși locali)
+
+Exemplul verificat (81 de operații cu `validateOnly`, contul văzut prin MCC,
+regiunea și orașul rezolvate, 6 adrese), creat (o singură cerere reală, doar
+`PAUSED` pe campanii, grupuri și anunțuri, niciun `ENABLED` în jurnalul
+falsului), apoi verificat a doua oară (numele ocupate, prinse); lista și fișa
+campaniei; o adresă 404 (eroare pe câmpul ei); un refuz de politică al Google pe
+un titlu (mutat pe anunțul din plan, grupul se deschide la clic); același plan
+în lot (citit, verificat, creat; a doua oară — numele ocupate). Fără derulare
+laterală la 360, 768, 1024, 1440 și 1920; focusul trece pe panoul verificării,
+apoi pe rezultat; fără erori în consolă; reduced-motion.
+
+### Neverificat încă — se confirmă la prima creare reală
+
+1. Mesajele reale ale Google pentru numele duplicate (portalul le prinde oricum
+   înainte, din citire).
+2. Comportamentul serverelor clienților la `HEAD` (unele răspund 403 roboților:
+   portalul îl spune ca avertisment, nu ca eroare).
+3. Timpul unei verificări pe un plan cu ~750 de operații (`maxDuration` e 60 s).
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server, cu o excepție marcată (`NEXT_PUBLIC_`).
@@ -1818,10 +1935,32 @@ unde a fost de ales, am ales varianta cea mai sigură și mai simplă și am not
    dar interfața pune pe pauză doar campanii.
 13. **Faza 9 — o singură funcție de rețea pentru mutate** (`sendMutate`, privată),
    cu două uși, fiecare cu garda ei; `verify-paused.mjs` verifică structura.
+14. **Faza 10 — un rând pe campanie, cu `plan_group_id`** (migrarea 9) și
+   `channel = 'search'`: campaniile apar în listă, în statistici și în
+   sincronizare ca oricare altele; rândurile aceluiași plan rămân legate.
+15. **Faza 10 — obiectivul rândurilor de căutare e `leads`**: rezultatele sunt
+   conversiile contului (apeluri, formulare). Clicurile se văd oricum separat.
+16. **Faza 10 — citirile tolerează migrarea 9 neaplicată**: lista și fișa cad pe
+   coloanele vechi, deci un deploy înaintea migrării nu strică pagina; doar
+   crearea unui plan de căutare cere migrarea (și spune asta).
+17. **Faza 10 — fără „Creează încă o dată, intenționat” la căutare**: Google n-ar
+   primi aceleași nume a doua oară; dublura trimite la campaniile existente.
+18. **Faza 10 — adresele se întreabă cu `HEAD`, fără redirecționări urmărite**;
+   un 403 sau o lipsă de răspuns sunt avertismente (mulți servere blochează
+   roboții), doar 404/410/5xx sunt erori.
+19. **Faza 10 — planurile de căutare intră în lot**, cu aceleași reguli; cu
+   avertismentul despre operațiile zilnice în README.
 
 ## De făcut de om (fazele 8–14)
 
 Ce nu ține de zona portalului sau nu se poate face din cod. Fiecare punct spune
 exact ce și de ce.
 
-1. **Faza 8: nimic.** Pagina „Căutare” funcționează și fără chei, doar cu validarea.
+1. **Migrarea 9** (`supabase/migrations/00000000000009_ads_google_search.sql`):
+   lipită în Supabase → SQL Editor → Run, după migrările 5–8. Fără ea, crearea
+   unui plan de căutare reușește în Google Ads, dar nu se notează în portal
+   (mesajul o spune). Se poate rula de mai multe ori.
+2. **`supabase/portal-reclame.sql`** (fișierul „o singură lipire”) e în afara
+   zonei fazelor 8–14, deci nu l-am atins: la merge, migrările 9 și următoarele se
+   adaugă la finalul lui (sunt scrise să poată rula de mai multe ori) — sau se
+   rulează separat, în ordine.

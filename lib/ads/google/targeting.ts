@@ -1,7 +1,7 @@
 import "server-only";
 
 import { COUNTRY_LABEL } from "../constants";
-import type { Plan } from "../plan-schema";
+import type { Plan, PlanLocation } from "../plan-schema";
 import type { PlanProblem } from "../plan-validate";
 import type { ResolvedName } from "../types";
 import type { AdsWorkspace } from "../workspaces";
@@ -105,59 +105,74 @@ async function interestsOf(workspace: AdsWorkspace, account: GoogleAccount) {
 
 const TAXONOMY_LABEL: Record<string, string> = { AFFINITY: "afinitate", IN_MARKET: "în piață" };
 
-export async function resolveGoogleTargeting(
+/** Rezultatul rezolvării unei liste de locații: constantele, numele găsite, problemele. */
+export interface ResolvedLocations {
+  geoTargets: string[];
+  names: ResolvedName[];
+  errors: PlanProblem[];
+  warnings: PlanProblem[];
+}
+
+/**
+ * Locațiile unei liste din plan → constantele Google, în ordine. Lista se
+ * modifică pe loc: fiecare locație găsită primește `key`. Căutările se țin
+ * în `cache` (aceeași regiune în patru campanii = o singură căutare).
+ * `radiusNote` — avertismentul pentru o rază pe care Google n-o folosește
+ * (la căutare, raza e oricum refuzată de validare).
+ */
+export async function resolveLocations(
   workspace: AdsWorkspace,
-  account: GoogleAccount,
-  input: Plan
-): Promise<GoogleTargeting> {
-  const plan: Plan = structuredClone(input);
+  locations: PlanLocation[],
+  pathPrefix: string,
+  options: { radiusNote?: (index: number, radius: number) => string; cache?: Map<string, RawSuggestion[]> } = {}
+): Promise<ResolvedLocations> {
   const errors: PlanProblem[] = [];
   const warnings: PlanProblem[] = [];
-  const locations: ResolvedName[] = [];
-  const languages: ResolvedName[] = [];
-  const interests: ResolvedName[] = [];
+  const names: ResolvedName[] = [];
   const geoTargets: string[] = [];
-  const languageConstants: string[] = [];
-  const interestIds: string[] = [];
+  const lookup = async (name: string, country: string) => {
+    const key = `${country}|${name}`;
+    const cached = options.cache?.get(key);
+    if (cached) return cached;
+    const found = await suggest(workspace, name, country);
+    options.cache?.set(key, found);
+    return found;
+  };
 
-  // Locațiile, în ordinea planului.
-  for (const [index, location] of plan.audience.locations.entries()) {
-    const path = `audience.locations.${index}`;
+  for (const [index, location] of locations.entries()) {
+    const path = `${pathPrefix}.${index}`;
     if (location.type === "country") {
       const id = COUNTRY_GEO[location.code];
       if (id) {
-        locations.push({ path, asked: location.code, found: COUNTRY_LABEL[location.code] ?? location.code, key: id, given: true });
+        names.push({ path, asked: location.code, found: COUNTRY_LABEL[location.code] ?? location.code, key: id, given: true });
         geoTargets.push(`geoTargetConstants/${id}`);
         continue;
       }
-      const match = (await suggest(workspace, COUNTRY_LABEL[location.code] ?? location.code, location.code)).find(
+      const match = (await lookup(COUNTRY_LABEL[location.code] ?? location.code, location.code)).find(
         (item) => item.geoTargetConstant?.targetType === "Country"
       )?.geoTargetConstant;
       if (!match?.id) {
-        locations.push({ path, asked: location.code, found: null, key: null, given: false });
+        names.push({ path, asked: location.code, found: null, key: null, given: false });
         errors.push({ path, message: `Google nu găsește țara ${location.code}.` });
         continue;
       }
-      locations.push({ path, asked: location.code, found: match.canonicalName ?? match.name ?? location.code, key: match.id, given: false });
+      names.push({ path, asked: location.code, found: match.canonicalName ?? match.name ?? location.code, key: match.id, given: false });
       geoTargets.push(`geoTargetConstants/${match.id}`);
       continue;
     }
 
     const asked = location.name;
     if (location.key) {
-      locations.push({ path, asked, found: location.name, key: location.key, given: true });
+      names.push({ path, asked, found: location.name, key: location.key, given: true });
       geoTargets.push(`geoTargetConstants/${location.key.replace(/^geoTargetConstants\//, "")}`);
       continue;
     }
-    if (location.type === "city" && location.radius_km) {
-      warnings.push({
-        path: `${path}.radius_km`,
-        message: `Pe Google, campaniile Demand Gen țintesc orașul, nu o rază în jurul lui: locația ${index + 1} se ia fără cei ${location.radius_km} km.`,
-      });
+    if (location.type === "city" && location.radius_km && options.radiusNote) {
+      warnings.push({ path: `${path}.radius_km`, message: options.radiusNote(index, location.radius_km) });
     }
     const types = location.type === "city" ? CITY_TYPES : REGION_TYPES;
     const wanted = normalize(location.name);
-    const candidates = (await suggest(workspace, location.name, location.country))
+    const candidates = (await lookup(location.name, location.country))
       .map((item) => item.geoTargetConstant)
       .filter((item): item is NonNullable<RawSuggestion["geoTargetConstant"]> => Boolean(item?.id && item.status !== "REMOVAL_PLANNED"))
       .filter((item) => !item.countryCode || item.countryCode === location.country)
@@ -166,7 +181,7 @@ export async function resolveGoogleTargeting(
       candidates.find((item) => normalize(item.name ?? "") === wanted) ??
       (candidates.length === 1 ? candidates[0] : null);
     if (!match?.id) {
-      locations.push({ path, asked, found: null, key: null, given: false });
+      names.push({ path, asked, found: null, key: null, given: false });
       errors.push({
         path: `${path}.name`,
         message: `Google nu găsește ${location.type === "city" ? "orașul" : "regiunea"} „${location.name}” în ${COUNTRY_LABEL[location.country] ?? location.country}. Verifică scrierea sau pune id-ul locației Google în "key".`,
@@ -174,34 +189,70 @@ export async function resolveGoogleTargeting(
       continue;
     }
     location.key = match.id;
-    locations.push({ path, asked, found: match.canonicalName ?? match.name ?? asked, key: match.id, given: false });
+    names.push({ path, asked, found: match.canonicalName ?? match.name ?? asked, key: match.id, given: false });
     geoTargets.push(`geoTargetConstants/${match.id}`);
   }
+  return { geoTargets, names, errors, warnings };
+}
+
+/** Limbile (coduri ISO) → constantele Google. O limbă necunoscută e eroare. */
+export async function resolveLanguages(
+  workspace: AdsWorkspace,
+  account: GoogleAccount,
+  codes: string[],
+  pathPrefix: string
+): Promise<{ languageConstants: string[]; names: ResolvedName[]; errors: PlanProblem[] }> {
+  const languageConstants: string[] = [];
+  const names: ResolvedName[] = [];
+  const errors: PlanProblem[] = [];
+  if (codes.length === 0) return { languageConstants, names, errors };
+  const rows = await googleSearch<{ languageConstant?: { id?: string; code?: string; name?: string; targetable?: boolean } }>(
+    workspace,
+    account.info.id,
+    `SELECT language_constant.id, language_constant.code, language_constant.name, language_constant.targetable FROM language_constant WHERE language_constant.code IN (${codes.map((code) => `'${code}'`).join(", ")})`,
+    { loginCustomerId: account.loginCustomerId }
+  );
+  for (const [index, code] of codes.entries()) {
+    const path = `${pathPrefix}.${index}`;
+    const match = rows.map((row) => row.languageConstant).find((item) => item?.code?.toLowerCase() === code && item.targetable !== false);
+    if (!match?.id) {
+      names.push({ path, asked: code, found: null, key: null, given: false });
+      errors.push({ path, message: `Google nu are limba „${code}” printre limbile de targetare.` });
+      continue;
+    }
+    languageConstants.push(`languageConstants/${match.id}`);
+    names.push({ path, asked: code, found: match.name ?? code, key: match.id, given: false });
+  }
+  return { languageConstants, names, errors };
+}
+
+export async function resolveGoogleTargeting(
+  workspace: AdsWorkspace,
+  account: GoogleAccount,
+  input: Plan
+): Promise<GoogleTargeting> {
+  const plan: Plan = structuredClone(input);
+  const interests: ResolvedName[] = [];
+  const interestIds: string[] = [];
+
+  // Locațiile, în ordinea planului. Demand Gen nu are rază pe grup.
+  const located = await resolveLocations(workspace, plan.audience.locations, "audience.locations", {
+    radiusNote: (index, radius) =>
+      `Pe Google, campaniile Demand Gen țintesc orașul, nu o rază în jurul lui: locația ${index + 1} se ia fără cei ${radius} km.`,
+  });
+  const errors: PlanProblem[] = [...located.errors];
+  const warnings: PlanProblem[] = [...located.warnings];
+  const locations = located.names;
+  const geoTargets = located.geoTargets;
   if (new Set(geoTargets).size !== geoTargets.length) {
     errors.push({ path: "audience.locations", message: "Aceeași locație apare de două ori în plan. Scoate dublura." });
   }
 
   // Limbile.
-  if (plan.audience.languages.length > 0) {
-    const codes = plan.audience.languages.map((code) => `'${code}'`).join(", ");
-    const rows = await googleSearch<{ languageConstant?: { id?: string; code?: string; name?: string; targetable?: boolean } }>(
-      workspace,
-      account.info.id,
-      `SELECT language_constant.id, language_constant.code, language_constant.name, language_constant.targetable FROM language_constant WHERE language_constant.code IN (${codes})`,
-      { loginCustomerId: account.loginCustomerId }
-    );
-    for (const [index, code] of plan.audience.languages.entries()) {
-      const path = `audience.languages.${index}`;
-      const match = rows.map((row) => row.languageConstant).find((item) => item?.code?.toLowerCase() === code && item.targetable !== false);
-      if (!match?.id) {
-        languages.push({ path, asked: code, found: null, key: null, given: false });
-        errors.push({ path, message: `Google nu are limba „${code}” printre limbile de targetare.` });
-        continue;
-      }
-      languageConstants.push(`languageConstants/${match.id}`);
-      languages.push({ path, asked: code, found: match.name ?? code, key: match.id, given: false });
-    }
-  }
+  const spoken = await resolveLanguages(workspace, account, plan.audience.languages, "audience.languages");
+  errors.push(...spoken.errors);
+  const languages = spoken.names;
+  const languageConstants = spoken.languageConstants;
 
   // Interesele: segmentele Google de afinitate și „în piață".
   if (plan.audience.interests.length > 0) {

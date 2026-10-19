@@ -6,6 +6,8 @@ import { addDays, fillDays, formatAmount, formatCount, periodRange, todayInBucha
 import { campaignUrl, managerName } from "@/lib/ads/links";
 import { buildFinalUrl, countOf } from "@/lib/ads/plan-derive";
 import { summarizePlan } from "@/lib/ads/plan-summary";
+import { summarizeSearchPlan } from "@/lib/ads/google/search/summary";
+import { SearchPreview } from "@/components/ads/search-preview";
 import { readCampaignDays } from "@/lib/ads/stats";
 import { STORE_FAILURE_MESSAGE, getCampaign } from "@/lib/ads/store";
 import { listWorkspaces } from "@/lib/ads/workspaces.server";
@@ -69,8 +71,11 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   const weekBefore = totalsOf(rows.filter((row) => row.date >= week.previousFrom && row.date <= week.previousTo));
 
   const plan = campaign.plan;
-  const summary = summarizePlan(plan as unknown as Record<string, unknown>, campaign.platform);
-  const finalUrl = buildFinalUrl(plan.destination.url, plan.destination.utm ?? null) ?? plan.destination.url;
+  const search = campaign.channel === "search";
+  // Planul de căutare are altă formă (faza 10): fișa lui arată campania cum a fost trimisă, nu un video.
+  const summary = search ? null : summarizePlan(plan as unknown as Record<string, unknown>, campaign.platform);
+  const searchSummary = search ? summarizeSearchPlan(plan as unknown as Record<string, unknown>) : null;
+  const finalUrl = search ? null : (buildFinalUrl(plan.destination.url, plan.destination.utm ?? null) ?? plan.destination.url);
   const paused = isPausedStatus(campaign.status);
 
   return (
@@ -93,7 +98,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               <span className="font-md-mono uppercase tracking-[0.14em] text-bone/85">
                 {campaignStatusLabel(campaign.status)}
               </span>
-              <span>{OBJECTIVE_LABEL[campaign.objective]}</span>
+              <span>{search ? "Căutare" : OBJECTIVE_LABEL[campaign.objective]}</span>
               <span>
                 {formatAmount(campaign.dailyBudget, campaign.currency)} pe zi
               </span>
@@ -185,6 +190,29 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         </>
       )}
 
+      {searchSummary ? (
+        <section aria-labelledby="campania-trimisa" className="mt-14">
+          <h2 id="campania-trimisa" className="eyebrow">
+            Campania, cum a fost trimisă
+          </h2>
+          <div className="mt-4 max-w-4xl">
+            <SearchPreview summary={searchSummary} operations={null} accountLabel={campaign.adAccount} sent />
+          </div>
+          <details className="group mt-6 max-w-4xl">
+            <summary className="cursor-pointer list-none text-[14px] font-semibold text-bone underline-offset-4 hover:underline">
+              <span aria-hidden className="mr-2 inline-block transition-transform duration-150 group-open:rotate-90">
+                ›
+              </span>
+              Planul JSON al campaniei, cu cheile locațiilor găsite de Google
+            </summary>
+            <pre className="mt-3 max-h-[28rem] overflow-auto rounded-panel-lg border border-hair bg-ink/60 p-4 font-md-mono text-[12px] leading-relaxed text-bone/85">
+              {JSON.stringify(plan, null, 2)}
+            </pre>
+          </details>
+        </section>
+      ) : null}
+
+      {summary ? (
       <section aria-labelledby="material" className="mt-14 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div>
           <h2 id="material" className="eyebrow">
@@ -234,6 +262,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           />
         </div>
       </section>
+      ) : null}
     </main>
   );
 }

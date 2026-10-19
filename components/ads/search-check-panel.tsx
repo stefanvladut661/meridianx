@@ -96,8 +96,14 @@ export function SearchCheckPanel({ check, stale }: { check: SearchCheck; stale: 
             Crearea
           </dt>
           <dd className="min-w-0 text-[14.5px] text-bone/90">
-            {countOf(check.operations, "operații")} trimise la Google cu <span className="font-md-mono text-[13px]">validateOnly</span>
-            {check.ok ? " — Google le-ar accepta pe toate. Nu s-a creat nimic." : " — nu s-a creat nimic."}
+            {check.operations === 0 ? (
+              "Nimic trimis la Google încă: întâi corecturile de mai jos, apoi „Verifică din nou” trimite tot planul cu validateOnly."
+            ) : (
+              <>
+                {countOf(check.operations, "operații")} trimise la Google cu <span className="font-md-mono text-[13px]">validateOnly</span>
+                {check.ok ? " — Google le-ar accepta pe toate. Nu s-a creat nimic." : " — nu s-a creat nimic."}
+              </>
+            )}
           </dd>
         </div>
         {check.callConversions.length > 0 ? (

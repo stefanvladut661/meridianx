@@ -70,7 +70,7 @@ export function CampaignList({
                   >
                     {workspace?.name ?? campaign.workspace}
                   </span>
-                  <span>{OBJECTIVE_LABEL[campaign.objective] ?? campaign.objective}</span>
+                  <span>{campaign.channel === "search" ? "Căutare" : (OBJECTIVE_LABEL[campaign.objective] ?? campaign.objective)}</span>
                   <span aria-hidden>·</span>
                   <span className="font-md-mono text-[12px] tabular-nums">
                     {formatLeadDateTime(campaign.createdAt)}

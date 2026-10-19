@@ -22,6 +22,14 @@ import { PIXEL_ID as SITE_META_PIXEL_ID } from "@/lib/meta-pixel";
 import { TIKTOK_PIXEL_ID as SITE_TIKTOK_PIXEL_CODE } from "@/lib/tiktok-pixel";
 import { GOOGLE_ADS_LEAD_SEND_TO } from "@/lib/google-tag";
 import { SITE_URL } from "@/lib/site-url";
+import { describeGoogleError } from "@/lib/ads/google/errors";
+import { checkSearchOnGoogle } from "@/lib/ads/google/search/check";
+import { createSearchOnGoogle } from "@/lib/ads/google/search/create";
+import type { SearchPlan } from "@/lib/ads/google/search/schema";
+import type { SearchCheck, SearchCheckResponse, SearchCreateResponse } from "@/lib/ads/google/search/types";
+import { validateSearchPlan } from "@/lib/ads/google/search/validate";
+import { planFormatOf } from "@/lib/ads/plan-json";
+import type { PlatformCheck } from "@/lib/ads/types";
 
 /**
  * Acțiunile portalului de reclame.
@@ -232,6 +240,131 @@ async function createPrepared(
 }
 
 // ---------------------------------------------------------------------------
+// Planul de căutare (faza 10): verificare cu validateOnly, creare atomică
+// ---------------------------------------------------------------------------
+
+type SearchPrepared =
+  | { ok: true; user: { id: string; email: string | null }; workspace: AdsWorkspace; plan: SearchPlan }
+  | { ok: false; message: string; problems?: { path: string; message: string }[] };
+
+function validateSearchFor(workspace: AdsWorkspace, plan: unknown, user: { id: string; email: string | null }): SearchPrepared {
+  if (workspace.platform !== "google") {
+    return { ok: false, message: `Planurile de căutare se creează în Google Ads, iar ${workspaceName(workspace)} e pe altă platformă. Nu s-a trimis nimic.` };
+  }
+  const validation = validateSearchPlan(plan, { currentWorkspace: workspace.id });
+  if (!validation.ok) {
+    return { ok: false, message: "Planul are greșeli — corectează-le și verifică din nou.", problems: validation.errors };
+  }
+  return { ok: true, user, workspace, plan: validation.plan };
+}
+
+async function prepareSearchPlan(input: { plan: unknown; workspace: string }): Promise<SearchPrepared> {
+  const context = await session(input.workspace);
+  if (!context.ok) return context;
+  return validateSearchFor(context.workspace, input.plan, context.user);
+}
+
+async function checkSearchPrepared(prepared: Extract<SearchPrepared, { ok: true }>): Promise<SearchCheckResponse> {
+  try {
+    const { check } = await checkSearchOnGoogle(prepared.workspace, prepared.plan);
+    return { ok: true, check };
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "verificarea planului", prepared.workspace.tokenEnv) };
+  }
+}
+
+export async function checkSearchPlan(input: { plan: unknown; workspace: string }): Promise<SearchCheckResponse> {
+  const prepared = await prepareSearchPlan(input);
+  if (!prepared.ok) return prepared;
+  return checkSearchPrepared(prepared);
+}
+
+async function createSearchPrepared(
+  prepared: Extract<SearchPrepared, { ok: true }>,
+  options: { fingerprint: string; duplicateMinutes: number }
+): Promise<SearchCreateResponse> {
+  const { workspace, plan, user } = prepared;
+
+  // Același plan, creat de curând: campaniile există deja (iar Google n-ar
+  // primi a doua oară aceleași nume). Întâi baza — e mai ieftină decât Google.
+  const duplicate = await findRecentDuplicate(options.fingerprint, options.duplicateMinutes);
+  if (!duplicate.ok) return { ok: false, message: STORE_FAILURE_MESSAGE[duplicate.reason] };
+  if (duplicate.data) {
+    return {
+      ok: false,
+      message: `Exact planul ăsta a fost creat ${agoLabel(duplicate.data.createdAt)}${duplicate.data.createdByEmail ? `, de ${duplicate.data.createdByEmail}` : ""}. Campaniile lui sunt deja în cont, oprite; Google n-ar primi a doua oară aceleași nume.`,
+      duplicate: {
+        createdAt: duplicate.data.createdAt,
+        adsManagerUrl: campaignUrl("google", duplicate.data.adAccount, duplicate.data.platformCampaignId),
+        recordId: duplicate.data.id,
+      },
+    };
+  }
+
+  // Verificarea se reface aici, pe server: amprenta trebuie să fie cea văzută de om.
+  let context: Awaited<ReturnType<typeof checkSearchOnGoogle>>;
+  try {
+    context = await checkSearchOnGoogle(workspace, plan);
+  } catch (error) {
+    return { ok: false, message: describeGoogleError(error, "verificarea dinaintea creării", workspace.tokenEnv) };
+  }
+  if (!context.check.ok) {
+    return { ok: false, message: "Verificarea pe Google a găsit probleme noi. Verifică din nou planul.", problems: context.check.errors, recheck: true };
+  }
+  if (context.check.fingerprint !== options.fingerprint) {
+    return { ok: false, message: "Planul sau ce a găsit Google s-a schimbat de la verificare. Verifică din nou, ca să creezi exact ce vezi pe ecran.", recheck: true };
+  }
+
+  const result = await createSearchOnGoogle({ workspace, context, user });
+  revalidatePath("/admin/ads");
+  return result;
+}
+
+export async function createSearchPlan(input: { plan: unknown; workspace: string; fingerprint: string }): Promise<SearchCreateResponse> {
+  const prepared = await prepareSearchPlan(input);
+  if (!prepared.ok) return prepared;
+  return createSearchPrepared(prepared, { fingerprint: input.fingerprint, duplicateMinutes: 30 });
+}
+
+/**
+ * Verificarea unui plan de căutare, în forma pe care o citește lotul: același
+ * panou ca pentru planurile video (contul, locațiile și limbile găsite, erorile).
+ */
+function searchCheckForBatch(check: SearchCheck): PlatformCheck {
+  return {
+    platform: "google",
+    ok: check.ok,
+    fingerprint: check.fingerprint,
+    checkedAt: check.checkedAt,
+    account: check.account,
+    identity: null,
+    instagram: null,
+    pixel: check.callConversions[0] ? { id: check.callConversions[0].id, name: `${check.callConversions[0].name} · apeluri` } : null,
+    video: null,
+    videos: [],
+    dsa: null,
+    conversionDomain: null,
+    locations: check.campaigns.flatMap((campaign) => [...campaign.locations, ...campaign.excluded.map((name) => ({ ...name, asked: `fără ${name.asked}` }))]),
+    languages: check.campaigns.flatMap((campaign) => campaign.languages),
+    interests: [],
+    behaviors: [],
+    errors: check.errors,
+    warnings: [...check.warnings, { path: "", message: `${check.operations} de operații trimise la Google cu validateOnly — ${check.ok ? "le-ar accepta pe toate" : "nu s-a creat nimic"}.` }],
+  };
+}
+
+function searchCreateForBatch(result: SearchCreateResponse): CreateResponse {
+  if (!result.ok) return result;
+  return {
+    ok: true,
+    recordId: result.campaigns[0]?.recordId ?? null,
+    adsManagerUrl: result.accountUrl,
+    created: result.campaigns.map((campaign) => ({ kind: "campaign" as const, id: campaign.id, name: campaign.name })),
+    storeWarning: result.storeWarning,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Lotul: mai multe planuri, același proprietar
 // ---------------------------------------------------------------------------
 
@@ -272,7 +405,28 @@ async function prepareBatchPlan(input: { plan: unknown; screenWorkspace: string 
   return { ok: true, user: screen.user, workspace, adapter: adapterFor(workspace.platform), plan: validation.plan };
 }
 
+/** Un plan de căutare din lot: aceeași regulă a banilor, apoi validarea de căutare. */
+async function prepareBatchSearch(input: { plan: unknown; screenWorkspace: string }): Promise<SearchPrepared> {
+  const screen = await session(input.screenWorkspace);
+  if (!screen.ok) return screen;
+  const workspace = findWorkspace((input.plan as { workspace?: unknown } | null)?.workspace);
+  if (!workspace) return { ok: false, message: "Planul nu spune un spațiu de lucru cunoscut. Corectează câmpul workspace." };
+  if (workspace.owner !== screen.workspace.owner) {
+    return {
+      ok: false,
+      message: `Planul e pentru ${workspaceName(workspace)}, iar lotul e pentru ${workspaceName(screen.workspace)}: un lot nu amestecă banii agenției cu ai clienților. Nu s-a trimis nimic.`,
+    };
+  }
+  return validateSearchFor(workspace, input.plan, screen.user);
+}
+
 export async function checkBatchPlan(input: { plan: unknown; screenWorkspace: string }): Promise<CheckResponse> {
+  if (planFormatOf(input.plan) === "search") {
+    const prepared = await prepareBatchSearch(input);
+    if (!prepared.ok) return prepared;
+    const response = await checkSearchPrepared(prepared);
+    return response.ok ? { ok: true, check: searchCheckForBatch(response.check) } : response;
+  }
   const prepared = await prepareBatchPlan(input);
   if (!prepared.ok) return prepared;
   return checkPrepared(prepared);
@@ -288,6 +442,13 @@ export async function createBatchPlan(input: {
   screenWorkspace: string;
   fingerprint: string;
 }): Promise<CreateResponse> {
+  if (planFormatOf(input.plan) === "search") {
+    const search = await prepareBatchSearch(input);
+    if (!search.ok) return search;
+    return searchCreateForBatch(
+      await createSearchPrepared(search, { fingerprint: input.fingerprint, duplicateMinutes: BATCH_DUPLICATE_DAYS * 24 * 60 })
+    );
+  }
   const prepared = await prepareBatchPlan(input);
   if (!prepared.ok) return prepared;
   return createPrepared(prepared, {

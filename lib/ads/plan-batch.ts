@@ -1,5 +1,8 @@
 import { CURRENCIES, type Currency } from "./constants";
-import { batchPlansOf, parseJsonText, type PlanTextFailure } from "./plan-json";
+import { summarizeSearchPlan } from "./google/search/summary";
+import { validateSearchPlan } from "./google/search/validate";
+import { countOf } from "./plan-derive";
+import { batchPlansOf, parseJsonText, planFormatOf, type PlanTextFailure } from "./plan-json";
 import { asNumber, asRecord, asString, getIn } from "./plan-path";
 import { summarizePlan, type PlanSummary } from "./plan-summary";
 import { validatePlan, type PlanProblem } from "./plan-validate";
@@ -48,8 +51,13 @@ export interface BatchItem {
   /** Validarea a trecut, cu regulile lotului cu tot. */
   valid: boolean;
   summary: PlanSummary | null;
+  /** Suma bugetelor zilnice ale planului (la căutare: toate campaniile lui). */
   dailyBudget: number | null;
   currency: Currency | null;
+  /** `search` = plan de căutare (`meridian-google-search/1`), cu altă formă și altă verificare. */
+  kind: "video" | "search";
+  /** La căutare: „Căutare · 4 campanii · 17 grupuri · 200 de cuvinte cheie”. */
+  searchFacts: string | null;
 }
 
 export type BatchRead =
@@ -117,19 +125,49 @@ function readItem(raw: unknown, index: number, owner: AdsWorkspace["owner"]): Ba
       summary: null,
       dailyBudget: null,
       currency: null,
+      kind: "video",
+      searchFacts: null,
     };
   }
 
   const workspace = findWorkspace(record.workspace);
+  const moneyRule = (errors: PlanProblem[]) => {
+    if (workspace && workspace.owner !== owner) {
+      errors.unshift({
+        path: "workspace",
+        message: `Lotul e pentru ${ownerLabel(owner) === "Meridian" ? "reclamele agenției (Meridian)" : "banii clienților (Clienți)"}, iar planul ăsta e pentru ${workspaceName(workspace)}. Un lot nu amestecă banii agenției cu ai clienților: pune planul în alt lot sau schimbă spațiul de sus.`,
+      });
+    }
+    return errors;
+  };
+
+  // Planul de căutare: altă validare, același lot (aceeași regulă a banilor).
+  if (planFormatOf(record) === "search") {
+    const validation = validateSearchPlan(record, { currentWorkspace: workspace?.id ?? null });
+    const errors = moneyRule([...validation.errors]);
+    const search = summarizeSearchPlan(record);
+    const first = search.campaigns[0]?.name ?? `Planul ${index + 1}`;
+    const currencyValue = record.currency;
+    return {
+      index,
+      raw,
+      record,
+      key,
+      name: search.campaigns.length > 1 ? `${first} + încă ${search.campaigns.length - 1}` : first,
+      workspace,
+      errors,
+      warnings: validation.warnings,
+      valid: errors.length === 0,
+      summary: null,
+      dailyBudget: search.totals.dailyBudget,
+      currency: CURRENCIES.includes(currencyValue as Currency) ? (currencyValue as Currency) : null,
+      kind: "search",
+      searchFacts: `Căutare · ${search.totals.campaigns === 1 ? "o campanie" : countOf(search.totals.campaigns, "campanii")} · ${countOf(search.totals.adGroups, "grupuri")} · ${countOf(search.totals.keywords, "cuvinte cheie")}${validation.operations !== null ? ` · ${countOf(validation.operations, "operații")}` : ""}`,
+    };
+  }
   // Fiecare plan se validează în spațiul scris în el; regula banilor vine separat.
   const validation = validatePlan(record, { currentWorkspace: workspace?.id ?? null });
-  const errors = [...validation.errors];
-  if (workspace && workspace.owner !== owner) {
-    errors.unshift({
-      path: "workspace",
-      message: `Lotul e pentru ${ownerLabel(owner) === "Meridian" ? "reclamele agenției (Meridian)" : "banii clienților (Clienți)"}, iar planul ăsta e pentru ${workspaceName(workspace)}. Un lot nu amestecă banii agenției cu ai clienților: pune planul în alt lot sau schimbă spațiul de sus.`,
-    });
-  }
+  const errors = moneyRule([...validation.errors]);
 
   const currencyRaw = getIn(record, "campaign.currency");
   return {
@@ -145,6 +183,8 @@ function readItem(raw: unknown, index: number, owner: AdsWorkspace["owner"]): Ba
     summary: workspace ? summarizePlan(record, workspace.platform) : null,
     dailyBudget: asNumber(getIn(record, "campaign.daily_budget")),
     currency: CURRENCIES.includes(currencyRaw as Currency) ? (currencyRaw as Currency) : null,
+    kind: "video",
+    searchFacts: null,
   };
 }
 
