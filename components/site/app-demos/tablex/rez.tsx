@@ -12,7 +12,6 @@ import {
   EyeOff,
   LayoutGrid,
   LogIn,
-  MessageCircle,
   MessageSquare,
   Phone,
   Timer,
@@ -45,7 +44,7 @@ import {
   type ZonaId,
 } from "./data";
 import { HartaSala } from "./map";
-import { D, FONT, L } from "./theme";
+import { D, L, TITLU, UMBRA } from "./theme";
 import {
   BadgeStatus,
   Btn,
@@ -64,6 +63,8 @@ import {
    formularul de rezervare și walk-in-ul cu harta în miniatură.
    ============================================================ */
 
+const numarMasa = (id: string) => (MASA_DUPA_ID[id]?.grup ? "V1 + V2" : (MASA_DUPA_ID[id]?.numar ?? id));
+
 /* ---------- acțiunile, cu regulile din produs ---------- */
 
 export function useActiuni() {
@@ -72,8 +73,8 @@ export function useActiuni() {
   const eroareSuprapunere = (masaId: string, alta: Rez) => {
     c.toast({
       tip: "eroare",
-      text: `Masa ${MASA_DUPA_ID[masaId]?.numar ?? masaId} este deja ocupată în intervalul ales.`,
-      desc: `${alta.nume}, ${fmtOra(alta.start)}–${fmtOra(alta.start + alta.dur)} · buffer-ul de 15 minute inclus.`,
+      text: `Masa ${numarMasa(masaId)} e ocupată în intervalul ales`,
+      desc: `${alta.nume} o are ${fmtOra(alta.start)}–${fmtOra(alta.start + alta.dur)}, plus 15 min debarasare. Alege altă masă.`,
     });
   };
 
@@ -92,7 +93,7 @@ export function useActiuni() {
         status: "sosita",
         sursa: "walk_in",
       });
-      c.toast({ tip: "succes", text: `Masa ${numar} e ocupată.`, desc: `Walk-in · ${persoane(pers)} · de la ${fmtOra(start)}` });
+      c.toast({ tip: "succes", text: `Masa ${numarMasa(masaId)} e ocupată`, desc: `Walk-in, ${persoane(pers)}, de la ${fmtOra(start)}` });
       return null;
     },
     muta(rezId: string, masaId: string) {
@@ -104,7 +105,7 @@ export function useActiuni() {
         return false;
       }
       c.setRez((xs) => xs.map((x) => (x.id === rezId ? { ...x, masa: masaId } : x)));
-      c.toast({ tip: "succes", text: `Rezervarea a trecut pe masa ${MASA_DUPA_ID[masaId]?.numar ?? masaId}.` });
+      c.toast({ tip: "succes", text: `Rezervare mutată pe masa ${numarMasa(masaId)}`, desc: `${r.nume}, ${fmtOra(r.start)}` });
       return true;
     },
     prelungeste(rezId: string) {
@@ -114,13 +115,13 @@ export function useActiuni() {
       if (alta) {
         c.toast({
           tip: "eroare",
-          text: "Nu se poate prelungi: urmează altă rezervare.",
+          text: "Nu se poate prelungi",
           desc: `${alta.nume} are masa de la ${fmtOra(alta.start)}. Mută una dintre rezervări pe altă masă.`,
         });
         return;
       }
       c.setRez((xs) => xs.map((x) => (x.id === rezId ? { ...x, dur: x.dur + 0.5 } : x)));
-      c.toast({ tip: "succes", text: "Masa rămâne ocupată încă 30 de minute.", desc: `Până la ${fmtOra(r.start + r.dur + 0.5)}.` });
+      c.toast({ tip: "succes", text: "Rezervare prelungită", desc: `Masa ${numarMasa(r.masa)} rămâne ocupată până la ${fmtOra(r.start + r.dur + 0.5)}` });
     },
     aloca(rezId: string, masaId: string) {
       const r = c.rez.find((x) => x.id === rezId);
@@ -131,7 +132,7 @@ export function useActiuni() {
         return false;
       }
       c.setRez((xs) => xs.map((x) => (x.id === rezId ? { ...x, masa: masaId } : x)));
-      c.toast({ tip: "succes", text: `Masa ${MASA_DUPA_ID[masaId]?.numar} alocată.`, desc: `${r.nume} · ${fmtOra(r.start)}` });
+      c.toast({ tip: "succes", text: `Masa ${numarMasa(masaId)} alocată`, desc: `${r.nume}, ${fmtOra(r.start)}` });
       return true;
     },
   };
@@ -168,9 +169,9 @@ export function Confirmare({
 }) {
   const c = useDemo();
   return (
-    <Modal onClose={onClose} eticheta={titlu} latime={c.mobil ? 350 : 400} reducedMotion={c.reducedMotion}>
+    <Modal onClose={onClose} eticheta={titlu} latime={c.mobil ? 350 : 384} reducedMotion={c.reducedMotion}>
       <div className="grid gap-2 p-5">
-        <h2 className="text-[17px] font-semibold tracking-tight" style={{ fontFamily: FONT.display }}>
+        <h2 className="text-[16px] font-semibold leading-snug" style={TITLU}>
           {titlu}
         </h2>
         <div className="text-[14px] leading-relaxed" style={{ color: L.mutedFg }}>
@@ -189,6 +190,24 @@ export function Confirmare({
   );
 }
 
+/** Textele dialogurilor de confirmare, aceleași din listă și din fișă. */
+export function textConfirmare(tip: "anulata" | "respinsa" | "no_show", r: Rez) {
+  const rezumat = `${r.nume} · ${persoane(r.pers)} · ${fmtOra(r.start)}.`;
+  if (tip === "no_show")
+    return { titlu: "Marchezi ca neprezentat?", descriere: `${rezumat} Neprezentarea intră în fișa clientului.`, confirma: "Marchează neprezentat" };
+  if (tip === "respinsa")
+    return {
+      titlu: "Respingi cererea?",
+      descriere: r.tel ? `${rezumat} Oaspetele primește mesaj pe WhatsApp.` : rezumat,
+      confirma: "Respinge cererea",
+    };
+  return {
+    titlu: "Anulezi rezervarea?",
+    descriere: r.tel ? `${rezumat} Oaspetele primește mesaj pe WhatsApp.` : `${rezumat} Masa se eliberează pe hartă.`,
+    confirma: "Anulează rezervarea",
+  };
+}
+
 /* ---------- fișa rezervării (SheetRezervare) ---------- */
 
 function Caseta({
@@ -200,30 +219,31 @@ function Caseta({
   eticheta: string;
   icon: ReactNode;
   children: ReactNode;
+  /** Nota internă: marcată cu muchie, ca nimeni s-o citească oaspetelui cu voce tare. */
   avertisment?: boolean;
 }) {
   return (
-    <div
-      className="min-w-0 rounded-xl p-3"
-      style={{ background: L.muted, borderLeft: avertisment ? "2px solid rgba(15,23,42,.25)" : undefined }}
+    <section
+      className="min-w-0 rounded-[12px] p-3"
+      style={{ background: L.muted, borderLeft: avertisment ? "2px solid rgba(20,20,19,.25)" : undefined }}
     >
       <h3 className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: L.mutedFg }}>
         {icon}
         {eticheta}
       </h3>
-      <div className="mt-1.5 text-[14px]">{children}</div>
-    </div>
+      <div className="mt-1.5 break-words text-[14px]">{children}</div>
+    </section>
   );
 }
 
 function Cifra({ eticheta, icon, valoare, detaliu }: { eticheta: string; icon: ReactNode; valoare: ReactNode; detaliu?: ReactNode }) {
   return (
-    <div className="min-w-0 rounded-xl px-3 py-2.5" style={{ background: L.muted }}>
+    <div className="min-w-0 rounded-[12px] px-3 py-2.5" style={{ background: L.muted }}>
       <p className="flex items-center gap-1.5 text-[12px]" style={{ color: L.mutedFg }}>
         {icon}
         {eticheta}
       </p>
-      <p className="mt-0.5 truncate text-[18px] font-semibold leading-tight tabular-nums">{valoare}</p>
+      <p className="mt-0.5 truncate text-[18px] font-semibold leading-tight">{valoare}</p>
       {detaliu && (
         <p className="mt-0.5 truncate text-[12px]" style={{ color: L.mutedFg }}>
           {detaliu}
@@ -260,10 +280,7 @@ export function SheetRezervare({
   const dorita = r.masaDorita ? MASA_DUPA_ID[r.masaDorita] : null;
   const esteActiva = activa(r);
   const iconSize = 14;
-
-  const schimba = (s: "confirmata" | "sosita" | "anulata" | "no_show" | "respinsa") => {
-    c.schimbaStatus(r.id, s);
-  };
+  const confirmare = deConfirmat ? textConfirmare(deConfirmat, r) : null;
 
   return (
     <Modal
@@ -273,7 +290,7 @@ export function SheetRezervare({
       latime={420}
       reducedMotion={c.reducedMotion}
     >
-      {c.mobil && <div aria-hidden className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full" style={{ background: "#cbd5e1" }} />}
+      {c.mobil && <div aria-hidden className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full" style={{ background: L.input }} />}
       <div className="flex shrink-0 items-start gap-2 border-b px-4 pb-4 pt-3" style={{ borderColor: L.border }}>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -282,10 +299,10 @@ export function SheetRezervare({
               {ETICHETA_SURSA[r.sursa]}
             </span>
           </div>
-          <h2 className="mt-1.5 break-words text-[20px] font-semibold leading-tight tracking-tight" style={{ fontFamily: FONT.display }}>
+          <h2 className="mt-2 break-words text-[20px] font-semibold leading-tight" style={TITLU}>
             {r.nume}
           </h2>
-          <p className="text-[13px]" style={{ color: L.mutedFg }}>
+          <p className="mt-0.5 text-[14px]" style={{ color: L.mutedFg }}>
             {ZI_AZI}
           </p>
         </div>
@@ -293,244 +310,223 @@ export function SheetRezervare({
       </div>
 
       <div className={c.mobil ? "tx-scroll min-h-0 flex-1 overflow-y-auto" : "contents"}>
-      <div className={c.mobil ? "flex flex-col gap-3 p-4" : "tx-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"}>
-        <div className="rounded-xl px-3 py-2.5" style={{ background: L.muted }}>
-          <p className="flex items-center gap-1.5 text-[12px]" style={{ color: L.mutedFg }}>
-            <Clock size={iconSize} aria-hidden />
-            Interval
-          </p>
-          <p className="mt-0.5 text-[24px] font-semibold leading-tight tabular-nums">
-            {fmtOra(r.start)} – {fmtOra(r.start + r.dur)}
-          </p>
-          <p className="mt-0.5 text-[12px]" style={{ color: L.mutedFg }}>
-            {r.dur.toLocaleString("ro-RO")} h, plus 15 minute de debarasare
-          </p>
-        </div>
+        <div className={c.mobil ? "flex flex-col gap-3 p-4" : "tx-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"}>
+          <div className="rounded-[12px] px-3 py-2.5" style={{ background: L.muted }}>
+            <p className="flex items-center gap-1.5 text-[12px]" style={{ color: L.mutedFg }}>
+              <Clock size={iconSize} aria-hidden />
+              Interval
+            </p>
+            <p className="mt-0.5 text-[24px] font-semibold leading-tight">
+              {fmtOra(r.start)} – {fmtOra(r.start + r.dur)}
+            </p>
+            <p className="mt-0.5 text-[12px]" style={{ color: L.mutedFg }}>
+              +15 min debarasare
+            </p>
+          </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Cifra eticheta="Persoane" icon={<Users size={iconSize} aria-hidden />} valoare={r.pers} />
-          <Cifra
-            eticheta="Masa"
-            icon={<LayoutGrid size={iconSize} aria-hidden />}
-            valoare={masa ? (masa.grup ? "V1 + V2" : masa.numar) : "Nealocată"}
-            detaliu={masa ? `${numeZona(masa.zona)} · ${capacitate(masa.id)} locuri` : dorita ? `cere masa ${dorita.numar}` : "o aloci din listă"}
-          />
-        </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Cifra eticheta="Persoane" icon={<Users size={iconSize} aria-hidden />} valoare={r.pers} />
+            <Cifra
+              eticheta="Masa"
+              icon={<LayoutGrid size={iconSize} aria-hidden />}
+              valoare={masa ? numarMasa(masa.id) : "Nealocată"}
+              detaliu={masa ? `${numeZona(masa.zona)} · ${capacitate(masa.id)} locuri` : dorita ? `cere masa ${dorita.numar}` : undefined}
+            />
+          </div>
 
-        {r.tel ? (
-          <button
-            type="button"
-            onClick={() =>
-              c.notify("În demo nu se sună nicăieri. În aplicația reală, butonul deschide apelul direct de pe telefonul ospătarului.")
-            }
-            className="flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2 text-left hover:bg-[#f1f5f9]"
-            style={{ borderColor: L.border }}
-          >
-            <Phone size={16} color={L.mutedFg} aria-hidden />
-            <span className="min-w-0 flex-1 truncate font-medium tabular-nums">{telMascat(r.tel)}</span>
-            <span className="text-[12px]" style={{ color: L.mutedFg }}>
-              Sună
-            </span>
-          </button>
-        ) : (
-          <p
-            className="flex items-center gap-2.5 rounded-xl border border-dashed px-3 py-2 text-[13.5px]"
-            style={{ borderColor: L.border, color: L.mutedFg }}
-          >
-            <Phone size={16} aria-hidden />
-            Fără telefon — {r.sursa === "walk_in" ? "a intrat de pe stradă" : "rezervare de grup"}
-          </p>
-        )}
+          {r.tel ? (
+            <button
+              type="button"
+              onClick={() => c.notify("În demo nu se sună.")}
+              className="flex min-h-11 items-center gap-2.5 rounded-[12px] border px-3 py-2 text-left transition-colors duration-150 hover:bg-[#f1f0ec]"
+              style={{ borderColor: L.border }}
+            >
+              <Phone size={16} color={L.mutedFg} aria-hidden />
+              <span className="min-w-0 flex-1 truncate font-medium">{telMascat(r.tel)}</span>
+              <span className="text-[12px]" style={{ color: L.mutedFg }}>
+                Sună
+              </span>
+            </button>
+          ) : (
+            <p
+              className="flex min-h-11 items-center gap-2.5 rounded-[12px] border border-dashed px-3 py-2 text-[14px]"
+              style={{ borderColor: L.input, color: L.mutedFg }}
+            >
+              <Phone size={16} aria-hidden />
+              Fără telefon
+            </p>
+          )}
 
-        {client && (
-          <div
-            className="rounded-xl border p-3"
-            style={{
-              borderColor: client.noShow >= 2 ? "#fca5a5" : L.border,
-              background: client.noShow >= 2 ? L.ocupatSoft : L.card,
-            }}
-          >
-            {client.noShow >= 2 && (
-              <p className="mb-2 flex items-start gap-2 text-[13px] font-medium" style={{ color: L.ocupatText }}>
-                <TriangleAlert size={15} className="mt-px shrink-0" aria-hidden />
-                {client.noShow} neprezentări în istoric. Decizia rămâne a ta — rezervarea nu se blochează automat.
-              </p>
-            )}
-            <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-[12px]" style={{ color: L.mutedFg }}>
-                  Fișa clientului
+          {client && (
+            <div
+              className="rounded-[12px] border p-3"
+              style={{
+                borderColor: client.noShow >= 2 ? L.ocupatBorder : L.border,
+                background: client.noShow >= 2 ? L.ocupatSoft : L.card,
+              }}
+            >
+              {client.noShow >= 2 && (
+                <p className="mb-2 flex items-center gap-1.5 text-[13px] font-medium" style={{ color: L.ocupatText }}>
+                  <TriangleAlert size={14} className="shrink-0" aria-hidden />
+                  {client.noShow} neprezentări în istoric
                 </p>
-                <p className="text-[14px] font-medium tabular-nums">
-                  {client.vizite} vizite · {client.noShow} {client.noShow === 1 ? "neprezentare" : "neprezentări"}
-                </p>
-                {taguri.length > 0 && (
-                  <p className="mt-1 flex flex-wrap gap-1">
-                    {taguri.map((t) => (
-                      <span key={t} className="rounded-md px-1.5 py-0.5 text-[11.5px] font-medium" style={{ background: L.accent, color: L.accentFg }}>
-                        {t}
-                      </span>
-                    ))}
+              )}
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px]" style={{ color: L.mutedFg }}>
+                    Fișa clientului
                   </p>
-                )}
+                  <p className="text-[14px] font-medium">
+                    {client.vizite} vizite · {client.noShow} {client.noShow === 1 ? "neprezentare" : "neprezentări"}
+                  </p>
+                  {taguri.length > 0 && (
+                    <p className="mt-1.5 flex flex-wrap gap-1">
+                      {taguri.map((t) => (
+                        <span
+                          key={t}
+                          className="inline-flex h-5 items-center rounded-[5px] px-1.5 text-[12px] font-[550]"
+                          style={{ background: client.noShow >= 2 ? L.card : L.secondary, color: L.fg }}
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+                </div>
+                <Btn v="outline" m="sm" onClick={() => c.deschideClient(client.id)}>
+                  Deschide
+                  <ChevronRight size={14} aria-hidden />
+                </Btn>
               </div>
-              <Btn v="outline" m="sm" onClick={() => c.deschideClient(client.id)}>
-                Deschide
-                <ChevronRight size={14} aria-hidden />
-              </Btn>
             </div>
+          )}
+
+          {r.nota && (
+            <Caseta eticheta="Nota clientului" icon={<MessageSquare size={iconSize} aria-hidden />}>
+              {r.nota}
+            </Caseta>
+          )}
+
+          {esteActiva && !r.masa && (
+            <Caseta eticheta="Alocă o masă" icon={<LayoutGrid size={iconSize} aria-hidden />}>
+              <div className="flex gap-2">
+                <select
+                  aria-label="Masa de alocat"
+                  value={masaNoua || (dorita && libere.some((x) => x.m.id === dorita.id) ? dorita.id : "")}
+                  onChange={(e) => setMasaNoua(e.target.value)}
+                  style={{ ...stilInput, height: 36 }}
+                >
+                  <option value="">Alege o masă liberă</option>
+                  {libere.map(({ m, cap }) => (
+                    <option key={m.id} value={m.id}>
+                      Masa {numarMasa(m.id)} · {cap} locuri · {numeZona(m.zona)}
+                      {cap < r.pers ? " · prea mică" : ""}
+                      {dorita?.id === m.id ? " · cerută de client" : ""}
+                    </option>
+                  ))}
+                </select>
+                <Btn
+                  className="h-9"
+                  disabled={!(masaNoua || (dorita && libere.some((x) => x.m.id === dorita.id)))}
+                  onClick={() => {
+                    const id = masaNoua || dorita?.id;
+                    if (id && a.aloca(r.id, id)) setMasaNoua("");
+                  }}
+                >
+                  Alocă
+                </Btn>
+              </div>
+            </Caseta>
+          )}
+
+          <Caseta eticheta="Note interne" icon={<EyeOff size={iconSize} aria-hidden />} avertisment>
+            <textarea
+              aria-label="Note interne"
+              rows={2}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ex.: a sunat, întârzie 20 de minute"
+              className="w-full resize-none rounded-[10px] border bg-white px-2.5 py-2 text-[14px]"
+              style={{ borderColor: L.input, boxShadow: UMBRA.xs }}
+            />
+            {note !== (r.noteInterne ?? "") && (
+              <div className="mt-1.5 flex justify-end">
+                <Btn
+                  m="xs"
+                  onClick={() => c.setRez((xs) => xs.map((x) => (x.id === r.id ? { ...x, noteInterne: note.trim() || undefined } : x)))}
+                >
+                  Salvează nota
+                </Btn>
+              </div>
+            )}
+          </Caseta>
+        </div>
+
+        {esteActiva && (
+          <div className={cx("grid shrink-0 gap-2 border-t p-4", c.mobil && "pb-7")} style={{ borderColor: L.border }}>
+            {r.status === "pending" && (
+              <div className="grid grid-cols-2 gap-2">
+                <Btn m="lg" className="h-11" onClick={() => c.schimbaStatus(r.id, "confirmata")}>
+                  <Check size={16} aria-hidden />
+                  Confirmă
+                </Btn>
+                <Btn m="lg" v="outline" className="h-11" onClick={() => setDeConfirmat("respinsa")}>
+                  <Ban size={16} aria-hidden />
+                  Respinge
+                </Btn>
+              </div>
+            )}
+            {(r.status === "confirmata" || r.status === "pending") && (
+              <Btn m="lg" v="secondary" className="h-11" onClick={() => c.schimbaStatus(r.id, "sosita")}>
+                <LogIn size={16} aria-hidden />
+                Marchează sosit
+              </Btn>
+            )}
+            {r.masa && (
+              <div className="grid grid-cols-2 gap-2">
+                {onMuta && (
+                  <Btn m="lg" v="outline" className="h-11" onClick={() => onMuta(r.id)}>
+                    <ArrowLeftRight size={16} aria-hidden />
+                    Mută pe altă masă
+                  </Btn>
+                )}
+                <Btn m="lg" v="outline" onClick={() => a.prelungeste(r.id)} className={cx("h-11", !onMuta && "col-span-2")}>
+                  <Timer size={16} aria-hidden />
+                  Prelungește 30 min
+                </Btn>
+              </div>
+            )}
+            {r.status === "confirmata" && r.tel && (
+              <Btn m="lg" v="outline" className="h-11" onClick={() => c.notify("În demo, mesajul WhatsApp nu pleacă.")}>
+                <Clock size={16} aria-hidden />
+                Anunță întârziere scurtă
+              </Btn>
+            )}
+            {r.status !== "pending" && (
+              <div className="mt-1 grid grid-cols-2 gap-2 border-t pt-3" style={{ borderColor: L.border }}>
+                <Btn m="lg" v="ghost" className="h-11" onClick={() => setDeConfirmat("no_show")}>
+                  <UserX size={16} aria-hidden />
+                  Neprezentat
+                </Btn>
+                <Btn m="lg" v="destructive" className="h-11" onClick={() => setDeConfirmat("anulata")}>
+                  <Ban size={16} aria-hidden />
+                  Anulează
+                </Btn>
+              </div>
+            )}
           </div>
         )}
-
-        {r.nota && (
-          <Caseta eticheta="Nota clientului" icon={<MessageSquare size={iconSize} aria-hidden />}>
-            {r.nota}
-          </Caseta>
-        )}
-
-        {esteActiva && !r.masa && (
-          <Caseta eticheta="Alocă o masă" icon={<LayoutGrid size={iconSize} aria-hidden />}>
-            <div className="flex gap-2">
-              <select
-                aria-label="Masa de alocat"
-                value={masaNoua || (dorita && libere.some((x) => x.m.id === dorita.id) ? dorita.id : "")}
-                onChange={(e) => setMasaNoua(e.target.value)}
-                style={{ ...stilInput, height: 36, fontSize: 13.5 }}
-              >
-                <option value="">Alege o masă liberă…</option>
-                {libere.map(({ m, cap }) => (
-                  <option key={m.id} value={m.id}>
-                    Masa {m.grup ? "V1 + V2" : m.numar} · {cap} locuri · {numeZona(m.zona)}
-                    {cap < r.pers ? " (prea mică)" : ""}
-                    {dorita?.id === m.id ? " — cerută de client" : ""}
-                  </option>
-                ))}
-              </select>
-              <Btn
-                m="sm"
-                className="h-9"
-                disabled={!(masaNoua || (dorita && libere.some((x) => x.m.id === dorita.id)))}
-                onClick={() => {
-                  const id = masaNoua || dorita?.id;
-                  if (id && a.aloca(r.id, id)) setMasaNoua("");
-                }}
-              >
-                Alocă
-              </Btn>
-            </div>
-          </Caseta>
-        )}
-
-        <Caseta eticheta="Note interne — doar pentru personal" icon={<EyeOff size={iconSize} aria-hidden />}>
-          <textarea
-            aria-label="Note interne"
-            rows={2}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Ex.: preferă colțul liniștit, vine cu un scaun de copil."
-            className="w-full resize-none rounded-lg border bg-white px-2.5 py-2 text-[13.5px]"
-            style={{ borderColor: L.border }}
-          />
-          {note !== (r.noteInterne ?? "") && (
-            <div className="mt-1.5 flex justify-end">
-              <Btn
-                m="xs"
-                onClick={() => {
-                  c.setRez((xs) => xs.map((x) => (x.id === r.id ? { ...x, noteInterne: note.trim() || undefined } : x)));
-                  c.toast({ tip: "succes", text: "Nota a fost salvată." });
-                }}
-              >
-                Salvează nota
-              </Btn>
-            </div>
-          )}
-        </Caseta>
       </div>
 
-      {esteActiva && (
-        <div
-          className={cx("grid shrink-0 gap-2 border-t p-4", c.mobil && "pb-7")}
-          style={{ borderColor: L.border }}
-        >
-          {r.status === "pending" && (
-            <div className="grid grid-cols-2 gap-2">
-              <Btn m="lg" onClick={() => schimba("confirmata")}>
-                <Check size={16} aria-hidden />
-                Confirmă
-              </Btn>
-              <Btn m="lg" v="outline" onClick={() => setDeConfirmat("respinsa")}>
-                <Ban size={16} aria-hidden />
-                Respinge
-              </Btn>
-            </div>
-          )}
-          {(r.status === "confirmata" || r.status === "pending") && (
-            <Btn m="lg" v="secondary" onClick={() => schimba("sosita")}>
-              <LogIn size={16} aria-hidden />
-              Marchează sosit
-            </Btn>
-          )}
-          {r.masa && (
-            <div className="grid grid-cols-2 gap-2">
-              {onMuta && (
-                <Btn m="lg" v="outline" onClick={() => onMuta(r.id)}>
-                  <ArrowLeftRight size={16} aria-hidden />
-                  Mută pe altă masă
-                </Btn>
-              )}
-              <Btn m="lg" v="outline" onClick={() => a.prelungeste(r.id)} className={onMuta ? undefined : "col-span-2"}>
-                <Timer size={16} aria-hidden />
-                Prelungește 30 min
-              </Btn>
-            </div>
-          )}
-          {r.status === "confirmata" && r.tel && (
-            <Btn
-              m="lg"
-              v="outline"
-              onClick={() =>
-                c.notify("În demo, mesajul WhatsApp nu pleacă. În aplicația reală, oaspetele îl primește imediat și se consumă un credit.")
-              }
-            >
-              <MessageCircle size={16} aria-hidden />
-              Anunță întârziere scurtă
-            </Btn>
-          )}
-          {r.status !== "pending" && (
-            <div className="mt-1 grid grid-cols-2 gap-2 border-t pt-3" style={{ borderColor: L.border }}>
-              <Btn m="lg" v="ghost" onClick={() => setDeConfirmat("no_show")}>
-                <UserX size={16} aria-hidden />
-                Neprezentat
-              </Btn>
-              <Btn m="lg" v="destructive" onClick={() => setDeConfirmat("anulata")}>
-                <Ban size={16} aria-hidden />
-                Anulează
-              </Btn>
-            </div>
-          )}
-        </div>
-      )}
-      </div>
-
-      {deConfirmat && (
+      {deConfirmat && confirmare && (
         <Confirmare
-          titlu={
-            deConfirmat === "anulata"
-              ? "Anulezi rezervarea?"
-              : deConfirmat === "respinsa"
-                ? "Respingi cererea?"
-                : "Marchezi ca neprezentat?"
-          }
-          descriere={
-            deConfirmat === "no_show"
-              ? `${r.nume} nu a ajuns. Neprezentarea intră în fișa clientului; de la două încolo, numărul primește semnalul roșu.`
-              : `${r.nume} · ${persoane(r.pers)} · ${fmtOra(r.start)}. Masa se eliberează imediat pe hartă.`
-          }
-          confirma={deConfirmat === "anulata" ? "Anulează" : deConfirmat === "respinsa" ? "Respinge" : "Neprezentat"}
+          titlu={confirmare.titlu}
+          descriere={confirmare.descriere}
+          confirma={confirmare.confirma}
           distructiv={deConfirmat !== "no_show"}
           onClose={() => setDeConfirmat(null)}
           onConfirm={() => {
-            schimba(deConfirmat);
+            c.schimbaStatus(r.id, deConfirmat);
             setDeConfirmat(null);
             onClose();
           }}
@@ -561,29 +557,29 @@ export function AlegeActiuneMasa({
   const latura = c.mobil ? 158 : 208;
 
   const schimba = (d: number) => setPers((n) => Math.min(20, Math.max(1, n + d)));
+  const pasPersoane =
+    "grid h-10 w-10 place-content-center rounded-[12px] transition-colors duration-150 hover:bg-[rgba(31,157,105,.35)]";
 
   return (
     <Modal onClose={onClose} eticheta={`Masa ${m.numar}`} latime={c.mobil ? 366 : 520} reducedMotion={c.reducedMotion}>
       <div className="flex items-start justify-between gap-2 px-5 pt-4">
         <div className="min-w-0">
-          <h2 className="text-[21px] font-semibold tracking-tight" style={{ fontFamily: FONT.display }}>
-            Masa {m.grup ? "V1 + V2" : m.numar}
-            <span className="ml-2 text-[15px] font-normal" style={{ color: L.mutedFg }}>
+          <h2 className="text-[20px] font-semibold leading-tight" style={TITLU}>
+            Masa {numarMasa(masaId)}
+            <span className="ml-2 text-[16px] font-normal" style={{ color: L.mutedFg, letterSpacing: 0 }}>
               {capacitate(masaId)} locuri · {numeZona(m.zona)}
             </span>
           </h2>
-          <p className="mt-0.5 text-[13px]" style={{ color: L.mutedFg }}>
-            {urm
-              ? `Următoarea rezervare: ${fmtOra(urm.start)} · ${urm.nume}, ${persoane(urm.pers)}`
-              : "Liberă până la închidere."}
+          <p className="mt-1 text-[14px]" style={{ color: L.mutedFg }}>
+            {urm ? `Rezervată de la ${fmtOra(urm.start)} pentru ${urm.nume}` : "Liberă până la închidere"}
           </p>
         </div>
         <BtnInchide onClick={onClose} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 p-5" style={{ gap: c.mobil ? 12 : 16 }}>
+      <div className="grid grid-cols-2 p-5" style={{ gap: c.mobil ? 12 : 16 }}>
         <div
-          className="relative flex select-none flex-col items-center justify-center gap-2 rounded-2xl p-3"
+          className="relative flex select-none flex-col items-center justify-center gap-2 rounded-[16px] p-3"
           style={{ height: latura, background: L.walkinSoft, color: L.walkinFg }}
         >
           {/* Pătratul întreg e ținta; reglajul de persoane stă deasupra lui,
@@ -599,10 +595,10 @@ export function AlegeActiuneMasa({
                 setAgitare((n) => n + 1);
               } else onClose();
             }}
-            className="absolute inset-0 rounded-2xl transition-colors hover:bg-[#10b981]/10 active:bg-[#10b981]/20"
+            className="absolute inset-0 rounded-[16px] transition-colors duration-150 hover:bg-[rgba(31,157,105,.08)] active:bg-[rgba(31,157,105,.16)]"
           />
-          <Zap size={c.mobil ? 32 : 42} aria-hidden className="pointer-events-none relative" />
-          <span className="pointer-events-none relative text-[22px] font-bold tracking-tight" style={{ fontFamily: FONT.display }}>
+          <Zap size={c.mobil ? 30 : 40} aria-hidden className="pointer-events-none relative" />
+          <span className="pointer-events-none relative text-[22px] font-semibold" style={TITLU}>
             Walk-in
           </span>
           <span className="relative flex items-center gap-2.5">
@@ -610,38 +606,38 @@ export function AlegeActiuneMasa({
               type="button"
               aria-label="Mai puține persoane"
               onClick={() => schimba(-1)}
-              className="grid place-content-center rounded-xl hover:bg-[#10b981]/35"
-              style={{ width: 38, height: 38, background: "rgba(16,185,129,.2)" }}
+              className={pasPersoane}
+              style={{ background: "rgba(31,157,105,.2)" }}
             >
               <ChevronDown size={20} aria-hidden />
             </button>
-            <span className="pointer-events-none min-w-8 text-center text-[28px] font-bold tabular-nums" aria-live="polite">
+            <span className="pointer-events-none min-w-8 text-center text-[28px] font-semibold" aria-live="polite">
               {pers}
             </span>
             <button
               type="button"
               aria-label="Mai multe persoane"
               onClick={() => schimba(1)}
-              className="grid place-content-center rounded-xl hover:bg-[#10b981]/35"
-              style={{ width: 38, height: 38, background: "rgba(16,185,129,.2)" }}
+              className={pasPersoane}
+              style={{ background: "rgba(31,157,105,.2)" }}
             >
               <ChevronUp size={20} aria-hidden />
             </button>
           </span>
-          <span className="pointer-events-none relative text-[13px] opacity-80">persoane</span>
+          <span className="pointer-events-none relative text-[14px] opacity-80">persoane</span>
         </div>
 
         <button
           type="button"
           onClick={onRezervare}
-          className="flex flex-col items-center justify-center gap-2 rounded-2xl p-3 transition-transform active:scale-[0.98]"
+          className="flex flex-col items-center justify-center gap-2 rounded-[16px] p-3 transition-colors duration-150 hover:bg-[#f9e2d2]"
           style={{ height: latura, background: L.rezervareSoft, color: L.rezervareFg }}
         >
-          <CalendarPlus size={c.mobil ? 32 : 42} aria-hidden />
-          <span className="text-[22px] font-bold tracking-tight" style={{ fontFamily: FONT.display }}>
+          <CalendarPlus size={c.mobil ? 30 : 40} aria-hidden />
+          <span className="text-[22px] font-semibold" style={TITLU}>
             Rezervare
           </span>
-          <span className="max-w-40 text-center text-[13px] opacity-80">Cu nume, oră și număr de persoane</span>
+          <span className="max-w-40 text-center text-[14px] opacity-80">Cu nume, oră și număr de persoane</span>
         </button>
       </div>
 
@@ -649,13 +645,12 @@ export function AlegeActiuneMasa({
         <p
           key={agitare}
           role="alert"
-          className={cx("mx-5 -mt-1 mb-5 flex items-start gap-2 rounded-lg px-3 py-2.5 text-[13px]", !c.reducedMotion && "tx-anim-shake")}
+          className={cx("mx-5 -mt-1 mb-5 flex items-start gap-2 rounded-[10px] px-3 py-2.5 text-[14px]", !c.reducedMotion && "tx-anim-shake")}
           style={{ background: L.ocupatSoft, color: L.ocupatText }}
         >
-          <CircleAlert size={16} className="mt-px shrink-0" aria-hidden />
+          <CircleAlert size={16} className="mt-0.5 shrink-0" aria-hidden />
           <span>
-            <strong className="font-semibold">Masa este deja ocupată în intervalul ales.</strong> {eroare.nume} are masa de la{" "}
-            {fmtOra(eroare.start)}, iar un walk-in ține 2 ore. Alege altă masă sau fă o rezervare mai scurtă.
+            Masa e rezervată de la {fmtOra(eroare.start)} pentru {eroare.nume}. Alege altă masă sau fă o rezervare mai scurtă.
           </span>
         </p>
       )}
@@ -698,13 +693,13 @@ export function FormRezervare({
 
   const trimite = () => {
     const e: typeof erori = {};
-    if (nume.trim().length < 2) e.nume = "Scrie numele clientului — așa îl găsești în listă.";
+    if (nume.trim().length < 2) e.nume = "Scrie numele clientului.";
     const cifre = tel.replace(/\D/g, "");
     if (tel.trim() && !/^07\d{8}$/.test(cifre)) e.tel = "Numărul are 10 cifre și începe cu 07.";
     let alta: Rez | null = null;
     if (masaId) alta = conflict(c.rez, masaId, ora, durata);
     if (alta)
-      e.masa = `Masa este deja ocupată în intervalul ales: ${alta.nume}, ${fmtOra(alta.start)}–${fmtOra(alta.start + alta.dur)} (buffer-ul de 15 minute inclus).`;
+      e.masa = `Masa e ocupată ${fmtOra(alta.start)}–${fmtOra(alta.start + alta.dur)} de ${alta.nume}, plus 15 min debarasare. Alege altă masă sau altă oră.`;
     setErori(e);
     setIncercare((n) => n + 1);
     if (Object.keys(e).length) return;
@@ -721,29 +716,25 @@ export function FormRezervare({
     });
     c.toast({
       tip: "succes",
-      text: "Rezervare creată.",
-      desc: `${nume.trim()} · ${persoane(pers)} · ${fmtOra(ora)}${masaId ? ` · masa ${MASA_DUPA_ID[masaId].grup ? "V1 + V2" : MASA_DUPA_ID[masaId].numar}` : ""}`,
+      text: "Rezervare salvată",
+      desc: `${nume.trim()}, ${persoane(pers)}, ${fmtOra(ora)}${masaId ? `, masa ${numarMasa(masaId)}` : ""}`,
     });
     onClose();
   };
 
   const shake = !c.reducedMotion && incercare > 0 ? "tx-anim-shake" : undefined;
+  const eticheta = "text-[14px] font-medium";
+  const camp = { ...stilInput, height: 40 };
 
   return (
-    <Modal
-      onClose={onClose}
-      eticheta="Rezervare nouă"
-      tip={c.mobil ? "jos" : "centru"}
-      latime={500}
-      reducedMotion={c.reducedMotion}
-    >
+    <Modal onClose={onClose} eticheta="Rezervare nouă" tip={c.mobil ? "jos" : "centru"} latime={500} reducedMotion={c.reducedMotion}>
       <div className="flex shrink-0 items-start justify-between gap-2 border-b px-5 py-4" style={{ borderColor: L.border }}>
         <div>
-          <h2 className="text-[18px] font-semibold tracking-tight" style={{ fontFamily: FONT.display }}>
+          <h2 className="text-[18px] font-semibold leading-tight" style={TITLU}>
             Rezervare nouă
           </h2>
-          <p className="text-[13px]" style={{ color: L.mutedFg }}>
-            {ZI_AZI} · se confirmă direct
+          <p className="mt-0.5 text-[14px]" style={{ color: L.mutedFg }}>
+            {ZI_AZI}
           </p>
         </div>
         <BtnInchide onClick={onClose} />
@@ -759,7 +750,7 @@ export function FormRezervare({
       >
         <div className={cx("grid gap-3", !c.mobil && "grid-cols-2")}>
           <div className="grid gap-1.5">
-            <label htmlFor="tx-nume" className="text-[13px] font-medium">
+            <label htmlFor="tx-nume" className={eticheta}>
               Numele clientului
             </label>
             <input
@@ -772,17 +763,17 @@ export function FormRezervare({
               aria-describedby={erori.nume ? "tx-nume-err" : undefined}
               key={erori.nume ? `n${incercare}` : "n"}
               className={erori.nume ? shake : undefined}
-              style={{ ...stilInput, borderColor: erori.nume ? L.destructive : L.border }}
+              style={{ ...camp, borderColor: erori.nume ? L.destructive : L.input }}
             />
             {erori.nume && (
-              <p id="tx-nume-err" className="flex items-center gap-1 text-[12.5px]" style={{ color: L.ocupatText }}>
+              <p id="tx-nume-err" className="flex items-center gap-1 text-[13px]" style={{ color: L.ocupatText }}>
                 <TriangleAlert size={13} aria-hidden />
                 {erori.nume}
               </p>
             )}
           </div>
           <div className="grid gap-1.5">
-            <label htmlFor="tx-tel" className="text-[13px] font-medium">
+            <label htmlFor="tx-tel" className={eticheta}>
               Telefon <span style={{ color: L.mutedFg, fontWeight: 400 }}>(opțional)</span>
             </label>
             <input
@@ -790,15 +781,15 @@ export function FormRezervare({
               inputMode="tel"
               value={tel}
               onChange={(e) => setTel(e.target.value)}
-              placeholder="07xx xxx xxx"
+              placeholder="0722 123 456"
               aria-invalid={Boolean(erori.tel)}
               aria-describedby={erori.tel ? "tx-tel-err" : undefined}
               key={erori.tel ? `t${incercare}` : "t"}
               className={erori.tel ? shake : undefined}
-              style={{ ...stilInput, borderColor: erori.tel ? L.destructive : L.border }}
+              style={{ ...camp, borderColor: erori.tel ? L.destructive : L.input }}
             />
             {erori.tel && (
-              <p id="tx-tel-err" className="flex items-center gap-1 text-[12.5px]" style={{ color: L.ocupatText }}>
+              <p id="tx-tel-err" className="flex items-center gap-1 text-[13px]" style={{ color: L.ocupatText }}>
                 <TriangleAlert size={13} aria-hidden />
                 {erori.tel}
               </p>
@@ -807,7 +798,7 @@ export function FormRezervare({
         </div>
 
         <div className="grid gap-1.5">
-          <p className="text-[13px] font-medium" id="tx-ora">
+          <p className={eticheta} id="tx-ora">
             Ora
           </p>
           <div role="group" aria-labelledby="tx-ora" className="tx-fara-bara -mx-1 flex min-h-[38px] gap-1.5 overflow-x-auto px-1 pb-0.5">
@@ -817,11 +808,10 @@ export function FormRezervare({
                 type="button"
                 aria-pressed={h === ora}
                 onClick={() => setOra(h)}
-                className="h-9 shrink-0 rounded-lg px-3 text-[13.5px] font-medium tabular-nums"
-                style={{
-                  background: h === ora ? L.primary : L.muted,
-                  color: h === ora ? "#fff" : L.fg,
-                }}
+                className={cx(
+                  "h-9 shrink-0 rounded-[10px] px-3 text-[14px] font-medium transition-colors duration-150",
+                  h === ora ? "bg-[#141413] text-[#fafaf8]" : "bg-[#f1f0ec] text-[#141413] hover:bg-[#e8e6e1]"
+                )}
               >
                 {fmtOra(h)}
               </button>
@@ -831,11 +821,11 @@ export function FormRezervare({
 
         <div className={cx("grid gap-4", !c.mobil && "grid-cols-2")}>
           <div className="grid gap-1.5">
-            <p className="text-[13px] font-medium">Persoane</p>
+            <p className={eticheta}>Persoane</p>
             <Stepper value={pers} onChange={setPers} eticheta="Persoane" />
           </div>
           <div className="grid gap-1.5">
-            <p className="text-[13px] font-medium">Durata</p>
+            <p className={eticheta}>Durata</p>
             <Segmented
               eticheta="Durata"
               value={dur}
@@ -852,7 +842,7 @@ export function FormRezervare({
         </div>
 
         <div className="grid gap-1.5">
-          <label htmlFor="tx-masa" className="text-[13px] font-medium">
+          <label htmlFor="tx-masa" className={eticheta}>
             Masa
           </label>
           <select
@@ -860,9 +850,9 @@ export function FormRezervare({
             value={masaId}
             onChange={(e) => setMasaId(e.target.value)}
             aria-invalid={Boolean(erori.masa)}
-            style={{ ...stilInput, borderColor: erori.masa ? L.destructive : L.border }}
+            style={{ ...camp, borderColor: erori.masa ? L.destructive : L.input }}
           >
-            <option value="">Fără masă — o aloci mai târziu</option>
+            <option value="">Fără masă</option>
             {ZONE.map((z) => (
               <optgroup key={z.id} label={z.nume}>
                 {optiuniMese
@@ -871,8 +861,8 @@ export function FormRezervare({
                     const ocupata = conflict(c.rez, m.id, ora, durata);
                     return (
                       <option key={m.id} value={m.id}>
-                        Masa {m.grup ? "V1 + V2" : m.numar} · {capacitate(m.id)} locuri
-                        {ocupata ? ` — ocupată (${ocupata.nume}, ${fmtOra(ocupata.start)})` : ""}
+                        Masa {numarMasa(m.id)} · {capacitate(m.id)} locuri
+                        {ocupata ? ` · ocupată (${ocupata.nume}, ${fmtOra(ocupata.start)})` : ""}
                       </option>
                     );
                   })}
@@ -883,22 +873,22 @@ export function FormRezervare({
             <p
               key={`m${incercare}`}
               role="alert"
-              className={cx("flex items-start gap-1.5 rounded-lg px-2.5 py-2 text-[12.5px]", shake)}
+              className={cx("flex items-start gap-1.5 rounded-[10px] px-2.5 py-2 text-[13px]", shake)}
               style={{ color: L.ocupatText, background: L.ocupatSoft }}
             >
-              <CircleAlert size={14} className="mt-px shrink-0" aria-hidden />
+              <CircleAlert size={14} className="mt-0.5 shrink-0" aria-hidden />
               {erori.masa}
             </p>
           )}
           {masaId && capacitate(masaId) < pers && !erori.masa && (
-            <p className="text-[12.5px]" style={{ color: L.expirareText }}>
-              Atenție: masa are doar {capacitate(masaId)} locuri.
+            <p className="text-[13px]" style={{ color: L.expirareText }}>
+              Masa are doar {capacitate(masaId)} locuri.
             </p>
           )}
         </div>
 
         <div className="grid gap-1.5">
-          <p className="text-[13px] font-medium">Cum a venit rezervarea</p>
+          <p className={eticheta}>Sursa</p>
           <Segmented
             eticheta="Sursa rezervării"
             value={sursa}
@@ -933,51 +923,45 @@ export function WalkInRapid({ onClose }: { onClose: () => void }) {
   const [zona, setZona] = useState<ZonaId>("salon");
   const start = oraWalkIn(c.acum);
   const { status } = useMemo(() => statusuriLa(c.acum, c.rez), [c.acum, c.rez]);
+
+  /** Mesele care pot primi grupul acum; mesele unite (V1 + V2) contează o dată. */
+  const potrivite = (z?: ZonaId) =>
+    MESE.filter(
+      (m) =>
+        !m.indisponibila &&
+        (!m.grup || m.id === MESE.find((x) => x.grup === m.grup)?.id) &&
+        (!z || m.zona === z) &&
+        capacitate(m.id) >= pers &&
+        !conflict(c.rez, m.id, start, DURATA_IMPLICITA)
+    );
+
   const eligibile = useMemo(() => {
     const s = new Set<string>();
-    for (const m of MESE) {
-      if (m.indisponibila || m.zona !== zona) continue;
-      if (capacitate(m.id) < pers) continue;
-      if (conflict(c.rez, m.id, start, DURATA_IMPLICITA)) continue;
-      for (const id of meseRezervare({ masa: m.id })) s.add(id);
-    }
+    for (const m of potrivite(zona)) for (const id of meseRezervare({ masa: m.id })) s.add(id);
     return s;
+    // potrivite citește doar ce e în dependențe
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c.rez, pers, zona, start]);
   const zonaObj = ZONE.find((z) => z.id === zona)!;
-  const totalLibere = MESE.filter(
-    (m) => !m.indisponibila && capacitate(m.id) >= pers && !conflict(c.rez, m.id, start, DURATA_IMPLICITA)
-  ).length;
+  const nZona = potrivite(zona).length;
+  const nTotal = potrivite().length;
+  const alta = ZONE.find((z) => z.id !== zona)!;
+  const pana = fmtOra(start + DURATA_IMPLICITA);
 
   return (
-    <Modal
-      onClose={onClose}
-      eticheta="Walk-in"
-      tip={c.mobil ? "jos" : "centru"}
-      latime={640}
-      reducedMotion={c.reducedMotion}
-    >
-      <div className="flex shrink-0 items-start justify-between gap-2 px-5 pt-4">
-        <div>
-          <h2 className="text-[19px] font-semibold tracking-tight" style={{ fontFamily: FONT.display }}>
-            Walk-in
-          </h2>
-          <p className="text-[13px]" style={{ color: L.mutedFg }}>
-            Câte persoane? Apoi atinge masa pe hartă.
-          </p>
-        </div>
+    <Modal onClose={onClose} eticheta="Walk-in" tip={c.mobil ? "jos" : "centru"} latime={640} reducedMotion={c.reducedMotion}>
+      <div className="flex shrink-0 items-center justify-between gap-2 px-5 pt-4">
+        <h2 className="text-[18px] font-semibold leading-tight" style={TITLU}>
+          Walk-in
+        </h2>
         <BtnInchide onClick={onClose} />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-3">
         <Stepper value={pers} onChange={setPers} eticheta="Persoane" mare />
-        <Segmented
-          eticheta="Zona"
-          value={zona}
-          onChange={setZona}
-          optiuni={ZONE.map((z) => ({ id: z.id, text: z.nume }))}
-        />
+        <Segmented eticheta="Zona" value={zona} onChange={setZona} optiuni={ZONE.map((z) => ({ id: z.id, text: z.nume }))} />
       </div>
       <div className={cx("px-5 pt-3", c.mobil ? "pb-8" : "pb-5")}>
-        <div className="tx-dark overflow-hidden rounded-lg" style={{ background: D.exterior, border: `1px solid ${D.border}` }}>
+        <div className="tx-dark overflow-hidden rounded-[10px]" style={{ background: D.exterior, border: `1px solid ${D.border}` }}>
           <HartaSala
             zona={zonaObj}
             statusuri={status}
@@ -989,12 +973,12 @@ export function WalkInRapid({ onClose }: { onClose: () => void }) {
             style={{ width: "100%", height: "auto", aspectRatio: `${zonaObj.w} / ${zonaObj.h}` }}
           />
         </div>
-        <p className="mt-2.5 text-[13px]" style={{ color: totalLibere ? L.mutedFg : L.ocupatText }}>
-          {totalLibere
-            ? eligibile.size
-              ? `Mesele încercuite sunt libere pentru ${persoane(pers)}, de acum până la ${fmtOra(start + DURATA_IMPLICITA)}.`
-              : `Nicio masă potrivită aici. Încearcă ${zona === "salon" ? "Terasa" : "Salonul"}.`
-            : "Nu există mese libere momentan."}
+        <p className="mt-2.5 text-[14px]" style={{ color: nTotal ? L.mutedFg : L.ocupatText }}>
+          {nZona
+            ? `${nZona} ${nZona === 1 ? "masă liberă" : "mese libere"} pentru ${persoane(pers)}, până la ${pana}`
+            : nTotal
+              ? `Nicio masă liberă aici pentru ${persoane(pers)}. Încearcă ${alta.nume}.`
+              : `Nicio masă liberă pentru ${persoane(pers)} până la ${pana}`}
         </p>
       </div>
     </Modal>

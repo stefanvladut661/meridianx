@@ -10,11 +10,13 @@ import { CircleAlert, CircleCheck, Info, Minus, Plus, X } from "lucide-react";
 import type { StatusRez, Sursa } from "./data";
 import { createPortal } from "react-dom";
 import { Ctx } from "./ctx";
-import { FONT, L } from "./theme";
+import { FONT, L, UMBRA } from "./theme";
 
 /* ============================================================
-   Piesele de interfață ale panoului TableX (shadcn/ui în produs):
-   butoane, insigne, dialoguri, sertare, notificări.
+   Piesele de interfață ale panoului TableX (shadcn/ui în produs,
+   pe tokenii din src/index.css): butoane, insigne, dialoguri,
+   sertare, notificări. Raze: 5px insigne, 8px elemente de meniu,
+   10px controale, 12px carduri și dialoguri, 16px sertarul de jos.
    ============================================================ */
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
@@ -24,62 +26,68 @@ export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Bool
 export function StiluriDemo() {
   return (
     <style>{`
-      .tx-root *:focus-visible { outline: 2px solid ${L.primary}; outline-offset: 2px; }
-      .tx-root .tx-dark *:focus-visible, .tx-root .tx-dark:focus-visible { outline-color: #60a5fa; }
-      .tx-root .tx-masa:hover .tx-forma { stroke-width: 3.5; }
-      .tx-root .tx-masa:focus-visible .tx-forma { stroke: #60a5fa !important; stroke-width: 5 !important; }
-      .tx-root .tx-insigna:focus-visible circle { stroke: #f8fafc; stroke-width: 3; }
-      .tx-root .tx-slot:hover { background: #1e293b; }
-      .tx-root .tx-slot[aria-pressed="true"]:hover { background: #60a5fa; }
-      .tx-root .tx-btn-dark:hover { background: #1e293b !important; }
+      .tx-root { font-variant-numeric: tabular-nums; }
+      .tx-root h1, .tx-root h2, .tx-root h3 { text-wrap: balance; }
+      .tx-root ::selection { background: rgba(20,20,19,.14); color: ${L.fg}; }
+      .tx-root *:focus-visible { outline: 2px solid ${L.fg}; outline-offset: 2px; }
+      .tx-root .tx-dark *:focus-visible, .tx-root .tx-dark:focus-visible { outline-color: #edece8; }
+      .tx-root input:focus-visible, .tx-root select:focus-visible, .tx-root textarea:focus-visible {
+        outline: none; border-color: rgba(20,20,19,.45) !important; box-shadow: 0 0 0 3px rgba(20,20,19,.1) !important;
+      }
+      .tx-root [aria-invalid="true"]:focus-visible { border-color: ${L.destructive} !important; box-shadow: 0 0 0 3px rgba(196,53,43,.2) !important; }
+      .tx-root input::placeholder, .tx-root textarea::placeholder { color: ${L.mutedFg}; opacity: 1; }
+      .tx-root .tx-masa:hover .tx-forma { stroke-width: 3; }
+      .tx-root .tx-masa:focus-visible .tx-forma { stroke: #6e9bff !important; stroke-width: 4 !important; }
+      .tx-root .tx-insigna:focus-visible circle { stroke: #edece8; stroke-width: 3; }
+      .tx-root .tx-slot:hover { background: #23231f; }
+      .tx-root .tx-slot[aria-pressed="true"]:hover { background: #edece8; }
+      .tx-root .tx-btn-dark:hover { background: #2a2a27 !important; }
       .tx-root .tx-fara-bara { scrollbar-width: none; }
       .tx-root .tx-fara-bara::-webkit-scrollbar { display: none; }
-      .tx-root .tx-scroll { scrollbar-width: thin; scrollbar-color: rgba(15,23,42,.22) transparent; }
+      .tx-root .tx-scroll { scrollbar-width: thin; scrollbar-color: rgba(20,20,19,.2) transparent; }
       .tx-root .tx-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-      .tx-root .tx-scroll::-webkit-scrollbar-thumb { background: rgba(15,23,42,.2); border-radius: 99px; }
-      .tx-root .tx-scroll-dark { scrollbar-width: thin; scrollbar-color: rgba(248,250,252,.2) transparent; }
-      @keyframes tx-halou { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
-      .tx-root .tx-halou { animation: tx-halou 1.4s ease-in-out infinite; }
+      .tx-root .tx-scroll::-webkit-scrollbar-thumb { background: rgba(20,20,19,.2); border-radius: 99px; }
+      .tx-root .tx-scroll-dark { scrollbar-width: thin; scrollbar-color: rgba(237,236,232,.2) transparent; }
       @keyframes tx-fade { from { opacity: 0 } to { opacity: 1 } }
-      @keyframes tx-dreapta { from { transform: translateX(28px); opacity: 0 } to { transform: none; opacity: 1 } }
+      @keyframes tx-dreapta { from { transform: translateX(40px); opacity: 0 } to { transform: none; opacity: 1 } }
+      @keyframes tx-stanga { from { transform: translateX(-40px); opacity: 0 } to { transform: none; opacity: 1 } }
       @keyframes tx-sus { from { transform: translateY(40px); opacity: 0 } to { transform: none; opacity: 1 } }
-      @keyframes tx-pop { from { transform: scale(.96); opacity: 0 } to { transform: none; opacity: 1 } }
-      @keyframes tx-toast { from { transform: translateY(10px); opacity: 0 } to { transform: none; opacity: 1 } }
+      @keyframes tx-pop { from { transform: scale(.95); opacity: 0 } to { transform: none; opacity: 1 } }
+      @keyframes tx-toast { from { transform: translateY(8px); opacity: 0 } to { transform: none; opacity: 1 } }
       @keyframes tx-shake { 0%,100% { transform: translateX(0) } 20%,60% { transform: translateX(-4px) } 40%,80% { transform: translateX(4px) } }
-      @keyframes tx-nou { from { background: #dbeafe } to { background: transparent } }
-      @keyframes tx-puls { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55) } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0) } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0) } }
+      @keyframes tx-nou { from { background-color: #efeeea } to { background-color: #ffffff } }
       @keyframes tx-scan { 0% { transform: translateY(0) } 100% { transform: translateY(196px) } }
-      .tx-root .tx-anim-fade { animation: tx-fade .2s ease both; }
-      .tx-root .tx-anim-dreapta { animation: tx-dreapta .28s cubic-bezier(.16,1,.3,1) both; }
-      .tx-root .tx-anim-sus { animation: tx-sus .3s cubic-bezier(.16,1,.3,1) both; }
-      .tx-root .tx-anim-pop { animation: tx-pop .22s cubic-bezier(.16,1,.3,1) both; }
-      .tx-root .tx-anim-toast { animation: tx-toast .25s cubic-bezier(.16,1,.3,1) both; }
+      .tx-root .tx-anim-fade { animation: tx-fade .15s ease-out both; }
+      .tx-root .tx-anim-dreapta { animation: tx-dreapta .2s ease-out both; }
+      .tx-root .tx-anim-stanga { animation: tx-stanga .2s ease-out both; }
+      .tx-root .tx-anim-sus { animation: tx-sus .2s ease-out both; }
+      .tx-root .tx-anim-pop { animation: tx-pop .15s ease-out both; }
+      .tx-root .tx-anim-toast { animation: tx-toast .2s ease-out both; }
       .tx-root .tx-anim-shake { animation: tx-shake .32s ease-in-out; }
-      .tx-root .tx-anim-nou { animation: tx-nou 2.4s ease-out both; }
-      .tx-root .tx-puls { animation: tx-puls 1.8s ease-out infinite; }
+      .tx-root .tx-anim-nou { animation: tx-nou 1.6s ease-out; }
       .tx-root .tx-scan { animation: tx-scan 1.6s ease-in-out infinite alternate; }
     `}</style>
   );
 }
 
-/* ---------- buton ---------- */
+/* ---------- buton (Button din produs) ---------- */
 
-type Varianta = "primary" | "outline" | "secondary" | "ghost" | "destructive" | "walkin";
+type Varianta = "primary" | "outline" | "secondary" | "ghost" | "destructive";
 type Marime = "xs" | "sm" | "md" | "lg";
 
 const VARIANTE: Record<Varianta, string> = {
-  primary: "bg-[#1d4ed8] text-white hover:bg-[#1e40af] disabled:bg-[#93a8e6]",
-  outline: "border border-[#e2e8f0] bg-white text-[#0f172a] hover:bg-[#f1f5f9] disabled:text-[#94a3b8]",
-  secondary: "bg-[#e2e8f0] text-[#1e293b] hover:bg-[#cbd5e1]",
-  ghost: "bg-transparent text-[#0f172a] hover:bg-[#f1f5f9]",
-  destructive: "bg-[#dc2626] text-white hover:bg-[#b91c1c]",
-  walkin: "bg-[#10b981] text-[#052e1f] hover:bg-[#0ea371]",
+  primary: "bg-[#141413] text-[#fafaf8] shadow-[0_1px_1px_rgba(20,20,19,.06)] hover:bg-[#373736]",
+  outline:
+    "border border-[#d3d0c8] bg-white text-[#141413] shadow-[0_1px_1px_rgba(20,20,19,.06)] hover:bg-[#efeeea]",
+  secondary: "bg-[#eeede9] text-[#141413] hover:bg-[#e3e2de]",
+  ghost: "bg-transparent text-[#141413] hover:bg-[#f1f0ec]",
+  destructive: "bg-[#f9ebea] text-[#c4352b] hover:bg-[#f3d7d5]",
 };
 const MARIMI: Record<Marime, string> = {
-  xs: "h-7 gap-1 rounded-md px-2.5 text-[12px]",
-  sm: "h-8 gap-1.5 rounded-md px-3 text-[13px]",
-  md: "h-9 gap-2 rounded-lg px-4 text-[14px]",
-  lg: "h-11 gap-2 rounded-lg px-5 text-[15px]",
+  xs: "h-6 gap-1 rounded-[8px] px-2 text-[12px]",
+  sm: "h-7 gap-1 rounded-[8px] px-2.5 text-[13px]",
+  md: "h-8 gap-1.5 rounded-[10px] px-2.5 text-[14px]",
+  lg: "h-10 gap-2 rounded-[10px] px-4 text-[15px]",
 };
 
 export function Btn({
@@ -94,7 +102,7 @@ export function Btn({
       type="button"
       {...rest}
       className={cx(
-        "inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium transition-colors disabled:cursor-not-allowed",
+        "inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-[550] transition-[background-color,color,box-shadow,transform] duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-50",
         VARIANTE[v],
         MARIMI[m],
         className
@@ -123,6 +131,7 @@ export const ETICHETA_SURSA: Record<Sursa, string> = {
   telefon: "Telefonic",
 };
 
+/** Aceleași culori ca pe hartă: chihlimbar ce cere atenție, verde confirmat, roșu problemă. */
 const STIL_REZ: Record<StatusRez, CSSProperties> = {
   pending: { background: L.expirareSoft, color: L.fg },
   confirmata: { background: L.liberSoft, color: L.fg },
@@ -135,7 +144,7 @@ const STIL_REZ: Record<StatusRez, CSSProperties> = {
 export function BadgeStatus({ s, className }: { s: StatusRez; className?: string }) {
   return (
     <span
-      className={cx("inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-[12px] font-medium", className)}
+      className={cx("inline-flex h-5 shrink-0 items-center rounded-[5px] px-1.5 text-[12px] font-[550]", className)}
       style={STIL_REZ[s]}
     >
       {ETICHETA_REZ[s]}
@@ -143,6 +152,7 @@ export function BadgeStatus({ s, className }: { s: StatusRez; className?: string
   );
 }
 
+/** Numărul mesei, în listă: insigna îl ține lizibil și lângă un nume lung. */
 export function Chip({
   children,
   style,
@@ -154,7 +164,7 @@ export function Chip({
 }) {
   return (
     <span
-      className={cx("inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-semibold tabular-nums", className)}
+      className={cx("inline-flex shrink-0 items-center gap-1 rounded-[4px] px-1.5 py-0.5 text-[12px] font-semibold", className)}
       style={{ background: L.secondary, color: L.secondaryFg, ...style }}
     >
       {children}
@@ -162,7 +172,7 @@ export function Chip({
   );
 }
 
-export function Avatar({ nume, marime = 36, culoare }: { nume: string; marime?: number; culoare?: string }) {
+export function Avatar({ nume, marime = 36 }: { nume: string; marime?: number }) {
   const init = nume
     .replace(/[^A-Za-zĂÂÎȘȚăâîșț ]/g, "")
     .split(" ")
@@ -171,22 +181,11 @@ export function Avatar({ nume, marime = 36, culoare }: { nume: string; marime?: 
     .map((p) => p[0])
     .join("")
     .toUpperCase();
-  let h = 0;
-  for (const ch of nume) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const paleta = ["#dbeafe", "#d1fae5", "#fef3c7", "#ede9fe", "#ffedd5", "#e0f2fe", "#fce7f3"];
-  const text = ["#1e40af", "#065f46", "#92400e", "#5b21b6", "#9a3412", "#075985", "#9d174d"];
-  const i = h % paleta.length;
   return (
     <span
       aria-hidden
       className="inline-flex shrink-0 items-center justify-center rounded-full font-semibold"
-      style={{
-        width: marime,
-        height: marime,
-        fontSize: marime * 0.38,
-        background: culoare ?? paleta[i],
-        color: culoare ? "#fff" : text[i],
-      }}
+      style={{ width: marime, height: marime, fontSize: Math.round(marime * 0.36), background: L.muted, color: L.mutedFg }}
     >
       {init}
     </span>
@@ -210,7 +209,9 @@ export function Stepper({
   eticheta: string;
   mare?: boolean;
 }) {
-  const s = mare ? 44 : 36;
+  const s = mare ? 44 : 32;
+  const btn =
+    "inline-flex items-center justify-center rounded-[10px] border border-[#d3d0c8] bg-white text-[#141413] shadow-[0_1px_1px_rgba(20,20,19,.06)] transition-colors duration-150 hover:bg-[#efeeea] disabled:pointer-events-none disabled:opacity-50";
   return (
     <div className="flex items-center gap-2" role="group" aria-label={eticheta}>
       <button
@@ -218,16 +219,12 @@ export function Stepper({
         aria-label={`Mai puține (${eticheta.toLowerCase()})`}
         disabled={value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
-        className="inline-flex items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#0f172a] hover:bg-[#f1f5f9] disabled:opacity-40"
+        className={btn}
         style={{ width: s, height: s }}
       >
-        <Minus size={mare ? 20 : 16} aria-hidden />
+        <Minus size={mare ? 18 : 16} aria-hidden />
       </button>
-      <output
-        aria-live="polite"
-        className="min-w-10 text-center font-semibold tabular-nums"
-        style={{ fontSize: mare ? 26 : 18 }}
-      >
+      <output aria-live="polite" className="min-w-9 text-center font-semibold" style={{ fontSize: mare ? 24 : 16 }}>
         {value}
       </output>
       <button
@@ -235,16 +232,16 @@ export function Stepper({
         aria-label={`Mai multe (${eticheta.toLowerCase()})`}
         disabled={value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
-        className="inline-flex items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#0f172a] hover:bg-[#f1f5f9] disabled:opacity-40"
+        className={btn}
         style={{ width: s, height: s }}
       >
-        <Plus size={mare ? 20 : 16} aria-hidden />
+        <Plus size={mare ? 18 : 16} aria-hidden />
       </button>
     </div>
   );
 }
 
-/* ---------- comutator segmentat ---------- */
+/* ---------- comutator segmentat (lista de taburi) ---------- */
 
 export function Segmented<T extends string>({
   optiuni,
@@ -265,7 +262,7 @@ export function Segmented<T extends string>({
     <div
       role="group"
       aria-label={eticheta}
-      className={cx("inline-flex rounded-lg p-[3px]", className)}
+      className={cx("inline-flex rounded-[10px] p-[3px]", mic ? "h-7" : "h-8", className)}
       style={{ background: L.muted }}
     >
       {optiuni.map((o) => {
@@ -277,14 +274,11 @@ export function Segmented<T extends string>({
             aria-pressed={on}
             onClick={() => onChange(o.id)}
             className={cx(
-              "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-colors",
-              mic ? "h-7 px-2.5 text-[12.5px]" : "h-8 px-3 text-[13px]"
+              "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] font-medium transition-colors duration-150",
+              mic ? "px-2.5 text-[13px]" : "px-3 text-[14px]",
+              on ? "text-[#141413]" : "text-[#141413]/60 hover:text-[#141413]"
             )}
-            style={{
-              background: on ? L.card : "transparent",
-              color: on ? L.fg : L.mutedFg,
-              boxShadow: on ? "0 1px 2px rgba(15,23,42,.08), 0 0 0 1px rgba(15,23,42,.04)" : undefined,
-            }}
+            style={{ background: on ? L.card : "transparent", boxShadow: on ? UMBRA.xs : undefined }}
           >
             {o.text}
           </button>
@@ -312,13 +306,13 @@ export function Switch({
       aria-checked={on}
       aria-label={eticheta}
       onClick={() => onChange(!on)}
-      className="relative inline-flex h-[22px] w-[40px] shrink-0 items-center rounded-full transition-colors"
-      style={{ background: on ? L.primary : "#cbd5e1" }}
+      className="relative inline-flex h-[18px] w-8 shrink-0 items-center rounded-full transition-colors duration-150"
+      style={{ background: on ? L.primary : L.input }}
     >
       <span
         aria-hidden
-        className="absolute left-[3px] top-[3px] h-4 w-4 rounded-full bg-white shadow transition-transform"
-        style={{ transform: on ? "translateX(18px)" : "none" }}
+        className="absolute left-px top-px h-4 w-4 rounded-full transition-transform duration-150"
+        style={{ background: L.bg, transform: on ? "translateX(14px)" : "none" }}
       />
     </button>
   );
@@ -398,7 +392,7 @@ export function Modal({
       <div
         aria-hidden
         className={cx("absolute inset-0", !reducedMotion && "tx-anim-fade")}
-        style={{ background: "rgba(15,23,42,.45)" }}
+        style={{ background: tip === "centru" ? "rgba(20,20,19,.28)" : "rgba(20,20,19,.24)" }}
         onClick={onClose}
       />
       <div
@@ -409,9 +403,9 @@ export function Modal({
         tabIndex={-1}
         className={cx(
           "absolute flex flex-col outline-none",
-          tip === "centru" && "left-1/2 top-1/2 max-h-[92%] -translate-x-1/2 -translate-y-1/2 rounded-xl",
-          tip === "dreapta" && "bottom-0 right-0 top-0",
-          tip === "jos" && "bottom-0 left-0 right-0 max-h-[88%] rounded-t-2xl",
+          tip === "centru" && "left-1/2 top-1/2 max-h-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[12px]",
+          tip === "dreapta" && "bottom-0 right-0 top-0 border-l",
+          tip === "jos" && "bottom-0 left-0 right-0 max-h-[88%] rounded-t-[16px]",
           className
         )}
         style={{
@@ -419,7 +413,8 @@ export function Modal({
           maxWidth: tip === "centru" ? "calc(100% - 24px)" : undefined,
           background: L.card,
           color: L.fg,
-          boxShadow: "0 24px 64px -16px rgba(15,23,42,.45)",
+          borderColor: L.border,
+          boxShadow: tip === "centru" ? `0 0 0 1px rgba(20,20,19,.08), ${UMBRA.xl}` : UMBRA.xl,
           ...style,
         }}
       >
@@ -438,9 +433,9 @@ export function BtnInchide({ onClick, eticheta = "Închide" }: { onClick: () => 
       type="button"
       aria-label={eticheta}
       onClick={onClick}
-      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]"
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[#63615b] transition-colors duration-150 hover:bg-[#f1f0ec] hover:text-[#141413]"
     >
-      <X size={18} aria-hidden />
+      <X size={16} aria-hidden />
     </button>
   );
 }
@@ -465,31 +460,26 @@ export function Toasturi({
       aria-live="polite"
       className={cx(
         "pointer-events-none absolute z-50 flex flex-col gap-2",
-        pozitie === "jos-dreapta" ? "bottom-3 right-2 w-[276px]" : "left-3 right-3 top-[104px]"
+        pozitie === "jos-dreapta" ? "bottom-4 right-4 w-[320px]" : "left-3 right-3 top-[104px]"
       )}
     >
       {lista.map((t) => {
+        // Ca în produs: pictograma ia culoarea textului. Roșul rămâne doar pentru erori.
         const Icon = t.tip === "succes" ? CircleCheck : t.tip === "eroare" ? CircleAlert : Info;
-        const culoare = t.tip === "succes" ? L.liber : t.tip === "eroare" ? L.destructive : L.primary;
         return (
           <div
             key={t.id}
             role={t.tip === "eroare" ? "alert" : "status"}
-            className={cx("pointer-events-auto flex items-start gap-2.5 rounded-lg px-3.5 py-3", !reducedMotion && "tx-anim-toast")}
-            style={{
-              background: L.card,
-              border: `1px solid ${L.border}`,
-              boxShadow: "0 12px 32px -12px rgba(15,23,42,.35)",
-              fontFamily: FONT.sans,
-            }}
+            className={cx("pointer-events-auto flex items-start gap-2.5 rounded-[8px] px-3.5 py-3", !reducedMotion && "tx-anim-toast")}
+            style={{ background: L.card, border: `1px solid ${L.border}`, boxShadow: UMBRA.lg, fontFamily: FONT.sans }}
           >
-            <Icon size={18} color={culoare} className="mt-px shrink-0" aria-hidden />
+            <Icon size={16} color={t.tip === "eroare" ? L.destructive : L.fg} className="mt-0.5 shrink-0" aria-hidden />
             <div className="min-w-0 flex-1">
-              <p className="text-[13.5px] font-medium leading-snug" style={{ color: L.fg }}>
+              <p className="text-[14px] font-medium leading-snug" style={{ color: L.fg }}>
                 {t.text}
               </p>
               {t.desc && (
-                <p className="mt-0.5 text-[12.5px] leading-snug" style={{ color: L.mutedFg }}>
+                <p className="mt-0.5 text-[13px] leading-snug" style={{ color: L.mutedFg }}>
                   {t.desc}
                 </p>
               )}
@@ -498,7 +488,7 @@ export function Toasturi({
               type="button"
               aria-label="Închide notificarea"
               onClick={() => onInchide(t.id)}
-              className="-mr-1 -mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-[#94a3b8] hover:text-[#0f172a]"
+              className="-mr-1 -mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] text-[#63615b] transition-colors duration-150 hover:bg-[#f1f0ec] hover:text-[#141413]"
             >
               <X size={14} aria-hidden />
             </button>
@@ -522,33 +512,34 @@ export function Card({
 }) {
   return (
     <div
-      className={cx("min-w-0 rounded-xl", className)}
-      style={{
-        background: L.card,
-        boxShadow: "0 0 0 1px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.05)",
-        ...style,
-      }}
+      className={cx("min-w-0 rounded-[12px]", className)}
+      style={{ background: L.card, boxShadow: `${UMBRA.inel}, ${UMBRA.xs}`, ...style }}
     >
       {children}
     </div>
   );
 }
 
-export function Eticheta({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+/** Titlul unui card: Display, 16px, ca `CardTitle` din produs. */
+export function TitluCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <label htmlFor={htmlFor} className="text-[13px] font-medium" style={{ color: L.fg }}>
+    <h2
+      className={cx("text-[16px] font-semibold leading-snug", className)}
+      style={{ fontFamily: FONT.display, letterSpacing: "-0.01em" }}
+    >
       {children}
-    </label>
+    </h2>
   );
 }
 
 export const stilInput: CSSProperties = {
-  height: 38,
+  height: 32,
   width: "100%",
-  borderRadius: 8,
-  border: `1px solid ${L.border}`,
+  borderRadius: 10,
+  border: `1px solid ${L.input}`,
   background: L.card,
-  padding: "0 12px",
+  padding: "0 10px",
   fontSize: 14,
   color: L.fg,
+  boxShadow: UMBRA.xs,
 };

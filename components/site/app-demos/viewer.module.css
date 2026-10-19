@@ -1,14 +1,210 @@
-/* Toast-ul vizualizatorului: intră de jos, sub 400ms (lumea software). */
+/* ============================================================
+   Vizualizatorul de demo-uri: scena, rama și toast-ul.
+
+   Rama se dimensionează din CSS (unități de container), nu din JS:
+   apare deja în HTML-ul de pe server, cu posterul demo-ului în ea.
+   JS-ul măsoară apoi ecranul ramei și scalează pânza fixă a demo-ului
+   (1280×800 sau 390×844) exact pe el.
+   ============================================================ */
+
+/* ---------- Scena ----------
+   Pe telefon și tabletă ia restul ecranului, sub bara de sus și șirul
+   de pași (--rail); svh, nu dvh, ca rama să nu se redimensioneze când
+   bara browserului se strânge la scroll. Pe desktop stă lipită lângă
+   coloana din stânga, cât tot ecranul de sub bara de sus. */
+.stage {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--md-fg) 4%, var(--md-bg));
+  height: max(22rem, calc(100svh - 3.5rem - var(--rail, 6.25rem)));
+}
+
+@media (min-width: 1024px) {
+  .stage {
+    position: sticky;
+    top: 3.5rem;
+    align-self: start;
+    height: calc(100dvh - 3.5rem);
+  }
+}
+
+/* Zona în care încape rama; containerul după care se măsoară. */
+.fit {
+  position: absolute;
+  inset: 1rem;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (min-width: 640px) {
+  .fit {
+    inset: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .fit {
+    inset: 2rem;
+  }
+}
+
+/* ---------- Rama ----------
+   Desktop: pânza goală, cu o margine de 1px și o umbră mică, neutră.
+   Telefon: rama de telefon, cu razele concentrice (60 / 48) și bezelul
+   de 12px ale ramei la mărime reală, scrise în procente ca să rămână
+   corecte la orice scară. Nu mărim peste mărimea reală. */
+.frame {
+  position: relative;
+  flex: none;
+}
+
+.frame[data-device="desktop"] {
+  width: min(100cqw, 100cqh * 1.6, 1280px);
+  aspect-ratio: 1280 / 800;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgb(18 23 27 / 0.14),
+    0 1px 2px rgb(18 23 27 / 0.06),
+    0 12px 32px -16px rgb(18 23 27 / 0.22);
+}
+
+.frame[data-device="mobile"] {
+  width: min(100cqw, 100cqh * 414 / 868, 414px);
+  aspect-ratio: 414 / 868;
+  border-radius: 14.4928% / 6.9124%;
+  background: #0c0d0f;
+  box-shadow:
+    inset 0 0 0 1.5px #2a2c30,
+    0 1px 2px rgb(18 23 27 / 0.06),
+    0 12px 32px -16px rgb(18 23 27 / 0.22);
+}
+
+/* Ecranul ramei: pe el se așază pânza scalată. */
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--md-fg) 7%, var(--md-bg));
+}
+.frame[data-device="mobile"] .screen {
+  /* bezelul: 12px din 414 pe lățime, 12px din 868 pe înălțime */
+  inset: 1.3825% 2.8986%;
+  border-radius: 12.3077% / 5.6872%;
+}
+
+/* Insula dinamică și indicatorul „home”: ale ramei, peste demo. */
+.island,
+.home {
+  display: none;
+  position: absolute;
+  left: 50%;
+  z-index: 50;
+  translate: -50% 0;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.frame[data-device="mobile"] .island {
+  display: block;
+  top: 1.3033%;
+  width: 31.2821%;
+  height: 4.0284%;
+  background: #000;
+}
+.frame[data-device="mobile"] .home {
+  display: block;
+  bottom: 0.9479%;
+  width: 34.359%;
+  height: 0.5924%;
+  background: rgb(115 115 115 / 0.6);
+}
+
+/* Înainte de montare, pe ecran de telefon, rama are deja forma de
+   telefon: JS-ul alege oricum telefonul acolo, iar așa nu sare din
+   desktop în telefon după hidratare. Aceleași reguli ca mai sus. */
+@media (max-width: 767.98px) {
+  .frame[data-auto] {
+    width: min(100cqw, 100cqh * 414 / 868, 414px);
+    aspect-ratio: 414 / 868;
+    border-radius: 14.4928% / 6.9124%;
+    background: #0c0d0f;
+    box-shadow:
+      inset 0 0 0 1.5px #2a2c30,
+      0 1px 2px rgb(18 23 27 / 0.06),
+      0 12px 32px -16px rgb(18 23 27 / 0.22);
+  }
+  .frame[data-auto] .screen {
+    inset: 1.3825% 2.8986%;
+    border-radius: 12.3077% / 5.6872%;
+  }
+  .frame[data-auto] .island {
+    display: block;
+    top: 1.3033%;
+    width: 31.2821%;
+    height: 4.0284%;
+    background: #000;
+  }
+  .frame[data-auto] .home {
+    display: block;
+    bottom: 0.9479%;
+    width: 34.359%;
+    height: 0.5924%;
+    background: rgb(115 115 115 / 0.6);
+  }
+}
+
+/* Pânza demo-ului. Până la prima măsurare ocupă ecranul ramei, fără
+   scalare; după, are mărimea fixă a demo-ului și `transform: scale()`. */
+.canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+}
+
+/* Cât se încarcă bucata de JS a demo-ului: posterul, altfel un text. */
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-muted);
+}
+.poster {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* ---------- Turul ----------
+   Raza rămâne 8px și pe focus: regula globală :focus-visible o coboară
+   la 4px, iar la un buton cu fundal colțurile ar sări. */
+.step,
+.step:focus-visible {
+  border-radius: 8px;
+}
+
+/* ---------- Toast ----------
+   În afara ramei, cu vocea MERIDIAN. Intră de jos, 200ms, fără rebound. */
 .toast {
-  animation: toastIn 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: toastIn 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 @keyframes toastIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
   }
 }

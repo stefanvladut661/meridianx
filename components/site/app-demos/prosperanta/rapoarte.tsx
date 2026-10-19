@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Download, RefreshCw, FileText, Plug, Receipt, UserRound, CircleCheck } from "lucide-react";
+import { Download, FileText, Plug, Receipt, RefreshCw } from "lucide-react";
 import { dec, lei, num } from "../kit";
 import { C, STATIONS, stationDaily, stationHourly, stationShare } from "./data";
 import { StationsMap } from "./map";
 import { useDemo } from "./store";
 import { PageTitle, StaffShell } from "./staff";
-import { Bars, Btn, Card, CardHead, LiveDot, Pills, de } from "./ui";
+import { Avatar, Bars, Btn, Card, CardHead, LiveDot, Meta, MetricStrip, Pills, SW, nr, unit } from "./ui";
 
 /* ============================================================
    Rapoarte pe stație: cifrele pe interval, grafic, echipa din
@@ -21,6 +21,8 @@ const AVG_PRICE = 7.12;
 const money = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mil. lei` : lei(n);
 
+const line = `1px solid ${C.border}`;
+
 export function Rapoarte() {
   const { s, mobile, notify, setRepStation } = useDemo();
   const [period, setPeriod] = useState<Period>("7");
@@ -28,7 +30,10 @@ export function Rapoarte() {
 
   const data = useMemo(() => {
     if (period === "azi") {
-      const h = stationHourly(st.id, 9);
+      /* de la 06:00 până la ora curentă; ultima bară e ora în curs */
+      const hour = Math.floor(s.clock / 3600);
+      const part = (s.clock % 3600) / 3600;
+      const h = stationHourly(st.id, hour).map((x, i, a) => (i === a.length - 1 ? { ...x, litres: x.litres * part } : x));
       const scale = st.id === 0 ? s.shiftBase.litres / h.reduce((a, x) => a + x.litres, 0) : 1;
       const rows = h.map((x) => ({ label: `${x.label}:00`, litres: x.litres * scale }));
       const litres = rows.reduce((a, x) => a + x.litres, 0);
@@ -51,7 +56,7 @@ export function Rapoarte() {
       vouchers: d.reduce((a, x) => a + x.vouchers, 0),
       every: period === "30" ? 5 : 1,
     };
-  }, [period, st.id, s.shiftBase]);
+  }, [period, st.id, s.shiftBase, s.clock]);
 
   const periodPills = (
     <Pills<Period>
@@ -59,50 +64,35 @@ export function Rapoarte() {
       size="sm"
       value={period}
       onChange={setPeriod}
+      stretch={mobile}
       items={[
         { id: "azi", label: "Azi" },
         { id: "7", label: "7 zile" },
-        { id: "30", label: "30 zile" },
+        { id: "30", label: "30 de zile" },
       ]}
     />
   );
 
-  const download = () =>
-    notify(`În demo, descărcarea e oprită. În aplicația reală pleacă raportul PDF pentru stația ${st.name}, cu fiecare zi și fiecare voucher.`);
+  const download = () => notify("Descărcarea PDF e oprită în demo.");
 
-  const kpis = [
-    { l: "Litri total", v: num(data.litres) },
-    { l: "Vânzări", v: money(data.litres * AVG_PRICE) },
-    { l: "Puncte emise", v: num(data.points) },
-    { l: "Tranzacții", v: num(data.tx) },
-    { l: "Vouchere", v: num(data.vouchers) },
-  ];
-
-  const kpiGrid = (
-    <div className={`grid gap-3 ${mobile ? "grid-cols-2" : "grid-cols-[1fr_1.35fr_1fr_1fr_0.85fr]"}`}>
-      {kpis.map((k, i) => (
-        <div
-          key={k.l}
-          className={`rounded-[18px] bg-white p-4 ${mobile && i === 0 ? "col-span-2" : ""}`}
-          style={{ border: `2px solid ${C.border}` }}
-        >
-          <p className="truncate text-[10.5px] font-bold uppercase tracking-[0.08em]" style={{ color: C.mutedFg }}>
-            {k.l}
-          </p>
-          <p className="tnum mt-1 truncate text-[22px] font-black leading-tight" style={{ color: C.red }}>
-            {k.v}
-          </p>
-        </div>
-      ))}
-    </div>
+  const kpis = (
+    <MetricStrip
+      cols={mobile ? 2 : 5}
+      size={mobile ? "md" : "lg"}
+      items={[
+        { label: "Litri", value: num(data.litres), span: mobile ? 2 : undefined },
+        { label: "Vânzări", value: money(data.litres * AVG_PRICE) },
+        { label: "Puncte emise", value: num(data.points) },
+        { label: "Tranzacții", value: num(data.tx) },
+        { label: "Vouchere validate", value: num(data.vouchers) },
+      ]}
+    />
   );
 
   const chart = (
     <Card>
-      <CardHead right={<span className="text-[12px] font-bold" style={{ color: C.mutedFg }}>{period === "azi" ? "litri pe oră, de la 06:00" : "litri pe zi"}</span>}>
-        {st.name}
-      </CardHead>
-      <div className="px-5 pb-4 pt-4">
+      <CardHead>{period === "azi" ? "Litri pe oră" : "Litri pe zi"}</CardHead>
+      <div className="px-4 pb-3 pt-3">
         <Bars
           values={data.rows.map((r) => r.litres)}
           labels={data.rows.map((r) => r.label)}
@@ -110,6 +100,7 @@ export function Rapoarte() {
           height={mobile ? 120 : 132}
           every={mobile && period === "30" ? 6 : data.every}
           format={(n) => `${num(n)} L`}
+          ticks
         />
       </div>
     </Card>
@@ -118,16 +109,11 @@ export function Rapoarte() {
   const map = (
     <Card className="overflow-hidden">
       <StationsMap selected={st.id} onSelect={setRepStation} sizeByVolume label="Alege stația" />
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <div className="min-w-0">
-          <p className="truncate text-[15px] font-black uppercase">{st.name}</p>
-          <p className="text-[12px]" style={{ color: C.mutedFg }}>
-            {st.town} · {dec(stationShare(st.id) * 100)}% din volumul rețelei
-          </p>
-        </div>
-        <span className="shrink-0 rounded-full px-2.5 py-1 text-[10.5px] font-black uppercase" style={{ background: C.greenBg, color: C.green }}>
-          Deschisă
-        </span>
+      <div className="px-4 py-3" style={{ borderTop: line }}>
+        <p className="truncate text-[15px] font-semibold">{st.name}</p>
+        <p className="text-[12.5px]" style={{ color: C.mutedFg }}>
+          {st.town} · {(stationShare(st.id) * 100).toLocaleString("ro-RO", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% din litrii rețelei
+        </p>
       </div>
     </Card>
   );
@@ -137,16 +123,16 @@ export function Rapoarte() {
       <StaffShell face="admin" screen="rapoarte">
         <div className="prs-scroll absolute inset-0">
           <main className="space-y-3 px-3 pb-10 pt-4">
-            <PageTitle title="Rapoarte" sub="Pe stație și pe interval. Atinge un pin ca să schimbi stația." />
+            <PageTitle title="Rapoarte" />
             {map}
             {periodPills}
-            {kpiGrid}
+            {kpis}
             {chart}
             <Team />
             <Integrations />
             <Invoices />
-            <Btn variant="soft" className="w-full" onClick={download}>
-              <Download size={15} strokeWidth={2.6} /> Descarcă raportul
+            <Btn variant="secondary" className="w-full" onClick={download}>
+              <Download size={15} strokeWidth={SW} aria-hidden /> Descarcă PDF
             </Btn>
           </main>
         </div>
@@ -159,12 +145,11 @@ export function Rapoarte() {
         <div className="mx-auto w-full max-w-[1232px] shrink-0 px-6 pt-5">
           <PageTitle
             title="Rapoarte"
-            sub="Pe stație și pe interval · tranzacțiile vin din casele de marcat, facturile pleacă singure"
             right={
               <div className="flex items-center gap-3">
                 {periodPills}
-                <Btn variant="outline" size="sm" onClick={download}>
-                  <Download size={14} strokeWidth={2.6} /> Raport PDF
+                <Btn variant="secondary" size="sm" onClick={download}>
+                  <Download size={14} strokeWidth={SW} aria-hidden /> Descarcă PDF
                 </Btn>
               </div>
             }
@@ -176,9 +161,9 @@ export function Rapoarte() {
             <Team />
           </div>
           <div className="prs-scroll col-span-8 min-h-0 space-y-4 pr-0.5">
-            {kpiGrid}
+            {kpis}
             {chart}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 items-start gap-4">
               <Integrations />
               <Invoices />
             </div>
@@ -197,37 +182,31 @@ function Team() {
   const shifts = ["Tura 1 · 07–15", "Tura 2 · 15–23", "Tura 3 · 23–07"];
   return (
     <Card>
-      <CardHead right={<span className="text-[12px] font-bold" style={{ color: C.mutedFg }}>{st.staff.length} angajați</span>}>Echipa stației</CardHead>
+      <CardHead right={<Meta>{nr(st.staff.length, "angajat", "angajați")}</Meta>}>Echipa</CardHead>
       <ul>
         {st.staff.map((name, i) => {
           const on = i === 0;
           const ops = on ? (st.id === 0 ? s.shiftBase.ops : 90 + ((st.id * 37) % 70)) : 0;
-          const vouchers = on ? (st.id === 0 ? s.shiftBase.vouchers : 6 + (st.id % 9)) : 0;
           return (
-            <li key={name} className="flex items-center gap-3 px-5 py-3" style={{ borderTop: i ? `1px solid ${C.border}` : undefined }}>
-              <span
-                className="flex size-9 shrink-0 items-center justify-center rounded-full"
-                style={{ background: on ? C.red : C.muted, color: on ? "#fff" : C.mutedFg }}
-              >
-                <UserRound size={17} strokeWidth={2.4} />
-              </span>
+            <li key={name} className="flex items-center gap-3 px-4 py-2.5" style={{ borderTop: i ? line : undefined }}>
+              <Avatar name={name} size={32} />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13.5px] font-bold">{name}</p>
-                <p className="text-[11.5px]" style={{ color: C.mutedFg }}>
+                <p className="truncate text-[13.5px] font-medium">{name}</p>
+                <p className="text-[12.5px]" style={{ color: C.mutedFg }}>
                   {shifts[i % 3]}
                 </p>
               </div>
               {on ? (
-                <div className="text-right">
-                  <p className="flex items-center justify-end gap-1.5 text-[10.5px] font-black uppercase" style={{ color: C.green }}>
-                    <LiveDot color={C.green} /> În tură
+                <div className="shrink-0 text-right">
+                  <p className="flex items-center justify-end gap-1.5 text-[12.5px] font-medium" style={{ color: C.green }}>
+                    <LiveDot /> În tură
                   </p>
-                  <p className="tnum text-[12px] font-bold">
-                    {num(ops)} op. · {vouchers} vouchere
+                  <p className="text-[12.5px]" style={{ color: C.mutedFg }}>
+                    {nr(ops, "operațiune", "operațiuni")}
                   </p>
                 </div>
               ) : (
-                <span className="text-[11px] font-bold uppercase" style={{ color: C.soft }}>
+                <span className="shrink-0 text-[12.5px]" style={{ color: C.mutedFg }}>
                   Liber
                 </span>
               )}
@@ -242,11 +221,12 @@ function Team() {
 /* ---------------- integrări ---------------- */
 
 function Integrations() {
-  const { s, notify, sync, rm } = useDemo();
+  const { s, sync, rm } = useDemo();
   const [busy, setBusy] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
+  /* rezultatul se vede pe loc, în ora ultimei sincronizări */
   const run = () => {
     if (busy) return;
     setBusy(true);
@@ -254,61 +234,49 @@ function Integrations() {
       () => {
         setBusy(false);
         sync();
-        notify("În demo, sincronizarea e simulată. În aplicația reală, tranzacțiile vin din casele de marcat, iar facturile pleacă spre programul de facturare.");
       },
       rm ? 50 : 1200
     );
   };
 
+  const invoices = 184 + s.invoices.length - 5;
   const rows = [
-    {
-      icon: <Plug size={17} strokeWidth={2.4} />,
-      name: "Case de marcat Rompetrol",
-      line: (
-        <>
-          <b className="tnum font-black" style={{ color: C.fg }}>{num(s.totals.todayTx)}</b> {de(s.totals.todayTx)}tranzacții importate azi
-        </>
-      ),
-    },
-    {
-      icon: <Receipt size={17} strokeWidth={2.4} />,
-      name: "Facturare clienți firmă",
-      line: (
-        <>
-          <b className="tnum font-black" style={{ color: C.fg }}>{184 + s.invoices.length - 5}</b> {de(184 + s.invoices.length - 5)}facturi emise azi
-        </>
-      ),
-    },
+    { icon: Plug, name: "Case de marcat Rompetrol", line: `${num(s.totals.todayTx)} ${unit(s.totals.todayTx, "tranzacție importată", "tranzacții importate")} azi` },
+    { icon: Receipt, name: "Facturare clienți firmă", line: `${num(invoices)} ${unit(invoices, "factură emisă", "facturi emise")} azi` },
   ];
 
   return (
     <Card>
       <CardHead>Integrări</CardHead>
       <ul>
-        {rows.map((r, i) => (
-          <li key={r.name} className="flex items-center gap-3 px-5 py-3" style={{ borderTop: i ? `1px solid ${C.border}` : undefined }}>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-[12px]" style={{ background: "#FDECEE", color: C.red }}>
-              {r.icon}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13.5px] font-black uppercase">{r.name}</p>
-              <p className="text-[12px]" style={{ color: C.mutedFg }}>
-                {r.line}
-              </p>
-            </div>
-            <span className="flex shrink-0 items-center gap-1 text-[10.5px] font-black uppercase" style={{ color: C.green }}>
-              <CircleCheck size={13} strokeWidth={2.8} /> Conectat
-            </span>
-          </li>
-        ))}
+        {rows.map((r, i) => {
+          const I = r.icon;
+          return (
+            <li key={r.name} className="flex items-start gap-3 px-4 py-3" style={{ borderTop: i ? line : undefined }}>
+              <I size={16} strokeWidth={SW} className="mt-0.5 shrink-0" style={{ color: C.mutedFg }} aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-medium">{r.name}</p>
+                <p className="text-[12.5px]" style={{ color: C.mutedFg }}>
+                  {r.line}
+                </p>
+              </div>
+              <span className="flex shrink-0 items-center gap-1.5 pt-0.5 text-[12.5px] font-medium" style={{ color: C.green }}>
+                <LiveDot /> Conectat
+              </span>
+            </li>
+          );
+        })}
       </ul>
-      <div className="flex items-center justify-between gap-3 px-5 py-3" style={{ borderTop: `1px solid ${C.border}` }}>
-        <p className="text-[12px]" style={{ color: C.mutedFg }}>
-          Ultima sincronizare: <b className="tnum font-black" style={{ color: C.fg }}>{s.lastSync}</b>
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5" style={{ borderTop: line }}>
+        <p className="text-[12.5px]" style={{ color: C.mutedFg }} aria-live="polite">
+          Ultima sincronizare:{" "}
+          <span className="font-semibold" style={{ color: C.fg }}>
+            {s.lastSync}
+          </span>
         </p>
-        <Btn size="sm" variant="dark" onClick={run} disabled={busy} aria-busy={busy}>
-          <RefreshCw size={13} strokeWidth={2.8} className={busy ? "a-spin" : ""} />
-          {busy ? "Se sincronizează" : "Sincronizează"}
+        <Btn size="sm" variant="secondary" onClick={run} disabled={busy} aria-busy={busy}>
+          <RefreshCw size={14} strokeWidth={SW} className={busy ? "a-spin" : ""} aria-hidden />
+          {busy ? "Se sincronizează…" : "Sincronizează"}
         </Btn>
       </div>
     </Card>
@@ -319,23 +287,19 @@ function Invoices() {
   const { s, notify } = useDemo();
   return (
     <Card>
-      <CardHead right={<span className="text-[12px] font-bold" style={{ color: C.mutedFg }}>automat, la fiecare bon pe firmă</span>}>Facturi recente</CardHead>
+      <CardHead>Facturi recente</CardHead>
       <ul>
         {s.invoices.slice(0, 5).map((f, i) => (
-          <li key={f.no} style={{ borderTop: i ? `1px solid ${C.border}` : undefined }}>
-            <button
-              type="button"
-              onClick={() => notify(`În demo, factura nu se deschide. În aplicația reală se descarcă PDF-ul facturii ${f.no}.`)}
-              className={`flex w-full items-center gap-3 px-5 py-2.5 text-left transition-colors hover:bg-[#FAFAFA] ${i === 0 ? "a-in" : ""}`}
-            >
-              <FileText size={16} className="shrink-0" style={{ color: C.soft }} />
+          <li key={f.no} style={{ borderTop: i ? line : undefined }}>
+            <button type="button" onClick={() => notify("Descărcarea facturii e oprită în demo.")} className="row flex w-full items-center gap-3 px-4 py-2.5 text-left">
+              <FileText size={16} strokeWidth={SW} className="shrink-0" style={{ color: C.mutedFg }} aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[13px] font-bold">{f.company}</span>
-                <span className="block text-[11.5px]" style={{ color: C.mutedFg }}>
+                <span className="block truncate text-[13.5px] font-medium">{f.company}</span>
+                <span className="block text-[12.5px]" style={{ color: C.mutedFg }}>
                   {f.no} · {f.time}
                 </span>
               </span>
-              <span className="tnum shrink-0 text-[13px] font-black">{dec(f.value)} lei</span>
+              <span className="shrink-0 text-[13.5px] font-semibold">{dec(f.value)} lei</span>
             </button>
           </li>
         ))}
@@ -343,4 +307,3 @@ function Invoices() {
     </Card>
   );
 }
-

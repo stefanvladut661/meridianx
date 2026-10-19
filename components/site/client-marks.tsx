@@ -29,7 +29,7 @@ const S = {
 
 const MARKS: Record<string, Mark> = {
   /* montaj și amenajări — colțare de cadru */
-  "Art Install Suppliers": {
+  "Art Instal Suppliers": {
     from: "#e0a34a",
     to: "#c2703a",
     glyph: (

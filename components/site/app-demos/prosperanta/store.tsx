@@ -34,7 +34,7 @@ import {
    Starea comună a demo-ului: un singur „backend” în memorie.
    Angajatul adaugă litri → clientul vede punctele → revendică
    o recompensă → angajatul validează voucherul → adminul vede
-   totul în fluxul live. Toate ecranele citesc de aici.
+   totul în fluxul de tranzacții. Toate ecranele citesc de aici.
    ============================================================ */
 
 export type Tx = {
@@ -71,6 +71,8 @@ type State = {
   pickVoucher: string | null;
   lastSync: string;
   autoDone: boolean;
+  /** Fluxul de tranzacții e oprit de utilizator (WCAG 2.2.2). */
+  paused: boolean;
   toast: { id: number; points: number; litres: number; station: number; fuel: Fuel } | null;
 };
 
@@ -89,14 +91,17 @@ type Action =
   | { type: "pickVoucher"; code: string | null }
   | { type: "sync" }
   | { type: "autoDone" }
+  | { type: "pause" }
   | { type: "toast"; toast: State["toast"] };
 
+const TICK_MS = 6000;
+
 const SHIFT_INIT: Tx[] = [
-  { id: "s1", kind: "fuel", name: "Mihaela S.", station: 0, fuel: "motorina", litres: 48.2, points: 48, time: "09:36" },
-  { id: "s2", kind: "fuel", name: "Paul D.", station: 0, fuel: "benzina", litres: 31.5, points: 31, time: "09:29" },
-  { id: "s3", kind: "voucher", name: "Oana I.", station: 0, fuel: "benzina", litres: 0, points: 0, time: "09:24", reward: "Cafea gratuită" },
-  { id: "s4", kind: "fuel", name: "Cristian B.", station: 0, fuel: "gpl", litres: 36.8, points: 73, time: "09:18" },
-  { id: "s5", kind: "fuel", name: "Laura C.", station: 0, fuel: "benzina", litres: 40.1, points: 40, time: "09:07" },
+  { id: "s1", kind: "fuel", name: "Mihaela S.", station: 0, fuel: "motorina", litres: 48.2, points: 48, time: "10:09" },
+  { id: "s2", kind: "fuel", name: "Paul D.", station: 0, fuel: "benzina", litres: 31.5, points: 31, time: "10:04" },
+  { id: "s3", kind: "voucher", name: "Oana I.", station: 0, fuel: "benzina", litres: 0, points: 0, time: "09:58", reward: "Cafea gratuită" },
+  { id: "s4", kind: "fuel", name: "Cristian B.", station: 0, fuel: "gpl", litres: 36.8, points: 73, time: "09:53" },
+  { id: "s5", kind: "fuel", name: "Laura C.", station: 0, fuel: "benzina", litres: 40.1, points: 40, time: "09:47" },
 ];
 
 function seedFeed(): Tx[] {
@@ -126,8 +131,9 @@ const init: State = {
   repStation: 0,
   pickCustomer: null,
   pickVoucher: null,
-  lastSync: "09:38",
+  lastSync: "10:10",
   autoDone: false,
+  paused: false,
   toast: null,
 };
 
@@ -187,6 +193,8 @@ function bumpShift(b: State["shiftBase"], tx: Tx): State["shiftBase"] {
 function reducer(s: State, a: Action): State {
   switch (a.type) {
     case "tick": {
+      /* Tura din panoul angajatului e a casei lui: se schimbă doar prin
+         operațiunile lui, nu prin tranzacțiile celorlalte case. */
       const tx = a.tx;
       let totals = tx.kind === "fuel" ? addFuelTotals(s.totals, tx.litres, tx.fuel, tx.points) : { ...s.totals, vouchers: s.totals.vouchers + 1 };
       if (a.member) totals = { ...totals, members: totals.members + 1, newToday: totals.newToday + 1 };
@@ -194,8 +202,6 @@ function reducer(s: State, a: Action): State {
         ...s,
         clock: s.clock + a.dt,
         feed: [tx, ...s.feed].slice(0, 30),
-        shift: tx.station === 0 ? [tx, ...s.shift].slice(0, 30) : s.shift,
-        shiftBase: tx.station === 0 ? bumpShift(s.shiftBase, tx) : s.shiftBase,
         totals,
         invoices: a.invoice ? [a.invoice, ...s.invoices].slice(0, 12) : s.invoices,
       };
@@ -312,6 +318,8 @@ function reducer(s: State, a: Action): State {
       return { ...s, lastSync: clockLabel(s.clock) };
     case "autoDone":
       return { ...s, autoDone: true };
+    case "pause":
+      return { ...s, paused: !s.paused };
     case "toast":
       return { ...s, toast: a.toast };
   }
@@ -339,6 +347,7 @@ type Ctx = {
   pickVoucher: (code: string | null) => void;
   sync: () => void;
   autoDone: () => void;
+  togglePause: () => void;
   clearToast: () => void;
 };
 
@@ -355,12 +364,15 @@ export function DemoProvider({
   go,
   notify,
   reducedMotion,
+  feedOpen,
   children,
 }: {
   device: DemoDevice;
   go: (s: string) => void;
   notify: (m: string) => void;
   reducedMotion: boolean;
+  /** Fluxul de tranzacții e pe ecran (dashboard-ul, cu butonul de pauză). */
+  feedOpen: boolean;
   children: React.ReactNode;
 }) {
   const [s, dispatch] = useReducer(reducer, init);
@@ -368,12 +380,15 @@ export function DemoProvider({
   const sRef = useRef(s);
   sRef.current = s;
 
-  /* Rețeaua trăiește: o tranzacție nouă la ~2,6 s. Sub reduced motion, nu. */
+  /* Rețeaua: o tranzacție la 6 s, cu ceasul demo-ului în pas cu cel real
+     (~7 pe minut, cât dau 1.742 de tranzacții până la 10:12). Merge doar
+     cât dashboard-ul e deschis, unde fluxul are buton de pauză; sub
+     reduced motion, deloc. */
   useInterval(
     () => {
       const n = i.current++;
       const r = rng(n * 53 + 11);
-      const dt = 9 + Math.floor(r() * 26);
+      const dt = TICK_MS / 1000;
       const tx = makeTx(n, sRef.current.clock + dt);
       const invoice: Invoice | undefined =
         n % 6 === 3
@@ -387,8 +402,8 @@ export function DemoProvider({
           : undefined;
       dispatch({ type: "tick", tx, dt, member: n % 7 === 4, invoice });
     },
-    2600,
-    !reducedMotion
+    TICK_MS,
+    feedOpen && !reducedMotion && !s.paused
   );
 
   /* Acțiunile sunt stabile (nu se schimbă la fiecare tick), ca efectele
@@ -418,6 +433,7 @@ export function DemoProvider({
       pickVoucher: (code: string | null) => dispatch({ type: "pickVoucher", code }),
       sync: () => dispatch({ type: "sync" }),
       autoDone: () => dispatch({ type: "autoDone" }),
+      togglePause: () => dispatch({ type: "pause" }),
       clearToast: () => dispatch({ type: "toast", toast: null }),
     }),
     []

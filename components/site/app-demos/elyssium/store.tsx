@@ -43,7 +43,7 @@ export const TEXT_MOTIV: Record<Motiv, string> = {
   abonament_expirat: "abonament expirat",
   fara_abonament: "fără abonament",
   fara_sedinte: "fără ședințe rămase",
-  alegere_necesara: "recepția alege ce se consumă",
+  alegere_necesara: "alege ce se consumă",
   deja_intrat_azi: "a intrat deja azi",
   respinsa_de_receptie: "respinsă de recepție",
 };
@@ -60,7 +60,6 @@ export type Scan = {
   consum?: { plan: string; tip: Tip; ramase: number | null; exp: number };
   optiuni?: Optiune[];
   staff?: string;
-  live?: boolean;
 };
 
 type Jurnal = { text: string; cine: string; ora: string };
@@ -73,7 +72,8 @@ export type State = {
   scans: Scan[];
   azi: { scanari: number; consumate: number; refuzate: number; tipuri: Record<Tip, number> };
   inSala: number;
-  vanzariAzi: { suma: number; nr: number; online: number };
+  /** Vânzările făcute în demo, peste cifrele lunii din data.ts. */
+  vanzariNoi: { suma: number; metoda: Metoda }[];
   openScan: string | null;
   profil: string | null;
   dialogSub: string | null;
@@ -198,7 +198,7 @@ function initial(): State {
     scans,
     azi: { scanari: 131, consumate: 124, refuzate: 3, tipuri: { fitness: 101, spa: 17, aerobic: 6 } },
     inSala: 58,
-    vanzariAzi: { suma: 2_310, nr: 12, online: 7 },
+    vanzariNoi: [],
     openScan: null,
     profil: null,
     dialogSub: null,
@@ -220,6 +220,9 @@ export type Demo = {
   go: (s: string) => void;
   notify: (m: string) => void;
   getM: (id: string) => Member;
+  /** Lista de scanări și plățile care sosesc singure sunt oprite. */
+  pauza: boolean;
+  setPauza: (p: boolean) => void;
   scaneaza: (memberId: string, metoda?: "qr" | "manual") => string;
   rezolva: (scanId: string, subId: string, tip: Tip, staff?: string) => void;
   respinge: (scanId: string) => void;
@@ -242,15 +245,28 @@ export function useDemo(): Demo {
 const PERSONAJE = ["c0", "c1", "c2"];
 const getRef = (s: State, id: string) => s.over[id] ?? lume().dupaId.get(id)!;
 
+/**
+ * Ecranele pe care se vede fluxul (scanările care sosesc, plățile online
+ * care primesc factură). Pe celelalte, datele stau pe loc: lista de
+ * clienți nu se reordonează sub cursor, iar Dashboard-ul rămâne la ora
+ * din „actualizat la”. Pe telefon, ecranul de scanare e al membrului și
+ * nu arată lista recepției.
+ */
+function areFlux(screen: string, device: DemoDevice) {
+  return screen === "receptie" || screen === "facturi" || (screen === "scanare" && device === "desktop");
+}
+
 export function DemoProvider({
   children,
   device,
+  screen,
   rm,
   go,
   notify,
 }: {
   children: ReactNode;
   device: DemoDevice;
+  screen: string;
   rm: boolean;
   go: (s: string) => void;
   notify: (m: string) => void;
@@ -258,6 +274,11 @@ export function DemoProvider({
   const [st, setSt] = useState<State>(initial);
   const ref = useRef(st);
   const timers = useRef<number[]>([]);
+  // sub reduced motion lista pornește oprită; butonul „Continuă” o pornește
+  const [pauza, setPauza] = useState(rm);
+  useEffect(() => {
+    if (rm) setPauza(true);
+  }, [rm]);
 
   const upd = useCallback((f: (s: State) => State) => {
     const next = f(ref.current);
@@ -285,7 +306,7 @@ export function DemoProvider({
         const m = getRef(s, memberId);
         const a = analizeaza(m, s.intrati);
         const sec = s.now;
-        const scan: Scan = { id, sec, memberId, metoda, status: a.status, live: true };
+        const scan: Scan = { id, sec, memberId, metoda, status: a.status };
         let over = s.over;
         let intrati = s.intrati;
         const azi = { ...s.azi, tipuri: { ...s.azi.tipuri }, scanari: s.azi.scanari + 1 };
@@ -361,9 +382,9 @@ export function DemoProvider({
           ...s,
           seq: s.seq + 1,
           over: { ...s.over, [m.id]: { ...m, subs: [...m.subs, sub], nrAbonamente: m.nrAbonamente + 1 } },
-          vanzariAzi: { ...s.vanzariAzi, suma: s.vanzariAzi.suma + plan.pret, nr: s.vanzariAzi.nr + 1 },
+          vanzariNoi: [...s.vanzariNoi, { suma: plan.pret, metoda }],
           jurnal: { ...s.jurnal, [m.id]: [j, ...(s.jurnal[m.id] ?? [])] },
-          flash: { memberId: m.id, text: `„${plan.nume}” e activ din acest moment și a apărut deja pe telefonul clientului.` },
+          flash: { memberId: m.id, text: `Abonament creat: „${plan.nume}”` },
         };
       });
     },
@@ -430,7 +451,10 @@ export function DemoProvider({
     [upd, later]
   );
 
-  /* ---------- viața: scanări și plăți care sosesc singure ---------- */
+  /* ---------- fluxul: scanările și plățile online care sosesc ----------
+     Doar pe ecranele care îl arată și cât timp nu e pe pauză (butonul
+     „Pauză” din Scanări, cerut de WCAG 2.2.2 pentru conținut care se
+     actualizează singur). */
   const tickRef = useRef(0);
   useInterval(
     () => {
@@ -438,8 +462,8 @@ export function DemoProvider({
       const r = rng(7000 + k * 31);
       const s0 = ref.current;
       const L = lume();
-      // timpul demo-ului avansează cu 20–60 s la fiecare sosire
-      upd((s) => ({ ...s, now: s.now + 20 + Math.floor(r() * 40) }));
+      // timpul demo-ului avansează cu 20–50 s la fiecare sosire
+      upd((s) => ({ ...s, now: s.now + 20 + Math.floor(r() * 30) }));
 
       // o recepționeră de pe alt calculator rezolvă scanările rămase de mult în așteptare
       const vechi = s0.scans.filter((x) => x.status === "in_asteptare" && x.id !== s0.openScan && !PERSONAJE.includes(x.memberId));
@@ -480,7 +504,7 @@ export function DemoProvider({
         const fid = `fl${k}`;
         upd((s) => ({
           ...s,
-          vanzariAzi: { suma: s.vanzariAzi.suma + p.pret, nr: s.vanzariAzi.nr + 1, online: s.vanzariAzi.online + 1 },
+          vanzariNoi: [...s.vanzariNoi, { suma: p.pret, metoda: "online" as const }],
           facturi: [
             { id: fid, numar: null, client: `${c.prenume} ${c.nume.charAt(0)}.`, plan: p.nume, suma: p.pret, ora: ora(s.now), o: 0, status: "emitere" as const, email: false },
             ...s.facturi,
@@ -498,8 +522,8 @@ export function DemoProvider({
         }, 2600);
       }
     },
-    5200,
-    !rm
+    7000,
+    !pauza && areFlux(screen, device)
   );
 
   const value = useMemo<Demo>(
@@ -511,6 +535,8 @@ export function DemoProvider({
       go,
       notify,
       getM,
+      pauza,
+      setPauza,
       scaneaza,
       rezolva,
       respinge,
@@ -521,7 +547,7 @@ export function DemoProvider({
       stergeAnunt,
       reincearcaFactura,
     }),
-    [st, device, rm, go, notify, getM, scaneaza, rezolva, respinge, vindeAbonament, reseteazaPersonaje, set, publica, stergeAnunt, reincearcaFactura]
+    [st, device, rm, go, notify, getM, pauza, scaneaza, rezolva, respinge, vindeAbonament, reseteazaPersonaje, set, publica, stergeAnunt, reincearcaFactura]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

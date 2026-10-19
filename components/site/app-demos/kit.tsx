@@ -395,8 +395,18 @@ export function Donut({
  * Bara de stare iOS pentru layout-ul de telefon: 44px, ora în stânga,
  * semnal/wifi/baterie în dreapta, mijlocul liber pentru insula dinamică.
  * `tone="light"` = text alb (pe header închis), `"dark"` = text negru.
+ * `time` = ora din datele demo-ului („10:12”), ca bara să nu arate ora
+ * de prezentare Apple (9:41) peste o aplicație care trăiește altă oră.
  */
-export function StatusBar({ tone = "dark", bg }: { tone?: "light" | "dark"; bg?: string }) {
+export function StatusBar({
+  tone = "dark",
+  bg,
+  time = "9:41",
+}: {
+  tone?: "light" | "dark";
+  bg?: string;
+  time?: string;
+}) {
   const c = tone === "light" ? "#fff" : "#000";
   return (
     <div
@@ -416,7 +426,7 @@ export function StatusBar({ tone = "dark", bg }: { tone?: "light" | "dark"; bg?:
         letterSpacing: "-0.01em",
       }}
     >
-      <span>9:41</span>
+      <span style={{ fontVariantNumeric: "tabular-nums" }}>{time}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <svg width="18" height="11" viewBox="0 0 18 11" fill={c}>
           <rect x="0" y="7" width="3" height="4" rx="1" />

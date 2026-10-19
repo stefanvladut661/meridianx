@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
@@ -148,8 +149,15 @@ export const ADMIN_ACCESS_MESSAGES: Record<Exclude<AdminVerdict, "allowed">, str
  * Poarta e AICI, nu în formularul de login: rutele API și acțiunile de
  * server trec toate prin funcția asta, deci un cont scos din listă pierde
  * accesul la următoarea cerere, nu la următoarea autentificare.
+ *
+ * `cache()`: layout-ul și pagina din /admin o cheamă amândouă în aceeași
+ * cerere (pagina TREBUIE să verifice singură, vezi (dash)/page.tsx), iar
+ * așa tokenul se validează la Supabase o singură dată pe cerere.
  */
-export async function getAdminUser(): Promise<{ id: string; email: string | null } | null> {
+export const getAdminUser = cache(async function getAdminUser(): Promise<{
+  id: string;
+  email: string | null;
+} | null> {
   const supabase = await createReadOnlySessionClient();
   if (!supabase) return null;
 
@@ -164,4 +172,4 @@ export async function getAdminUser(): Promise<{ id: string; email: string | null
   }
 
   return { id: data.user.id, email: data.user.email ?? null };
-}
+});

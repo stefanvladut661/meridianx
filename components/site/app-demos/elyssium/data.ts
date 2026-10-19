@@ -1,4 +1,4 @@
-import { rng } from "../kit";
+import { num, rng } from "../kit";
 
 /* ============================================================
    Datele demo-ului Elyssium — toate inventate, deterministe.
@@ -17,14 +17,22 @@ export const C = {
   coral: "#E88B84",
   text: "#111827",
   text2: "#6B7280",
+  /** gri secundar pe fundaluri colorate sau gri, unde #6B7280 nu trece AA */
+  text2Tare: "#4B5563",
   fundal: "#FAFAF8",
   card: "#FFFFFF",
   contur: "#E5E7EB",
+  /** conturul câmpurilor și al butoanelor secundare */
+  conturCamp: "#D1D5DB",
   dezactivat: "#F3F4F6",
   succes: "#0F766E",
   eroare: "#DC2626",
+  /** roșul pentru text (5,7:1 pe fundalul roz) */
+  eroareText: "#B91C1C",
   avert: "#F59E0B",
   avertText: "#92400E",
+  /** chihlimbarul pentru text pe alb: „2 zile”, „în așteptare” */
+  avertCerneala: "#B45309",
   fAuriu: "#FDF4D5",
   auriuText: "#7A5D06",
   fSucces: "#E6F4F2",
@@ -36,15 +44,18 @@ export const C = {
   spaBg: "#EAF0FD",
   spaText: "#3F63C4",
   aerBg: "#FDF0EF",
-  aerText: "#B85B54",
+  aerText: "#9F4A44",
+  /** barele ne-evidențiate din grafice (3,1:1 pe alb) și liniile de grilă */
+  movStins: "#9A89BD",
+  grila: "#EEF0F3",
 } as const;
 
-export const UMBRA = "0 4px 12px rgba(17, 24, 39, 0.06)";
+/** Doar pentru semnul din logo. */
 export const GRADIENT = `linear-gradient(135deg, ${C.mov} 0%, ${C.albastru} 55%, ${C.coral} 100%)`;
 
 /* ---------- timp: „azi” e miercuri, 23 septembrie 2026 ---------- */
 const TODAY = Date.UTC(2026, 8, 23);
-export const ORA_START = 9 * 3600 + 41 * 60; // 09:41, ca bara de stare
+export const ORA_START = 10 * 3600 + 17 * 60; // 10:17, ora la care se deschide demo-ul
 
 export const LUNI = [
   "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie",
@@ -60,9 +71,11 @@ export const dataLunga = (o: number) => {
   const d = zi(o);
   return `${d.getUTCDate()} ${LUNI[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 };
+/** „19 sept.”; cu anul doar când nu e 2026: „28 nov. 2025”. */
 export const dataScurta = (o: number) => {
   const d = zi(o);
-  return `${d.getUTCDate()} ${LUNI_SCURT[d.getUTCMonth()]}`;
+  const an = d.getUTCFullYear();
+  return `${d.getUTCDate()} ${LUNI_SCURT[d.getUTCMonth()]}${an === 2026 ? "" : ` ${an}`}`;
 };
 export const lunaAn = (o: number) => {
   const d = zi(o);
@@ -72,12 +85,16 @@ export const ziSapt = (o: number) => ZILE_SAPT[zi(o).getUTCDay()];
 export const ora = (sec: number) =>
   `${String(Math.floor(sec / 3600) % 24).padStart(2, "0")}:${String(Math.floor((sec % 3600) / 60)).padStart(2, "0")}`;
 
-/** Plural românesc: 1 zi · 7 zile · 22 de zile. */
-export function plural(n: number, unu: string, multe: string) {
-  if (n === 1) return `1 ${unu}`;
+/** Doar substantivul, cu „de” când trebuie: 7 → „zile”, 22 → „de zile”. */
+export function cuvantPlural(n: number, unu: string, multe: string) {
+  if (n === 1) return unu;
   const r = n % 100;
   const de = n >= 20 && (r === 0 || r >= 20);
-  return `${n} ${de ? "de " : ""}${multe}`;
+  return `${de ? "de " : ""}${multe}`;
+}
+/** Plural românesc: 1 zi · 7 zile · 22 de zile · 1.694 de abonamente. */
+export function plural(n: number, unu: string, multe: string) {
+  return `${num(n)} ${cuvantPlural(n, unu, multe)}`;
 }
 export const pluralZile = (n: number) => plural(n, "zi", "zile");
 export const pluralSedinte = (n: number) => plural(n, "ședință", "ședințe");
@@ -430,14 +447,15 @@ export const VANDUTE_LUNA = 1694;
 export const VANDUTE_LUNA_TRECUTA = 1538;
 export const NOI_LUNA = 164;
 
-/** Check-in-urile pe zi, ultimele 30 de zile (azi = ultima). */
+/** Intrările pe zi, ultimele 30 de zile încheiate (ieri = ultima). Ziua
+    de azi nu intră: la 10:17 ar arăta ca o prăbușire, nu ca o zi în curs. */
 export const CHECKINS_30: { o: number; n: number }[] = (() => {
   const r = rng(303);
   const out: { o: number; n: number }[] = [];
-  for (let o = -29; o <= 0; o++) {
+  for (let o = -30; o <= -1; o++) {
     const dow = zi(o).getUTCDay();
     const baza = dow === 0 ? 262 : dow === 6 ? 384 : 566;
-    const trend = 1 + (o + 29) * 0.0035;
+    const trend = 1 + (o + 30) * 0.0035;
     out.push({ o, n: Math.round(baza * trend * (0.93 + r() * 0.14)) });
   }
   return out;
@@ -475,8 +493,8 @@ export const ANUNTURI: Anunt[] = [
     id: "a2",
     titlu: "Sauna, în revizie joi dimineață",
     text: "Joi, între 7:30 și 12:00, sauna e închisă pentru revizia anuală. Restul zonei SPA rămâne deschisă.",
-    o: -6,
-    ora: "10:12",
+    o: -7,
+    ora: "17:40",
     trimise: 4264,
     citite: 3398,
     autor: STAFF_ALT,
@@ -484,7 +502,7 @@ export const ANUNTURI: Anunt[] = [
   {
     id: "a1",
     titlu: "Abonamentul se cumpără și din aplicație",
-    text: "Plătești cu cardul, abonamentul se activează pe loc, iar factura vine pe email.",
+    text: "Alegi abonamentul în aplicație și plătești cu cardul. Factura o primești pe email.",
     o: -15,
     ora: "12:30",
     trimise: 4218,
@@ -544,7 +562,7 @@ export const FACTURI_INITIALE: Factura[] = (() => {
     } else if (k === 7) {
       f.status = "de_verificat";
       f.numar = null;
-      f.motiv = "SmartBill n-a răspuns în 20 s — verifică în SmartBill Cloud";
+      f.motiv = "SmartBill n-a răspuns în 20 s. Verifică în SmartBill Cloud.";
       numar++;
     }
     out.push(f);

@@ -45,16 +45,27 @@ export type Loc = {
 };
 
 export const LOCS: Loc[] = [
-  { id: "arges-mall", name: "Argeș Mall", city: "Pitești", code: "AM", type: "fizic", connector: "pc-arges-1", source: "DorSoft", method: "export JSON · citire", agent: "1.4.2", today: 34980, receipts: 29, units: 57, stockValue: 2184000, stockUnits: 5210, pay: [0.74, 0.26, 0], records: 1482, syncAgo: 4, status: "online", file: "ZOF-ArgesMall-219.json" },
-  { id: "centru", name: "Centru", city: "Pitești", code: "CE", type: "fizic", connector: "pc-centru-1", source: "DorSoft", method: "export JSON · citire", agent: "1.4.2", today: 29460, receipts: 25, units: 49, stockValue: 1912000, stockUnits: 4580, pay: [0.69, 0.31, 0], records: 1296, syncAgo: 11, status: "online", file: "ZOF-Centru-214.json" },
-  { id: "valcea", name: "Râmnicu Vâlcea", city: "Vâlcea", code: "RV", type: "fizic", connector: "pc-valcea-1", source: "Access", method: "bază .accdb · ODBC read-only", agent: "1.4.2", today: 24870, receipts: 21, units: 40, stockValue: 1655000, stockUnits: 3940, pay: [0.71, 0.29, 0], records: 1104, syncAgo: 7, status: "online", file: "valcea.accdb" },
-  { id: "exercitiu", name: "Exercițiu", city: "Pitești", code: "EX", type: "fizic", connector: "pc-exercitiu-1", source: "DorSoft", method: "export JSON · citire", agent: "1.4.2", today: 19640, receipts: 17, units: 33, stockValue: 1388000, stockUnits: 3310, pay: [0.66, 0.34, 0], records: 873, syncAgo: 19, status: "online", file: "ZOF-Exercitiu-207.json" },
-  { id: "bratianu", name: "I.C. Brătianu", city: "Pitești", code: "IB", type: "fizic", connector: "pc-bratianu-1", source: "DorSoft", method: "export JSON · citire", agent: "1.4.1", today: 16230, receipts: 14, units: 27, stockValue: 1204000, stockUnits: 2870, pay: [0.63, 0.37, 0], records: 742, syncAgo: 26, status: "online", file: "ZOF-Bratianu-198.json" },
-  { id: "campulung", name: "Câmpulung", city: "Argeș", code: "CL", type: "fizic", connector: "pc-campulung-1", source: "Access", method: "bază .accdb · ODBC read-only", agent: "1.4.1", today: 13910, receipts: 12, units: 22, stockValue: 1046000, stockUnits: 2490, pay: [0.58, 0.42, 0], records: 611, syncAgo: 196, status: "warning", file: "campulung.accdb" },
-  { id: "mioveni", name: "Mioveni", city: "Argeș", code: "MI", type: "fizic", connector: "pc-mioveni-1", source: "DorSoft", method: "export JSON · citire", agent: "1.4.2", today: 12780, receipts: 11, units: 21, stockValue: 958000, stockUnits: 2290, pay: [0.61, 0.39, 0], records: 566, syncAgo: 14, status: "online", file: "ZOF-Mioveni-176.json" },
-  { id: "curtea", name: "Curtea de Argeș", city: "Argeș", code: "CA", type: "fizic", connector: "pc-curtea-1", source: "DorSoft", method: "export JSON · citire", agent: "1.4.2", today: 11350, receipts: 10, units: 18, stockValue: 872000, stockUnits: 2080, pay: [0.57, 0.43, 0], records: 498, syncAgo: 33, status: "online", file: "ZOF-Curtea-162.json" },
-  { id: "zof-ro", name: "zof.ro", city: "Magazin online", code: "ON", type: "online", connector: "shopify-zof", source: "Shopify", method: "comenzi · webhook", agent: "1.2.0", today: 9820, receipts: 8, units: 11, stockValue: 0, stockUnits: 0, pay: [0, 0, 1], records: 412, syncAgo: 2, status: "online", file: "webhook orders/create" },
+  { id: "arges-mall", name: "Argeș Mall", city: "Pitești", code: "AM", type: "fizic", connector: "pc-arges-1", source: "DorSoft", method: "export JSON", agent: "1.4.2", today: 34980, receipts: 29, units: 57, stockValue: 2184000, stockUnits: 5210, pay: [0.74, 0.26, 0], records: 1482, syncAgo: 4, status: "online", file: "ZOF-ArgesMall-219.json" },
+  { id: "centru", name: "Centru", city: "Pitești", code: "CE", type: "fizic", connector: "pc-centru-1", source: "DorSoft", method: "export JSON", agent: "1.4.2", today: 29460, receipts: 25, units: 49, stockValue: 1912000, stockUnits: 4580, pay: [0.69, 0.31, 0], records: 1296, syncAgo: 11, status: "online", file: "ZOF-Centru-214.json" },
+  { id: "valcea", name: "Râmnicu Vâlcea", city: "Vâlcea", code: "RV", type: "fizic", connector: "pc-valcea-1", source: "Access", method: "bază .accdb", agent: "1.4.2", today: 24870, receipts: 21, units: 40, stockValue: 1655000, stockUnits: 3940, pay: [0.71, 0.29, 0], records: 1104, syncAgo: 7, status: "online", file: "valcea.accdb" },
+  { id: "exercitiu", name: "Exercițiu", city: "Pitești", code: "EX", type: "fizic", connector: "pc-exercitiu-1", source: "DorSoft", method: "export JSON", agent: "1.4.2", today: 19640, receipts: 17, units: 33, stockValue: 1388000, stockUnits: 3310, pay: [0.66, 0.34, 0], records: 873, syncAgo: 19, status: "online", file: "ZOF-Exercitiu-207.json" },
+  { id: "bratianu", name: "I.C. Brătianu", city: "Pitești", code: "IB", type: "fizic", connector: "pc-bratianu-1", source: "DorSoft", method: "export JSON", agent: "1.4.1", today: 16230, receipts: 14, units: 27, stockValue: 1204000, stockUnits: 2870, pay: [0.63, 0.37, 0], records: 742, syncAgo: 26, status: "online", file: "ZOF-Bratianu-198.json" },
+  { id: "campulung", name: "Câmpulung", city: "Argeș", code: "CL", type: "fizic", connector: "pc-campulung-1", source: "Access", method: "bază .accdb", agent: "1.4.1", today: 13910, receipts: 12, units: 22, stockValue: 1046000, stockUnits: 2490, pay: [0.58, 0.42, 0], records: 611, syncAgo: 196, status: "warning", file: "campulung.accdb" },
+  { id: "mioveni", name: "Mioveni", city: "Argeș", code: "MI", type: "fizic", connector: "pc-mioveni-1", source: "DorSoft", method: "export JSON", agent: "1.4.2", today: 12780, receipts: 11, units: 21, stockValue: 958000, stockUnits: 2290, pay: [0.61, 0.39, 0], records: 566, syncAgo: 14, status: "online", file: "ZOF-Mioveni-176.json" },
+  { id: "curtea", name: "Curtea de Argeș", city: "Argeș", code: "CA", type: "fizic", connector: "pc-curtea-1", source: "DorSoft", method: "export JSON", agent: "1.4.2", today: 11350, receipts: 10, units: 18, stockValue: 872000, stockUnits: 2080, pay: [0.57, 0.43, 0], records: 498, syncAgo: 33, status: "online", file: "ZOF-Curtea-162.json" },
+  { id: "zof-ro", name: "zof.ro", city: "Magazin online", code: "ON", type: "online", connector: "shopify-zof", source: "Shopify", method: "webhook comenzi", agent: "1.2.0", today: 9820, receipts: 8, units: 11, stockValue: 0, stockUnits: 0, pay: [0, 0, 1], records: 412, syncAgo: 2, status: "online", file: "orders/create" },
 ];
+
+/** Numele fișierului importat: exporturile DorSoft sunt numerotate, baza Access are un singur fișier. */
+export function fileName(l: Loc, n: number) {
+  const m = /^(.*-)(\d+)(\.json)$/.exec(l.file);
+  return m ? `${m[1]}${n}${m[3]}` : l.file;
+}
+/** Numărul ultimului export DorSoft, la pornire (0 pentru celelalte surse). */
+export function fileNo(l: Loc) {
+  const m = /-(\d+)\.json$/.exec(l.file);
+  return m ? Number(m[1]) : 0;
+}
 
 export const PHYSICAL = LOCS.filter((l) => l.type === "fizic");
 export const locById = (id: string) => LOCS.find((l) => l.id === id) ?? LOCS[0];
@@ -419,7 +430,7 @@ export const CATEGORY_SPLIT = [
   { name: "Rame", share: 0.29 },
   { name: "Ochelari de soare", share: 0.14 },
   { name: "Lentile de contact", share: 0.08 },
-  { name: "Servicii (consultație, montaj)", share: 0.05 },
+  { name: "Servicii", share: 0.05 },
   { name: "Accesorii", share: 0.03 },
 ];
 
@@ -519,10 +530,11 @@ export type Alert = {
   minutes: number;
 };
 
+/* Textul și vechimea alertei de agent se recalculează din stare (alerts.tsx). */
 export const ALERTS: Alert[] = [
-  { id: "a1", kind: "agent", severity: "medium", text: "Câmpulung: agentul nu a mai trimis date de 3 min. Vânzările așteaptă în bufferul local.", minutes: 3 },
-  { id: "a2", kind: "critic", severity: "high", text: "Ray-Ban RB3025 Aviator: stoc critic la Mioveni (1 buc).", minutes: 12 },
-  { id: "a3", kind: "epuizat", severity: "high", text: "Tom Ford FT5401: epuizat la I.C. Brătianu și Mioveni.", minutes: 38 },
-  { id: "a4", kind: "trend", severity: "info", text: "Oakley Holbrook: vânzări +45% față de săptămâna trecută.", minutes: 64 },
-  { id: "a5", kind: "scadere", severity: "low", text: "Gucci GG0027O: fără vânzări de 14 zile la Curtea de Argeș.", minutes: 190 },
+  { id: "a1", kind: "agent", severity: "medium", text: "Câmpulung: fără semnal de 3 min, 3 bonuri în așteptare", minutes: 3 },
+  { id: "a2", kind: "critic", severity: "high", text: "Ray-Ban RB3025 Aviator: stoc critic la Mioveni (1 buc)", minutes: 12 },
+  { id: "a3", kind: "epuizat", severity: "high", text: "Tom Ford FT5401: epuizat la I.C. Brătianu și Mioveni", minutes: 38 },
+  { id: "a4", kind: "trend", severity: "info", text: "Oakley Holbrook: vânzări +45% față de săptămâna trecută", minutes: 64 },
+  { id: "a5", kind: "scadere", severity: "low", text: "Gucci GG0027O: fără vânzări de 14 zile la Curtea de Argeș", minutes: 190 },
 ];

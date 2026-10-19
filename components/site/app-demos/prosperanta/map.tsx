@@ -114,23 +114,27 @@ export function StationsMap({
             onClick={() => onSelect?.(s.id)}
             aria-label={`${label}: ${s.town === "Pitești" ? `Pitești, ${s.name}` : s.name}`}
             aria-pressed={on}
-            className="group absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-[width,height] duration-200"
+            className="group absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-[width,height] duration-150 ease-out"
             style={{
               left: `${(s.x / 600) * 100}%`,
               top: `${(s.y / 380) * 100}%`,
               width: size,
               height: size,
               background: on ? C.fg : C.red,
-              border: "2.5px solid #fff",
-              boxShadow: on ? "0 0 0 4px rgba(26,26,26,.18), 0 6px 14px rgba(0,0,0,.25)" : "0 3px 8px rgba(224,6,28,.35)",
+              border: "2px solid #fff",
+              boxShadow: on ? "0 2px 6px rgba(0,0,0,0.3)" : "0 1px 3px rgba(0,0,0,0.3)",
               zIndex: on ? 3 : near ? 2 : 1,
             }}
           >
             <span className="block size-[6px] rounded-full bg-white" />
             {(on || near) && (
               <span
-                className={`pointer-events-none absolute bottom-full mb-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-black uppercase ${align}`}
-                style={{ background: on ? C.fg : C.red, color: "#fff", boxShadow: "0 4px 10px rgba(0,0,0,.18)" }}
+                className={`pointer-events-none absolute bottom-full mb-1.5 whitespace-nowrap rounded-[6px] px-2 py-1 text-[12px] font-semibold leading-none ${align}`}
+                style={
+                  on
+                    ? { background: C.fg, color: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }
+                    : { background: "#fff", color: C.fg, boxShadow: `inset 0 0 0 1px ${C.border}, 0 1px 3px rgba(0,0,0,0.15)` }
+                }
               >
                 {near && !on ? "Cea mai apropiată" : s.name}
               </span>

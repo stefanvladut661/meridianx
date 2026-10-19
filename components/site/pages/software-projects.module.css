@@ -1,40 +1,105 @@
-/* Cardurile de proiect: la hover, fereastra urcă puțin și telefonul
-   iese de dedesubt. Sub 400ms, ca tot ce se mișcă în lumea software. */
+/* ============================================================
+   Cardurile de proiect: capturile demo-ului pe o scenă neutră, aceeași
+   pentru toate proiectele. Culorile clientului rămân în capturi, nu
+   ies pe suprafețele MERIDIAN. Captura de desktop are doar o margine
+   de 1px; telefonul apare numai la produsele cu o față separată pe
+   telefon (aplicația clientului, a membrului).
+
+   Până se încarcă imaginea, cutia ei e gri, nu albă: un card nu se
+   vede niciodată ca o fereastră goală.
+   ============================================================ */
 
 .visual {
+  position: relative;
   isolation: isolate;
+  overflow: hidden;
+  aspect-ratio: 16 / 11;
+  background: color-mix(in oklab, var(--md-fg) 5%, var(--md-bg));
+  transition: background-color 180ms ease-out;
 }
 
-.desk,
+.card:hover .visual {
+  background: color-mix(in oklab, var(--md-fg) 7.5%, var(--md-bg));
+}
+
+/* captura de desktop, centrată, cu margini egale de jur împrejur */
+.shot {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 50%;
+  translate: 0 -50%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--md-fg) 9%, var(--md-bg));
+  box-shadow: 0 0 0 1px rgb(18 23 27 / 0.12);
+}
+
+.withPhone .shot {
+  right: auto;
+  left: 6%;
+  width: 70%;
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* Telefonul: aceleași proporții ca rama din vizualizator (414×868, raze
+   60/48, bezel 12px), în procente, ca să țină la orice lățime. */
 .phone {
-  transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: absolute;
+  right: 6%;
+  top: 50%;
+  translate: 0 -50%;
+  width: 20%;
+  aspect-ratio: 414 / 868;
+  border-radius: 14.4928% / 6.9124%;
+  background: #0c0d0f;
+  box-shadow: inset 0 0 0 1px #2a2c30;
+}
+.phone > .screen {
+  position: absolute;
+  inset: 1.3825% 2.8986%;
+  overflow: hidden;
+  border-radius: 12.3077% / 5.6872%;
+  background: color-mix(in oklab, var(--md-fg) 9%, var(--md-bg));
 }
 
-.card:hover .desk,
-.card:focus-visible .desk {
-  transform: translateY(-6px);
-}
-.card:hover .phone,
-.card:focus-visible .phone {
-  transform: translateY(-10%);
-}
-
-/* punctul verde de „live" */
-.live {
-  animation: livePulse 1.8s ease-in-out infinite;
-}
-@keyframes livePulse {
-  50% {
-    opacity: 0.35;
+/* Sub 640px, compoziția de desktop ar ieși la o treime din mărime și nu
+   s-ar mai putea citi: cardul arată partea de sus a capturii de
+   telefon, la o scară la care textul se citește. */
+@media (max-width: 639.98px) {
+  .visual {
+    aspect-ratio: 4 / 3;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .desk,
+  .shot,
+  .withPhone .shot {
+    left: 11%;
+    right: 11%;
+    width: auto;
+    top: 9%;
+    bottom: -2px;
+    translate: none;
+    aspect-ratio: auto;
+    border-radius: 14px 14px 0 0;
+  }
   .phone {
-    transition: none;
+    display: none;
   }
-  .live {
-    animation: none;
-  }
+}
+
+/* Cardul întreg e clicabil prin legătura din titlu (pseudo-elementul ei
+   acoperă cardul). Focusul se desenează pe card, nu pe titlu. */
+.cardLink:focus-visible {
+  outline: none;
+}
+.card:has(.cardLink:focus-visible) {
+  outline: 2px solid var(--md-a1);
+  outline-offset: 3px;
 }

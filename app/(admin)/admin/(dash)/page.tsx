@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { leadListQuerySchema } from "@/lib/validations/lead";
 import { getLead, getLeadStats, listLeads } from "@/lib/supabase/leads";
-import { isWriteConfigured } from "@/lib/supabase/clients";
+import { getAdminUser, isAuthConfigured, isWriteConfigured } from "@/lib/supabase/clients";
 import { StatsStrip } from "../_components/stats-strip";
 import { Filters } from "../_components/filters";
 import { LeadWorkspace } from "../_components/lead-workspace";
@@ -67,6 +68,16 @@ function buildHref(cleaned: Record<string, string>, leadId?: string): string {
 export default async function AdminDashboardPage({
   searchParams,
 }: Readonly<{ searchParams: Promise<SearchParams> }>) {
+  // Garda stă și aici, nu doar în layout. Next randează layout-ul și
+  // pagina în paralel, deci redirectul din layout NU oprește citirile de
+  // mai jos: fără verificarea asta, payload-ul paginii (lista de lead-uri,
+  // cu telefoane și note) pleca în corpul răspunsului 307 către orice cont
+  // Supabase autentificat care nu e în ADMIN_EMAILS (ex. membrii vault-ului).
+  // `getAdminUser` e memorizată pe cerere, deci tokenul se validează o dată.
+  if (!isAuthConfigured()) return <SetupNotice />;
+  const user = await getAdminUser();
+  if (!user) redirect("/admin/login");
+
   const raw = await searchParams;
   const cleaned = cleanParams(raw);
   // `sters` e semnul lăsat de acțiunea de ștergere; nu e filtru și nu

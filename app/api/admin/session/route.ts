@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createWritableSessionClient } from "@/lib/supabase/clients";
+import { checkAdminEmail, createWritableSessionClient } from "@/lib/supabase/clients";
 
 /**
  * POST /api/admin/session — reîmprospătarea sesiunii de admin.
@@ -28,6 +28,16 @@ export async function POST() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
     return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
+  // Ruta ține în viață DOAR sesiunile de admin: un cont autentificat care
+  // nu e în ADMIN_EMAILS (ex. un membru al vault-ului) nu primește aici
+  // tokenuri rotite pentru panou.
+  if (checkAdminEmail(data.user.email) !== "allowed") {
+    return NextResponse.json(
+      { ok: false },
+      { status: 403, headers: { "Cache-Control": "no-store" } }
+    );
   }
 
   return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });

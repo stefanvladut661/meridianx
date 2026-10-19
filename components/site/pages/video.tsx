@@ -62,12 +62,16 @@ export function VideoScreen() {
         {/* --- capul, de la AURORA --- */}
         <Hero />
         <TrustStrip />
+        {/* Recenziile vin imediat după hero (2026-10): o recenzie filmată
+            și citatele clienților reali conving mai repede decât orice
+            spunem noi despre noi, deci sunt primul lucru după promisiune.
+            Materialele vin imediat după ele. */}
+        <Social />
         <Work />
         <Problems />
         {/* --- corpul, de la SIGNAL --- */}
         <Process />
         <Services />
-        <Social />
         <Questions />
         <FinalCta />
       </main>
@@ -843,7 +847,8 @@ function ReviewStream() {
 
 function Social() {
   return (
-    <section className="relative px-5 py-24 sm:px-6 lg:py-32">
+    <section id="recenzii" className="relative px-5 py-24 sm:px-6 lg:py-32">
+      {/* Fără subtitlu: placa video și citatele de alături se văd singure. */}
       <SectionHead
         eyebrow="Recenzii"
         title={
@@ -853,7 +858,6 @@ function Social() {
             <span className="grad-text-soft">Credeți-i pe ei.</span>
           </>
         }
-        lead="Unul a zis-o în fața camerei. Restul, în scris."
       />
 
       {/* Placa video e ținută scurtă pe desktop (max 300px, adică ~530px

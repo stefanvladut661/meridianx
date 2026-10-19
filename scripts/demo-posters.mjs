@@ -12,7 +12,7 @@
  * Cere un server (dev sau start) pornit la adresa dată.
  */
 import { spawn } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,8 +30,19 @@ const SCREEN = {
 };
 
 const CANVAS = { desktop: [1280, 800], mobile: [390, 844] };
+/* Chrome-ul local: variabila CHROME câștigă; altfel prima cale care
+   există (instalarea pe 64 de biți e în „Program Files”, cea veche în
+   „Program Files (x86)”, iar pe Mac/Linux numele standard). */
 const CHROME =
-  process.env.CHROME ?? "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe";
+  process.env.CHROME ??
+  [
+    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+  ].find((p) => existsSync(p)) ??
+  "chrome";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, Bell, MessageSquare, Smartphone, Minus, Plus, Send, Save, TriangleAlert, Megaphone } from "lucide-react";
-import { compact, num } from "../kit";
-import { AUDIENCES, C, FUELS, KIND_LABEL, type Campaign, type CampaignKind } from "./data";
+import { useState, type ReactNode } from "react";
+import { CircleCheck, Menu, Minus, Plus, TriangleAlert } from "lucide-react";
+import { StatusBar, compact, dec, num } from "../kit";
+import { AUDIENCES, C, FUELS, KIND_LABEL, clockLabel, type Campaign, type CampaignKind } from "./data";
+import { CampaignBanner, Hero, HomeLinks, RewardsPill, Tile, nextReward } from "./client";
 import { useDemo } from "./store";
 import { PageTitle, StaffShell } from "./staff";
-import { Btn, Card, CardHead, Label, Mark, Pills, de, inputCls, inputStyle } from "./ui";
+import { Badge, Btn, Card, CardHead, Label, Logo, Mark, Meta, Pills, SW, Switch, inputCls, nr, unit } from "./ui";
 
 /* ============================================================
    Unelte de marketing: campanii afișate în aplicația clientului
@@ -15,26 +16,36 @@ import { Btn, Card, CardHead, Label, Mark, Pills, de, inputCls, inputStyle } fro
    ============================================================ */
 
 type MTab = "lista" | "creeaza" | "reguli";
-const PERIODS = ["Weekendul acesta", "7 zile", "Tot octombrie"];
+
+const PERIODS = [
+  { id: "weekend", label: "Weekendul acesta" },
+  { id: "7", label: "7 zile" },
+  { id: "oct", label: "Tot octombrie" },
+] as const;
+type PeriodId = (typeof PERIODS)[number]["id"];
+/** Perioada, cum apare în rândul campaniei, după public. */
+const PERIOD_TEXT: Record<PeriodId, string> = { weekend: "weekendul acesta", "7": "7 zile", oct: "octombrie" };
 
 type Draft = {
   title: string;
   description: string;
   kind: CampaignKind;
   audience: string;
-  period: string;
+  period: PeriodId;
   push: boolean;
   sms: boolean;
 };
 const EMPTY: Draft = {
   title: "Spălare gratuită la 200 L",
-  description: "Strânge 200 de litri în octombrie și primești o spălare standard din partea noastră.",
+  description: "Strânge 200 de litri în octombrie și primești o spălare standard.",
   kind: "produs",
   audience: "activi",
-  period: PERIODS[2],
+  period: "oct",
   push: true,
   sms: false,
 };
+
+const line = `1px solid ${C.border}`;
 
 export function Campanii() {
   const { s, mobile, notify, addCampaign } = useDemo();
@@ -43,15 +54,14 @@ export function Campanii() {
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const aud = AUDIENCES.find((a) => a.id === d.audience)!;
-  const activeCount = s.campaigns.filter((c) => c.active).length;
 
   const check = () => {
     if (!d.title.trim()) {
-      setErr("Scrie un titlu: e primul lucru pe care îl vede clientul.");
+      setErr("Scrie un titlu.");
       return false;
     }
     if (!d.description.trim()) {
-      setErr("Scrie o descriere scurtă: clientul trebuie să știe ce are de făcut.");
+      setErr("Scrie o descriere.");
       return false;
     }
     setErr(null);
@@ -66,7 +76,7 @@ export function Campanii() {
       kind: d.kind,
       audience: aud.label,
       reach: aud.reach,
-      period: d.period,
+      period: PERIOD_TEXT[d.period],
       active: false,
       draft: true,
       push: d.push,
@@ -82,14 +92,21 @@ export function Campanii() {
 
   const launch = () => {
     if (!check()) return;
-    const ch = [d.push && "notificare push", d.sms && "SMS"].filter(Boolean).join(" și ");
-    notify(
-      `În demo, trimiterea e oprită. În aplicația reală, campania pleacă la ${num(aud.reach)} de clienți${ch ? ` prin ${ch}` : ""} și apare ca banner în aplicație.`
-    );
+    notify(`Trimiterea e oprită în demo. Campania ar pleca la ${nr(aud.reach, "client", "clienți")}.`);
   };
 
   const form = (
-    <CampaignForm d={d} setD={(p) => { setD({ ...d, ...p }); setErr(null); setSaved(null); }} err={err} onSave={saveDraft} onLaunch={launch} reach={aud.reach} />
+    <CampaignForm
+      d={d}
+      setD={(p) => {
+        setD({ ...d, ...p });
+        setErr(null);
+        setSaved(null);
+      }}
+      err={err}
+      onSave={saveDraft}
+      onLaunch={launch}
+    />
   );
 
   if (mobile)
@@ -97,16 +114,16 @@ export function Campanii() {
       <StaffShell face="admin" screen="campanii">
         <div className="prs-scroll absolute inset-0">
           <main className="space-y-3 px-3 pb-10 pt-4">
-            <PageTitle title="Campanii" sub={`${activeCount} active · ${num(s.totals.members)} de membri în club`} />
+            <PageTitle title="Campanii" />
             <Pills<MTab>
               label="Secțiuni campanii"
               value={tab}
               onChange={setTab}
-              size="sm"
+              stretch="auto"
               items={[
-                { id: "lista", label: `Campanii · ${s.campaigns.length}` },
-                { id: "creeaza", label: "Creează" },
-                { id: "reguli", label: "Puncte / litru" },
+                { id: "lista", label: "Toate", count: s.campaigns.length },
+                { id: "creeaza", label: "Campanie nouă" },
+                { id: "reguli", label: "Puncte pe litru" },
               ]}
             />
             {tab === "lista" && (
@@ -117,7 +134,14 @@ export function Campanii() {
             )}
             {tab === "creeaza" && (
               <>
-                <BannerPreview title={d.title} description={d.description} kind={d.kind} />
+                <section>
+                  <p className="mb-1.5 text-[13px] font-medium" style={{ color: C.mutedFg }}>
+                    Previzualizare
+                  </p>
+                  <div inert aria-hidden>
+                    <CampaignBanner title={d.title || "Titlul campaniei"} description={d.description || "Descrierea apare aici."} />
+                  </div>
+                </section>
                 {form}
               </>
             )}
@@ -131,16 +155,13 @@ export function Campanii() {
     <StaffShell face="admin" screen="campanii">
       <div className="absolute inset-0 flex flex-col">
         <div className="mx-auto w-full max-w-[1232px] shrink-0 px-6 pt-5">
-          <PageTitle
-            title="Campanii"
-            sub={`${activeCount} active acum · bannerul din aplicație îl văd toți cei ${num(s.totals.members)} de membri`}
-          />
+          <PageTitle title="Campanii" />
         </div>
         <div className="mx-auto grid min-h-0 w-full max-w-[1232px] flex-1 grid-cols-12 gap-4 px-6 pb-5 pt-4">
           <div className="prs-scroll col-span-4 min-h-0">{form}</div>
           <div className="col-span-3 flex min-h-0 flex-col items-center">
-            <p className="mb-2 self-start text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: C.mutedFg }}>
-              Previzualizare în aplicație
+            <p className="mb-2 self-start text-[13px] font-medium" style={{ color: C.mutedFg }}>
+              Previzualizare
             </p>
             <PhonePreview d={d} />
           </div>
@@ -157,13 +178,22 @@ export function Campanii() {
 
 function SavedNote({ title }: { title: string }) {
   return (
-    <p role="status" className="a-in rounded-[14px] px-4 py-3 text-[13px] font-bold" style={{ background: C.greenBg, color: C.green }}>
-      Ciornă salvată: „{title}”. Activeaz-o din listă și apare pe ecranul de start al clienților.
+    <p role="status" className="a-in flex items-center gap-2 rounded-[8px] px-3 py-2.5 text-[13px] font-medium" style={{ background: C.greenBg, color: C.greenInk }}>
+      <CircleCheck size={16} strokeWidth={SW} className="shrink-0" aria-hidden /> Ciornă salvată: „{title}”
     </p>
   );
 }
 
 /* ---------------- formularul ---------------- */
+
+function Group({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <fieldset className="min-w-0">
+      <legend className="mb-1.5 text-[13px] font-medium">{label}</legend>
+      {children}
+    </fieldset>
+  );
+}
 
 function CampaignForm({
   d,
@@ -171,24 +201,27 @@ function CampaignForm({
   err,
   onSave,
   onLaunch,
-  reach,
 }: {
   d: Draft;
   setD: (p: Partial<Draft>) => void;
   err: string | null;
   onSave: () => void;
   onLaunch: () => void;
-  reach: number;
 }) {
   return (
-    <Card className="p-5">
-      <p className="flex items-center gap-2 text-[13px] font-black uppercase">
-        <Megaphone size={16} strokeWidth={2.4} style={{ color: C.red }} /> Campanie nouă
-      </p>
-      <div className="mt-3.5 space-y-3.5">
+    <Card className="p-4">
+      <h2 className="text-[14px] font-semibold">Campanie nouă</h2>
+      <div className="mt-3 space-y-3">
         <div>
           <Label htmlFor="prs-ct">Titlu</Label>
-          <input id="prs-ct" value={d.title} maxLength={40} onChange={(e) => setD({ title: e.target.value })} placeholder="ex. Puncte triple luni dimineața" className={inputCls} style={inputStyle} />
+          <input
+            id="prs-ct"
+            value={d.title}
+            maxLength={40}
+            onChange={(e) => setD({ title: e.target.value })}
+            placeholder="Ex.: Puncte triple luni dimineața"
+            className={inputCls}
+          />
         </div>
         <div>
           <Label htmlFor="prs-cd">Descriere</Label>
@@ -196,99 +229,70 @@ function CampaignForm({
             id="prs-cd"
             value={d.description}
             maxLength={120}
-            rows={3}
+            rows={2}
             onChange={(e) => setD({ description: e.target.value })}
-            placeholder="Ce primește clientul și ce are de făcut."
-            className="w-full resize-none rounded-[12px] bg-white px-3.5 py-2.5 text-[14px] leading-snug outline-none"
-            style={inputStyle}
+            placeholder="Ex.: Strânge 200 L în octombrie și primești o spălare."
+            className="field block w-full resize-none rounded-[8px] bg-white px-3 py-2 text-[14px] leading-snug"
           />
         </div>
-        <div>
-          <Label>Tip</Label>
-          <div className="flex gap-1.5">
-            {(Object.keys(KIND_LABEL) as CampaignKind[]).map((k) => {
-              const on = d.kind === k;
-              return (
-                <button
-                  key={k}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setD({ kind: k })}
-                  className="h-8 flex-1 whitespace-nowrap rounded-full px-2 text-[10.5px] font-black uppercase"
-                  style={on ? { background: C.red, color: "#fff" } : { background: C.muted }}
-                >
-                  {KIND_LABEL[k]}
-                </button>
-              );
-            })}
+        <Group label="Tip">
+          <Pills<CampaignKind>
+            kind="radio"
+            stretch="auto"
+            label="Tip"
+            value={d.kind}
+            onChange={(k) => setD({ kind: k })}
+            items={(Object.keys(KIND_LABEL) as CampaignKind[]).map((k) => ({ id: k, label: KIND_LABEL[k] }))}
+          />
+        </Group>
+        <Group label="Public">
+          <div className="overflow-hidden rounded-[8px]" style={{ border: line }}>
+            {AUDIENCES.map((a, i) => (
+              <label key={a.id} className="row flex h-9 cursor-pointer items-center gap-2.5 px-3 text-[13.5px]" style={{ borderTop: i ? line : undefined }}>
+                <input type="radio" name="prs-aud" checked={d.audience === a.id} onChange={() => setD({ audience: a.id })} />
+                <span className="min-w-0 flex-1 truncate">{a.label}</span>
+                <span className="shrink-0 text-[12.5px]" style={{ color: C.mutedFg }}>
+                  {num(a.reach)}
+                </span>
+              </label>
+            ))}
           </div>
-        </div>
-        <div>
-          <Label>Public</Label>
-          <div role="radiogroup" aria-label="Public" className="grid grid-cols-2 gap-1.5">
-            {AUDIENCES.map((a) => {
-              const on = d.audience === a.id;
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => setD({ audience: a.id })}
-                  className="flex flex-col rounded-[12px] px-3 py-2 text-left"
-                  style={{ border: `2px solid ${on ? C.red : C.border}`, background: on ? "#FFF8F8" : "#fff" }}
-                >
-                  <span className="truncate text-[12px] font-bold leading-tight">{a.label}</span>
-                  <span className="tnum mt-0.5 text-[13px] font-black" style={{ color: on ? C.red : C.mutedFg }}>
-                    {num(a.reach)}
-                  </span>
-                </button>
-              );
-            })}
+        </Group>
+        <Group label="Canale">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-[13.5px]">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked disabled readOnly /> Banner în aplicație
+            </label>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input type="checkbox" checked={d.push} onChange={(e) => setD({ push: e.target.checked })} /> Notificare push
+            </label>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input type="checkbox" checked={d.sms} onChange={(e) => setD({ sms: e.target.checked })} /> SMS
+            </label>
           </div>
-        </div>
-        <div>
-          <Label>Canale</Label>
-          <div className="flex gap-1.5">
-            <Chan icon={<Smartphone size={14} />} label="Banner" on locked />
-            <Chan icon={<Bell size={14} />} label="Push" on={d.push} onChange={(v) => setD({ push: v })} />
-            <Chan icon={<MessageSquare size={14} />} label="SMS" on={d.sms} onChange={(v) => setD({ sms: v })} />
-          </div>
-        </div>
-        <div>
-          <Label>Perioadă</Label>
-          <div className="flex gap-1.5">
-            {PERIODS.map((p) => {
-              const on = d.period === p;
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setD({ period: p })}
-                  className="h-8 flex-1 whitespace-nowrap rounded-full px-2 text-[10.5px] font-black uppercase"
-                  style={on ? { background: C.fg, color: "#fff" } : { background: C.muted }}
-                >
-                  {p}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        </Group>
+        <Group label="Perioadă">
+          <Pills<PeriodId>
+            kind="radio"
+            stretch="auto"
+            label="Perioadă"
+            value={d.period}
+            onChange={(p) => setD({ period: p })}
+            items={PERIODS.map((p) => ({ id: p.id, label: p.label }))}
+          />
+        </Group>
         {/* acțiunile rămân mereu la vedere, chiar dacă formularul se derulează */}
-        <div className="sticky bottom-0 z-10 -mx-5 -mb-5 space-y-2 rounded-b-[16px] bg-white px-5 pb-5 pt-3" style={{ borderTop: `1px solid ${C.border}` }}>
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 space-y-2 rounded-b-[12px] bg-white px-4 pb-4 pt-3" style={{ borderTop: line }}>
           {err && (
-            <p role="alert" className="flex items-start gap-2 text-[13px] font-bold" style={{ color: C.red }}>
-              <TriangleAlert size={16} className="mt-0.5 shrink-0" /> {err}
+            <p role="alert" className="flex items-start gap-2 text-[13px] font-medium" style={{ color: C.red }}>
+              <TriangleAlert size={16} strokeWidth={SW} className="mt-0.5 shrink-0" aria-hidden /> {err}
             </p>
           )}
-          <div className="grid grid-cols-[1fr_1.4fr] gap-2">
-            <Btn variant="outline" onClick={onSave}>
-              <Save size={15} strokeWidth={2.4} /> Ciornă
+          <div className="grid grid-cols-2 gap-2">
+            <Btn variant="secondary" onClick={onSave}>
+              Salvează ciorna
             </Btn>
-            <Btn onClick={onLaunch}>
-              <Send size={15} strokeWidth={2.4} /> Lansează · {compact(reach)}
-            </Btn>
+            <Btn onClick={onLaunch}>Lansează campania</Btn>
           </div>
         </div>
       </div>
@@ -296,121 +300,61 @@ function CampaignForm({
   );
 }
 
-function Chan({ icon, label, on, onChange, locked = false }: { icon: React.ReactNode; label: string; on: boolean; onChange?: (v: boolean) => void; locked?: boolean }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-disabled={locked}
-      aria-label={locked ? `${label}: mereu activ` : label}
-      onClick={() => !locked && onChange?.(!on)}
-      className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-[11.5px] font-black uppercase transition-colors"
-      style={
-        on
-          ? { background: locked ? "#FDECEE" : C.red, color: locked ? C.red : "#fff", border: `2px solid ${locked ? "#FDECEE" : C.red}` }
-          : { background: "#fff", color: C.mutedFg, border: `2px solid ${C.border}` }
-      }
-    >
-      {icon}
-      {label}
-      {on && !locked && <span aria-hidden>✓</span>}
-    </button>
-  );
-}
-
-/* ---------------- previzualizare ---------------- */
-
-function BannerPreview({ title, description, kind }: { title: string; description: string; kind: CampaignKind }) {
-  return (
-    <div className="relative overflow-hidden rounded-[24px] p-5 pr-16" style={{ background: C.campGrad }}>
-      <span className="pointer-events-none absolute -right-3 -top-6 text-[120px] font-black leading-none text-white/[0.09]" aria-hidden>
-        {kind === "dublu" ? "×2" : kind === "bonus" ? "+" : "★"}
-      </span>
-      <p className="relative text-[11px] font-black uppercase tracking-[0.2em]" style={{ color: C.orange }}>
-        Campania săptămânii
-      </p>
-      <p className="relative mt-1.5 break-words text-[21px] font-black uppercase leading-[1.05] text-white">{title || "Titlul campaniei"}</p>
-      <p className="relative mt-1.5 text-[13px] text-white/95">{description || "Descrierea apare aici."}</p>
-      <span className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white p-2.5" style={{ color: C.red }}>
-        <ArrowRight size={18} strokeWidth={2.6} />
-      </span>
-    </div>
-  );
-}
+/* ---------------- previzualizare ----------------
+   Ecranul de start al aplicației, desenat cu aceleași piese ca în
+   aplicația clientului, la lățimea telefonului (390px), micșorat. */
 
 function PhonePreview({ d }: { d: Draft }) {
   const { s } = useDemo();
   const pts = s.customers[0].points;
+  const active = s.vouchers.filter((v) => v.customer === 0 && v.status === "active").length;
+  const SCREEN = 240;
   return (
-    <div className="relative w-[258px] rounded-[40px] bg-[#111] p-[9px] shadow-[0_30px_60px_-25px_rgba(0,0,0,.45)]">
+    <div className="relative w-[258px] shrink-0 rounded-[40px] bg-[#111] p-[9px]" style={{ boxShadow: "0 12px 32px -16px rgba(0,0,0,0.35)" }}>
       <div className="relative h-[486px] overflow-hidden rounded-[32px] bg-white">
-        <span className="absolute left-1/2 top-2 z-10 h-[20px] w-[78px] -translate-x-1/2 rounded-full bg-black" aria-hidden />
+        <div inert aria-hidden className="absolute left-0 top-0 origin-top-left" style={{ width: 390, transform: `scale(${SCREEN / 390})` }}>
+          <StatusBar tone="dark" bg="#fff" time={clockLabel(s.clock)} />
+          <div className="flex h-14 items-center justify-between pl-4 pr-2" style={{ borderBottom: line }}>
+            <Logo size={30} />
+            <span className="flex size-11 items-center justify-center">
+              <Menu size={24} strokeWidth={SW} />
+            </span>
+          </div>
+          <div className="space-y-3 px-4 pt-4">
+            <Hero points={pts} next={nextReward(pts)} />
+            <div className="grid grid-cols-2 gap-3">
+              <Tile title="Voucherele mele" note={active === 1 ? "1 activ" : active > 1 ? `${active} active` : undefined} />
+              <Tile title="Istoric alimentări" />
+            </div>
+            <CampaignBanner title={d.title || "Titlul campaniei"} description={d.description || "Descrierea apare aici."} />
+            <RewardsPill />
+            <HomeLinks />
+          </div>
+        </div>
+        <span className="absolute left-1/2 top-[7px] z-10 h-[17px] w-[64px] -translate-x-1/2 rounded-full bg-black" aria-hidden />
         {d.push && (
-          <div className="a-in absolute inset-x-2 top-9 z-20 rounded-[16px] bg-[#F2F2F2] p-2.5 shadow-[0_10px_24px_-10px_rgba(0,0,0,.35)]">
+          <div
+            className="a-in absolute inset-x-2 top-[30px] z-20 rounded-[14px] p-2.5"
+            style={{ background: "#F2F2F2", boxShadow: "0 6px 16px -8px rgba(0,0,0,0.3)" }}
+            aria-hidden
+          >
             <div className="flex items-center gap-1.5">
-              <span className="flex size-5 items-center justify-center rounded-[6px] bg-white">
+              <span className="flex size-5 items-center justify-center rounded-[5px] bg-white">
                 <Mark size={13} />
               </span>
-              <span className="text-[9.5px] font-bold uppercase tracking-[0.06em]" style={{ color: C.mutedFg }}>
-                Prosperanța · acum
+              <span className="text-[10px] font-medium" style={{ color: C.mutedFg }}>
+                Prosperanța
+              </span>
+              <span className="ml-auto text-[10px]" style={{ color: C.mutedFg }}>
+                acum
               </span>
             </div>
-            <p className="mt-1 truncate text-[11.5px] font-black">{d.title || "Titlul campaniei"}</p>
+            <p className="mt-1 truncate text-[11.5px] font-semibold">{d.title || "Titlul campaniei"}</p>
             <p className="line-clamp-2 text-[10.5px] leading-snug" style={{ color: "#444" }}>
               {d.description || "Descrierea apare aici."}
             </p>
           </div>
         )}
-        <div className="flex items-center justify-between px-3.5 pb-2 pt-9" style={{ borderBottom: `1px solid ${C.border}` }}>
-          <span className="flex items-center gap-1.5">
-            <Mark size={17} />
-            <span className="text-[9.5px] font-black uppercase">Prosperanța</span>
-          </span>
-          <span className="flex flex-col gap-[3px]" aria-hidden>
-            <span className="h-[2px] w-3.5 bg-black" />
-            <span className="h-[2px] w-3.5 bg-black" />
-            <span className="h-[2px] w-3.5 bg-black" />
-          </span>
-        </div>
-        <div className="space-y-2 p-2.5">
-          <div className="rounded-[14px] p-3 text-white" style={{ background: C.heroGrad }}>
-            <p className="text-[7px] font-bold uppercase tracking-[0.2em] opacity-90">Puncte disponibile</p>
-            <p className="text-[26px] font-black leading-none">
-              {num(pts)} <span className="text-[10px]">PUNCTE</span>
-            </p>
-            <div className="mt-2 h-1.5 rounded-full bg-white/30">
-              <div className="h-full w-[80%] rounded-full" style={{ background: C.orange }} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            <div className="h-[54px] rounded-[12px] p-2 text-[7.5px] font-black uppercase text-white" style={{ background: C.red }}>
-              Voucherele mele
-            </div>
-            <div className="h-[54px] rounded-[12px] p-2 text-[7.5px] font-black uppercase" style={{ border: `1.5px solid ${C.red}`, color: C.red }}>
-              Istoric alimentări
-            </div>
-          </div>
-          <div className="relative overflow-hidden rounded-[14px] p-3 pr-9 ring-2 ring-[#F59E24] ring-offset-2" style={{ background: C.campGrad }}>
-            <span className="pointer-events-none absolute -right-1 -top-3 text-[64px] font-black leading-none text-white/[0.09]" aria-hidden>
-              {d.kind === "dublu" ? "×2" : d.kind === "bonus" ? "+" : "★"}
-            </span>
-            <p className="relative text-[7px] font-black uppercase tracking-[0.2em]" style={{ color: C.orange }}>
-              Campania săptămânii
-            </p>
-            <p className="relative mt-1 break-words text-[13px] font-black uppercase leading-[1.05] text-white">{d.title || "Titlul campaniei"}</p>
-            <p className="relative mt-1 line-clamp-3 text-[8.5px] leading-snug text-white/95">{d.description || "Descrierea apare aici."}</p>
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white p-1" style={{ color: C.red }}>
-              <ArrowRight size={10} strokeWidth={3} />
-            </span>
-          </div>
-          <div className="rounded-full py-2.5 pl-3.5 text-[8.5px] font-black uppercase text-white" style={{ background: C.red }}>
-            Recompensele mele
-          </div>
-          <div className="rounded-full py-2.5 pl-3.5 text-[8.5px] font-black uppercase" style={{ border: `1.5px solid ${C.red}`, color: C.red }}>
-            Cum funcționează
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -423,56 +367,38 @@ function CampaignList() {
   const shown = s.campaigns.find((c) => c.active && !c.draft)?.id;
   return (
     <Card>
-      <CardHead right={<span className="text-[12px] font-bold" style={{ color: C.mutedFg }}>cele mai noi sus</span>}>Campaniile tale</CardHead>
+      <CardHead right={<Meta>{s.campaigns.length}</Meta>}>Toate campaniile</CardHead>
       <ul>
-        {s.campaigns.map((c, i) => (
-          <li key={c.id} className={`px-5 py-3.5 ${c.draft ? "a-flash" : ""}`} style={{ borderTop: i ? `1px solid ${C.border}` : undefined }}>
-            <div className="flex items-start gap-3">
+        {s.campaigns.map((c, i) => {
+          const state = c.active ? "Activă" : c.draft ? "Ciornă" : "Oprită";
+          return (
+            <li key={c.id} className={`flex items-center gap-4 px-4 py-3 ${c.draft ? "a-flash" : ""}`} style={{ borderTop: i ? line : undefined }}>
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase" style={{ background: "#FDECEE", color: C.red }}>
-                    {KIND_LABEL[c.kind]}
-                  </span>
-                  {c.draft && (
-                    <span className="rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase" style={{ background: C.muted, color: C.mutedFg }}>
-                      Ciornă
-                    </span>
-                  )}
-                  {shown === c.id && (
-                    <span className="rounded-full px-2 py-0.5 text-[9.5px] font-black uppercase text-white" style={{ background: C.green }}>
-                      Banner în aplicație acum
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1.5 truncate text-[14.5px] font-black uppercase">{c.title}</p>
-                <p className="mt-0.5 text-[12px]" style={{ color: C.mutedFg }}>
-                  {c.audience} · {num(c.reach)} · {c.period}
+                <p className="flex min-w-0 items-center gap-2">
+                  <span className="truncate text-[14px] font-semibold">{c.title}</span>
+                  {shown === c.id && <Badge>În aplicație</Badge>}
+                </p>
+                <p className="truncate text-[12.5px]" style={{ color: C.mutedFg }}>
+                  {c.audience} · {c.period}
                 </p>
                 {c.joined > 0 && (
-                  <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[12px] font-bold">
-                    <span className="whitespace-nowrap">
-                      <b className="font-black" style={{ color: C.red }}>{num(c.joined)}</b> {de(c.joined)}participanți
-                    </span>
-                    <span className="whitespace-nowrap">
-                      <b className="font-black" style={{ color: C.red }}>{compact(c.litres)} L</b> în campanie
+                  <p className="mt-0.5 text-[12.5px]" style={{ color: C.mutedFg }}>
+                    <span className="font-medium" style={{ color: C.fg }}>
+                      {num(c.joined)}
+                    </span>{" "}
+                    {unit(c.joined, "participant", "participanți")} ·{" "}
+                    <span className="font-medium" style={{ color: C.fg }}>
+                      {compact(c.litres)} L
                     </span>
                   </p>
                 )}
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={c.active}
-                aria-label={`${c.title}: ${c.active ? "activă" : "inactivă"}`}
-                onClick={() => toggleCampaign(c.id)}
-                className="mt-1 h-8 shrink-0 rounded-full px-3 text-[11px] font-black uppercase transition-colors"
-                style={c.active ? { background: C.red, color: "#fff", border: `2px solid ${C.red}` } : { background: "#fff", color: C.fg, border: `2px solid ${C.border}` }}
-              >
-                {c.active ? "Activă" : c.draft ? "Activează" : "Inactivă"}
-              </button>
-            </div>
-          </li>
-        ))}
+              <Switch on={c.active} onChange={() => toggleCampaign(c.id)} label={c.title}>
+                <span className="w-[44px] text-left text-[13px]">{state}</span>
+              </Switch>
+            </li>
+          );
+        })}
       </ul>
     </Card>
   );
@@ -484,30 +410,37 @@ function Rules() {
   const { s, setPpl } = useDemo();
   return (
     <Card>
-      <CardHead right={<span className="text-[12px] font-bold" style={{ color: C.mutedFg }}>se aplică imediat în stații</span>}>Reguli de punctare</CardHead>
-      <p className="px-5 pt-3 text-[12.5px]" style={{ color: C.mutedFg }}>
-        Câte puncte primește clientul pentru fiecare litru, în funcție de combustibil.
-      </p>
-      <ul className="px-3 pb-3 pt-1">
-        {FUELS.map((f) => {
+      <CardHead>Puncte pe litru</CardHead>
+      <ul>
+        {FUELS.map((f, i) => {
           const v = s.ppl[f.id];
           const set = (n: number) => setPpl(f.id, Math.max(0.5, Math.min(5, Math.round(n * 2) / 2)));
+          const step = (n: number, label: string, icon: ReactNode, disabled: boolean) => (
+            <button
+              type="button"
+              aria-label={`${label} punctele pentru ${f.label}`}
+              onClick={() => set(v + n)}
+              disabled={disabled}
+              className="ico flex h-full w-9 items-center justify-center disabled:cursor-not-allowed"
+              style={disabled ? { color: "#C4C4C4", background: "transparent" } : undefined}
+            >
+              {icon}
+            </button>
+          );
           return (
-            <li key={f.id} className="flex items-center gap-3 rounded-[12px] px-2 py-2">
-              <span className="flex-1 text-[14px] font-black uppercase">{f.label}</span>
-              <span className="text-[12px] font-bold" style={{ color: C.mutedFg }}>
-                {f.price.toLocaleString("ro-RO")} lei/L
-              </span>
-              <div className="flex h-9 items-center rounded-full" style={{ background: C.muted }}>
-                <button type="button" aria-label={`Scade punctele pentru ${f.label}`} onClick={() => set(v - 0.5)} className="flex size-9 items-center justify-center rounded-full">
-                  <Minus size={14} strokeWidth={2.8} />
-                </button>
-                <span className="tnum w-[62px] text-center text-[14px] font-black" style={{ color: C.red }} aria-live="polite">
+            <li key={f.id} className="flex items-center gap-3 px-4 py-2.5" style={{ borderTop: i ? line : undefined }}>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-medium">{f.label}</p>
+                <p className="text-[12.5px]" style={{ color: C.mutedFg }}>
+                  {dec(f.price)} lei/L
+                </p>
+              </div>
+              <div className="flex h-9 items-center overflow-hidden rounded-[8px]" style={{ border: `1px solid ${C.line}` }}>
+                {step(-0.5, "Scade", <Minus size={14} strokeWidth={2} />, v <= 0.5)}
+                <span className="w-[64px] text-center text-[14px] font-semibold" aria-live="polite">
                   {String(v).replace(".", ",")} p/L
                 </span>
-                <button type="button" aria-label={`Crește punctele pentru ${f.label}`} onClick={() => set(v + 0.5)} className="flex size-9 items-center justify-center rounded-full">
-                  <Plus size={14} strokeWidth={2.8} />
-                </button>
+                {step(0.5, "Crește", <Plus size={14} strokeWidth={2} />, v >= 5)}
               </div>
             </li>
           );

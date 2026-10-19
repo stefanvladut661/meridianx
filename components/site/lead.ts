@@ -40,6 +40,19 @@ const MESSAGES = {
 } as const;
 
 /**
+ * Un câmp „Firmă” care e doar un șir lung de cifre nu e numele unei
+ * firme: e un ID pus de completarea automată a browserului (în admin
+ * au ajuns lead-uri cu „120254528883140547”, format de ID Meta, pe care
+ * omul nu l-a scris). Îl oprim în formular, cât omul e încă acolo.
+ */
+export function looksLikeId(value: string): boolean {
+  return /^[\d\s]{8,}$/.test(value.trim());
+}
+
+export const COMPANY_ID_ERROR =
+  "Completează cu numele firmei.";
+
+/**
  * Capturează UTM-urile o dată, la montarea paginii.
  *
  * După redesign layout-urile de divizie sunt goale, deci apelul nu mai

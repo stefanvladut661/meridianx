@@ -27,7 +27,7 @@ export default function Demo({ device, screen, go, notify, reducedMotion }: Demo
   return (
     <div className={`prs relative h-full w-full overflow-hidden ${reducedMotion ? "prs-rm" : ""}`}>
       <style>{SCOPED_CSS}</style>
-      <DemoProvider device={device} go={go} notify={notify} reducedMotion={reducedMotion}>
+      <DemoProvider device={device} go={go} notify={notify} reducedMotion={reducedMotion} feedOpen={id === "dashboard"}>
         {id === "home" && <Home />}
         {id === "recompense" && <Rewards />}
         {id === "statie" && <Statie />}

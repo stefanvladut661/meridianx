@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Download, Search, Minus, Plus, CircleCheck, TriangleAlert, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, CircleCheck, Download, Minus, Plus, Search, TriangleAlert } from "lucide-react";
 import { num } from "../kit";
-import { C, STATIONS, baseHistory, dateLabel, fuelLabel, phoneMask, stationName, type Customer } from "./data";
+import { C, STATIONS, baseHistory, dateLabel, fuelWord, phoneMask, stationName, type Customer } from "./data";
 import { useDemo } from "./store";
 import { PageTitle, StaffShell } from "./staff";
-import { Avatar, Bars, Btn, Card, CardHead, Label, Pills, Roll, de, inputCls, inputStyle, litri } from "./ui";
+import { Avatar, Btn, Card, CardHead, Label, Meta, Pills, SW, de, inputCls, litri, nr, signed, unit } from "./ui";
 
 /* ============================================================
    Clienții: căutare după nume sau telefon, fișa clientului cu
@@ -19,9 +19,12 @@ const norm = (t: string) =>
   t
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "");
 
-const lastLabel = (d: number) => (d === 0 ? "azi" : d === 1 ? "ieri" : `acum ${d} zile`);
+const lastLabel = (d: number) => (d === 0 ? "azi" : d === 1 ? "ieri" : `acum ${d} ${unit(d, "zi", "zile")}`);
+
+const line = `1px solid ${C.border}`;
+const COLS = "grid-cols-[minmax(0,1.9fr)_1.1fr_0.75fr_0.75fr_0.95fr]";
 
 export function Clienti() {
   const { s, mobile, notify } = useDemo();
@@ -45,20 +48,18 @@ export function Clienti() {
   }, [s.customers, q, filter]);
 
   const current = sel === null ? null : s.customers.find((c) => c.id === sel) ?? null;
-  const exportCsv = () =>
-    notify(`În demo, exportul e oprit. În aplicația reală pleacă un fișier CSV cu ${num(s.totals.members)} de clienți, fără parole.`);
+  const filtered = q.trim() !== "" || filter !== "toti";
+  const count = filtered ? nr(list.length, "rezultat", "rezultate") : `${num(s.customers.length)} din ${num(s.totals.members)}`;
+  const exportCsv = () => notify("Exportul CSV e oprit în demo.");
+  const clear = () => {
+    setQ("");
+    setFilter("toti");
+  };
 
   const search = (
     <div className="relative">
-      <Search size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C.soft }} />
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Caută telefon, nume"
-        aria-label="Caută clienți după telefon sau nume"
-        className={`${inputCls} pl-10`}
-        style={inputStyle}
-      />
+      <Search size={17} strokeWidth={SW} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: C.mutedFg }} aria-hidden />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Caută după nume sau telefon" aria-label="Caută clienți" className={`${inputCls} pl-9`} />
     </div>
   );
 
@@ -70,9 +71,9 @@ export function Clienti() {
       onChange={setFilter}
       items={[
         { id: "toti", label: "Toți" },
-        { id: "activi", label: "Activi 30 zile" },
+        { id: "activi", label: "Activi" },
         { id: "inactivi", label: "Inactivi" },
-        { id: "peste500", label: "Peste 500 p" },
+        { id: "peste500", label: "Peste 500 de puncte" },
         { id: "gpl", label: "GPL" },
       ]}
     />
@@ -80,22 +81,20 @@ export function Clienti() {
 
   const empty = (
     <div className="px-5 py-10 text-center">
-      <p className="text-[14px] font-black uppercase">Niciun client găsit</p>
+      <p className="text-[15px] font-semibold">Niciun client găsit</p>
       <p className="mt-1 text-[13px]" style={{ color: C.mutedFg }}>
-        Caută după nume sau după ultimele cifre ale telefonului.
+        Încearcă ultimele cifre ale telefonului
       </p>
-      <Btn
-        className="mt-4"
-        size="sm"
-        variant="outline"
-        onClick={() => {
-          setQ("");
-          setFilter("toti");
-        }}
-      >
+      <Btn className="mt-4" size="sm" variant="secondary" onClick={clear}>
         Șterge filtrele
       </Btn>
     </div>
+  );
+
+  const exportBtn = (
+    <Btn variant="secondary" className={mobile ? "w-full" : ""} onClick={exportCsv}>
+      <Download size={15} strokeWidth={SW} aria-hidden /> Exportă CSV
+    </Btn>
   );
 
   if (mobile)
@@ -103,9 +102,9 @@ export function Clienti() {
       <StaffShell face="admin" screen="clienti">
         {current ? (
           <div className="prs-scroll absolute inset-0">
-            <main className="px-3 pb-10 pt-3">
-              <button type="button" onClick={() => setSel(null)} className="mb-3 flex h-10 items-center gap-1.5 rounded-full pr-3 text-[13px] font-black uppercase" style={{ color: C.red }}>
-                <ArrowLeft size={18} strokeWidth={2.6} /> Clienți
+            <main className="px-3 pb-10 pt-2">
+              <button type="button" onClick={() => setSel(null)} className="mb-1 flex h-11 items-center gap-1.5 rounded-[8px] pr-3 text-[14px] font-medium">
+                <ArrowLeft size={18} strokeWidth={SW} aria-hidden /> Clienți
               </button>
               <Detail c={current} />
             </main>
@@ -113,39 +112,34 @@ export function Clienti() {
         ) : (
           <div className="prs-scroll absolute inset-0">
             <main className="space-y-3 px-3 pb-10 pt-4">
-              <PageTitle title="Clienți" sub={`${num(s.totals.members)} membri · 31.904 activi în 30 de zile`} />
+              <PageTitle title="Clienți" sub={`${nr(s.totals.members, "membru", "membri")} · 31.904 activi`} />
               {search}
               <div className="prs-hscroll -mx-3 px-3">{filters}</div>
               <Card>
                 {list.length === 0 && empty}
                 <ul>
-                  {list.slice(0, 24).map((c, i) => (
+                  {list.map((c, i) => (
                     <li key={c.id}>
-                      <button
-                        type="button"
-                        onClick={() => setSel(c.id)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-                        style={{ borderTop: i ? `1px solid ${C.border}` : undefined }}
-                      >
-                        <Avatar name={c.name} size={36} tone={c.id === 0 ? "red" : "soft"} />
+                      <button type="button" onClick={() => setSel(c.id)} className="row flex w-full items-center gap-3 px-4 py-2.5 text-left" style={{ borderTop: i ? line : undefined }}>
+                        <Avatar name={c.name} size={36} />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[14px] font-bold">{c.name}</span>
-                          <span className="block text-[12px]" style={{ color: C.mutedFg }}>
-                            {phoneMask(c.tail)} · {lastLabel(c.last)}
+                          <span className="block truncate text-[14px] font-medium">{c.name}</span>
+                          <span className="block truncate text-[12.5px]" style={{ color: C.mutedFg }}>
+                            {phoneMask(c.tail)} · <span style={c.last > 30 ? { color: C.amber } : undefined}>{lastLabel(c.last)}</span>
                           </span>
                         </span>
-                        <span className="text-[15px] font-black" style={{ color: C.red }}>
-                          {num(c.points)}
-                          <span className="ml-0.5 text-[10px]">p</span>
+                        <span className="shrink-0 text-right">
+                          <span className="block text-[14px] font-semibold">{num(c.points)}</span>
+                          <span className="block text-[12px]" style={{ color: C.mutedFg }}>
+                            {c.points === 1 ? "punct" : "puncte"}
+                          </span>
                         </span>
                       </button>
                     </li>
                   ))}
                 </ul>
               </Card>
-              <Btn variant="soft" className="w-full" onClick={exportCsv}>
-                <Download size={15} strokeWidth={2.6} /> Export CSV
-              </Btn>
+              {exportBtn}
             </main>
           </div>
         )}
@@ -158,43 +152,30 @@ export function Clienti() {
         <div className="mx-auto w-full max-w-[1232px] shrink-0 px-6 pt-5">
           <PageTitle
             title="Clienți"
-            sub={
-              <>
-                <b className="font-black" style={{ color: C.fg }}>
-                  <Roll value={s.totals.members} />
-                </b>{" "}
-                membri · 31.904 activi în ultimele 30 de zile · {s.totals.newToday} {de(s.totals.newToday)}înscriși azi
-              </>
-            }
+            sub={`${nr(s.totals.members, "membru", "membri")} · 31.904 activi în ultimele 30 de zile`}
             right={
               <div className="flex items-center gap-2">
                 <div className="w-[300px]">{search}</div>
-                <Btn variant="outline" onClick={exportCsv}>
-                  <Download size={15} strokeWidth={2.6} /> Export CSV
-                </Btn>
+                {exportBtn}
               </div>
             }
           />
           <div className="mt-4 flex items-center gap-3">
-            <SlidersHorizontal size={16} style={{ color: C.soft }} aria-hidden />
             {filters}
-            <span className="ml-auto text-[12.5px] font-bold" style={{ color: C.mutedFg }}>
-              {list.length} {de(list.length)}rezultate încărcate
+            <span className="ml-auto text-[12.5px]" style={{ color: C.mutedFg }} aria-live="polite">
+              {count}
             </span>
           </div>
         </div>
 
-        <div className="mx-auto grid min-h-0 w-full max-w-[1232px] flex-1 grid-cols-12 gap-4 px-6 pb-5 pt-4">
+        <div className="mx-auto grid min-h-0 w-full max-w-[1232px] flex-1 grid-cols-12 gap-4 px-6 pb-5 pt-3">
           <Card className="col-span-7 flex min-h-0 flex-col overflow-hidden">
-            <div
-              className="grid shrink-0 grid-cols-[minmax(0,1.9fr)_1.15fr_0.8fr_0.95fr_0.9fr] gap-3 px-5 py-2.5 text-[10.5px] font-bold uppercase tracking-[0.08em]"
-              style={{ color: C.mutedFg, borderBottom: `2px solid ${C.border}` }}
-            >
+            <div className={`grid shrink-0 ${COLS} gap-3 px-4 py-2.5 text-[12.5px] font-medium`} style={{ color: C.mutedFg, borderBottom: line }}>
               <span>Client</span>
               <span>Telefon</span>
               <span className="text-right">Puncte</span>
-              <span className="text-right">Litri total</span>
-              <span className="text-right">Ultima</span>
+              <span className="text-right">Litri</span>
+              <span className="text-right">Ultima vizită</span>
             </div>
             <ul className="prs-scroll min-h-0 flex-1">
               {list.length === 0 && <li>{empty}</li>}
@@ -206,47 +187,33 @@ export function Clienti() {
                       type="button"
                       onClick={() => setSel(c.id)}
                       aria-pressed={on}
-                      className="grid w-full grid-cols-[minmax(0,1.9fr)_1.15fr_0.8fr_0.95fr_0.9fr] items-center gap-3 px-5 py-2 text-left transition-colors hover:bg-[#FAFAFA]"
-                      style={{ borderTop: i ? `1px solid ${C.border}` : undefined, background: on ? "#FDECEE" : undefined }}
+                      className={`row grid w-full ${COLS} items-center gap-3 px-4 py-2 text-left`}
+                      style={{ borderTop: i ? line : undefined, background: on ? C.sel : undefined }}
                     >
                       <span className="flex min-w-0 items-center gap-2.5">
-                        <Avatar name={c.name} size={30} tone={c.id === 0 ? "red" : "soft"} />
-                        <span className="truncate text-[13.5px] font-bold">{c.name}</span>
+                        <Avatar name={c.name} size={28} />
+                        <span className="truncate text-[13.5px] font-medium">{c.name}</span>
                       </span>
-                      <span className="text-[12.5px]" style={{ color: C.mutedFg }}>
+                      <span className="text-[13px]" style={{ color: C.mutedFg }}>
                         {phoneMask(c.tail)}
                       </span>
-                      <span className="tnum text-right text-[14px] font-black" style={{ color: C.red }}>
-                        {num(c.points)}
-                      </span>
-                      <span className="tnum text-right text-[13px] font-bold">{num(c.litres)}</span>
-                      <span className="text-right text-[12.5px]" style={{ color: c.last > 30 ? "#B86E00" : C.mutedFg }}>
+                      <span className="text-right text-[13.5px] font-semibold">{num(c.points)}</span>
+                      <span className="text-right text-[13.5px]">{num(c.litres)}</span>
+                      <span className="text-right text-[13px]" style={{ color: c.last > 30 ? C.amber : C.mutedFg }}>
                         {lastLabel(c.last)}
                       </span>
                     </button>
                   </li>
                 );
               })}
-              {list.length > 0 && (
-                <li className="px-5 py-3" style={{ borderTop: `1px solid ${C.border}` }}>
-                  <button
-                    type="button"
-                    className="text-[12px] font-black uppercase"
-                    style={{ color: C.red }}
-                    onClick={() => notify(`În demo sunt încărcați doar primii ${s.customers.length} de clienți. În aplicația reală, lista se încarcă pe pagini, din toți cei ${num(s.totals.members)}.`)}
-                  >
-                    Încarcă următorii 50
-                  </button>
-                </li>
-              )}
             </ul>
           </Card>
           <div className="prs-scroll col-span-5 min-h-0 pr-0.5">
             {current ? (
               <Detail c={current} />
             ) : (
-              <div className="flex h-full items-center justify-center rounded-[18px] p-8 text-center text-[14px]" style={{ border: `2px dashed ${C.border}`, color: C.mutedFg }}>
-                Alege un client din listă ca să-i vezi istoricul și punctele.
+              <div className="flex h-full items-center justify-center rounded-[12px] p-8 text-center text-[14px]" style={{ border: `1px dashed ${C.line}`, color: C.mutedFg }}>
+                Alege un client din listă
               </div>
             )}
           </div>
@@ -262,16 +229,14 @@ function Detail({ c }: { c: Customer }) {
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const history = [...(s.extra[c.id] ?? []), ...baseHistory(c)];
-  const fuelings = history.filter((h) => !h.note);
-  const last8 = fuelings.slice(0, 8).reverse();
 
   const apply = () => {
     const d = parseInt(delta, 10);
     if (!d) return setMsg({ ok: false, text: "Scrie o valoare diferită de zero, de exemplu 50 sau −20." });
     if (!reason.trim()) return setMsg({ ok: false, text: "Scrie motivul. Ajustările fără motiv nu se salvează." });
-    if (c.points + d < 0) return setMsg({ ok: false, text: `Clientul are doar ${c.points} puncte. Nu poți scădea mai mult.` });
+    if (c.points + d < 0) return setMsg({ ok: false, text: `Clientul are doar ${nr(c.points, "punct", "puncte")}.` });
     adjust(c.id, d, reason.trim());
-    setMsg({ ok: true, text: `Ajustare aplicată: ${d > 0 ? "+" : ""}${d} puncte. Apare în istoricul clientului.` });
+    setMsg({ ok: true, text: `Ajustare aplicată: ${signed(d)} ${unit(Math.abs(d), "punct", "puncte")}` });
     setDelta("");
     setReason("");
   };
@@ -286,51 +251,38 @@ function Detail({ c }: { c: Customer }) {
 
   return (
     <div className="space-y-3">
-      <Card className="p-5">
+      <Card className="p-4">
         <div className="flex items-start gap-3">
-          <Avatar name={c.name} size={48} tone={c.id === 0 ? "red" : "soft"} />
+          <Avatar name={c.name} size={44} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[18px] font-black uppercase leading-tight">{c.name}</p>
-            <p className="mt-0.5 text-[12.5px]" style={{ color: C.mutedFg }}>
+            <p className="truncate text-[16px] font-semibold leading-tight">{c.name}</p>
+            <p className="mt-0.5 truncate text-[12.5px]" style={{ color: C.mutedFg }}>
               {phoneMask(c.tail)} · {c.mail}
             </p>
-            <p className="text-[12.5px]" style={{ color: C.mutedFg }}>
-              Membru din {c.since} · preferă {STATIONS[c.fav].name}
+            <p className="truncate text-[12.5px]" style={{ color: C.mutedFg }}>
+              Membru din {c.since} · stația preferată: {STATIONS[c.fav].name}
             </p>
           </div>
         </div>
-        <div className="mt-4 flex items-end justify-between gap-3">
-          <p className="text-[36px] font-black leading-none" style={{ color: C.red }}>
-            <Roll value={c.points} /> <span className="text-[15px] uppercase">puncte</span>
-          </p>
-          <div className="w-[150px]">
-            <Bars values={last8.map((h) => h.litres)} labels={last8.map(() => "")} height={40} highlight={last8.length - 1} />
-          </div>
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {[
-            { l: "Litri total", v: num(c.litres) },
-            { l: "Alimentări", v: num(c.visits) },
-            { l: "Vouchere folosite", v: num(c.used) },
-          ].map((x) => (
-            <div key={x.l} className="rounded-[14px] px-3 py-2" style={{ background: C.muted }}>
-              <p className="truncate text-[10px] font-bold uppercase tracking-[0.06em]" style={{ color: C.mutedFg }}>
-                {x.l}
-              </p>
-              <p className="tnum text-[17px] font-black">{x.v}</p>
-            </div>
-          ))}
-        </div>
+        <p className="mt-4 flex items-baseline gap-1.5">
+          <span className="text-[28px] font-semibold leading-none tracking-[-0.01em]">{num(c.points)}</span>
+          <span className="text-[14px]" style={{ color: C.mutedFg }}>
+            {c.points === 1 ? "punct" : `${de(c.points)}puncte`}
+          </span>
+        </p>
+        <p className="mt-2 text-[13px]" style={{ color: C.mutedFg }}>
+          {litri(c.litres, 0)} · {nr(c.visits, "alimentare", "alimentări")} · {nr(c.used, "voucher folosit", "vouchere folosite")}
+        </p>
       </Card>
 
-      <Card className="p-5">
-        <p className="text-[13px] font-black uppercase">Ajustare manuală</p>
-        <div className={`mt-3 grid gap-3 ${mobile ? "grid-cols-1" : "grid-cols-[150px_1fr]"}`}>
+      <Card className="p-4">
+        <h3 className="text-[14px] font-semibold">Ajustare manuală</h3>
+        <div className={`mt-3 grid gap-3 ${mobile ? "grid-cols-1" : "grid-cols-[148px_1fr]"}`}>
           <div>
-            <Label htmlFor={`prs-delta-${c.id}`}>Delta (+/−)</Label>
-            <div className="flex h-11 items-center overflow-hidden rounded-[12px]" style={inputStyle}>
-              <button type="button" aria-label="Scade 10" onClick={() => step(-10)} className="flex h-full w-9 shrink-0 items-center justify-center hover:bg-[#F5F5F5]">
-                <Minus size={15} strokeWidth={2.6} />
+            <Label htmlFor={`prs-delta-${c.id}`}>Puncte (+/−)</Label>
+            <div className="field flex h-11 items-center overflow-hidden rounded-[8px] bg-white">
+              <button type="button" aria-label="Scade 10" onClick={() => step(-10)} className="ico flex h-full w-10 shrink-0 items-center justify-center">
+                <Minus size={15} strokeWidth={2} />
               </button>
               <input
                 id={`prs-delta-${c.id}`}
@@ -339,12 +291,14 @@ function Detail({ c }: { c: Customer }) {
                   setDelta(e.target.value.replace(/[^\d-]/g, "").slice(0, 5));
                   setMsg(null);
                 }}
+                onKeyDown={(e) => e.key === "Enter" && apply()}
                 inputMode="numeric"
                 placeholder="0"
-                className="tnum h-full w-full min-w-0 bg-transparent text-center text-[15px] font-black outline-none"
+                autoComplete="off"
+                className="h-full w-full min-w-0 bg-transparent text-center text-[15px] font-semibold outline-none"
               />
-              <button type="button" aria-label="Adaugă 10" onClick={() => step(10)} className="flex h-full w-9 shrink-0 items-center justify-center hover:bg-[#F5F5F5]">
-                <Plus size={15} strokeWidth={2.6} />
+              <button type="button" aria-label="Adaugă 10" onClick={() => step(10)} className="ico flex h-full w-10 shrink-0 items-center justify-center">
+                <Plus size={15} strokeWidth={2} />
               </button>
             </div>
           </div>
@@ -358,17 +312,21 @@ function Detail({ c }: { c: Customer }) {
                 setMsg(null);
               }}
               onKeyDown={(e) => e.key === "Enter" && apply()}
-              placeholder="ex. bon scanat greșit pe 19.09"
+              placeholder="Ex.: bon înregistrat greșit pe 19.09"
+              autoComplete="off"
               className={inputCls}
-              style={inputStyle}
             />
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-3">
-          <Btn onClick={apply}>Aplică</Btn>
+        <div className={`mt-3 flex gap-3 ${mobile ? "flex-col" : "items-center"}`}>
+          <Btn onClick={apply}>Aplică ajustarea</Btn>
           {msg && (
-            <p role={msg.ok ? "status" : "alert"} className="flex items-start gap-1.5 text-[12.5px] font-bold" style={{ color: msg.ok ? C.green : C.red }}>
-              {msg.ok ? <CircleCheck size={15} className="mt-0.5 shrink-0" /> : <TriangleAlert size={15} className="mt-0.5 shrink-0" />}
+            <p role={msg.ok ? "status" : "alert"} className="flex items-start gap-1.5 text-[13px] font-medium" style={{ color: msg.ok ? C.greenInk : C.red }}>
+              {msg.ok ? (
+                <CircleCheck size={15} strokeWidth={SW} className="mt-0.5 shrink-0" aria-hidden />
+              ) : (
+                <TriangleAlert size={15} strokeWidth={SW} className="mt-0.5 shrink-0" aria-hidden />
+              )}
               {msg.text}
             </p>
           )}
@@ -376,22 +334,22 @@ function Detail({ c }: { c: Customer }) {
       </Card>
 
       <Card>
-        <CardHead>Istoric ({history.length})</CardHead>
+        <CardHead right={<Meta>{history.length}</Meta>}>Istoric</CardHead>
         <ul>
           {history.map((h, i) => (
-            <li key={h.id} className={`flex items-center justify-between gap-3 px-5 py-2.5 text-[13px] ${h.day === 0 ? "a-flash" : ""}`} style={{ borderTop: i ? `1px solid ${C.border}` : undefined }}>
+            <li
+              key={h.id}
+              className={`flex items-center justify-between gap-3 px-4 py-2.5 ${h.day === 0 ? "a-flash" : ""}`}
+              style={{ borderTop: i ? line : undefined }}
+            >
               <span className="min-w-0">
-                <span className="block truncate font-bold">
-                  {h.note ? `Ajustare manuală · ${h.note}` : `${stationName(h.station)} · ${litri(h.litres, 1)} ${fuelLabel(h.fuel)}`}
-                </span>
-                <span className="text-[11.5px]" style={{ color: C.mutedFg }}>
-                  {h.day === 0 ? `Azi, ${h.time}` : `${dateLabel(h.day)} ${h.time}`}
+                <span className="block truncate text-[13.5px] font-medium">{h.note ? `Ajustare manuală · ${h.note}` : stationName(h.station)}</span>
+                <span className="block text-[12.5px]" style={{ color: C.mutedFg }}>
+                  {h.day === 0 ? `Azi, ${h.time}` : `${dateLabel(h.day)}, ${h.time}`}
+                  {h.note ? "" : ` · ${litri(h.litres, 1)} ${fuelWord(h.fuel)}`}
                 </span>
               </span>
-              <span className="shrink-0 font-black" style={{ color: h.points < 0 ? C.fg : C.red }}>
-                {h.points > 0 ? "+" : ""}
-                {h.points}
-              </span>
+              <span className="shrink-0 text-[13.5px] font-semibold">{signed(h.points)}</span>
             </li>
           ))}
         </ul>

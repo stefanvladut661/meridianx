@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Icon } from "./ui";
-import { submitLead, useUtmCapture } from "./lead";
+import { COMPANY_ID_ERROR, looksLikeId, submitLead, useUtmCapture } from "./lead";
 import { CONTACT } from "./video-content";
 
 /* ============================================================
@@ -76,6 +76,11 @@ export function VideoLeadForm() {
     if (need === OTHER && !otherText) {
       setError("Scrie în două vorbe ce ai nevoie.");
       otherRef.current?.focus();
+      return;
+    }
+    if (looksLikeId(company)) {
+      setError(COMPANY_ID_ERROR);
+      document.getElementById(`${uid}-company`)?.focus();
       return;
     }
 

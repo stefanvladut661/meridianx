@@ -6,27 +6,35 @@ import { rng } from "../kit";
    încărcare. Niciun nume, telefon sau email nu e real.
    ============================================================ */
 
-/* ---------- culorile aplicației reale (index.css, HSL → hex) ---------- */
+/* ---------- culorile aplicației reale (index.css, HSL → hex) ----------
+   Roșul merge doar pe acțiuni, selecție, focus, Hero-ul cu puncte și
+   bannerul de campanie. Fără degradeuri: bannerul folosește doar
+   începutul lui --gradient-campaign, plat (text alb la 6,06:1). */
 export const C = {
   red: "#E0061C", // --primary 354 95% 45%
-  redDeep: "#C7051A", // gradient-campaign start
-  redInk: "#B8051A",
-  orange: "#F59E24", // --secondary 35 91% 55%
-  flame: "#F95706", // gradient-campaign end
+  redDeep: "#C7051A", // începutul lui --gradient-campaign
+  orange: "#F59E24", // --secondary 35 91% 55%: progres și o culoare de grafic
   fg: "#1A1A1A", // --foreground
   muted: "#F5F5F5", // --muted
-  mutedFg: "#666666", // --muted-foreground
-  soft: "#8A8A8A",
+  mutedFg: "#666666", // --muted-foreground, 5,74:1 pe alb
+  soft: "#8A8A8A", // doar contur de câmp (3,45:1) și text dezactivat
+  line: "#D4D4D4", // conturul butoanelor secundare și al comutatoarelor oprite
   border: "#E5E5E5", // --border
   bg: "#FFFFFF",
+  canvas: "#FAFAFA", // fundalul panoului de administrare
+  sel: "#F0F0F0", // rândul selectat
+  bar: "#D9D9D9", // barele care nu sunt evidențiate
   green: "#12803A",
   greenBg: "#E7F5EC",
-  heroGrad: "linear-gradient(135deg, #E0061C 0%, #F59E24 100%)",
-  campGrad: "linear-gradient(120deg, #C7051A 0%, #F95706 100%)",
-  shadow: "0 8px 24px -8px rgba(224, 6, 28, 0.25)",
+  greenInk: "#0E6B30", // text verde pe fundal verde deschis, 5,9:1
+  amber: "#8A5300", // atenție, 6,33:1
 };
 
-export const FONT = 'var(--font-switzer), "Segoe UI", system-ui, -apple-system, sans-serif';
+/* Aplicația reală nu declară un font (shadcn implicit), deci randează
+   fontul sistemului: Segoe UI pe Windows, SF pe Mac. */
+export const FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+/** Pentru codurile de voucher, comparate caracter cu caracter. */
+export const MONO = 'ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace';
 
 /* ---------- combustibil ---------- */
 export type Fuel = "benzina" | "motorina" | "gpl";
@@ -36,6 +44,8 @@ export const FUELS: { id: Fuel; label: string; price: number }[] = [
   { id: "gpl", label: "GPL", price: 3.69 },
 ];
 export const fuelLabel = (f: Fuel) => FUELS.find((x) => x.id === f)!.label;
+/** În mijlocul propoziției: „benzină”, „motorină”, dar „GPL”. */
+export const fuelWord = (f: Fuel) => (f === "gpl" ? "GPL" : fuelLabel(f).toLowerCase());
 export const fuelPrice = (f: Fuel) => FUELS.find((x) => x.id === f)!.price;
 export const PPL_INIT: Record<Fuel, number> = { benzina: 1, motorina: 1, gpl: 2 };
 
@@ -54,7 +64,7 @@ export const STATIONS: Station[] = [
   { id: 0, name: "Calea Craiovei", town: "Pitești", x: 262, y: 236, w: 1.32, staff: ["Ionuț Dobre", "Raluca Stan", "Marius Enache"] },
   { id: 1, name: "Petrochimiștilor", town: "Pitești", x: 336, y: 250, w: 1.18, staff: ["Adrian Neagu", "Simona Preda"] },
   { id: 2, name: "Exercițiu", town: "Pitești", x: 283, y: 170, w: 1.04, staff: ["Cătălin Toma", "Oana Iordache"] },
-  { id: 3, name: "Calea București", town: "Pitești", x: 352, y: 214, w: 1.24, staff: ["Sorin Lazăr", "Bianca Vasile", "Paul Dinu"] },
+  { id: 3, name: "Calea București", town: "Pitești", x: 352, y: 214, w: 1.24, staff: ["Sorin Mocanu", "Bianca Tănase", "Paul Dinu"] },
   { id: 4, name: "Trivale", town: "Pitești", x: 244, y: 198, w: 0.82, staff: ["Daniel Oprea", "Irina Barbu"] },
   { id: 5, name: "Găvana", town: "Pitești", x: 326, y: 178, w: 0.94, staff: ["Florin Anghel", "Carmen Diaconu"] },
   { id: 6, name: "Prundu", town: "Pitești", x: 297, y: 218, w: 0.88, staff: ["Radu Nistor", "Alina Moldovan"] },
@@ -93,7 +103,7 @@ export const REWARDS: Reward[] = [
 ];
 export const rewardById = (id: number) => REWARDS.find((r) => r.id === id)!;
 
-/* ---------- timp: „azi” e 23.09.2026, ora demo pornește la 09:41 ---------- */
+/* ---------- timp: „azi” e 23.09.2026, ora demo pornește la 10:12 ---------- */
 const BASE = new Date(2026, 8, 23);
 const p2 = (n: number) => String(n).padStart(2, "0");
 /** offset 0 = azi, 1 = ieri … → „21.09.2026” */
@@ -104,9 +114,9 @@ export function dateLabel(offset: number, withYear = true) {
     ? `${p2(d.getDate())}.${p2(d.getMonth() + 1)}.${d.getFullYear()}`
     : `${p2(d.getDate())}.${p2(d.getMonth() + 1)}`;
 }
-/** secunde de la miezul nopții → „09:41” */
+/** secunde de la miezul nopții → „10:12” */
 export const clockLabel = (sec: number) => `${p2(Math.floor(sec / 3600) % 24)}:${p2(Math.floor(sec / 60) % 60)}`;
-export const CLOCK_START = 9 * 3600 + 41 * 60;
+export const CLOCK_START = 10 * 3600 + 12 * 60;
 
 /* ---------- oameni ---------- */
 const FIRST = [
@@ -153,7 +163,8 @@ const SINCE = ["mai 2026", "iun. 2026", "iul. 2026", "aug. 2026", "sept. 2026"];
 function genCustomer(id: number): Customer {
   const r = rng(9100 + id * 13);
   const first = FIRST[(id * 7 + 3) % FIRST.length];
-  const last = LAST[(id * 11 + 5) % LAST.length];
+  // după 40 de clienți, numele de familie se decalează: altfel id 41 = id 1
+  const last = LAST[(id * 11 + 5 + Math.floor(id / 40) * 3) % LAST.length];
   const litres = Math.round(260 + r() * 4300);
   const fuelRoll = r();
   const fuel: Fuel = fuelRoll < 0.46 ? "benzina" : fuelRoll < 0.84 ? "motorina" : "gpl";
@@ -296,11 +307,11 @@ export const CAMPAIGNS_INIT: Campaign[] = [
   {
     id: 4,
     title: "Puncte duble la weekend",
-    description: "Sâmbătă și duminică primești dublu numărul de puncte la fiecare alimentare!",
+    description: "Sâmbăta și duminica primești puncte duble la fiecare alimentare.",
     kind: "dublu",
     audience: "Toți membrii",
     reach: 48271,
-    period: "Sâm.–Dum. · tot septembrie",
+    period: "sâm.–dum., septembrie",
     active: true,
     joined: 9412,
     litres: 386450,
@@ -308,11 +319,11 @@ export const CAMPAIGNS_INIT: Campaign[] = [
   {
     id: 3,
     title: "Lichid de parbriz gratuit",
-    description: "Lichid de parbriz GRATUIT la 150 L alimentați în septembrie.",
+    description: "Lichid de parbriz gratuit la 150 L alimentați în septembrie.",
     kind: "produs",
     audience: "Activi în ultimele 30 de zile",
     reach: 31904,
-    period: "01.09 – 30.09",
+    period: "1–30 sept.",
     active: true,
     joined: 4218,
     litres: 702300,
@@ -324,7 +335,7 @@ export const CAMPAIGNS_INIT: Campaign[] = [
     kind: "dublu",
     audience: "Clienți GPL",
     reach: 12440,
-    period: "Permanent",
+    period: "permanent",
     active: true,
     joined: 7730,
     litres: 511800,
@@ -336,7 +347,7 @@ export const CAMPAIGNS_INIT: Campaign[] = [
     kind: "produs",
     audience: "Membri noi",
     reach: 5120,
-    period: "01.08 – 31.08",
+    period: "1–31 aug.",
     active: false,
     joined: 2964,
     litres: 118200,
@@ -345,12 +356,12 @@ export const CAMPAIGNS_INIT: Campaign[] = [
 
 export const AUDIENCES = [
   { id: "toti", label: "Toți membrii", reach: 48271 },
-  { id: "activi", label: "Activi · 30 de zile", reach: 31904 },
-  { id: "inactivi", label: "Inactivi · 60+ zile", reach: 7812 },
+  { id: "activi", label: "Activi în ultimele 30 de zile", reach: 31904 },
+  { id: "inactivi", label: "Inactivi de peste 60 de zile", reach: 7812 },
   { id: "gpl", label: "Clienți GPL", reach: 12440 },
 ];
 
-/* ---------- cifrele rețelei (luna curentă, până azi la 09:41) ---------- */
+/* ---------- cifrele rețelei (luna curentă, până azi la 10:12) ---------- */
 export const TOTALS_INIT = {
   monthRevenue: 30_846_215,
   monthLitres: 4_412_380,

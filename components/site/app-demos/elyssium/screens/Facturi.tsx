@@ -1,195 +1,171 @@
 "use client";
 
-import { useState } from "react";
-import { BadgeCheck, CalendarClock, Check, CreditCard, Download, FileSpreadsheet, FileText, Mail, PlugZap, RefreshCw } from "lucide-react";
-import { compact, lei, num, pct, useCountUp } from "../../kit";
-import { C, INCASARI, type Factura } from "../data";
+import { useEffect, useState } from "react";
+import { Check, Download, FileText, Mail, PlugZap, RefreshCw } from "lucide-react";
+import { compact, lei, num, pct } from "../../kit";
+import { C, INCASARI, plural, type Factura } from "../data";
 import { useDemo } from "../store";
 import { AntetPagina, StaffShell } from "../shell";
-import { Btn, Card, Chip, Eticheta, H2, MONO, Spinner, focus, useAnim } from "../ui";
+import { Btn, CIFRE, Card, Chip, Comutator, H2, Indicatori, Segmentat, Spinner } from "../ui";
 
 /* ============================================================
-   Rapoarte și facturare (Fazele 2D + 3A): încasările lunii, plățile
-   online prin Netopia, facturile emise automat în SmartBill (seria
-   APP, TVA 21%), coada de reîncercări și raportul lunar pe email.
+   Rapoarte: încasările lunii, plățile online prin Netopia, facturile
+   emise în SmartBill (seria APP, TVA 21%) cu cele care trebuie
+   reîncercate, conexiunea SmartBill și raportul lunar pe email.
    ============================================================ */
 
 type Luna = keyof typeof INCASARI;
-const LUNI: { k: Luna; eticheta: string }[] = [
-  { k: "iul", eticheta: "Iulie" },
-  { k: "aug", eticheta: "August" },
-  { k: "sep", eticheta: "Septembrie" },
+const LUNI: { v: Luna; eticheta: string }[] = [
+  { v: "iul", eticheta: "Iulie" },
+  { v: "aug", eticheta: "August" },
+  { v: "sep", eticheta: "Septembrie" },
 ];
 
 const nrFactura = (n: number | null) => (n === null ? "—" : `APP ${String(n).padStart(4, "0")}`);
+const problema = (f: Factura) => f.status === "esuata" || f.status === "de_verificat";
 
-function StatusFactura({ f }: { f: Factura }) {
-  if (f.status === "emisa") return <Chip ton="succes">emisă</Chip>;
+/** Starea apare doar când cere ceva de la recepție; factura emisă n-are etichetă. */
+function StareFactura({ f }: { f: Factura }) {
   if (f.status === "emitere")
     return (
       <Chip ton="avert">
-        <Spinner color="#B45309" size={11} /> se emite
+        <Spinner color={C.avertCerneala} size={10} /> Se emite
       </Chip>
     );
-  if (f.status === "esuata") return <Chip ton="eroare">eșuată</Chip>;
-  return <Chip ton="eroare">de verificat</Chip>;
-}
-
-function Kpi({ luna }: { luna: Luna }) {
-  const { st, rm, mobile } = useDemo();
-  const k = useCountUp(1, 900, !rm);
-  const d = INCASARI[luna];
-  const live = luna === "sep" ? st.vanzariAzi : null;
-  const online = d.online + (live ? (live.online - 7) * 190 : 0);
-  const total = d.online + d.cash + d.card + (live ? live.suma - 2310 : 0);
-  const facturi = d.facturi + (live ? live.online - 7 : 0);
-  const recep = d.cash + d.card;
-  const bani = (v: number) => (mobile ? `${compact(v)} lei` : lei(v));
-  const tiles: [string, string, string][] = [
-    ["Încasări totale", bani(total * k), `${num(d.vandute)} de abonamente · TVA 21% inclus`],
-    ["Online · Netopia", bani(online * k), `${pct((online / total) * 100, 0)} din total · ${num(d.plati + (live ? live.online - 7 : 0))} de plăți`],
-    ["La recepție", bani(recep * k), mobile ? "cash și card fizic" : `cash ${lei(d.cash)} · card ${lei(d.card)}`],
-    ["Facturi SmartBill", num(facturi * k), luna === "sep" ? `seria APP · 2 de rezolvat` : `seria APP · toate emise`],
-  ];
-  return (
-    <div className={`grid gap-3 ${mobile ? "grid-cols-2" : "grid-cols-4"}`}>
-      {tiles.map(([e, v, dd]) => (
-        <Card key={e} className="flex flex-col gap-1" style={{ padding: "16px 18px" }}>
-          <Eticheta>{e}</Eticheta>
-          <strong style={{ fontSize: mobile ? 21 : 26, fontWeight: 700, color: C.mov, lineHeight: 1.2, fontVariantNumeric: "tabular-nums" }}>{v}</strong>
-          <span style={{ fontSize: 12.5, color: C.text2 }}>{dd}</span>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-function Impartire({ luna }: { luna: Luna }) {
-  const d = INCASARI[luna];
-  const tot = d.online + d.cash + d.card;
-  const parti = [
-    { e: "Online · Netopia", v: d.online, c: C.mov },
-    { e: "Card fizic", v: d.card, c: C.albastru },
-    { e: "Cash", v: d.cash, c: C.coral },
-  ];
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex h-3 gap-[2px] overflow-hidden rounded-full" aria-hidden>
-        {parti.map((p) => (
-          <span key={p.e} className="h-full transition-[flex-grow] duration-500" style={{ flexGrow: p.v, background: p.c }} />
-        ))}
-      </div>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1" style={{ fontSize: 12.5, color: C.text2 }}>
-        {parti.map((p) => (
-          <li key={p.e} className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-[3px]" style={{ background: p.c }} />
-            {p.e} <b style={{ color: C.text }}>{pct((p.v / tot) * 100, 0)}</b>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  if (f.status === "esuata") return <Chip ton="eroare">Eșuată</Chip>;
+  if (f.status === "de_verificat") return <Chip ton="eroare">De verificat</Chip>;
+  return null;
 }
 
 export default function Facturi() {
   const { st, notify, mobile, reincearcaFactura } = useDemo();
-  const a = useAnim();
   const [luna, setLuna] = useState<Luna>("sep");
   const [verificare, setVerificare] = useState<"nu" | "merge" | "gata">("nu");
   const [automat, setAutomat] = useState(true);
 
-  const ultima = st.facturi.find((f) => f.id.startsWith("fl")) ?? st.facturi[0];
-  const pasFlux = ultima.status === "emitere" ? 2 : ultima.email ? 4 : 3;
+  useEffect(() => {
+    if (verificare !== "merge") return;
+    const t = window.setTimeout(() => setVerificare("gata"), 900);
+    return () => window.clearTimeout(t);
+  }, [verificare]);
 
-  const pdf = () => notify("În demo, PDF-ul nu se descarcă. În aplicația reală se deschide factura din SmartBill Cloud.");
+  /* ---------- indicatorii lunii ---------- */
+  const d = INCASARI[luna];
+  const noi = luna === "sep" ? st.vanzariNoi : [];
+  const suma = (m: string) => noi.filter((v) => v.metoda === m).reduce((s, v) => s + v.suma, 0);
+  const online = d.online + suma("online");
+  const cash = d.cash + suma("cash");
+  const card = d.card + suma("card_fizic");
+  const total = online + cash + card;
+  const plati = d.plati + noi.filter((v) => v.metoda === "online").length;
+  // în septembrie, facturile cu problemă și cele în curs vin din lista de mai jos
+  const deRezolvat = luna === "sep" ? st.facturi.filter(problema).length : d.plati - d.facturi;
+  const inCurs = luna === "sep" ? st.facturi.filter((f) => f.status === "emitere").length : 0;
+  const emise = plati - deRezolvat - inCurs;
+  const bani = (v: number) => (mobile ? `${compact(v)} lei` : lei(v));
+  const procent = (v: number) => pct((v / total) * 100, 0);
+
+  const indicatori = (
+    <Indicatori
+      items={[
+        { eticheta: "Încasări cu TVA", valoare: bani(total), detaliu: plural(d.vandute + noi.length, "abonament", "abonamente") },
+        { eticheta: "Online (Netopia)", valoare: bani(online), detaliu: `${procent(online)} din total` },
+        { eticheta: "La recepție", valoare: bani(cash + card), detaliu: `cash ${procent(cash)} · card ${procent(card)}` },
+        {
+          eticheta: "Facturi emise",
+          valoare: num(emise),
+          detaliu: deRezolvat > 0 ? <span style={{ color: C.avertCerneala, fontWeight: 500 }}>{deRezolvat} de rezolvat</span> : undefined,
+        },
+      ]}
+    />
+  );
 
   const antet = (
-    <AntetPagina titlu="Rapoarte și facturare" sub="Vânzările lunii, plățile online prin Netopia și facturile emise automat în SmartBill.">
-      <div role="group" aria-label="Luna" className="flex rounded-[12px] p-1" style={{ background: C.dezactivat }}>
-        {LUNI.map((l) => (
-          <button
-            key={l.k}
-            type="button"
-            aria-pressed={luna === l.k}
-            onClick={() => setLuna(l.k)}
-            className={`rounded-[9px] px-3 py-1.5 transition-colors ${focus}`}
-            style={{ fontSize: 13.5, fontWeight: 600, background: luna === l.k ? C.card : "transparent", color: luna === l.k ? C.mov : C.text2, boxShadow: luna === l.k ? "0 1px 3px rgba(17,24,39,0.1)" : undefined }}
-          >
-            {l.eticheta}
-          </button>
-        ))}
-      </div>
-      <Btn v="secundar" onClick={() => notify("În demo, Excel-ul nu se descarcă. În aplicația reală primești fișierul lunii: Nume, Abonament, Data, Preț, Metodă de plată și TOTAL ÎNCASĂRI.")}>
-        <Download size={15} /> Excel
+    <AntetPagina titlu="Rapoarte">
+      <Segmentat<Luna> eticheta="Luna" valoare={luna} onChange={setLuna} optiuni={LUNI} />
+      <Btn v="secundar" onClick={() => notify("Excel-ul nu se descarcă în demo.")}>
+        <Download size={15} aria-hidden /> Excel
       </Btn>
     </AntetPagina>
   );
 
-  const listaFacturi = (
-    <Card className="flex flex-col gap-2" pad={false} style={{ padding: mobile ? "16px 14px" : "18px 20px" }}>
-      <H2 right={<span style={{ fontSize: 12.5, color: C.text2 }}>azi · se emit singure la plată</span>}>Facturi SmartBill · seria APP</H2>
-      <ul className="mt-1 flex flex-col">
-        {st.facturi.slice(0, mobile ? 8 : 12).map((f, i) => {
-          const problema = f.status === "esuata" || f.status === "de_verificat";
+  /* ---------- facturile ---------- */
+  const pdf = () => notify("PDF-ul nu se descarcă în demo.");
+  const lista = st.facturi.slice(0, mobile ? 8 : 12);
+  const facturi = (
+    <Card pad={false} className="overflow-hidden">
+      <div style={{ padding: mobile ? "14px 16px 10px" : "16px 20px 10px" }}>
+        <H2 right="seria APP">Facturi</H2>
+      </div>
+      <ul>
+        {lista.map((f) => {
+          const pb = problema(f);
           return (
-            <li key={f.id} className={`flex flex-col gap-1.5 py-2.5 ${f.id.startsWith("fl") && f.status === "emitere" ? a("rowIn") : ""}`} style={{ borderTop: i ? `1px solid ${C.contur}` : undefined }}>
-              <div className="flex items-center gap-3" style={{ fontSize: 14 }}>
+            <li key={f.id} className="flex flex-col gap-1" style={{ borderTop: `1px solid ${C.contur}`, padding: mobile ? "10px 16px" : "9px 20px" }}>
+              <div className="flex items-center gap-3" style={{ fontSize: 14, minHeight: 34 }}>
                 {!mobile && (
-                  <span className="w-[40px] shrink-0" style={{ color: C.text2, fontVariantNumeric: "tabular-nums", fontSize: 13 }}>
-                    {f.o === -1 ? "ieri" : f.ora}
-                  </span>
-                )}
-                {!mobile && (
-                  <span className="w-[76px] shrink-0" style={{ fontFamily: MONO, fontWeight: 600, fontSize: 13, color: f.numar ? C.text : C.text2 }}>
-                    {nrFactura(f.numar)}
-                  </span>
+                  <>
+                    <span className="w-[40px] shrink-0" style={{ fontSize: 13, color: C.text2, ...CIFRE }}>
+                      {f.o === -1 ? "ieri" : f.ora}
+                    </span>
+                    <span className="w-[76px] shrink-0" style={{ fontSize: 13, fontWeight: 600, color: f.numar ? C.text : C.text2, ...CIFRE }}>
+                      {nrFactura(f.numar)}
+                    </span>
+                  </>
                 )}
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <b className="truncate" style={{ fontWeight: 600 }}>
+                  <span className="truncate" style={{ fontWeight: 600, lineHeight: "20px" }}>
                     {f.client}
-                  </b>
-                  <span className="truncate" style={{ fontSize: 12.5, color: C.text2 }}>
-                    {mobile && (
-                      <span style={{ fontFamily: MONO, fontSize: 12, color: f.numar ? C.text : C.text2 }}>
-                        {nrFactura(f.numar)} ·{" "}
-                      </span>
-                    )}
+                  </span>
+                  <span className="truncate" style={{ fontSize: 12.5, color: C.text2, lineHeight: "18px", ...CIFRE }}>
+                    {mobile && f.numar ? `${nrFactura(f.numar)} · ` : ""}
                     {f.plan}
                   </span>
                 </span>
-                <span className="shrink-0 text-right" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", width: mobile ? undefined : 64 }}>
+                <span className="shrink-0 text-right" style={{ fontWeight: 600, width: mobile ? undefined : 64, ...CIFRE }}>
                   {f.suma} lei
                 </span>
-                <span className={`${mobile ? "" : "w-[96px]"} shrink-0 text-right`}>
-                  <StatusFactura f={f} />
-                </span>
-                {!mobile && (
-                  <span className="flex w-[118px] shrink-0 items-center justify-end gap-1">
-                    {problema ? (
-                      <Btn v="secundar" mic onClick={() => reincearcaFactura(f.id)}>
-                        <RefreshCw size={13} /> Reîncearcă
-                      </Btn>
-                    ) : f.status === "emisa" ? (
-                      <>
-                        <span title={f.email ? "trimisă pe email" : "email în coadă"} className="flex size-7 items-center justify-center" aria-label={f.email ? "Trimisă pe email" : "Email în coadă"}>
-                          <Mail size={15} color={f.email ? C.succes : C.text2} />
-                        </span>
-                        <Btn v="fantoma" mic onClick={pdf}>
-                          <FileText size={13} /> PDF
-                        </Btn>
-                      </>
-                    ) : null}
+                {mobile ? (
+                  <span className="shrink-0">
+                    <StareFactura f={f} />
                   </span>
+                ) : (
+                  <>
+                    <span className="flex w-[104px] shrink-0 justify-end">
+                      <StareFactura f={f} />
+                    </span>
+                    <span className="flex w-[112px] shrink-0 items-center justify-end gap-1">
+                      {pb ? (
+                        <Btn v="secundar" mic onClick={() => reincearcaFactura(f.id)}>
+                          <RefreshCw size={13} aria-hidden /> Reîncearcă
+                        </Btn>
+                      ) : f.status === "emisa" ? (
+                        <>
+                          <span
+                            role="img"
+                            aria-label={f.email ? "Trimisă pe email" : "Emailul pleacă în curând"}
+                            title={f.email ? "Trimisă pe email" : "Emailul pleacă în curând"}
+                            className="flex size-7 items-center justify-center"
+                          >
+                            <Mail size={15} color={f.email ? C.succes : C.text2} aria-hidden />
+                          </span>
+                          <Btn v="fantoma" mic onClick={pdf} label={`PDF-ul facturii ${nrFactura(f.numar)}`}>
+                            <FileText size={13} aria-hidden /> PDF
+                          </Btn>
+                        </>
+                      ) : null}
+                    </span>
+                  </>
                 )}
               </div>
-              {problema && (
-                <div className="flex items-center gap-2" style={{ paddingLeft: mobile ? 0 : 128 }}>
-                  <p className="flex-1" style={{ fontSize: 12.5, color: C.eroare }}>
-                    {f.motiv} · abonamentul e activ, doar factura așteaptă
+              {pb && (
+                <div className="flex items-center gap-3" style={{ paddingLeft: mobile ? 0 : 40 + 12 + 76 + 12 }}>
+                  <p className="min-w-0 flex-1" style={{ fontSize: 12.5, color: C.eroareText, lineHeight: "18px" }}>
+                    {f.motiv}
                   </p>
                   {mobile && (
                     <Btn v="secundar" mic onClick={() => reincearcaFactura(f.id)}>
-                      <RefreshCw size={13} /> Reîncearcă
+                      <RefreshCw size={13} aria-hidden /> Reîncearcă
                     </Btn>
                   )}
                 </div>
@@ -201,147 +177,84 @@ export default function Facturi() {
     </Card>
   );
 
-  const PASI = [
-    { e: "Netopia confirmă plata", i: CreditCard },
-    { e: "Abonamentul se activează", i: BadgeCheck },
-    { e: "SmartBill emite factura", i: FileText },
-    { e: "Factura pleacă pe email", i: Mail },
-  ];
-  const flux = (
-    <Card className="flex flex-col gap-3">
-      <H2>Ultima plată online</H2>
-      <p style={{ fontSize: 13.5, color: C.text2, marginTop: -6 }}>
-        <b style={{ color: C.text }}>{ultima.client}</b> · {ultima.plan} · {ultima.suma} lei · {ultima.ora}
-      </p>
-      <ol className="flex flex-col">
-        {PASI.map((p, i) => {
-          const gata = i < pasFlux;
-          const lucru = i === pasFlux && pasFlux < PASI.length;
-          const I = p.i;
-          return (
-            <li key={p.e} className="flex items-stretch gap-3">
-              <span className="flex flex-col items-center">
-                <span
-                  className="flex size-8 items-center justify-center rounded-full transition-colors duration-300"
-                  style={{ background: gata ? C.succes : lucru ? C.fAvert : C.dezactivat, color: gata ? "#fff" : lucru ? "#B45309" : C.text2 }}
-                >
-                  {lucru ? <Spinner color="#B45309" size={14} /> : gata ? <Check size={16} strokeWidth={3} /> : <I size={15} />}
-                </span>
-                {i < PASI.length - 1 && <span className="w-[2px] flex-1 transition-colors duration-300" style={{ background: i < pasFlux - 1 ? C.succes : C.contur, minHeight: 12 }} />}
-              </span>
-              <span className="pb-3 pt-1.5" style={{ fontSize: 14, fontWeight: gata || lucru ? 600 : 500, color: gata || lucru ? C.text : C.text2 }}>
-                {p.e}
-                {i === 2 && ultima.numar && gata && <span style={{ fontFamily: MONO, fontSize: 12.5, color: C.text2, fontWeight: 500 }}> · {nrFactura(ultima.numar)}</span>}
-              </span>
+  /* ---------- SmartBill ---------- */
+  const smartbill = (
+    <Card className="flex flex-col gap-3.5">
+      <H2>SmartBill</H2>
+      <div className="flex items-start justify-between gap-3">
+        <span style={{ fontSize: 14, lineHeight: "20px" }}>
+          Emite factura automat la fiecare plată
+          <span className="mt-0.5 block" style={{ fontSize: 12.5, color: C.text2 }}>
+            {automat ? "Pornit · seria APP, TVA 21%" : "Oprit · emiți manual din profil"}
+          </span>
+        </span>
+        <Comutator on={automat} onChange={setAutomat} eticheta="Emite factura automat la fiecare plată" />
+      </div>
+      {verificare === "gata" && (
+        <ul role="status" className="flex flex-col gap-1.5" style={{ fontSize: 13.5 }}>
+          {["Cheia API e acceptată", "Seria APP există în cont", "Cota TVA 21% e definită"].map((t) => (
+            <li key={t} className="flex items-center gap-2">
+              <Check size={16} color={C.succes} strokeWidth={2.5} aria-hidden />
+              {t}
             </li>
-          );
-        })}
-      </ol>
-      <p style={{ fontSize: 12.5, color: C.text2 }}>Dacă SmartBill nu răspunde, abonamentul rămâne activ și factura intră în coada de reîncercări.</p>
+          ))}
+        </ul>
+      )}
+      <Btn
+        v="secundar"
+        className="self-start"
+        disabled={verificare === "merge"}
+        onClick={() => {
+          setVerificare("merge");
+          notify("Verificarea e simulată în demo.");
+        }}
+      >
+        {verificare === "merge" ? <Spinner size={14} color={C.text2Tare} /> : <PlugZap size={15} aria-hidden />} Verifică conexiunea
+      </Btn>
     </Card>
   );
 
+  /* ---------- raportul lunar ---------- */
   const raport = (
     <Card className="flex flex-col gap-3">
-      <H2>Raportul lunar automat</H2>
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full" style={{ background: C.fSucces }}>
-          <FileSpreadsheet size={17} color={C.succes} />
-        </span>
-        <p style={{ fontSize: 13.5, lineHeight: 1.5 }}>
-          Excel-ul lunii pleacă singur pe <b>30 septembrie, la 23:59</b>, către 2 destinatari.
-        </p>
-      </div>
-      <ul className="flex flex-col gap-1.5" style={{ fontSize: 13 }}>
-        {["31 august, 23:59", "31 iulie, 23:59", "30 iunie, 23:59"].map((d) => (
-          <li key={d} className="flex items-center gap-2" style={{ color: C.text2 }}>
-            <CalendarClock size={14} /> {d}
-            <span className="ml-auto">
-              <Chip ton="succes" mic>
-                trimis
-              </Chip>
-            </span>
+      <H2>Raport lunar pe email</H2>
+      <p style={{ fontSize: 13.5, ...CIFRE }}>
+        Următorul: 30 sept., 23:59 <span style={{ color: C.text2 }}>· 2 destinatari</span>
+      </p>
+      <ul style={{ fontSize: 13.5 }}>
+        {["31 aug., 23:59", "31 iul., 23:59", "30 iun., 23:59"].map((x) => (
+          <li key={x} className="flex items-center justify-between py-1.5" style={{ borderTop: `1px solid ${C.contur}`, ...CIFRE }}>
+            {x}
+            <span style={{ fontSize: 13, color: C.text2 }}>Trimis</span>
           </li>
         ))}
       </ul>
     </Card>
   );
 
-  const smartbill = (
-    <Card className="flex flex-col gap-3">
-      <H2>Conexiunea SmartBill</H2>
-      <label className="flex cursor-pointer items-center justify-between gap-3" style={{ fontSize: 14 }}>
-        <span>
-          Emite factura automat la fiecare plată
-          <span className="block" style={{ fontSize: 12.5, color: C.text2 }}>{automat ? "Pornit · seria APP, TVA 21%" : "Oprit · factura se emite la cerere, din profil"}</span>
-        </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={automat}
-          onClick={() => setAutomat((x) => !x)}
-          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${focus}`}
-          style={{ background: automat ? C.succes : "#D1D5DB" }}
-        >
-          <span className="absolute top-1 size-5 rounded-full bg-white shadow transition-[left] duration-200" style={{ left: automat ? 24 : 4 }} />
-          <span className="sr-only">Emite factura automat</span>
-        </button>
-      </label>
-      {verificare === "gata" ? (
-        <ul className={`flex flex-col gap-1.5 ${a("fadeUp")}`} style={{ fontSize: 13.5 }}>
-          {["Cheia API e acceptată", "Seria APP există în cont", "Cota TVA 21% e definită"].map((t) => (
-            <li key={t} className="flex items-center gap-2">
-              <Chip ton="succes" mic>
-                ok
-              </Chip>
-              {t}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <Btn
-        v="secundar"
-        disabled={verificare === "merge"}
-        onClick={() => {
-          setVerificare("merge");
-          window.setTimeout(() => setVerificare("gata"), 900);
-          notify("În demo, verificarea nu contactează SmartBill; rezultatul e simulat. În aplicația reală, testul nu emite nimic și nu arată niciun secret.");
-        }}
-      >
-        {verificare === "merge" ? <Spinner size={14} /> : <PlugZap size={15} />} Verifică conexiunea
-      </Btn>
-    </Card>
-  );
-
   return (
     <StaffShell activ="facturi">
-      <div className={mobile ? "flex flex-col gap-4" : "flex flex-col gap-5 px-6 py-6"}>
-        {antet}
-        <div className="-mt-1 flex flex-col gap-5">
-          <Kpi key={luna} luna={luna} />
-          <Card className="flex flex-col gap-2.5" style={{ padding: "14px 18px" }}>
-            <Eticheta>Cum s-a încasat în {LUNI.find((l) => l.k === luna)?.eticheta.toLowerCase()}</Eticheta>
-            <Impartire luna={luna} />
-          </Card>
-          {mobile ? (
-            <>
-              {flux}
-              {listaFacturi}
+      {mobile ? (
+        <div className="flex flex-col gap-4">
+          {antet}
+          {indicatori}
+          {facturi}
+          {smartbill}
+          {raport}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-5 px-6 py-6">
+          {antet}
+          {indicatori}
+          <div className="grid grid-cols-[1fr_320px] items-start gap-5">
+            {facturi}
+            <div className="flex flex-col gap-5">
               {smartbill}
               {raport}
-            </>
-          ) : (
-            <div className="grid grid-cols-[1fr_330px] items-start gap-5">
-              {listaFacturi}
-              <div className="flex flex-col gap-5">
-                {flux}
-                {smartbill}
-                {raport}
-              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </StaffShell>
   );
 }

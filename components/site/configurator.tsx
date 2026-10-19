@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import { Icon } from "./ui";
-import { submitLead, useUtmCapture } from "./lead";
+import { COMPANY_ID_ERROR, looksLikeId, submitLead, useUtmCapture } from "./lead";
 
 /* ============================================================
    CONFIGURATOR DE PROIECT — lead magnetul diviziei software.
@@ -224,6 +224,11 @@ export function Configurator() {
 
   async function send() {
     if (status === "sending") return;
+    if (looksLikeId(s.firma)) {
+      setError(COMPANY_ID_ERROR);
+      document.getElementById(`${uid}-firma`)?.focus();
+      return;
+    }
     setStatus("sending");
     setError(null);
     const result = await submitLead({ ...buildLead(s), website: honeypot });

@@ -143,8 +143,8 @@ function ElementStructura({ e }: { e: Element }) {
           y={ETICHETA_SUS.includes(e.tip) ? Math.min(20, e.h / 2) : cy}
           textAnchor="middle"
           dominantBaseline="central"
-          fill={e.tip === "bar" ? D.bg : e.tip === "piscina" ? "#0c4a6e" : D.fg}
-          style={{ fontSize: 13, fontWeight: 500, letterSpacing: "0.02em" }}
+          fill={e.tip === "bar" ? D.bg : D.fg}
+          style={{ fontSize: 13, fontWeight: 500, letterSpacing: "0.025em" }}
           pointerEvents="none"
         >
           {e.eticheta}
@@ -187,7 +187,7 @@ function MasaSvg({
     fill: culori.fill,
     stroke: selectata ? D.selectie : culori.stroke,
     strokeWidth: selectata ? 4 : 2,
-    transition: reducedMotion ? undefined : "fill .45s ease, stroke .45s ease",
+    transition: reducedMotion ? undefined : "fill .2s ease-out, stroke .2s ease-out, stroke-width .15s ease-out",
   };
 
   const laTasta = (e: KeyboardEvent<SVGGElement>) => {
@@ -209,7 +209,7 @@ function MasaSvg({
       style={{
         cursor: selectabila ? "pointer" : "default",
         opacity: stinsa ? 0.28 : 1,
-        transition: reducedMotion ? undefined : "opacity .25s ease",
+        transition: reducedMotion ? undefined : "opacity .2s ease-out",
         outline: "none",
       }}
     >
@@ -222,6 +222,8 @@ function MasaSvg({
         ))}
       </g>
 
+      {/* Conturul punctat spune „liberă pentru cererea asta”. Static, ca în produs:
+          o masă eligibilă nu e mai urgentă decât restul. */}
       {eligibila &&
         (rotunda ? (
           <ellipse
@@ -233,7 +235,6 @@ function MasaSvg({
             stroke={D.selectie}
             strokeWidth={3}
             strokeDasharray="6 5"
-            className={reducedMotion ? undefined : "tx-halou"}
           />
         ) : (
           <rect
@@ -246,7 +247,6 @@ function MasaSvg({
             stroke={D.selectie}
             strokeWidth={3}
             strokeDasharray="6 5"
-            className={reducedMotion ? undefined : "tx-halou"}
           />
         ))}
 
@@ -276,7 +276,7 @@ function MasaSvg({
           y={cy + 12}
           textAnchor="middle"
           dominantBaseline="central"
-          fill="rgba(248,250,252,0.72)"
+          fill="rgba(237,236,232,0.7)"
           style={{ fontSize: 11 }}
         >
           {m.cap} loc.
@@ -403,7 +403,7 @@ export function HartaSala({
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill={D.bg}
-                style={{ fontSize: 11, fontWeight: 700 }}
+                style={{ fontSize: 11, fontWeight: 600 }}
                 pointerEvents="none"
               >
                 ⇄
@@ -423,7 +423,7 @@ const ORDINE_LEGENDA: StatusMasa[] = ["liber", "ocupat", "expirare", "eveniment"
 export function Legenda({ culoareText, marime = 12, wrap = false }: { culoareText: string; marime?: number; wrap?: boolean }) {
   return (
     <ul
-      className={wrap ? "flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1" : "flex items-center gap-x-3.5 gap-y-1"}
+      className={wrap ? "flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5" : "flex items-center gap-x-4 gap-y-1.5"}
       style={{ fontSize: marime, color: culoareText }}
     >
       {ORDINE_LEGENDA.map((s) => (
@@ -431,7 +431,7 @@ export function Legenda({ culoareText, marime = 12, wrap = false }: { culoareTex
           <span
             aria-hidden
             className="inline-block rounded-full"
-            style={{ width: 10, height: 10, background: s === "inactiv" ? "#475569" : STATUS_HARTA[s].stroke }}
+            style={{ width: 10, height: 10, background: STATUS_HARTA[s].stroke }}
           />
           {ETICHETA_STATUS_MASA[s]}
         </li>
@@ -494,8 +494,8 @@ export function BaraOrara({
   const mic = marime === "sm";
   return (
     <div
-      className="flex items-center gap-1.5 rounded-lg p-1.5"
-      style={{ background: D.card, border: `1px solid ${D.border}`, color: D.fg, boxShadow: "0 1px 2px rgba(0,0,0,.25)" }}
+      className="flex items-center gap-2 rounded-[10px] p-1.5"
+      style={{ background: D.card, border: `1px solid ${D.border}`, color: D.fg, boxShadow: "0 1px 2px rgba(0,0,0,.3)" }}
     >
       <div
         ref={ref}
@@ -519,13 +519,13 @@ export function BaraOrara({
               aria-pressed={esteAles}
               aria-label={`Arată sala la ora ${fmtOra(s)}${esteAcum ? " (ora curentă)" : ""}`}
               onClick={() => onSchimba(esteAcum ? null : s)}
-              className="tx-slot shrink-0 rounded-md font-medium tabular-nums"
+              className="tx-slot shrink-0 rounded-[8px] transition-colors duration-150"
               style={{
                 padding: intreaga || esteAles || esteAcum ? (mic ? "5px 9px" : "6px 12px") : mic ? "5px 3px" : "6px 4px",
                 fontSize: mic ? 13 : 14,
                 background: esteAles ? D.primary : "transparent",
-                color: esteAles ? D.primaryFg : !intreaga ? D.mutedFg : trecut ? "rgba(248,250,252,.55)" : D.fg,
-                fontWeight: esteAles ? 700 : 500,
+                color: esteAles ? D.primaryFg : !intreaga ? D.mutedFg : trecut ? "rgba(237,236,232,.6)" : D.fg,
+                fontWeight: esteAles ? 600 : 500,
                 boxShadow: esteAcum && !esteAles ? `inset 0 0 0 1px ${D.primary}` : undefined,
               }}
             >
@@ -538,17 +538,11 @@ export function BaraOrara({
         <button
           type="button"
           onClick={() => onSchimba(null)}
-          className="tx-btn-dark flex shrink-0 items-center gap-1.5 rounded-md font-medium"
-          style={{
-            border: `1px solid ${D.border}`,
-            background: D.bg,
-            color: D.fg,
-            fontSize: mic ? 12 : 13,
-            padding: mic ? "5px 8px" : "6px 10px",
-          }}
+          className="tx-btn-dark flex h-7 shrink-0 items-center gap-1 rounded-[8px] px-2.5 font-[550] transition-colors duration-150"
+          style={{ border: `1px solid ${D.input}`, background: "rgba(61,60,56,.3)", color: D.fg, fontSize: 13 }}
           title={`Harta arată ora ${fmtOra(afisata)}. Revino la ${fmtOra(acum)}.`}
         >
-          <RotateCcw size={mic ? 13 : 14} aria-hidden />
+          <RotateCcw size={14} aria-hidden />
           {mic ? "Acum" : "Revino la ora curentă"}
         </button>
       )}

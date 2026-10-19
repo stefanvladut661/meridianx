@@ -250,7 +250,7 @@ export const TESTIMONIALS: (Placeholderable & {
     // verificat: primit în scris de la client
     quote:
       "Nu am primit doar un produs. Am primit și asistență pe tot parcursul, iar totul s-a întâmplat exact așa cum am discutat de la început.",
-    who: "Art Install Suppliers",
+    who: "Art Instal Suppliers",
     logo: "/video/recenzii/logo-art-instal.webp",
     where: "Amenajări și montaj",
   },
@@ -331,7 +331,7 @@ export const PRESENTATION = {
    Nume reale, folosite cu acordul clientului. Primele șase apar sub
    titlul din hero; restul trăiesc în testimoniale. */
 export const CLIENTS = [
-  "Art Install Suppliers",
+  "Art Instal Suppliers",
   "E45 RestoBar",
   "Vespera Gastrobar",
   "Nona Imobiliare",

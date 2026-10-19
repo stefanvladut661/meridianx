@@ -42,10 +42,25 @@ export const MOBILE_SAFE_BOTTOM = 20;
 export type DemoTourStep = {
   /** Id-ul ecranului pe care îl deschide pasul. Trebuie să existe în demo. */
   screen: string;
-  /** 1–3 cuvinte. */
+  /** 1–3 cuvinte, exact eticheta din meniul aplicației. */
   title: string;
-  /** O singură propoziție scurtă: ce vezi și de ce contează. */
-  line: string;
+  /**
+   * Opțional. Max. 60 de caractere, doar ce ecranul nu arată singur: o
+   * interacțiune ascunsă sau efectul ei în alt ecran. Fără „live”,
+   * „instant”, „singur” și fără tiparul „X: Y”. Majoritatea pașilor n-au.
+   */
+  line?: string;
+  /**
+   * Rolul care vede ecranul („Admin”, „Client”, „Recepție”). Pașii
+   * consecutivi cu același grup se afișează sub o singură etichetă.
+   */
+  group?: string;
+  /**
+   * Dispozitivul pe care se deschide pasul (ex. aplicația clientului pe
+   * telefon). Vizualizatorul îl respectă doar dacă vizitatorul n-a ales
+   * singur dispozitivul.
+   */
+  device?: DemoDevice;
 };
 
 export type AppDemoMeta = {
@@ -58,12 +73,23 @@ export type AppDemoMeta = {
   kind: string;
   /** O propoziție, maximum ~12 cuvinte: ce face aplicația. */
   headline: string;
-  /** 2–3 propoziții: problema clientului și ce am construit. */
+  /** Max. 2 propoziții: problema clientului și ce am construit, cu un fapt concret. */
   summary: string;
-  /** 4–6 funcții, fiecare în maximum 5 cuvinte. */
+  /**
+   * 4–6 funcții, fiecare în maximum 5 cuvinte. Nu se mai afișează pe
+   * suprafețe (turul e lista de funcții); rămân pentru uz intern.
+   */
   features: string[];
-  /** Sistemele cu care se leagă (facturare, POS, API-uri). Opțional. */
+  /**
+   * Doar sisteme EXTERNE cu care se leagă aplicația (Netopia, SmartBill,
+   * DorSoft). Nu funcții, formate de export sau canale. Opțional.
+   */
   integrations?: string[];
+  /**
+   * Înlocuiește nota standard despre datele inventate, când nu se
+   * potrivește (ex. Art Instal: conținutul e preluat de pe site-ul real).
+   */
+  disclaimer?: string;
   /** 4–7 pași. Primul e ecranul de pornire. */
   tour: DemoTourStep[];
   /** Pe ce dispozitive are demo-ul layout propriu. De preferat ambele. */
@@ -79,8 +105,12 @@ export type AppDemoMeta = {
     /** text pe fundalul `bg` */
     fg: string;
   };
-  /** Domeniul afișat în bara browserului, fără protocol: „app.firma.ro”. */
-  host: string;
+  /**
+   * Domeniul REAL și public al aplicației, fără protocol
+   * („confortsolutions.ro”). Vizualizatorul îl afișează ca link extern.
+   * Lipsește dacă domeniul nu e confirmat (CLAUDE.md §5: nu inventăm).
+   */
+  host?: string;
 };
 
 export type DemoProps = {
@@ -91,9 +121,9 @@ export type DemoProps = {
   go: (screen: string) => void;
   /**
    * Pentru acțiunile blocate în demo (ștergere, plată reală, export,
-   * trimitere de mesaje). Vizualizatorul afișează un toast scurt.
-   * Scrie mesajul ca pe o explicație, nu ca pe o eroare:
-   * „În demo, exportul e oprit. În aplicația reală pleacă PDF-ul.”
+   * trimitere de mesaje). Vizualizatorul afișează un toast scurt, în
+   * afara aplicației. O propoziție, max. ~70 de caractere, despre ce e
+   * oprit: „Exportul CSV e oprit în demo.”
    */
   notify: (message: string) => void;
   /** prefers-reduced-motion: fără bucle, fără contoare care urcă singure. */
