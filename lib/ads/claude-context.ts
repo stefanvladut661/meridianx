@@ -6,6 +6,10 @@ import type { AdsWorkspace } from "./workspaces";
 import { workspaceName } from "./workspaces";
 import { listAdAccounts, listInstagramAccounts, listLibrary as listMetaLibrary, listPages, listPixels } from "./meta/lookup";
 import { listIdentities, listLibrary as listTikTokLibrary, listTikTokPixels, readAdvertiser } from "./tiktok/lookup";
+import { googleSearch } from "./google/api";
+import { readNegativeLists } from "./google/account/read";
+import { CHANNEL_LABEL, CAMPAIGN_STATUS_LABEL, label } from "./google/account/labels";
+import { CONVERSION_TYPE_LABEL } from "./google/conversions/standard";
 import { listConversionActions, listGoogleAccounts, listGoogleLibrary } from "./google/lookup";
 
 /**
@@ -19,6 +23,8 @@ import { listConversionActions, listGoogleAccounts, listGoogleLibrary } from "./
 
 const ACCOUNTS_PER_WORKSPACE = 3;
 const VIDEOS_PER_ACCOUNT = 25;
+/** Google: campaniile existente arătate pe cont (cele active și pe pauză, după nume). */
+const CAMPAIGNS_PER_ACCOUNT = 60;
 
 export async function readAccountContext(workspace: AdsWorkspace, hints: string[]): Promise<AccountContext> {
   const context: AccountContext = {
@@ -98,17 +104,52 @@ export async function readAccountContext(workspace: AdsWorkspace, hints: string[
         state: account.info.state,
       }));
       for (const account of accounts.filter((item) => item.info.usable).slice(0, ACCOUNTS_PER_WORKSPACE)) {
-        const [conversions, library] = await Promise.all([
+        const [conversions, library, campaigns, lists] = await Promise.all([
           listConversionActions(workspace, account).catch(() => []),
           listGoogleLibrary(workspace, account).catch(() => ({ videos: [], truncated: false })),
+          googleSearch<{ campaign?: { name?: string; status?: string; advertisingChannelType?: string } }>(
+            workspace,
+            account.info.id,
+            "SELECT campaign.name, campaign.status, campaign.advertising_channel_type FROM campaign WHERE campaign.status != 'REMOVED' LIMIT 1000",
+            { loginCustomerId: account.loginCustomerId }
+          ).catch(() => null),
+          readNegativeLists(workspace, account).catch(() => null),
         ]);
         context.conversions.push(
           ...conversions.map((action) => ({
             id: action.id,
             name: action.name,
-            note: `${action.category}${action.primary ? ", principală" : ", secundară — Google nu optimizează pe ea"}, contul ${account.info.id}`,
+            note: `${label(CONVERSION_TYPE_LABEL, action.type)} (${action.type}), ${action.category}${action.primary ? ", principală" : ", secundară — Google nu optimizează pe ea"}, contul ${account.info.id}`,
           }))
         );
+        if (campaigns) {
+          context.campaigns = [
+            ...(context.campaigns ?? []),
+            // Întâi cele active, apoi după nume.
+            ...[...campaigns]
+              .sort(
+                (a, b) =>
+                  Number(b.campaign?.status === "ENABLED") - Number(a.campaign?.status === "ENABLED") ||
+                  (a.campaign?.name ?? "").localeCompare(b.campaign?.name ?? "", "ro")
+              )
+              .slice(0, CAMPAIGNS_PER_ACCOUNT)
+              .map((row) => ({
+                name: row.campaign?.name ?? "—",
+                type: label(CHANNEL_LABEL, row.campaign?.advertisingChannelType),
+                status: label(CAMPAIGN_STATUS_LABEL, row.campaign?.status),
+                account: account.info.id,
+              })),
+          ];
+          if (campaigns.length > CAMPAIGNS_PER_ACCOUNT) context.notes.push(`Contul ${account.info.id} are ${campaigns.length} de campanii; aici sunt ${CAMPAIGNS_PER_ACCOUNT} (întâi cele active).`);
+        } else {
+          context.notes.push(`Campaniile contului ${account.info.id} nu s-au putut citi — cere-i omului numele celor care există, ca să nu le dublezi.`);
+        }
+        if (lists) {
+          context.negativeLists = [
+            ...(context.negativeLists ?? []),
+            ...lists.map((list) => ({ name: list.name, keywords: list.count, campaigns: list.campaigns.length, account: account.info.id })),
+          ];
+        }
         context.videos.push(
           ...library.videos
             .filter((video) => video.ready)

@@ -283,7 +283,7 @@ async function prepareSearchPlan(input: { plan: unknown; workspace: string }): P
 
 async function checkSearchPrepared(prepared: Extract<SearchPrepared, { ok: true }>): Promise<SearchCheckResponse> {
   try {
-    const { check } = await checkSearchOnGoogle(prepared.workspace, prepared.plan);
+    const { check } = await checkSearchOnGoogle(prepared.workspace, prepared.plan, { volumes: true });
     return { ok: true, check };
   } catch (error) {
     return { ok: false, message: describeGoogleError(error, "verificarea planului", prepared.workspace.tokenEnv) };
@@ -605,6 +605,8 @@ export interface ClaudeContextSummary {
   identities: number;
   conversions: number;
   videos: number;
+  campaigns: number;
+  negativeLists: number;
   notes: string[];
 }
 
@@ -634,6 +636,7 @@ export async function readClaudeContext(input: {
       GOOGLE_ADS_LEAD_SEND_TO ? ` și, pe Google, acțiunea de conversie cu eticheta ${GOOGLE_ADS_LEAD_SEND_TO}` : "; pe Google, tag-ul de conversie nu e încă pus pe site (NEXT_PUBLIC_GOOGLE_ADS_LEAD)"
     }.`,
     "Site-ul trimite: pe Meta — Lead (formular), Contact, Schedule, ViewContent; pe TikTok — SubmitForm (lead), Contact, ViewContent; pe Google — conversia „Lead” la formular trimis.",
+    "Pe conturile Google ale clienților, acțiunile de conversie standard (apel din anunț, clic pe telefon, formular) se creează din portal, la „Conversii”: dacă un cont n-are una de tip AD_CALL, spune-i omului s-o creeze acolo înainte de planul de căutare.",
     "Spațiile fără token nu apar aici: pentru ele, cere-i omului id-urile.",
   ];
   return {
@@ -646,6 +649,8 @@ export async function readClaudeContext(input: {
       identities: context.identities.length,
       conversions: context.conversions.length,
       videos: context.videos.length,
+      campaigns: context.campaigns?.length ?? 0,
+      negativeLists: context.negativeLists?.length ?? 0,
       notes: context.notes,
     })),
   };

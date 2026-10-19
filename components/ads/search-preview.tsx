@@ -3,7 +3,10 @@
 import { EXPLORER_DAILY_OPERATIONS, MATCH_TYPE_LABEL, MUTATE_OPERATIONS_MAX } from "@/lib/ads/google/search/limits";
 import { keywordNotation } from "@/lib/ads/google/search/negatives";
 import type { SearchSummary, SummaryCampaign, SummaryKeyword } from "@/lib/ads/google/search/summary";
-import { countOf } from "@/lib/ads/plan-derive";
+import { keywordKey } from "@/lib/ads/google/search/text";
+import type { KeywordVolume, SearchVolumes } from "@/lib/ads/google/search/types";
+import type { Currency } from "@/lib/ads/constants";
+import { countOf, formatMoney } from "@/lib/ads/plan-derive";
 import { joinRo } from "@/lib/ads/plan-summary";
 import { cn } from "@/lib/utils";
 import { fieldId } from "./fields";
@@ -29,22 +32,61 @@ function hasErrorUnder(errorPaths: ReadonlySet<string>, path: string): boolean {
   return false;
 }
 
-function KeywordChips({ keywords, limit = 60, negative = false }: { keywords: SummaryKeyword[]; limit?: number; negative?: boolean }) {
+const COMPETITION_LABEL = { LOW: "mică", MEDIUM: "medie", HIGH: "mare" } as const;
+
+/** Volumele din Keyword Planner, pentru o campanie, plus moneda licitațiilor. */
+interface Volumes {
+  byKey: Record<string, KeywordVolume>;
+  currency: Currency | null;
+}
+
+/** „1.300 de căutări pe lună, concurență medie, 2,10–5,40 lei pentru sus” — tooltip și cititoare de ecran. */
+function volumeSentence(volume: KeywordVolume, currency: Currency | null): string {
+  const parts = [
+    volume.searches === null ? "volum necunoscut" : `${volume.searches.toLocaleString("ro-RO")} căutări pe lună`,
+    volume.competition ? `concurență ${COMPETITION_LABEL[volume.competition]}` : null,
+    volume.lowBid !== null && volume.highBid !== null ? `${formatMoney(volume.lowBid, currency)}–${formatMoney(volume.highBid, currency)} pe clic pentru partea de sus a paginii` : null,
+  ];
+  return parts.filter(Boolean).join(", ");
+}
+
+function KeywordChips({
+  keywords,
+  limit = 60,
+  negative = false,
+  volumes = null,
+}: {
+  keywords: SummaryKeyword[];
+  limit?: number;
+  negative?: boolean;
+  volumes?: Volumes | null;
+}) {
   if (keywords.length === 0) return <p className="text-[13.5px] text-dim">niciunul</p>;
   const shown = keywords.slice(0, limit);
   const rest = keywords.slice(limit);
-  const chip = (keyword: SummaryKeyword, index: number) => (
-    <li
-      key={`${keyword.match}-${keyword.text}-${index}`}
-      title={MATCH_HINT[keyword.match]}
-      className={cn(
-        "rounded-panel-sm border px-2 py-0.5 font-md-mono text-[12px] leading-5",
-        negative ? "border-hair text-bone/70 line-through decoration-bone/30" : "border-hair-strong text-bone/90"
-      )}
-    >
-      {keywordNotation(keyword)}
-    </li>
-  );
+  const chip = (keyword: SummaryKeyword, index: number) => {
+    const volume = volumes?.byKey[keywordKey(keyword.text)];
+    return (
+      <li
+        key={`${keyword.match}-${keyword.text}-${index}`}
+        title={volume ? `${MATCH_HINT[keyword.match]} · ${volumeSentence(volume, volumes?.currency ?? null)}` : MATCH_HINT[keyword.match]}
+        className={cn(
+          "rounded-panel-sm border px-2 py-0.5 font-md-mono text-[12px] leading-5",
+          negative ? "border-hair text-bone/70 line-through decoration-bone/30" : "border-hair-strong text-bone/90"
+        )}
+      >
+        {keywordNotation(keyword)}
+        {volume ? (
+          <>
+            <span aria-hidden className={cn("ml-1.5", volume.searches ? "text-bone/55" : "text-dim")}>
+              {volume.searches === null ? "—" : volume.searches.toLocaleString("ro-RO")}
+            </span>
+            <span className="sr-only">: {volumeSentence(volume, volumes?.currency ?? null)}</span>
+          </>
+        ) : null}
+      </li>
+    );
+  };
   return (
     <div>
       <ul className="flex flex-wrap gap-1.5">{shown.map(chip)}</ul>
@@ -69,7 +111,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 const MISSING = <span className="text-dim">—</span>;
 
-function CampaignBlock({ campaign, errorPaths }: { campaign: SummaryCampaign; errorPaths: ReadonlySet<string> }) {
+function CampaignBlock({ campaign, errorPaths, volumes }: { campaign: SummaryCampaign; errorPaths: ReadonlySet<string>; volumes: Volumes | null }) {
   const keywords = campaign.adGroups.reduce((sum, group) => sum + group.keywords.length, 0);
   const sitelinkTexts = campaign.sitelinks.map((sitelink) => sitelink.text);
 
@@ -167,6 +209,9 @@ function CampaignBlock({ campaign, errorPaths }: { campaign: SummaryCampaign; er
       <div className="space-y-2 border-t border-hair px-3 py-3 sm:px-4">
         {campaign.adGroups.map((group, groupIndex) => {
           const broken = hasErrorUnder(errorPaths, group.path);
+          const searches = volumes
+            ? group.keywords.reduce((sum, keyword) => sum + (volumes.byKey[keywordKey(keyword.text)]?.searches ?? 0), 0)
+            : null;
           return (
             <details
               key={group.path}
@@ -186,6 +231,7 @@ function CampaignBlock({ campaign, errorPaths }: { campaign: SummaryCampaign; er
                 <span className="font-md-mono text-[11.5px] text-dim">
                   {counted(group.keywords.length, "cuvânt", "cuvinte")} · {counted(group.ads.length, "anunț", "anunțuri")}
                   {group.maxCpc ? ` · ${group.maxCpc}` : ""}
+                  {searches ? ` · ≈ ${searches.toLocaleString("ro-RO")} căutări/lună` : ""}
                 </span>
               </summary>
               <div className="space-y-5 border-t border-hair px-3 py-4 sm:px-4">
@@ -194,9 +240,11 @@ function CampaignBlock({ campaign, errorPaths }: { campaign: SummaryCampaign; er
                     Cuvinte cheie · {group.keywords.length}
                   </h4>
                   <div className="mt-2">
-                    <KeywordChips keywords={group.keywords} />
+                    <KeywordChips keywords={group.keywords} volumes={volumes} />
                   </div>
-                  <p className="mt-2 font-md-mono text-[11px] text-dim">[exactă] · &quot;frază&quot; · amplă</p>
+                  <p className="mt-2 font-md-mono text-[11px] text-dim">
+                    [exactă] · &quot;frază&quot; · amplă{volumes ? " · cifra = căutări pe lună (Keyword Planner)" : ""}
+                  </p>
                 </div>
                 {group.negatives.length > 0 ? (
                   <div>
@@ -237,6 +285,7 @@ export function SearchPreview({
   errorPaths = new Set<string>(),
   accountLabel,
   sent = false,
+  volumes = null,
 }: {
   summary: SearchSummary;
   operations: number | null;
@@ -245,6 +294,8 @@ export function SearchPreview({
   accountLabel: string | null;
   /** Fișa unei campanii deja create: fără numărătoarea de operații. */
   sent?: boolean;
+  /** Volumele din Keyword Planner, din ultima verificare (null = fără acces sau neverificat). */
+  volumes?: SearchVolumes | null;
 }) {
   const { totals } = summary;
   const ledger = [
@@ -307,8 +358,16 @@ export function SearchPreview({
         </section>
       ) : null}
 
-      {summary.campaigns.map((campaign) => (
-        <CampaignBlock key={campaign.path} campaign={campaign} errorPaths={errorPaths} />
+      {volumes && "error" in volumes ? <p className={cn("text-[13px]", WARNING_TEXT)}>{volumes.error} Volumele de căutare lipsesc din previzualizare; restul verificării e întreg.</p> : null}
+      {volumes && "campaigns" in volumes && volumes.note ? <p className="text-[13px] text-dim">{volumes.note}</p> : null}
+
+      {summary.campaigns.map((campaign, index) => (
+        <CampaignBlock
+          key={campaign.path}
+          campaign={campaign}
+          errorPaths={errorPaths}
+          volumes={volumes && "campaigns" in volumes && volumes.campaigns[index] ? { byKey: volumes.campaigns[index], currency: summary.currency } : null}
+        />
       ))}
     </div>
   );

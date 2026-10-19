@@ -16,6 +16,22 @@ export interface SearchUrlCheck {
   note: string | null;
 }
 
+/** Ce spune Keyword Planner despre un cuvânt cheie (ultimele 12 luni, pe locațiile și limba campaniei). */
+export interface KeywordVolume {
+  /** Căutări pe lună, în medie; null = Google n-are destule date. */
+  searches: number | null;
+  competition: "LOW" | "MEDIUM" | "HIGH" | null;
+  /** Licitația pentru partea de sus a paginii, între (în moneda contului). */
+  lowBid: number | null;
+  highBid: number | null;
+}
+
+/**
+ * Volumele, pe campanie (în ordinea din plan), cu cheia `keywordKey(text)`.
+ * `{ error }` = citirea a eșuat (nu blochează nimic).
+ */
+export type SearchVolumes = { note: string | null; campaigns: Array<Record<string, KeywordVolume>> } | { error: string };
+
 export interface SearchCheck {
   ok: boolean;
   /** Amprenta planului verificat + ce a găsit Google; crearea o recalculează și refuză dacă diferă. */
@@ -35,6 +51,8 @@ export interface SearchCheck {
   /** Acțiunile de conversie de pe butoanele de apel. */
   callConversions: Array<{ id: string; name: string; type: string; ok: boolean }>;
   urls: SearchUrlCheck[];
+  /** Volumele din Keyword Planner; null = proiectul n-are acces (nivelul Basic) — ecranul nu le arată. */
+  volumes: SearchVolumes | null;
   errors: PlanProblem[];
   warnings: PlanProblem[];
 }

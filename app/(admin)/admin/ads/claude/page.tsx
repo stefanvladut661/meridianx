@@ -33,7 +33,8 @@ export default async function ClaudePage() {
       <h1 className="display mt-2 text-[2.25rem] text-bone sm:text-[2.75rem]">Pentru Claude</h1>
       <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-bone/70">
         Planurile se scriu într-o conversație cu Claude. De aici îi dai tot ce îi trebuie ca să scrie planuri pe care portalul
-        le primește din prima: formatul, regulile fiecărei platforme și id-urile reale din conturi.
+        le primește din prima: formatul (și cel al campaniilor de căutare Google), regulile fiecărei platforme și id-urile reale din
+        conturi — pe Google, și campaniile care există deja, conversiile și listele de negative.
       </p>
       <div className="mt-10">
         <ClaudeHelper

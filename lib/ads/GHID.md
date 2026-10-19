@@ -29,6 +29,7 @@ Trei documente, în ordinea în care se citesc:
 | **11** | **Contul existent**: campaniile, pauza, negativele pe campanii existente, auditul | ✅ gata, testată pe Google fals — **încă nu pe contul real** |
 | **12** | **Termenii de căutare**: sincronizarea, propunerile de negative, adăugarea cu bifă | ✅ gata, testată pe Google fals — **încă nu pe contul real** |
 | **13** | **Conversiile**: acțiunile standard de lead, importul GTM | ✅ gata — testat pe Google fals; importul, încă nu într-un GTM real |
+| **14** | **Pentru Claude pe căutare** + volumele din Keyword Planner | ✅ gata — volumele apar doar cu accesul Basic |
 
 Fazele 1–7 sunt pe `feat/ads-portal`; fazele 8–14 pe `feat/ads-google-search` (plecată din ea), împinse pe GitHub, **fără merge**
 (deci nu e pe site încă). Merge-ul îl faci tu sau mi-l ceri explicit.
@@ -74,6 +75,10 @@ Ce face fiecare fază și ce ai de făcut tu după ea. Detaliile tehnice: README
 ### Faza 13
 - **Ce face:** pagina **„Conversii”** — ce numără contul ca lead. Arată id-ul AW-…, acțiunile existente cu eticheta fiecăreia și dacă raportarea apelurilor e pornită. Creează, după „Verifică în Google”, acțiunile standard care lipsesc: apel din anunț (cel puțin 60 s), clic pe telefon, formular trimis. Apoi îți dă **fișierul de import pentru Google Tag Manager**: Conversion Linker, tag-ul Google, conversiile cu declanșatoarele lor.
 - **Ce ai de făcut:** pornește raportarea apelurilor în Google Ads, unde pagina spune că e oprită; importă fișierul în GTM-ul clientului cu „Combinare → Redenumește”, verifică în previzualizare, publică. Portalul nu atinge GTM.
+
+### Faza 14
+- **Ce face:** „Pentru Claude” știe acum și planurile de căutare: formatul, limitele, regulile negativelor, structura recomandată, un exemplu. Contextul conturilor Google arată campaniile care există deja, conversiile (cu tipul lor) și listele de negative — Claude nu mai refolosește nume luate. La „Verifică în Google”, previzualizarea arată lângă fiecare cuvânt cheie câte căutări are pe lună (Keyword Planner).
+- **Ce ai de făcut:** nimic obligatoriu. Volumele apar doar după ce proiectul Google Cloud trece la nivelul de acces Basic (README → „De făcut de om”); până atunci nu se văd deloc.
 
 ---
 

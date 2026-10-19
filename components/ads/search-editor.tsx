@@ -338,6 +338,7 @@ export function SearchEditor({
               operations={validation.operations}
               errorPaths={errorPaths}
               accountLabel={summary.account}
+              volumes={freshCheck?.volumes ?? null}
             />
             {check ? <SearchCheckPanel check={check.check} stale={check.key !== planKey} /> : null}
           </div>

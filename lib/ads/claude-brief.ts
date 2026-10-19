@@ -16,8 +16,11 @@ import {
   type Platform,
 } from "./constants";
 import { EXAMPLE_BY_PLATFORM } from "./example-plan";
+import { countOf } from "./plan-derive";
 import { BATCH_MAX } from "./plan-batch";
 import { googleBriefRules } from "./google/brief";
+import { searchBriefRules } from "./google/search/brief";
+import { SEARCH_PLAN_FORMAT } from "./google/search/limits";
 import { PLAN_FORMAT } from "./plan-schema";
 import { WORKSPACES, workspaceName } from "./workspaces";
 
@@ -65,11 +68,12 @@ Ești asistentul care scrie planurile de campanie ale agenției MERIDIAN (produc
 
 ## Ce primești și ce dai
 
-- Omul îți dă brief-ul (clientul, oferta, publicul, bugetul, platformele) și, de obicei, **contextul conturilor** copiat din portal: conturile de reclame, paginile, pixelii sau conversiile, identitățile TikTok și video-urile din biblioteci, cu id-urile lor.
+- Omul îți dă brief-ul (clientul, oferta, publicul, bugetul, platformele) și, de obicei, **contextul conturilor** copiat din portal: conturile de reclame, paginile, pixelii sau conversiile, identitățile TikTok și video-urile din biblioteci, cu id-urile lor; pe Google, și campaniile care există deja, acțiunile de conversie (cu tipul lor) și listele comune de negative.
 - Folosește DOAR id-urile din context. Nu inventa niciun id (cont, pagină, pixel, video, identitate). Dacă îți lipsește unul, întreabă-l pe om înainte să scrii planul.
 - Răspunde cu **un singur bloc \`\`\`json**, fără comentarii în el:
   - o campanie → un obiect plan;
-  - mai multe campanii → un lot: \`{ "format": "${PLAN_FORMAT}", "plans": [ … ] }\`, cel mult ${BATCH_MAX} de planuri.
+  - mai multe campanii → un lot: \`{ "format": "${PLAN_FORMAT}", "plans": [ … ] }\`, cel mult ${BATCH_MAX} de planuri;
+  - campanii de **căutare** pe Google → un plan de căutare (\`"format": "${SEARCH_PLAN_FORMAT}"\`, secțiunea „Google Search” de mai jos): un cont, una sau mai multe campanii. Poate sta și în lot, lângă celelalte planuri.
 - Dacă portalul îți trimite înapoi o listă de probleme, corectează exact acele câmpuri și trimite din nou TOT lotul, în același format.
 
 ## Spațiile de lucru
@@ -139,6 +143,8 @@ ${events}
 
 ${googleBriefRules()}
 
+${searchBriefRules()}
+
 ## Exemple complete
 
 ### Meta · Lead-uri
@@ -178,6 +184,10 @@ export interface AccountContext {
   /** Pixeli (Meta, TikTok) sau acțiuni de conversie (Google). */
   conversions: Array<{ id: string; name: string; note?: string }>;
   videos: Array<{ id: string; title: string | null; seconds: number | null; account: string }>;
+  /** Google: campaniile care există deja (numele sunt luate; ce rulează concurează). */
+  campaigns?: Array<{ name: string; type: string; status: string; account: string }>;
+  /** Google: listele comune de negative ale contului. */
+  negativeLists?: Array<{ name: string; keywords: number; campaigns: number; account: string }>;
   notes: string[];
 }
 
@@ -201,8 +211,27 @@ export function contextForClaude(contexts: ReadonlyArray<AccountContext>, siteNo
     }
     if (context.conversions.length > 0) {
       lines.push(
-        context.workspaceId.startsWith("google") ? "Acțiuni de conversie (conversion.pixel_id):" : "Pixeli (conversion.pixel_id):",
+        context.workspaceId.startsWith("google")
+          ? "Acțiuni de conversie (conversion.pixel_id; la căutare, cele de tip AD_CALL merg la assets.call.conversion_action_id):"
+          : "Pixeli (conversion.pixel_id):",
         ...context.conversions.map((item) => `- \`${item.id}\` — ${item.name}${item.note ? ` (${item.note})` : ""}`)
+      );
+    }
+    if (context.campaigns && context.campaigns.length > 0) {
+      lines.push(
+        "Campanii existente (numele sunt luate — nu le refolosi; cele active concurează la aceleași căutări):",
+        ...context.campaigns.map(
+          (campaign) => `- ${campaign.name} — ${campaign.type}, ${campaign.status}${context.accounts.length > 1 ? `, contul ${campaign.account}` : ""}`
+        )
+      );
+    }
+    if (context.negativeLists && context.negativeLists.length > 0) {
+      lines.push(
+        "Liste comune de negative (existente; un plan nou nu poate refolosi numele — o listă existentă se leagă din portal, „Cont” → „Negative”):",
+        ...context.negativeLists.map(
+          (list) =>
+            `- ${list.name} — ${list.keywords === 1 ? "un cuvânt" : countOf(list.keywords, "cuvinte")}, legată de ${list.campaigns === 1 ? "o campanie" : countOf(list.campaigns, "campanii")}${context.accounts.length > 1 ? `, contul ${list.account}` : ""}`
+        )
       );
     }
     if (context.videos.length > 0) {

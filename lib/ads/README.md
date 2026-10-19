@@ -42,6 +42,36 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 
 ---
 
+## Ce NU face portalul (intenționat)
+
+Lista scurtă, ca nimeni să nu caute un buton care n-are voie să existe.
+
+- **Nu pornește nimic.** Campaniile, grupurile și anunțurile se creează pe pauză;
+  nicio cale nu trimite statusul de pornire (garda și `verify-paused.mjs`).
+- **Nu modifică nimic existent, în afară de pauză.** Fără bugete, licitări,
+  cuvinte cheie, anunțuri, locații, program sau setări de cont — inclusiv
+  raportarea apelurilor. Pe un cont existent doar adaugă ce nu mărește
+  cheltuiala: negative, liste de negative, acțiuni de conversie.
+- **Nu șterge nimic** — nici campanii, nici negative, nici conversii (fără
+  `remove` în nicio gardă).
+- **Nu atinge site-ul clientului și nici GTM-ul lui.** Pentru conversii dă un
+  fișier de import și pașii; importul și publicarea le face omul.
+- **Nu face facturare**: plăți, bugete de cont, facturi — doar le citește în audit.
+- **Nu creează conturi și nu dă acces** (utilizatori, invitații) — doar le citește.
+- **Nu face Google Maps / Business Profile, Local Services, Performance Max,
+  Shopping sau aplicații.** Pe Google: Demand Gen (video) și căutare.
+- **Nu licitează automat pe conversii** (CPA / ROAS țintă): pe căutare, doar
+  „maximizează clicurile” sau CPC manual; strategiile pe conversii se pun în Google
+  Ads, după ce contul are conversii.
+- **Nu arată „Informații despre licitații”** (auction insights): în Google Ads API
+  sunt doar pentru dezvoltatorii aprobați de Google (listă de permisiuni), deci
+  rămân în interfața Google Ads.
+- **Nu propune cuvinte cheie noi** din Keyword Planner — doar cântărește (volumele
+  istorice) cuvintele din plan, și doar cu acces Basic.
+- **Nu trimite rezumatul săptămânal pe email** încă (în afara zonei: „De făcut de om”).
+
+---
+
 ## Fazele
 
 | Fază | Ce | Stare |
@@ -58,6 +88,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 10 | Google Search: verificarea cu `validateOnly` și crearea pe pauză a planului de căutare; planurile de căutare în lot; migrarea 9 | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
 | 11 | Contul existent (`/admin/ads/cont`): campaniile în toate stările, pauza, negativele pe campanii existente, auditul; jurnalul (migrarea 10) | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
 | 12 | Termenii de căutare: sincronizarea zilnică (același cron), propunerile de negative după regulile contului, adăugarea doar cu bifă; migrarea 11 | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși |
+| 14 | „Pentru Claude” pe căutare: formatul, limitele, negativele, structura recomandată; contextul Google cu campaniile, conversiile și listele de negative; volumele din Keyword Planner în previzualizare | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși; Keyword Planner cere accesul Basic |
 | 13 | Conversiile (`/admin/ads/conversii`): acțiunile standard de lead (apel din anunț, clic pe telefon, formular) și fișierul de import GTM; garda strânsă pe acțiunile de conversie | ✅ `feat/ads-google-search` — testat pe Google și Supabase falși; importul GTM, încă nu într-un container real |
 
 Commit separat după fiecare fază. Fazele 6 și 7 au fost cerute împreună („bagă și
@@ -153,7 +184,9 @@ Google, scopul e producția în masă”), deci au mers fără oprire între ele
 | `google/conversions/gtm.ts` | Faza 13. Fișierul de import GTM (Conversion Linker, tag-ul Google, conversiile, declanșatoarele) și verificarea alegerilor. Izomorf, pur. |
 | `google/conversions/read.ts` · `service.ts` | Faza 13. Citirile (setările de conversie ale contului, acțiunile cu etichetele lor), verificarea și crearea acțiunilor. |
 | `google/conversions/types.ts` | Faza 13. Tipurile pentru browser. |
-| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea, garda fazei 9, negativele pe conturi existente, termenii, conversiile și importul GTM (193 de verificări, fără rețea). |
+| `google/search/brief.ts` | Faza 14. Secțiunea „Google Search” din instrucțiunile pentru Claude: formatul, limitele (din `limits.ts`), negativele și conflictele, structura recomandată, exemplul. Izomorf. |
+| `google/search/planner.ts` | Faza 14. Volumele din Keyword Planner (`generateKeywordHistoricalMetrics`, citire), grupate pe locații + limbă + rețea; `null` fără acces. |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea, garda fazei 9, negativele pe conturi existente, termenii, conversiile, importul GTM și instrucțiunile pentru Claude (195 de verificări, fără rețea). |
 
 ---
 
@@ -1883,6 +1916,89 @@ crearea și arată id-ul managerului. Fără derulare laterală la 360, 768, 102
 
 ---
 
+## Faza 14 — „Pentru Claude” pe căutare și volumele din Keyword Planner
+
+### Instrucțiunile (`/admin/ads/claude`)
+
+`google/search/brief.ts` adaugă în instrucțiuni secțiunea **„Google Search — planul
+de căutare”**, compusă din aceleași constante ca validarea (`google/search/limits.ts`)
+și din același exemplu ca butonul „Încarcă exemplul”:
+
+- structura planului `meridian-google-search/1` și când se folosește (un cont, una
+  sau mai multe campanii; singur sau în lot);
+- limitele: campanii pe plan, grupuri, anunțuri, operații pe cerere, nume, chei,
+  bugetul ca **sumă** sub plafon, licitarea (`maximize_clicks` / `manual_cpc` și
+  pragul de avertisment pe CPC), rețelele, locațiile (fără rază), programul;
+- cuvintele cheie: potrivirile, lungimea, caracterele interzise, dublurile;
+- **negativele**: cele trei niveluri, cum blochează fiecare potrivire și regula pe
+  care portalul o aplică — un negativ care ar bloca un cuvânt pozitiv din aceeași
+  campanie e eroare;
+- anunțurile (titluri, descrieri, căi, fixări), materialele (linkuri, extensii,
+  fragmente cu antetele lor, apelul cu `conversion_action_id` de tip `AD_CALL`);
+- **structura recomandată**: o campanie pe serviciu (și zonă), grupuri strânse cu
+  o singură intenție și o singură pagină, una-două reclame cu cel puțin 8 titluri,
+  o listă comună „NEG - …” legată de toate, UTM pe campanie;
+- exemplul complet, cu firma inventată.
+
+`verify-paused.mjs` verifică: formatul, limitele (din constante, nu scrise de
+mână), regula conflictelor, exemplul întreg și că în instrucțiuni nu apare niciun id
+de cont în afară de zerouri și forma `123-456-7890`.
+
+### Contextul conturilor, pe Google
+
+Pe fiecare cont Google (primele trei utilizabile ale spațiului), pe lângă conturi,
+conversii și video-uri:
+
+- **acțiunile de conversie, cu tipul lor** — cele `AD_CALL` sunt marcate pentru
+  `assets.call.conversion_action_id`;
+- **campaniile existente** (nume, tip, stare; cel mult 60, întâi cele active) — cu
+  regula: numele sunt luate, cele active concurează la aceleași căutări;
+- **listele comune de negative** (nume, câte cuvinte, de câte campanii sunt legate).
+
+O citire care eșuează devine o notă în context („cere-i omului numele campaniilor”).
+Rezumatul de pe pagină: „1 cont · 11 campanii · 2 conversii · 1 listă de negative”.
+Contextul amintește și că acțiunile standard se creează din „Conversii”.
+
+### Volumele din Keyword Planner, în previzualizare
+
+`google/search/planner.ts`: `KeywordPlanIdeaService.GenerateKeywordHistoricalMetrics`
+(v26, `POST customers/{id}:generateKeywordHistoricalMetrics`) — o **citire**, prin
+`googleReadPost` (lista căilor de citire are acum și calea asta; `verify-paused`
+verifică că nicio cale de mutate nu trece drept citire).
+
+- Se cer doar la **„Verifică în Google”**, în paralel cu `validateOnly` (nu și la
+  verificarea refăcută de creare — nu schimbă ce se creează, nu intră în amprentă).
+- Campaniile cu aceleași locații, aceeași limbă și aceeași rețea merg într-o singură
+  cerere; cererile pleacă pe rând, la peste o secundă (Google: o cerere pe secundă
+  pe cont). Cel mult 10 locații pe cerere și prima limbă a campaniei (o notă o spune
+  când planul are mai multe).
+- Pe ecran: lângă fiecare cuvânt cheie, căutările pe lună (media ultimelor 12 luni);
+  pe fiecare grup, suma; pentru mouse și cititoare de ecran, fraza întreagă —
+  căutările, concurența, licitarea pentru partea de sus a paginii (în moneda
+  contului). Variantele apropiate (Google întoarce o singură formă pentru
+  „centrala”/„centrale”) se potrivesc pe cuvântul din plan.
+- **Fără acces** (proiectul Google Cloud la nivelul Explorer — Keyword Planner cere
+  Basic): Google refuză, iar portalul **nu arată nimic** — nici coloană goală, nici
+  mesaj. O altă eroare: un rând discret; verificarea rămâne întreagă.
+
+### Verificat (Chrome headless, Google și Supabase falși)
+
+Instrucțiunile au secțiunea de căutare (40.000 de caractere în total); „Citește
+conturile” dă, pe contul fals: 11 campanii (întâi cele active), 2 conversii cu
+tipul lor, lista „NEG - Vechi”. Planul-exemplu verificat: cifrele lângă cuvinte,
+„≈ 420 căutări/lună” pe grup, fraza pentru cititorul de ecran. Cu Keyword Planner
+refuzat: nicio urmă pe ecran, verificarea tot „Totul se potrivește”. Fără derulare
+laterală la 360 și 768, fără erori în consolă.
+
+### Neverificat încă — pe un cont real
+
+1. Ce eroare exactă dă Google unui proiect Explorer pe Keyword Planner (portalul
+   ascunde la orice 403, `PERMISSION_DENIED` sau `SERVICE_ACCESS_DENIED`).
+2. Timpul verificării cu volume pe un plan cu multe campanii pe zone diferite (o
+   secundă între cereri; ruta are 60 de secunde).
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server, cu o excepție marcată (`NEXT_PUBLIC_`).
@@ -2306,6 +2422,18 @@ unde a fost de ales, am ales varianta cea mai sigură și mai simplă și am not
    real), nu pe „Initialization”; id-uri ≥ 900, nume „Google Ads ·”.
 39. **Faza 13 — portalul nu vorbește cu GTM** (nici API, nici acces): face fișierul
    și scrie pașii; publicarea e a omului.
+40. **Faza 14 — planul de căutare intră în aceleași instrucțiuni** pentru Claude (o
+   secțiune nouă, nu un al doilea document): o singură lipire la începutul
+   conversației, iar Claude alege formatul după ce cere omul.
+41. **Faza 14 — contextul arată cel mult 60 de campanii pe cont, întâi cele active**,
+   și primele trei conturi utilizabile ale spațiului; restul e o notă.
+42. **Faza 14 — volumele doar la „Verifică în Google”** (nu la crearea refăcută, nu
+   în amprentă), în paralel cu `validateOnly`, grupate pe locații + limbă + rețea.
+43. **Faza 14 — fără acces la Keyword Planner, nimic pe ecran** (cum cere promptul),
+   iar orice altă eroare a lui e un rând discret, nu o problemă a planului.
+44. **Faza 14 — doar volumele istorice**, nu idei noi de cuvinte
+   (`GenerateKeywordIdeas`): cuvintele le scrie omul cu Claude, portalul le
+   cântărește.
 
 ## De făcut de om (fazele 8–14)
 
@@ -2349,3 +2477,8 @@ exact ce și de ce.
    lui, în UE multe conversii nu se văd.
 10. **Id-ul acțiunii „apel din anunț”** în planurile de căutare, la
    `assets.call.conversion_action_id` (pagina „Conversii” îl arată, cu „Copiază”).
+11. **Accesul Basic pentru Keyword Planner** (opțional — fără el, volumele nu apar,
+   restul merge): în proiectul Google Cloud al contului de serviciu, întâi
+   **verificarea mărcii** (OAuth brand verification), apoi Google Ads API →
+   Overview → „Upgrade access level” → nivelul următor Basic → „Apply for access”.
+   Basic dă și 15.000 de operații pe zi în loc de 2.880.

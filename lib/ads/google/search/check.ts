@@ -11,7 +11,8 @@ import { findGoogleAccount, listConversionActions, type GoogleAccount } from "..
 import { resolveLanguages, resolveLocations } from "../targeting";
 import { buildSearchOperations, type SearchOperations } from "./build";
 import type { SearchPlan } from "./schema";
-import type { SearchCheck } from "./types";
+import { readKeywordVolumes } from "./planner";
+import type { SearchCheck, SearchVolumes } from "./types";
 import { checkUrls } from "./urls";
 
 /**
@@ -58,7 +59,11 @@ function problemsFrom(error: GoogleAdsApiError, operations: SearchOperations): P
   return shown;
 }
 
-export async function checkSearchOnGoogle(workspace: AdsWorkspace, input: SearchPlan): Promise<SearchCheckContext> {
+/**
+ * `volumes`: și volumele din Keyword Planner (doar la „Verifică în Google”; la
+ * verificarea refăcută de creare nu — nu schimbă ce se creează).
+ */
+export async function checkSearchOnGoogle(workspace: AdsWorkspace, input: SearchPlan, wanted: { volumes?: boolean } = {}): Promise<SearchCheckContext> {
   const plan: SearchPlan = structuredClone(input);
   const errors: PlanProblem[] = [];
   const warnings: PlanProblem[] = [];
@@ -75,6 +80,7 @@ export async function checkSearchOnGoogle(workspace: AdsWorkspace, input: Search
       campaigns: [],
       callConversions: [],
       urls: [],
+      volumes: null,
       errors,
       warnings,
     },
@@ -240,6 +246,9 @@ export async function checkSearchOnGoogle(workspace: AdsWorkspace, input: Search
   };
   let operations: SearchOperations | null = null;
   let count = 0;
+  const volumesRead: Promise<SearchVolumes | null> = wanted.volumes
+    ? readKeywordVolumes(workspace, account, plan, context.campaigns).catch(() => ({ error: "Keyword Planner n-a răspuns." }))
+    : Promise.resolve(null);
   if (errors.length === 0) {
     operations = buildSearchOperations(plan, context);
     count = operations.operations.length;
@@ -250,6 +259,7 @@ export async function checkSearchOnGoogle(workspace: AdsWorkspace, input: Search
       errors.push(...problemsFrom(error, operations));
     }
   }
+  const volumes = await volumesRead;
 
   const check: SearchCheck = {
     ok: errors.length === 0,
@@ -267,6 +277,7 @@ export async function checkSearchOnGoogle(workspace: AdsWorkspace, input: Search
     campaigns,
     callConversions,
     urls: urlChecks,
+    volumes,
     errors,
     warnings,
   };

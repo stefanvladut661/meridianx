@@ -29,6 +29,8 @@ interface Summary {
   identities: number;
   conversions: number;
   videos: number;
+  campaigns: number;
+  negativeLists: number;
   notes: string[];
 }
 
@@ -41,7 +43,9 @@ function summaryLine(item: Summary): string {
   const parts = [plural(item.accounts, "cont", "conturi")];
   if (platform === "meta") parts.push(plural(item.identities, "pagină", "pagini"), plural(item.conversions, "pixel", "pixeli"));
   if (platform === "tiktok") parts.push(plural(item.identities, "identitate", "identități"), plural(item.conversions, "pixel", "pixeli"));
-  if (platform === "google") parts.push(plural(item.conversions, "conversie", "conversii"));
+  if (platform === "google") {
+    parts.push(plural(item.campaigns, "campanie", "campanii"), plural(item.conversions, "conversie", "conversii"), plural(item.negativeLists, "listă de negative", "liste de negative"));
+  }
   parts.push(plural(item.videos, "video", "video-uri"));
   return parts.join(" · ");
 }

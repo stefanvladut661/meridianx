@@ -11,9 +11,10 @@ import { GOOGLE_PAUSED, assertGooglePauseOnly, assertGooglePaused } from "../met
  * Ce poate face, intenționat, și nimic mai mult:
  *   - `googleSearch`  — citiri GAQL (contul, conversiile, video-urile,
  *                       interesele, cifrele);
- *   - `googleGet` / `googlePost` pe căile de citire fără efect
+ *   - `googleGet` / `googleReadPost` pe căile de citire fără efect
  *                       (`customers:listAccessibleCustomers`,
- *                       `geoTargetConstants:suggest`);
+ *                       `geoTargetConstants:suggest`, volumele din Keyword
+ *                       Planner — `generateKeywordHistoricalMetrics`);
  *   - `googleMutate`  — `googleAds:mutate`, ATOMIC (fără `partialFailure`),
  *                       cu `assertGooglePaused` rulat pe toate operațiile
  *                       ÎNAINTE de rețea. Cu `validateOnly`, Google verifică
@@ -394,7 +395,12 @@ export function googleGet<T>(workspace: AdsWorkspace, path: string, options: Req
   return request<T>(workspace, "GET", path, undefined, options);
 }
 
-const READ_ONLY_POSTS = [/^\/geoTargetConstants:suggest$/];
+/**
+ * POST-urile fără efect: sugestiile de locații și, din faza 14, volumele de
+ * căutare din Keyword Planner (`KeywordPlanIdeaService`, doar citire; cere
+ * nivelul de acces Basic al proiectului Google Cloud).
+ */
+const READ_ONLY_POSTS = [/^\/geoTargetConstants:suggest$/, /^\/customers\/\d{10}:generateKeywordHistoricalMetrics$/];
 
 export function googleReadPost<T>(workspace: AdsWorkspace, path: string, body: unknown, options: RequestOptions = {}): Promise<T> {
   if (!READ_ONLY_POSTS.some((pattern) => pattern.test(path))) {
