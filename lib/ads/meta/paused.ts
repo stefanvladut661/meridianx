@@ -140,6 +140,10 @@ export const GOOGLE_PAUSED = "PAUSED" as const;
 /**
  * Singurele operații din `googleAds:mutate` pe care le trimite portalul, și
  * doar ca `create`. Niciuna nu modifică un obiect existent.
+ *
+ * Din faza 9 (căutarea și întreținerea contului), lista are și listele
+ * comune de negative, legăturile lor, legarea materialelor de campanii și
+ * acțiunile de conversie — fiecare cu regula ei, mai jos.
  */
 export const GOOGLE_CREATE_OPERATIONS = [
   "campaignBudgetOperation",
@@ -150,10 +154,28 @@ export const GOOGLE_CREATE_OPERATIONS = [
   "adGroupCriterionOperation",
   "assetOperation",
   "adGroupAdOperation",
+  "sharedSetOperation",
+  "sharedCriterionOperation",
+  "campaignSharedSetOperation",
+  "campaignAssetOperation",
+  "conversionActionOperation",
 ] as const;
 
 /** Operațiile al căror obiect are status de livrare — acolo trebuie PAUSED. */
 const GOOGLE_OPERATIONS_WITH_STATUS: readonly string[] = ["campaignOperation", "adGroupOperation", "adGroupAdOperation"];
+
+/** Singurul tip de listă comună pe care îl creează sau îl leagă portalul: negative. */
+export const GOOGLE_NEGATIVE_LIST_TYPE = "NEGATIVE_KEYWORDS" as const;
+
+/**
+ * Ce știe garda despre cont, dincolo de cerere: listele comune de negative
+ * EXISTENTE, citite chiar înainte de trimitere (`shared_set.type =
+ * NEGATIVE_KEYWORDS`). Doar de ele se pot lega campanii și doar în ele se pot
+ * adăuga cuvinte; orice altă listă existentă e refuzată.
+ */
+export interface GoogleGuardContext {
+  negativeSharedSets?: readonly string[];
+}
 
 /**
  * Orice alt câmp `status` e refuzat: pe criterii (locație, vârstă, limbă)
@@ -185,9 +207,84 @@ function walkGoogle(value: unknown, path: string, statusAllowedHere: boolean): v
   }
 }
 
-export function assertGooglePaused(customerId: string, operations: ReadonlyArray<Record<string, unknown>>): void {
+/** Un id temporar (negativ) — resursa se creează în aceeași cerere. */
+const TEMPORARY = /^customers\/\d{10}\/[A-Za-z]+\/-\d+$/;
+
+/** Câmpurile unui criteriu care fac din el un criteriu de targetare (pozitiv sau negativ). */
+const CRITERION_FIELDS = [
+  "keyword",
+  "location",
+  "language",
+  "adSchedule",
+  "proximity",
+  "audience",
+  "ageRange",
+  "gender",
+  "placement",
+  "userList",
+  "userInterest",
+  "topic",
+  "webpage",
+  "device",
+  "brandList",
+  "keywordTheme",
+  "listingScope",
+  "contentLabel",
+  "ipBlock",
+  "mobileAppCategory",
+  "mobileApplication",
+  "youtubeVideo",
+  "youtubeChannel",
+  "operatingSystemVersion",
+  "carrier",
+  "incomeRange",
+  "parentalStatus",
+  "localServiceId",
+  "searchThemeMatchingSetting",
+];
+
+function createdIn(operations: ReadonlyArray<Record<string, unknown>>, kind: string): Map<string, Record<string, unknown>> {
+  const created = new Map<string, Record<string, unknown>>();
+  for (const operation of operations) {
+    const create = (operation?.[kind] as { create?: Record<string, unknown> } | undefined)?.create;
+    const resourceName = create?.resourceName;
+    if (create && typeof resourceName === "string" && TEMPORARY.test(resourceName)) created.set(resourceName, create);
+  }
+  return created;
+}
+
+/**
+ * Garda scrierilor de creare spre Google (`googleMutate`). Pe lângă regula de
+ * la faza 6 (doar `create`, doar tipurile din listă, campanie / grup /
+ * anunț cu PAUSED, niciun alt status, totul în contul din URL), din faza 9:
+ *
+ *   - un grup se creează doar într-o campanie creată în ACEEAȘI cerere; un
+ *     anunț și un criteriu de grup, doar într-un grup creat în aceeași cerere;
+ *     legarea materialelor, doar de o campanie creată în aceeași cerere;
+ *   - pe o campanie EXISTENTĂ, singurul criteriu permis e un cuvânt cheie
+ *     negativ (`negative: true` + `keyword`) — o campanie care rulează nu-și
+ *     poate lărgi publicul din portal;
+ *   - listele comune: doar de negative (`NEGATIVE_KEYWORDS`), create în
+ *     cerere sau existente și citite din cont chiar înainte (`context`);
+ *     cuvintele din ele, doar cuvinte; legarea lor de campanii, doar a lor;
+ *   - acțiunile de conversie se creează fără status (nu cheltuie bani).
+ */
+export function assertGooglePaused(
+  customerId: string,
+  operations: ReadonlyArray<Record<string, unknown>>,
+  context: GoogleGuardContext = {}
+): void {
   if (!/^\d{10}$/.test(customerId)) throw new NotPausedError(`Contul Google „${customerId}” nu are forma de 10 cifre.`);
   if (!Array.isArray(operations) || operations.length === 0) throw new NotPausedError("Nicio operație de trimis spre Google.");
+
+  const newCampaigns = createdIn(operations, "campaignOperation");
+  const newAdGroups = createdIn(operations, "adGroupOperation");
+  const newSharedSets = createdIn(operations, "sharedSetOperation");
+  const knownNegativeSets = new Set(context.negativeSharedSets ?? []);
+  const isNegativeSet = (value: unknown) =>
+    typeof value === "string" &&
+    ((newSharedSets.has(value) && newSharedSets.get(value)?.type === GOOGLE_NEGATIVE_LIST_TYPE) ||
+      (!TEMPORARY.test(value) && value.startsWith(`customers/${customerId}/sharedSets/`) && knownNegativeSets.has(value)));
 
   operations.forEach((operation, index) => {
     const kinds = Object.keys(operation ?? {});
@@ -200,26 +297,127 @@ export function assertGooglePaused(customerId: string, operations: ReadonlyArray
     const verbs = body && typeof body === "object" ? Object.keys(body as Record<string, unknown>) : [];
     if (verbs.length !== 1 || verbs[0] !== "create") {
       throw new NotPausedError(
-        `${kind} (${index}): portalul doar creează — nu actualizează, nu șterge (${verbs.join(", ") || "gol"}).`
+        `${kind} (${index}): portalul doar creează — nu actualizează, nu șterge (${verbs.join(", ") || "gol"}). Pauza are calea ei, googlePause.`
       );
     }
     const created = (body as { create?: unknown }).create;
     if (!created || typeof created !== "object" || Array.isArray(created)) {
       throw new NotPausedError(`${kind} (${index}): obiectul de creat lipsește.`);
     }
-    const resourceName = (created as { resourceName?: unknown }).resourceName;
-    if (typeof resourceName === "string" && !resourceName.startsWith(`customers/${customerId}/`)) {
-      throw new NotPausedError(`${kind} (${index}): resursa ${resourceName} nu e în contul ${customerId}.`);
+    const fields = created as Record<string, unknown>;
+    for (const value of Object.values(fields)) {
+      if (typeof value === "string" && value.startsWith("customers/") && !value.startsWith(`customers/${customerId}/`)) {
+        throw new NotPausedError(`${kind} (${index}): resursa ${value} nu e în contul ${customerId}.`);
+      }
     }
     if (GOOGLE_OPERATIONS_WITH_STATUS.includes(kind)) {
-      const status = (created as { status?: unknown }).status;
+      const status = fields.status;
       if (status !== GOOGLE_PAUSED) {
         throw new NotPausedError(
           `${kind} (${index}): status lipsă sau diferit de ${GOOGLE_PAUSED} (${JSON.stringify(status)}). Google ar porni-o.`
         );
       }
     }
+
+    switch (kind) {
+      case "adGroupOperation":
+        if (!newCampaigns.has(String(fields.campaign))) {
+          throw new NotPausedError(`adGroupOperation (${index}): un grup nou doar într-o campanie creată în aceeași cerere, nu în ${String(fields.campaign)}.`);
+        }
+        break;
+      case "adGroupAdOperation":
+      case "adGroupCriterionOperation":
+        if (!newAdGroups.has(String(fields.adGroup))) {
+          throw new NotPausedError(`${kind} (${index}): doar într-un grup creat în aceeași cerere, nu în ${String(fields.adGroup)}.`);
+        }
+        break;
+      case "campaignAssetOperation":
+        if (!newCampaigns.has(String(fields.campaign))) {
+          throw new NotPausedError(`campaignAssetOperation (${index}): materialele se leagă doar de o campanie creată în aceeași cerere.`);
+        }
+        break;
+      case "campaignCriterionOperation": {
+        if (newCampaigns.has(String(fields.campaign))) break;
+        const targeting = CRITERION_FIELDS.filter((field) => fields[field] !== undefined);
+        const extra = Object.keys(fields).filter((field) => !["resourceName", "campaign", "negative", "keyword"].includes(field));
+        if (fields.negative !== true || targeting.length !== 1 || targeting[0] !== "keyword" || extra.length > 0) {
+          throw new NotPausedError(
+            `campaignCriterionOperation (${index}): pe o campanie existentă (${String(fields.campaign)}) portalul adaugă doar cuvinte cheie NEGATIVE — un criteriu pozitiv (${targeting.join(", ") || "necunoscut"}${fields.negative === true ? "" : ", fără negative: true"}) ar lărgi publicul.`
+          );
+        }
+        break;
+      }
+      case "sharedSetOperation":
+        if (fields.type !== GOOGLE_NEGATIVE_LIST_TYPE) {
+          throw new NotPausedError(`sharedSetOperation (${index}): portalul creează doar liste de negative (${GOOGLE_NEGATIVE_LIST_TYPE}), nu ${JSON.stringify(fields.type)}.`);
+        }
+        break;
+      case "sharedCriterionOperation": {
+        const extra = Object.keys(fields).filter((field) => !["resourceName", "sharedSet", "keyword"].includes(field));
+        if (fields.keyword === undefined || extra.length > 0) {
+          throw new NotPausedError(`sharedCriterionOperation (${index}): într-o listă comună portalul pune doar cuvinte cheie (${extra.join(", ") || "fără keyword"}).`);
+        }
+        if (!isNegativeSet(fields.sharedSet)) {
+          throw new NotPausedError(`sharedCriterionOperation (${index}): lista ${String(fields.sharedSet)} nu e o listă de negative creată acum sau citită din cont ca listă de negative.`);
+        }
+        break;
+      }
+      case "campaignSharedSetOperation":
+        if (!isNegativeSet(fields.sharedSet)) {
+          throw new NotPausedError(`campaignSharedSetOperation (${index}): de o campanie se leagă doar liste de negative (${String(fields.sharedSet)} nu e una verificată).`);
+        }
+        break;
+      default:
+        break;
+    }
     walkGoogle(created, `${kind}.create`, GOOGLE_OPERATIONS_WITH_STATUS.includes(kind));
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Google Ads: pauza — singura actualizare, cu garda ei
+// ---------------------------------------------------------------------------
+
+/** Ce se poate pune pe pauză: campanii și grupuri. Nimic altceva. */
+export const GOOGLE_PAUSE_OPERATIONS = { campaignOperation: "campaigns", adGroupOperation: "adGroups" } as const;
+
+/**
+ * Garda lui `googlePause`: fiecare operație e EXACT
+ * `{ campaignOperation | adGroupOperation: { update: { resourceName, status: "PAUSED" }, updateMask: "status" } }`,
+ * pe o resursă existentă din contul din URL. Refuză orice alt câmp în mască
+ * sau în obiect, orice altă valoare, orice altă resursă, orice `create` sau
+ * `remove`. Pauza poate doar să oprească cheltuiala.
+ */
+export function assertGooglePauseOnly(customerId: string, operations: ReadonlyArray<Record<string, unknown>>): void {
+  if (!/^\d{10}$/.test(customerId)) throw new NotPausedError(`Contul Google „${customerId}” nu are forma de 10 cifre.`);
+  if (!Array.isArray(operations) || operations.length === 0) throw new NotPausedError("Nicio campanie de pus pe pauză.");
+
+  operations.forEach((operation, index) => {
+    const kinds = Object.keys(operation ?? {});
+    const kind = kinds[0] as keyof typeof GOOGLE_PAUSE_OPERATIONS;
+    if (kinds.length !== 1 || !(kind in GOOGLE_PAUSE_OPERATIONS)) {
+      throw new NotPausedError(`Pauza (${index}): doar campanii și grupuri se pun pe pauză, nu ${kinds.join(", ") || "nimic"}.`);
+    }
+    const body = operation[kind] as Record<string, unknown> | null;
+    const keys = body && typeof body === "object" ? Object.keys(body).sort() : [];
+    if (keys.join(",") !== "update,updateMask") {
+      throw new NotPausedError(`Pauza (${index}): operația are doar „update” și „updateMask”, nu ${keys.join(", ") || "nimic"}.`);
+    }
+    if (body?.updateMask !== "status") {
+      throw new NotPausedError(`Pauza (${index}): updateMask trebuie să fie exact „status”, nu ${JSON.stringify(body?.updateMask)}.`);
+    }
+    const update = body.update as Record<string, unknown> | null;
+    const fields = update && typeof update === "object" && !Array.isArray(update) ? Object.keys(update).sort() : [];
+    if (fields.join(",") !== "resourceName,status") {
+      throw new NotPausedError(`Pauza (${index}): se trimit doar resourceName și status, nu ${fields.join(", ") || "nimic"}.`);
+    }
+    if (update?.status !== GOOGLE_PAUSED) {
+      throw new NotPausedError(`Pauza (${index}): statusul trimis poate fi doar ${GOOGLE_PAUSED}, nu ${JSON.stringify(update?.status)}.`);
+    }
+    const pattern = new RegExp(`^customers/${customerId}/${GOOGLE_PAUSE_OPERATIONS[kind]}/\\d+$`);
+    if (typeof update.resourceName !== "string" || !pattern.test(update.resourceName)) {
+      throw new NotPausedError(`Pauza (${index}): ${String(update.resourceName)} nu e o resursă existentă de tipul ${GOOGLE_PAUSE_OPERATIONS[kind]} din contul ${customerId}.`);
+    }
   });
 }
 

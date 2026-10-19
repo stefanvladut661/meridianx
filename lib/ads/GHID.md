@@ -24,6 +24,7 @@ Trei documente, în ordinea în care se citesc:
 | **6** | **Google Ads** (Demand Gen, video pe YouTube): verificare cu `validateOnly`, creare atomică pe pauză, video nou urcat pe YouTube, cifre | ✅ gata, testată pe un Google fals (API v26) — **încă nu pe contul real** |
 | **7** | **Producția în masă**: lotul (până la 50 de planuri), mai multe video-uri pe plan (video × text), „Pentru Claude” (instrucțiuni + contextul conturilor), tag-ul Google pe site | ✅ gata, testată cap-coadă pe build de producție |
 | **8** | **Google Search — formatul**: planul de căutare, validarea (cu conflictele negativelor), previzualizarea | ✅ gata, fără niciun apel la Google |
+| **9** | **Garda nouă**: pauza, negativele pe campanii existente, listele de negative, conversiile | ✅ gata — 164 de verificări fără rețea; fără interfață încă |
 
 Fazele 1–7 sunt pe `feat/ads-portal`; fazele 8–14 pe `feat/ads-google-search` (plecată din ea), împinse pe GitHub, **fără merge**
 (deci nu e pe site încă). Merge-ul îl faci tu sau mi-l ceri explicit.
@@ -46,6 +47,11 @@ Ce face fiecare fază și ce ai de făcut tu după ea. Detaliile tehnice: README
 - **Ce face:** pagina nouă **„Căutare”** (`/admin/ads/cautare`, în meniu doar în spațiile Google). Lipești un plan `meridian-google-search/1` și îl citești în română: totalurile, suma bugetelor față de plafon, operațiile, fiecare campanie cu grupurile ei, anunțurile arătate ca rezultat de căutare. Găsește conflictele dintre negative și cuvintele cheie, titlurile prea lungi sau duplicate, programul suprapus, telefonul greșit — toate odată.
 - **Ce ai de făcut:** nimic. Fără niciun apel la Google; merge și fără chei.
 - **De citit:** README → „Faza 8” (formatul, exemplul comentat, regulile cu sursa lor).
+
+### Faza 9
+- **Ce face:** regula „doar pe pauză” capătă două excepții strânse, fiecare cu garda ei: **pauza** (doar `status: PAUSED`, doar pe campanii și grupuri existente) și **adăugarea care nu mărește cheltuiala** (negative pe campanii existente, liste de negative, acțiuni de conversie). Orice altceva — pornire, modificare de buget, licitare, cuvinte pozitive pe o campanie care rulează, ștergere — e refuzat înainte să plece spre Google.
+- **Ce ai de făcut:** nimic; fără interfață încă.
+- **Dovada:** `node lib/ads/meta/verify-paused.mjs` — 164 de verificări, printre ele fiecare încercare pe care promptul a cerut-o refuzată.
 
 ---
 

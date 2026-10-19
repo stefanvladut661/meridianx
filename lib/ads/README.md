@@ -54,6 +54,7 @@ log sau în răspuns către browser. Datele de test sunt evident false (zerouri)
 | 6 | Google Ads (Demand Gen, video pe YouTube), peste aceeași structură | ✅ `feat/ads-portal` — testat pe Google fals (API v26), încă nu pe contul real |
 | 7 | Producția în masă: lotul, mai multe video-uri pe plan, „Pentru Claude”, tag-ul Google pe site | ✅ `feat/ads-portal` — testat cap-coadă pe build de producție, cu toate platformele false |
 | 8 | Google Search: formatul `meridian-google-search/1`, validarea (cu conflictele negativelor), previzualizarea | ✅ `feat/ads-google-search` — fără niciun apel la Google |
+| 9 | Garda nouă: pauza (`googlePause`), negativele pe campanii existente, listele de negative, conversiile; `verify-paused.mjs` extins | ✅ `feat/ads-google-search` — 164 de verificări, fără rețea |
 
 Commit separat după fiecare fază. Fazele 6 și 7 au fost cerute împreună („bagă și
 Google, scopul e producția în masă”), deci au mers fără oprire între ele.
@@ -129,7 +130,9 @@ Google, scopul e producția în masă”), deci au mers fără oprire între ele
 | `google/search/text.ts` · `phone.ts` | Faza 8. Lungimea textelor cum o numără Google; cuvintele unui cuvânt cheie; caracterele nepermise; telefonul butonului de apel. |
 | `google/search/example.ts` | Faza 8. Exemplul complet, comentat (firmă inventată, `example.com`, id-uri din zerouri). |
 | `google/search/types.ts` | Faza 8. Ce ajunge în browser din verificarea și crearea unui plan de căutare. |
-| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă (86 de verificări, fără rețea). |
+| `meta/paused.ts` (faza 9) | Garda Google extinsă: listele comune (doar negative), legăturile, materialele pe campanii noi, conversiile fără status, criteriile pe campanii existente doar negative; plus `assertGooglePauseOnly`, garda pauzei. |
+| `google/api.ts` (faza 9) | `googlePause`: singura actualizare (`status: PAUSED`, `updateMask: "status"`), după garda ei; cererea `googleAds:mutate` stă într-o singură funcție privată (`sendMutate`). |
+| `meta/verify-paused.mjs` | `node lib/ads/meta/verify-paused.mjs` — verificarea regulii „doar pe pauză", pe Meta, TikTok și Google, plus producția în masă, căutarea și garda fazei 9 (164 de verificări, fără rețea). |
 
 ---
 
@@ -1423,6 +1426,46 @@ englezesc. (Lista „Structured snippet headers”, v26.)
 
 ---
 
+## Faza 9 — garda nouă: pauza, negativele pe resurse existente, conversiile
+
+Până acum portalul doar crea, pe pauză. Fazele 10–13 cer trei lucruri noi pe
+Google: crearea planului de căutare (liste comune, legături, materiale),
+**pauza** campaniilor existente și **negative adăugate pe campanii care rulează**.
+Fiecare are o regulă scrisă în gardă, nu în constructori — garda nu se bazează pe
+cod, îl verifică.
+
+| Ce | Unde | Regula |
+|---|---|---|
+| Crearea | `googleMutate` → `assertGooglePaused` (`meta/paused.ts`) | doar `create`, doar tipurile din `GOOGLE_CREATE_OPERATIONS`; campanie, grup, anunț cu `PAUSED`; orice alt `status` refuzat; toate resursele în contul din URL |
+| Grupuri, anunțuri, criterii de grup, materiale legate | aceeași gardă | doar în campanii / grupuri create **în aceeași cerere** (id temporar definit în cerere) |
+| Criteriu pe o campanie **existentă** | aceeași gardă | permis DOAR `negative: true` + `keyword` și nimic altceva; orice criteriu pozitiv (cuvânt, locație, limbă, program) sau negativ de alt tip — refuzat |
+| Liste comune | aceeași gardă | `sharedSetOperation` doar cu `type: NEGATIVE_KEYWORDS`; `sharedCriterionOperation` doar cu `keyword`, doar într-o listă de negative; `campaignSharedSetOperation` doar cu o listă de negative. O listă **existentă** trebuie să fie printre cele citite din cont chiar înainte (`shared_set.type = NEGATIVE_KEYWORDS`), trimise gărzii ca `negativeSharedSets` |
+| Acțiunile de conversie | aceeași gardă | `conversionActionOperation.create`, fără status (nu cheltuie bani) |
+| Pauza | `googlePause` → `assertGooglePauseOnly` | EXACT `{ campaignOperation | adGroupOperation: { update: { resourceName, status: "PAUSED" }, updateMask: "status" } }`, pe resurse existente din contul din URL. Orice alt câmp în mască sau în obiect, altă valoare, altă resursă, id temporar, `create` sau `remove` — refuzat |
+| Nimic altceva | ambele gărzi | fără update pe bugete, licitări, cuvinte, anunțuri, setări; fără `remove` |
+
+**O singură cerere spre Google.** `google/api.ts` are o singură funcție care
+trimite `googleAds:mutate` (`sendMutate`), neexportată, chemată doar de
+`googleMutate` (după garda creării) și de `googlePause` (după garda pauzei).
+`googlePause` primește doar nume de resurse și își construiește singură
+operațiile — un apelant nu-i poate strecura alt câmp.
+
+**`verify-paused.mjs`** (rulat înainte de fiecare commit) are acum 164 de
+verificări, fără rețea. Pe lângă cele de dinainte, încearcă și vede refuzate:
+`ENABLED` pe campanie / grup / anunț, `status` pe un cuvânt cheie, pe o locație
+sau pe legarea unui material, update pe buget, pauză cu alt câmp în mască, pauză
+cu `ENABLED` sau `REMOVED`, pauză amestecată cu o creare, pauză pe un id temporar
+sau pe altă resursă, criteriu pozitiv pe o campanie existentă (cuvânt, locație,
+program, un negativ cu încă un criteriu ascuns), negativ într-un grup existent,
+listă comună de alt tip decât negative (creată sau existentă, neverificată), alt
+criteriu decât un cuvânt într-o listă, acțiune de conversie cu status sau
+actualizată, `remove` pe campanie și pe criteriu. Și le vede trecute pe cele
+permise: negativ pe o campanie existentă, listă de negative verificată legată de
+o campanie existentă, cuvinte adăugate în ea, acțiune de conversie fără status,
+pauza pe campanii și grupuri, toate cele 81 de operații ale exemplului de căutare.
+
+---
+
 ## Variabile de mediu
 
 Toate doar pe server, cu o excepție marcată (`NEXT_PUBLIC_`).
@@ -1765,6 +1808,16 @@ unde a fost de ales, am ales varianta cea mai sigură și mai simplă și am not
 9. **Faza 8 — materialele identice din campanii diferite se creează o singură
    dată** și se leagă de fiecare campanie (același mesaj scurt pe patru campanii
    = un material, patru legături).
+10. **Faza 9 — negativele pe un GRUP existent sunt refuzate**: promptul permite
+   negative doar pe campanii existente (și în liste). Propunerile din termenii de
+   căutare merg deci pe campanie sau într-o listă comună, nu pe grup.
+11. **Faza 9 — listele existente se verifică prin citire, chiar înainte de
+   trimitere**: garda nu poate ști singură tipul unei liste din cont; apelantul
+   îi dă lista citită (`negativeSharedSets`), iar o listă necitită e refuzată.
+12. **Faza 9 — pauza merge și pe grupuri** (garda o permite, cum cere promptul),
+   dar interfața pune pe pauză doar campanii.
+13. **Faza 9 — o singură funcție de rețea pentru mutate** (`sendMutate`, privată),
+   cu două uși, fiecare cu garda ei; `verify-paused.mjs` verifică structura.
 
 ## De făcut de om (fazele 8–14)
 

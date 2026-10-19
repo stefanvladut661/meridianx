@@ -3,7 +3,7 @@ import "server-only";
 import { createSign } from "node:crypto";
 import type { AdsWorkspace } from "../workspaces";
 import { workspaceToken } from "../workspaces.server";
-import { assertGooglePaused } from "../meta/paused";
+import { GOOGLE_PAUSED, assertGooglePauseOnly, assertGooglePaused } from "../meta/paused";
 
 /**
  * Clientul Google Ads API (REST, v26) — SINGURUL loc care vorbește cu Google.
@@ -19,10 +19,14 @@ import { assertGooglePaused } from "../meta/paused";
  *                       ÎNAINTE de rețea. Cu `validateOnly`, Google verifică
  *                       tot lanțul fără să creeze nimic — așa arată
  *                       „Verifică în Google".
+ *   - `googlePause`   — din faza 9, singura actualizare: `status: PAUSED` pe
+ *                       campanii sau grupuri existente, cu garda ei
+ *                       (`assertGooglePauseOnly`), pe aceeași cerere atomică.
  *
- * Nu există funcție de actualizare sau de ștergere: garda refuză orice
- * operație `update` / `remove`, iar o campanie nouă pleacă `PAUSED` (implicit
- * Google ar porni-o — ENABLED). Activarea o face omul, în Google Ads.
+ * Nu există altă actualizare și nicio ștergere: garda creării refuză orice
+ * `update` / `remove`, garda pauzei refuză orice altceva decât pauza, iar o
+ * campanie nouă pleacă `PAUSED` (implicit Google ar porni-o — ENABLED).
+ * Activarea o face omul, în Google Ads.
  *
  * AUTENTIFICAREA (din 2026-09-09 nu mai există developer token): variabila
  * spațiului (`GOOGLE_ADS_MERIDIAN`) conține fișierul JSON al unui cont de
@@ -405,20 +409,16 @@ export interface MutateResult {
 }
 
 /**
- * SINGURA scriere spre Google: `googleAds:mutate`, atomic (o operație
- * refuzată = nimic creat). Operațiile trec prin `assertGooglePaused` înainte
- * de orice apel; cu `validateOnly`, Google le verifică pe toate și nu
- * creează nimic.
+ * Cererea `googleAds:mutate` însăși, atomică (`partialFailure: false`). NU se
+ * exportă: o cheamă doar `googleMutate` și `googlePause`, fiecare DUPĂ garda
+ * lui. Nicio altă cale din portal nu ajunge aici.
  */
-export async function googleMutate(
+async function sendMutate(
   workspace: AdsWorkspace,
-  customerId: string,
+  customer: string,
   operations: Array<Record<string, unknown>>,
   options: RequestOptions & { validateOnly: boolean }
 ): Promise<MutateResult> {
-  const customer = customerDigits(customerId);
-  if (!/^\d{10}$/.test(customer)) throw new Error(`Cont Google Ads invalid pentru creare: ${customerId}`);
-  assertGooglePaused(customer, operations);
   const data = await request<{ mutateOperationResponses?: Array<Record<string, unknown>> }>(
     workspace,
     "POST",
@@ -431,6 +431,48 @@ export async function googleMutate(
     return result?.resourceName ?? null;
   });
   return { resourceNames };
+}
+
+/**
+ * Scrierea de creare spre Google: `googleAds:mutate`, atomic (o operație
+ * refuzată = nimic creat). Operațiile trec prin `assertGooglePaused` înainte
+ * de orice apel; cu `validateOnly`, Google le verifică pe toate și nu
+ * creează nimic. `negativeSharedSets` = listele de negative existente, citite
+ * din cont chiar înainte — doar de ele se pot lega campanii (faza 9).
+ */
+export async function googleMutate(
+  workspace: AdsWorkspace,
+  customerId: string,
+  operations: Array<Record<string, unknown>>,
+  options: RequestOptions & { validateOnly: boolean; negativeSharedSets?: readonly string[] }
+): Promise<MutateResult> {
+  const customer = customerDigits(customerId);
+  if (!/^\d{10}$/.test(customer)) throw new Error(`Cont Google Ads invalid pentru creare: ${customerId}`);
+  assertGooglePaused(customer, operations, { negativeSharedSets: options.negativeSharedSets });
+  return sendMutate(workspace, customer, operations, options);
+}
+
+/**
+ * Pauza — SINGURA actualizare pe care o poate trimite portalul. Construiește
+ * ea operațiile (`update` cu `status: PAUSED`, `updateMask: "status"`) din
+ * numele resurselor și le trece prin `assertGooglePauseOnly` înainte de
+ * rețea. Poate doar să oprească cheltuiala: altă valoare, alt câmp, altă
+ * resursă sau o creare amestecată sunt refuzate de gardă.
+ */
+export async function googlePause(
+  workspace: AdsWorkspace,
+  customerId: string,
+  resourceNames: readonly string[],
+  options: RequestOptions & { validateOnly: boolean }
+): Promise<MutateResult> {
+  const customer = customerDigits(customerId);
+  if (!/^\d{10}$/.test(customer)) throw new Error(`Cont Google Ads invalid pentru pauză: ${customerId}`);
+  const operations = resourceNames.map((resourceName) => {
+    const kind = /\/adGroups\/\d+$/.test(resourceName) ? "adGroupOperation" : "campaignOperation";
+    return { [kind]: { update: { resourceName, status: GOOGLE_PAUSED }, updateMask: "status" } };
+  });
+  assertGooglePauseOnly(customer, operations);
+  return sendMutate(workspace, customer, operations, options);
 }
 
 /**
