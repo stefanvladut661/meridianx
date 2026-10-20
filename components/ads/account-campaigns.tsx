@@ -185,7 +185,7 @@ export function AccountCampaigns({
           role={result.ok ? "status" : "alert"}
           className={cn(
             "mt-5 rounded-panel-lg border px-5 py-4 text-[14px] leading-relaxed",
-            result.ok ? "border-bone/30 bg-char" : "border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05]"
+            result.ok ? "border-bone/30 bg-char" : "border-[#d93025]/35 bg-[#d93025]/[0.05]"
           )}
         >
           {result.ok ? (
@@ -227,7 +227,7 @@ export function AccountCampaigns({
                       return next;
                     })
                   }
-                  className="h-4 w-4 accent-[#ededed]"
+                  className="h-4 w-4 accent-[#2f5bff]"
                 />
               </th>
               <th scope="col" className="px-3 py-3 font-normal">Campania</th>
@@ -254,7 +254,7 @@ export function AccountCampaigns({
                         aria-label={`Bifează „${item.name}” pentru pauză`}
                         checked={selected.has(item.id)}
                         onChange={() => toggle(item.id)}
-                        className="h-4 w-4 accent-[#ededed]"
+                        className="h-4 w-4 accent-[#2f5bff]"
                       />
                     ) : null}
                   </td>

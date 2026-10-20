@@ -1,0 +1,172 @@
+/* ============================================================
+   Portalul de reclame v2 — tema albă
+   ------------------------------------------------------------
+   Promptul v2: fundal alb, linii gri subțiri, o singură culoare de
+   accent — albastrul site-ului (#2f5bff, din [data-scope="video"]).
+
+   Componentele portalului folosesc utilitarele sistemului de design
+   (bg-ink, bg-char, text-bone, text-dim, border-hair…), care citesc
+   variabilele --md-*. Aici variabilele primesc valori deschise DOAR sub
+   portal: ecranele vechi (Plan nou, Lot, Termeni, Conversii) devin albe
+   odată cu cele noi, fără să le rescriu, iar globals.css rămâne neatins.
+   Panoul de lead-uri și site-ul nu se schimbă: regulile cer `.ads-portal`.
+   ============================================================ */
+
+[data-scope="gate"]:has(.ads-portal),
+.ads-portal {
+  --md-bg: #ffffff;
+  --md-bg-2: #ffffff;
+  --md-fg: #15181f;
+  --md-muted: #5f6675;
+  --md-line: #e6e8ed;
+  --md-line-strong: #d2d6de;
+  --md-glass: #f5f6f8;
+  --md-glass-2: #eceef2;
+  --md-glass-a: #ffffff;
+  --md-glass-b: #ffffff;
+  --md-edge: transparent;
+  --md-grid-line: rgb(18 23 27 / 0.05);
+  --md-scroll: rgb(18 23 27 / 0.2);
+  --md-a1: #2f5bff;
+  --md-a2: #5b7cff;
+  --md-a3: #dbe3ff;
+  --md-on-a1: #ffffff;
+
+  /* Doar ale portalului */
+  --ap-side: #f7f8fa;
+  --ap-hover: #f3f5f9;
+  --ap-accent-soft: #eef2ff;
+  --ap-accent-ink: #1f45d8;
+  --ap-ok: #0f7b52;
+  --ap-ok-soft: #e7f6ef;
+  --ap-warn: #8a5a00;
+  --ap-warn-soft: #fff6df;
+  --ap-error: #c62828;
+  --ap-error-soft: #fdecec;
+  --ap-neutral-soft: #f0f1f4;
+  color-scheme: light;
+}
+
+html:has(.ads-portal) {
+  color-scheme: light;
+}
+
+body.md-body:has(.ads-portal) {
+  background: #ffffff;
+  color: #15181f;
+}
+
+.ads-portal {
+  background: var(--md-bg);
+  color: var(--md-fg);
+}
+
+/* Butoanele: dreptunghiuri cu colțuri mici, ca într-o unealtă, nu pastile
+   de pagină de prezentare. „btn-light” e acțiunea principală: albastră. */
+.ads-portal .btn {
+  border-radius: 8px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.ads-portal .btn:hover {
+  transform: none;
+}
+.ads-portal .btn-light {
+  background: var(--md-a1);
+  color: #ffffff;
+}
+.ads-portal .btn-light:hover {
+  background: var(--ap-accent-ink);
+  box-shadow: none;
+}
+.ads-portal .btn-light:disabled,
+.ads-portal .btn-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ads-portal .btn-ghost {
+  background: #ffffff;
+  border: 1px solid var(--md-line-strong);
+  color: var(--md-fg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.ads-portal .btn-ghost:hover {
+  background: var(--ap-hover);
+  border-color: #c3c8d2;
+}
+
+/* Suprafețele „glass” ale ecranelor vechi: plăci albe cu muchie. */
+.ads-portal .glass,
+.ads-portal .glass-2 {
+  background: #ffffff;
+  border-color: var(--md-line);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Titlurile mari ale ecranelor vechi, la scara uneltei. */
+.ads-portal main h1.display {
+  font-size: 1.625rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.ads-portal .eyebrow {
+  letter-spacing: 0.16em;
+}
+
+/* Câmpurile native (select, date, checkbox) în tema deschisă. */
+.ads-portal select,
+.ads-portal input,
+.ads-portal textarea {
+  color-scheme: light;
+}
+.ads-portal input[type="checkbox"],
+.ads-portal input[type="radio"] {
+  accent-color: var(--md-a1);
+}
+
+/* Tabelul de campanii: antetul lipit sus și prima coloană lipită la stânga
+   când tabelul derulează lateral. */
+.ads-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fbfbfd;
+}
+.ads-table .ads-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: inherit;
+}
+.ads-table thead .ads-sticky-col {
+  z-index: 3;
+}
+
+/* Panoul din dreapta intră cu o alunecare scurtă (sub 200 ms); fără ea la
+   reduced-motion (plasa globală din globals.css o oprește oricum). */
+@keyframes ap-slide-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.ads-panel-enter {
+  animation: ap-slide-in 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ads-panel-enter {
+    animation: none;
+  }
+}
+
+/* Focusul mutat din cod pe un titlu (panoul, rezultatul unei acțiuni) nu e un
+   element de atins cu Tab: fără contur. Restul elementelor păstrează conturul global. */
+.ads-portal [tabindex="-1"]:focus-visible {
+  outline: none;
+}

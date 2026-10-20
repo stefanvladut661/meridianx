@@ -341,7 +341,7 @@ export function BatchEditor({
           className={cn(
             FIELD,
             "mt-3 h-[20rem] resize-y whitespace-pre py-3 font-md-mono text-[12.5px] leading-[1.6] lg:h-[calc(100dvh-17rem)] lg:min-h-[24rem]",
-            syntax && "!border-[#ff6b6b]/60"
+            syntax && "!border-[#d93025]/60"
           )}
         />
         <div id="batch-status" className="mt-3 min-h-6 text-[13.5px] leading-snug">
@@ -482,7 +482,7 @@ export function BatchEditor({
                               <span
                                 className={cn(
                                   "rounded-full border px-2 py-0.5 font-md-mono text-[11px]",
-                                  workspace.owner === "clienti" ? "border-[#f0b429]/50 text-[#f5c451]" : "border-hair-strong text-bone/80"
+                                  workspace.owner === "clienti" ? "border-[#f0b429]/50 text-[#8a5a00]" : "border-hair-strong text-bone/80"
                                 )}
                               >
                                 {workspace.name}

@@ -91,7 +91,7 @@ export function WorkspaceRail({
 
         <p className="font-md-mono text-[11.5px] leading-snug text-dim" aria-live="polite">
           {current.owner === "clienti" ? (
-            <span className="font-semibold text-[#f5c451]">Banii clienților</span>
+            <span className="font-semibold text-[#8a5a00]">Banii clienților</span>
           ) : (
             <span className="text-bone/80">Reclamele agenției</span>
           )}

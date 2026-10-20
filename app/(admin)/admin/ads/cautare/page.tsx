@@ -33,7 +33,7 @@ export default async function SearchPlanPage() {
         anunțurile și materialele lor. Portalul le citește, găsește conflictele și le creează pe toate odată — oprite.
       </p>
       {current && current.platform !== "google" ? (
-        <p className="mt-4 max-w-2xl rounded-panel-lg border border-[#f0b429]/30 bg-[#f0b429]/[0.04] px-4 py-3 text-[14px] leading-relaxed text-[#f5c451]">
+        <p className="mt-4 max-w-2xl rounded-panel-lg border border-[#f0b429]/30 bg-[#f0b429]/[0.04] px-4 py-3 text-[14px] leading-relaxed text-[#8a5a00]">
           Lucrezi în {current.name}. Planurile de căutare se creează în Google Ads: treci în Meridian · Google sau Clienți ·
           Google din selectorul de sus.
         </p>

@@ -231,7 +231,7 @@ export function SearchEditor({
           className={cn(
             FIELD,
             "mt-3 h-[22rem] resize-y whitespace-pre py-3 font-md-mono text-[12.5px] leading-[1.6] lg:h-[calc(100dvh-17rem)] lg:min-h-[24rem]",
-            syntax && "!border-[#ff6b6b]/60"
+            syntax && "!border-[#d93025]/60"
           )}
         />
         <div id="search-status" className="mt-3 min-h-6 text-[13.5px] leading-snug">
@@ -346,7 +346,7 @@ export function SearchEditor({
 
         {checkFailure ? (
           <div role="alert" className="mt-4 space-y-3">
-            <div className="rounded-panel-lg border border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05] px-5 py-4">
+            <div className="rounded-panel-lg border border-[#d93025]/35 bg-[#d93025]/[0.05] px-5 py-4">
               <p className={cn("text-[15px] font-semibold", ERROR_TEXT)}>Verificarea pe Google n-a mers.</p>
               <p className="mt-1.5 text-[14px] leading-relaxed text-bone/80">{checkFailure.message}</p>
             </div>

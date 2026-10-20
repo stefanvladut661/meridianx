@@ -224,7 +224,7 @@ export function ConversionsView({
                     checked={draft.on}
                     disabled={Boolean(blocked)}
                     onChange={(event) => update(kind, { on: event.target.checked })}
-                    className="mt-1 h-4 w-4 shrink-0 accent-[#ededed]"
+                    className="mt-1 h-4 w-4 shrink-0 accent-[#2f5bff]"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -358,7 +358,7 @@ export function ConversionsView({
                       {errorText(kind, "value") ?? <p className="mt-1.5 text-[12px] text-dim">Aceeași la fiecare conversie.</p>}
                     </div>
                     <label className="flex items-center gap-3 self-start pt-6 text-[14px] text-bone/85 sm:col-span-2 xl:col-span-1">
-                      <input type="checkbox" checked={draft.primary} onChange={(event) => update(kind, { primary: event.target.checked })} className="h-4 w-4 accent-[#ededed]" />
+                      <input type="checkbox" checked={draft.primary} onChange={(event) => update(kind, { primary: event.target.checked })} className="h-4 w-4 accent-[#2f5bff]" />
                       Principală (contează la licitare)
                     </label>
                   </fieldset>
@@ -371,7 +371,7 @@ export function ConversionsView({
 
       <div className="min-w-0 space-y-4 lg:sticky lg:top-[8rem]">
         {blocked ? (
-          <p role="alert" className={cn("rounded-panel-lg border border-[#ff6b6b]/30 px-4 py-3 text-[14px] leading-relaxed", ERROR_TEXT)}>
+          <p role="alert" className={cn("rounded-panel-lg border border-[#d93025]/30 px-4 py-3 text-[14px] leading-relaxed", ERROR_TEXT)}>
             {blocked}
           </p>
         ) : null}

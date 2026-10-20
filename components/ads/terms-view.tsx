@@ -229,7 +229,7 @@ export function TermsView({
                             return next;
                           })
                         }
-                        className="mt-1 h-4 w-4 shrink-0 accent-[#ededed]"
+                        className="mt-1 h-4 w-4 shrink-0 accent-[#2f5bff]"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -274,12 +274,12 @@ export function TermsView({
             <legend className={LABEL}>Unde merg negativele bifate</legend>
             <div className="mt-2 grid gap-2">
               <label className={cn("flex cursor-pointer items-center gap-3 rounded-panel border px-3.5 py-2.5 text-[14px]", destination === "campaign" ? "border-bone/50 bg-glass" : "border-hair text-bone/80")}>
-                <input type="radio" name="destinatie" checked={destination === "campaign"} onChange={() => setDestination("campaign")} className="h-4 w-4 accent-[#ededed]" />
+                <input type="radio" name="destinatie" checked={destination === "campaign"} onChange={() => setDestination("campaign")} className="h-4 w-4 accent-[#2f5bff]" />
                 Pe campania fiecărui termen
               </label>
               {lists.map((list) => (
                 <label key={list.id} className={cn("flex cursor-pointer items-center gap-3 rounded-panel border px-3.5 py-2.5 text-[14px]", destination === list.id ? "border-bone/50 bg-glass" : "border-hair text-bone/80")}>
-                  <input type="radio" name="destinatie" checked={destination === list.id} onChange={() => setDestination(list.id)} className="h-4 w-4 accent-[#ededed]" />
+                  <input type="radio" name="destinatie" checked={destination === list.id} onChange={() => setDestination(list.id)} className="h-4 w-4 accent-[#2f5bff]" />
                   <span className="min-w-0 truncate">În lista „{list.name}”</span>
                   <span className="ml-auto shrink-0 font-md-mono text-[11px] text-dim">{counted(list.campaigns.length, "campanie", "campanii")}</span>
                 </label>
@@ -346,7 +346,7 @@ export function TermsView({
               <p className="mt-2 text-[12.5px] text-dim">0 = fără propuneri după cost.</p>
             </div>
             <label className="flex items-center gap-3 text-[14px] text-bone/85">
-              <input type="checkbox" checked={syncEnabled} onChange={(event) => setSyncEnabled(event.target.checked)} className="h-4 w-4 accent-[#ededed]" />
+              <input type="checkbox" checked={syncEnabled} onChange={(event) => setSyncEnabled(event.target.checked)} className="h-4 w-4 accent-[#2f5bff]" />
               Sincronizează termenii zilnic
             </label>
             <button type="button" onClick={runSave} disabled={saving} className="btn btn-light disabled:cursor-wait disabled:opacity-60">

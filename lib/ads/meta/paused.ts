@@ -410,12 +410,21 @@ export function assertGooglePaused(
 // Google Ads: pauza — singura actualizare, cu garda ei
 // ---------------------------------------------------------------------------
 
-/** Ce se poate pune pe pauză: campanii și grupuri. Nimic altceva. */
-export const GOOGLE_PAUSE_OPERATIONS = { campaignOperation: "campaigns", adGroupOperation: "adGroups" } as const;
+/**
+ * Ce se poate pune pe pauză: campanii, grupuri și (din v2) reclame. Nimic
+ * altceva. Reclama are numele `adGroupAds/<grup>~<reclamă>`.
+ */
+export const GOOGLE_PAUSE_OPERATIONS = { campaignOperation: "campaigns", adGroupOperation: "adGroups", adGroupAdOperation: "adGroupAds" } as const;
+
+const GOOGLE_PAUSE_ID: Record<keyof typeof GOOGLE_PAUSE_OPERATIONS, string> = {
+  campaignOperation: "\\d+",
+  adGroupOperation: "\\d+",
+  adGroupAdOperation: "\\d+~\\d+",
+};
 
 /**
  * Garda lui `googlePause`: fiecare operație e EXACT
- * `{ campaignOperation | adGroupOperation: { update: { resourceName, status: "PAUSED" }, updateMask: "status" } }`,
+ * `{ campaignOperation | adGroupOperation | adGroupAdOperation: { update: { resourceName, status: "PAUSED" }, updateMask: "status" } }`,
  * pe o resursă existentă din contul din URL. Refuză orice alt câmp în mască
  * sau în obiect, orice altă valoare, orice altă resursă, orice `create` sau
  * `remove`. Pauza poate doar să oprească cheltuiala.
@@ -428,7 +437,7 @@ export function assertGooglePauseOnly(customerId: string, operations: ReadonlyAr
     const kinds = Object.keys(operation ?? {});
     const kind = kinds[0] as keyof typeof GOOGLE_PAUSE_OPERATIONS;
     if (kinds.length !== 1 || !(kind in GOOGLE_PAUSE_OPERATIONS)) {
-      throw new NotPausedError(`Pauza (${index}): doar campanii și grupuri se pun pe pauză, nu ${kinds.join(", ") || "nimic"}.`);
+      throw new NotPausedError(`Pauza (${index}): doar campanii, grupuri și reclame se pun pe pauză, nu ${kinds.join(", ") || "nimic"}.`);
     }
     const body = operation[kind] as Record<string, unknown> | null;
     const keys = body && typeof body === "object" ? Object.keys(body).sort() : [];
@@ -446,7 +455,7 @@ export function assertGooglePauseOnly(customerId: string, operations: ReadonlyAr
     if (update?.status !== GOOGLE_PAUSED) {
       throw new NotPausedError(`Pauza (${index}): statusul trimis poate fi doar ${GOOGLE_PAUSED}, nu ${JSON.stringify(update?.status)}.`);
     }
-    const pattern = new RegExp(`^customers/${customerId}/${GOOGLE_PAUSE_OPERATIONS[kind]}/\\d+$`);
+    const pattern = new RegExp(`^customers/${customerId}/${GOOGLE_PAUSE_OPERATIONS[kind]}/${GOOGLE_PAUSE_ID[kind]}$`);
     if (typeof update.resourceName !== "string" || !pattern.test(update.resourceName)) {
       throw new NotPausedError(`Pauza (${index}): ${String(update.resourceName)} nu e o resursă existentă de tipul ${GOOGLE_PAUSE_OPERATIONS[kind]} din contul ${customerId}.`);
     }

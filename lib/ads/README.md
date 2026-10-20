@@ -168,6 +168,62 @@ Decizii: clientul e un nume în Supabase, nu un spațiu nou — spațiile rămâ
 plafonul; prima sincronizare aduce 90 de zile (nu 37 de luni, ca sincronizarea veche):
 destul pentru „luna trecută” comparată cu cea dinainte și repede pe conturi mari.
 
+**Faza 2 (2026-10-20) — designul nou, pe datele Google.**
+
+- **Cadrul** (`app/(admin)/admin/ads/layout.tsx`): meniul îngust din stânga (`sidebar.tsx`;
+  pe telefon, bara de jos cu „Mai mult”, `mobile-nav.tsx`), bara de sus (`top-bar.tsx`:
+  clientul, perioada — 7 / 30 / 90 de zile, luna aceasta, luna trecută — canalul și
+  „Actualizează”) și, doar pe ecranele care lucrează într-un spațiu de lucru (Plan nou, Lot,
+  Pentru Claude, uneltele Google), banda cu spațiul și filele „Căutări” (`legacy-strip.tsx`).
+- **Tema albă** dintr-un singur fișier al zonei (`portal.css`): variabilele `--md-*` primesc
+  valori deschise doar sub `.ads-portal`, butoanele devin dreptunghiuri, accentul e
+  albastrul site-ului. Culorile scrise de mână în componentele vechi (roșul, chihlimbarul,
+  verdele gândite pentru fundal închis) au trecut pe nuanțe care trec AA pe alb.
+- **Campanii** (`/admin/ads`, `campaigns-screen.tsx`): cele patru cifre (`kpi-tiles.tsx`, cu
+  schimbarea față de perioada dinainte), filele Campanii / Grupuri / Reclame cu numărul
+  rândurilor, căutarea fără diacritice, sortarea pe orice coloană, bifele care filtrează
+  nivelul următor („Vezi grupurile lor”), totalul de jos, coloanele canalului doar cu filtrul
+  pe el, rândurile șterse ascunse dacă n-au cheltuit în perioadă („Arată și cele șterse”).
+  Starea ecranului (fila, bifele, căutarea, sortarea, rândul deschis) stă în adresă.
+  Pe telefon: cardurile cu cifrele și „Pune pe pauză”.
+- **Panoul din dreapta** (`entity-panel.tsx`): cifrele perioadei, graficele pe zile
+  (cheltuit, rezultate), alegerea rezultatului pe campanie, setările doar pentru citit,
+  grupurile / reclamele rândului, „Pune pe pauză”, „Deschide în Google Ads”, legătura spre
+  planul trimis din portal. Escape îl închide și întoarce focusul pe rând; pe telefon e
+  ecran întreg și ține focusul înăuntru.
+- **Pauza** (`lib/ads/model/pause.ts`, `lib/ads/google/pause.ts`, `pause-dialog.tsx`): din
+  tabel (rândurile bifate) sau din panou, cu lista și cheltuiala în fereastra de confirmare.
+  Pe Google pe campanii, grupuri și — nou — reclame: garda pauzei (`assertGooglePauseOnly`)
+  primește și `adGroupAds/<grup>~<reclamă>`, tot doar cu `status: PAUSED` și `updateMask:
+  "status"`. Starea se recitește din cont chiar înainte; ce e deja oprit se sare. Fiecare
+  pauză intră în `ads_changes`. `verify-paused.mjs`: **202 verificări** (noile: pauza pe
+  reclamă permisă, iar cu `ENABLED`, alt câmp, altă mască, fără grup în nume, alt cont, id
+  temporar sau pe un criteriu — refuzată).
+- **Statistici** rescrisă pe modelul comun: cifrele, tabelul pe canale, graficele și tabelul
+  pe zile, campaniile comparate cu perioada dinainte. **Planuri**: intrările (Importă JSON,
+  Lot, Plan de căutare, Pentru Claude) și planurile create pentru clientul ales.
+  **Istoric**: creările, pauzele, modificările pe Google, actualizările, pe zile.
+- **Căutări** (doar cu Google): intrarea `/admin/ads/cautari` trece singură pe spațiul Google
+  al clientului și deschide termenii contului lui; filele Termeni · Negative și audit ·
+  Conversii · Plan de căutare.
+- Scoase: meniul vechi (`ads-nav.tsx`) și lista veche de campanii (`campaign-list.tsx`).
+
+Testat pe build de producție, cu Google și Supabase falși, în Chrome: actualizarea din bara
+de sus, panoul (focusul pe titlu, graficele, alegerea „Apeluri din anunțuri” → „16 apeluri”
+pe rând), Escape, bifa pe campanie → Grupuri → Reclame (reclama respinsă „Respinsă”),
+meniul „Campanii” care readuce fila Campanii, pauza pe o campanie și pe o reclamă (în
+jurnalul Google-ului fals doar `update` cu `status: PAUSED` și `updateMask: "status"`),
+coloanele Google, canalul fără cont, „Căutări”; fără derulare laterală la 360, 768, 1024,
+1440 și 1920; 20 de încărcări fără nicio eroare de hidratare, cu reduced-motion; consola
+curată. **De testat cu tokenul real:** pauza pe un cont Google adevărat (o faci tu, din
+portal, pe o campanie de test).
+
+Decizii: perioada implicită e 7 zile (ca în schiță); „Rezultate” adună campaniile măsurate,
+iar sub cifră scrie din ce („94 de conversii · 16 apeluri”) și câte sunt nemăsurate; costul
+per rezultat împarte doar cheltuiala campaniilor măsurate; meniul arată Materiale și
+Apeluri abia în fazele care le construiesc (un link spre nimic e un drum înfundat); fișa
+veche a unei campanii create din portal (`/admin/ads/[id]`) rămâne, legată din panou.
+
 ---
 
 ## Regula care nu se negociază

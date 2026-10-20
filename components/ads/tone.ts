@@ -16,13 +16,13 @@
 export const FIELD =
   "block w-full rounded-panel-sm border border-hair bg-ink/60 px-3.5 text-[15px] text-bone placeholder:text-dim transition-colors duration-150 focus:border-hair-strong";
 
-export const FIELD_INVALID = "!border-[#ff6b6b]/70 bg-[#ff6b6b]/[0.06]";
+export const FIELD_INVALID = "!border-[#d93025]/70 bg-[#d93025]/[0.06]";
 
-export const ERROR_TEXT = "text-[#ff8a8a]";
-export const WARNING_TEXT = "text-[#f5c451]";
-export const OK_TEXT = "text-[#4fd6a5]";
+export const ERROR_TEXT = "text-[#c62828]";
+export const WARNING_TEXT = "text-[#8a5a00]";
+export const OK_TEXT = "text-[#0f7b52]";
 
-export const ERROR_DOT = "bg-[#ff6b6b]";
+export const ERROR_DOT = "bg-[#d93025]";
 export const WARNING_DOT = "bg-[#f0b429]";
 export const OK_DOT = "bg-[#1fb583]";
 

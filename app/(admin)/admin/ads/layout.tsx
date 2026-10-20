@@ -1,28 +1,32 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
-import { Mark } from "@/components/site/mark";
+import { clientsForRequest } from "@/lib/ads/model/read";
+import { selectionFromCookie } from "@/lib/ads/model/selection.server";
 import { WorkspaceRail } from "@/components/ads/workspace-rail";
-import { AdsNav } from "@/components/ads/ads-nav";
 import { HydrateWhenParsed } from "@/components/ads/hydrate-when-parsed";
+import { Sidebar } from "@/components/ads/sidebar";
+import { MobileNav } from "@/components/ads/mobile-nav";
+import { TopBar, type TopBarClient } from "@/components/ads/top-bar";
+import { LegacyStrip } from "@/components/ads/legacy-strip";
 import { signOut } from "../login/actions";
 import { SessionKeeper } from "../_components/session-keeper";
 import { SetupNotice } from "../_components/setup-notice";
 import { chooseWorkspace } from "./actions";
+import { rememberSelectionAction } from "./v2-actions";
+import { syncClientAction } from "./clienti/actions";
+import "./portal.css";
 
 /**
- * Garda și capul portalului de reclame.
+ * Garda și cadrul portalului de reclame (v2).
  *
- * ACELAȘI mecanism de autentificare ca panoul de lead-uri, nu altul:
- * `isAuthConfigured()` → `getAdminUser()` (sesiune Supabase validată la
- * server + lista `ADMIN_EMAILS`) → redirect la /admin/login. Portalul stă
- * în afara grupului `(dash)` doar ca să aibă capul lui, cu selectorul de
- * spațiu de lucru mereu vizibil.
+ * ACELAȘI mecanism de autentificare ca panoul de lead-uri: `isAuthConfigured()`
+ * → `getAdminUser()` (sesiune Supabase deschisă cu Google + lista
+ * `ADMIN_EMAILS`) → altfel /admin/login.
  *
- * Capul are două rânduri: marca și navigarea, apoi spațiul de lucru. Al
- * doilea rând e lipit sus împreună cu primul — oriunde ai derula, vezi în
- * ce portofoliu ești.
+ * Cadrul, ca în Meta Ads Manager: meniul îngust în stânga, bara de sus cu
+ * clientul, perioada și canalul, apoi ecranul. Tema albă vine din `portal.css`
+ * (variabilele sistemului de design, doar sub `.ads-portal`).
  */
 export default async function AdsLayout({
   children,
@@ -34,58 +38,43 @@ export default async function AdsLayout({
 
   const workspaces = listWorkspaces();
   const currentId = await currentWorkspaceId();
-  const current = workspaces.find((workspace) => workspace.id === currentId) ?? workspaces[0];
+  const [clients, saved] = await Promise.all([clientsForRequest(), selectionFromCookie()]);
+
+  const barClients: TopBarClient[] = clients.ok
+    ? clients.data.map((client) => ({
+        id: client.id,
+        name: client.name,
+        owner: client.owner,
+        platforms: [...new Set(client.accounts.map((account) => account.platform))],
+        lastSyncedAt: client.accounts.map((account) => account.lastSyncedAt).filter((value): value is string => Boolean(value)).sort().at(-1) ?? null,
+        failedAccounts: client.accounts.filter((account) => account.syncEnabled && account.lastSyncStatus === "failed").length,
+      }))
+    : [];
+  const current = barClients.find((client) => client.id === saved.clientId) ?? barClients[0] ?? null;
+  // „Căutări” e doar pe Google: apare când clientul are un cont Google și canalul îl include.
+  const googleTools = (saved.channel === "toate" || saved.channel === "google") && (current ? current.platforms.includes("google") : true);
 
   return (
     // Hidratarea așteaptă sfârșitul citirii paginii — vezi hydrate-when-parsed.tsx.
     <HydrateWhenParsed>
-      <div className="relative min-h-dvh">
+      <div className="ads-portal relative min-h-dvh">
         <SessionKeeper />
-
         <a href="#continut" className="skip-link">
           Sari la conținut
         </a>
 
-        <header className="sticky top-0 z-30 border-b border-hair bg-ink/90 backdrop-blur-md">
-          <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-2.5 px-4 sm:gap-4 sm:px-8">
-            <Link href="/admin/ads" className="flex shrink-0 items-center gap-2.5 text-bone">
-              <Mark size={22} />
-              <span className="hidden font-md-display text-[15px] font-semibold tracking-[0.2em] min-[420px]:inline">
-                MERIDIAN
-              </span>
-            </Link>
-
-            <span aria-hidden className="hidden h-4 w-px shrink-0 bg-hair-strong sm:block" />
-            <AdsNav platform={current.platform} />
-
-            <div className="ml-auto flex shrink-0 items-center gap-4">
-              <Link
-                href="/admin"
-                className="hidden text-[13px] text-dim underline-offset-4 hover:text-bone hover:underline md:inline"
-              >
-                Lead-uri
-              </Link>
-              <span className="hidden font-md-mono text-[11px] tracking-wide text-dim lg:inline">
-                {user.email}
-              </span>
-              <form action={signOut}>
-                <button type="submit" className="btn btn-ghost !min-h-9 !px-4 !py-2 !text-[12.5px]">
-                  Ieși
-                </button>
-              </form>
+        <div className="lg:grid lg:min-h-dvh lg:grid-cols-[228px_minmax(0,1fr)]">
+          <Sidebar email={user.email} googleTools={googleTools} signOut={signOut} />
+          <div className="flex min-h-dvh min-w-0 flex-col">
+            <TopBar clients={barClients} saved={saved} remember={rememberSelectionAction} sync={syncClientAction} />
+            <LegacyStrip rail={<WorkspaceRail workspaces={workspaces} currentId={currentId} action={chooseWorkspace} />} />
+            <div id="continut" className="relative flex-1 pb-20 lg:pb-0">
+              {children}
             </div>
           </div>
-
-          <div className="border-t border-hair bg-char/70">
-            <div className="mx-auto max-w-[1400px] px-4 py-2.5 sm:px-8">
-              <WorkspaceRail workspaces={workspaces} currentId={currentId} action={chooseWorkspace} />
-            </div>
-          </div>
-        </header>
-
-        <div id="continut" className="relative">
-          {children}
         </div>
+
+        <MobileNav googleTools={googleTools} signOut={signOut} />
       </div>
     </HydrateWhenParsed>
   );

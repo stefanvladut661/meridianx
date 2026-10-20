@@ -379,7 +379,7 @@ function BudgetBar({ summary }: { summary: SearchSummary }) {
   return (
     <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-hair">
       <div
-        className={cn("h-full rounded-full", summary.overCap ? "bg-[#ff6b6b]" : "bg-bone/70")}
+        className={cn("h-full rounded-full", summary.overCap ? "bg-[#d93025]" : "bg-bone/70")}
         style={{ width: `${Math.max(ratio * 100, summary.totals.dailyBudget > 0 ? 1.5 : 0)}%` }}
       />
     </div>

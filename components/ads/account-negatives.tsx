@@ -128,7 +128,7 @@ export function AccountNegatives({
                   checked={mode === item}
                   disabled={item !== "campaigns" && lists.length === 0}
                   onChange={() => setMode(item)}
-                  className="h-4 w-4 accent-[#ededed]"
+                  className="h-4 w-4 accent-[#2f5bff]"
                 />
                 {NEGATIVES_MODE_LABEL[item]}
               </label>
@@ -185,7 +185,7 @@ export function AccountNegatives({
                 return (
                   <li key={item.id}>
                     <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-[13.5px] hover:bg-glass">
-                      <input type="checkbox" checked={chosen.has(item.id)} onChange={() => toggle(item.id)} className="h-4 w-4 shrink-0 accent-[#ededed]" />
+                      <input type="checkbox" checked={chosen.has(item.id)} onChange={() => toggle(item.id)} className="h-4 w-4 shrink-0 accent-[#2f5bff]" />
                       <span className="min-w-0 flex-1 truncate text-bone/90">{item.name}</span>
                       <span className="shrink-0 font-md-mono text-[11px] text-dim">
                         {linked ? "legată · " : ""}
@@ -225,14 +225,14 @@ export function AccountNegatives({
 
       <div className="min-w-0 space-y-4">
         {failure ? (
-          <p role="alert" className={cn("rounded-panel-lg border border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05] px-5 py-4 text-[14px]", ERROR_TEXT)}>
+          <p role="alert" className={cn("rounded-panel-lg border border-[#d93025]/35 bg-[#d93025]/[0.05] px-5 py-4 text-[14px]", ERROR_TEXT)}>
             {failure}
           </p>
         ) : null}
         {result ? (
           <div
             role={result.ok ? "status" : "alert"}
-            className={cn("rounded-panel-lg border px-5 py-4 text-[14px] leading-relaxed", result.ok ? "border-bone/30 bg-char" : "border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05]")}
+            className={cn("rounded-panel-lg border px-5 py-4 text-[14px] leading-relaxed", result.ok ? "border-bone/30 bg-char" : "border-[#d93025]/35 bg-[#d93025]/[0.05]")}
           >
             {result.ok ? (
               <>
@@ -265,7 +265,7 @@ export function PreviewPanel({ preview }: { preview: NegativesPreview }) {
     <div className="space-y-4 rounded-panel-lg border border-hair bg-char/60 px-5 py-5 sm:px-6">
       <h3 className="eyebrow !text-[11.5px] !text-bone">Previzualizarea</h3>
       {preview.errors.length > 0 ? (
-        <ul className="space-y-1.5 rounded-panel border border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05] px-4 py-3 text-[14px]">
+        <ul className="space-y-1.5 rounded-panel border border-[#d93025]/35 bg-[#d93025]/[0.05] px-4 py-3 text-[14px]">
           {preview.errors.map((error, index) => (
             <li key={index} className={ERROR_TEXT}>
               {error}

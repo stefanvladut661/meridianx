@@ -49,7 +49,7 @@ export function ProblemList({
       aria-label={title}
       className={cn(
         "rounded-panel-lg border px-5 py-4",
-        tone === "error" ? "border-[#ff6b6b]/35 bg-[#ff6b6b]/[0.05]" : "border-[#f0b429]/30 bg-[#f0b429]/[0.04]"
+        tone === "error" ? "border-[#d93025]/35 bg-[#d93025]/[0.05]" : "border-[#f0b429]/30 bg-[#f0b429]/[0.04]"
       )}
     >
       <h3 className={cn("flex items-center gap-2 text-[14.5px] font-semibold", tone === "error" ? ERROR_TEXT : WARNING_TEXT)}>

@@ -474,7 +474,11 @@ export async function googlePause(
   const customer = customerDigits(customerId);
   if (!/^\d{10}$/.test(customer)) throw new Error(`Cont Google Ads invalid pentru pauză: ${customerId}`);
   const operations = resourceNames.map((resourceName) => {
-    const kind = /\/adGroups\/\d+$/.test(resourceName) ? "adGroupOperation" : "campaignOperation";
+    const kind = /\/adGroupAds\/\d+~\d+$/.test(resourceName)
+      ? "adGroupAdOperation"
+      : /\/adGroups\/\d+$/.test(resourceName)
+        ? "adGroupOperation"
+        : "campaignOperation";
     return { [kind]: { update: { resourceName, status: GOOGLE_PAUSED }, updateMask: "status" } };
   });
   assertGooglePauseOnly(customer, operations);
