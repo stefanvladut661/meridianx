@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const ENTRIES = [
+  { href: "/admin/ads/creeaza", title: "Creează", body: "Pas cu pas: canal, obiectiv, public și buget, reclamele din Materiale. Verificat pe cont, creat pe pauză." },
   { href: "/admin/ads/nou", title: "Importă JSON", body: "Un plan lipit, făcut cu Claude sau de mână. Îl citești în română, îl verifici pe cont, îl creezi pe pauză." },
   { href: "/admin/ads/lot", title: "Lot", body: "Până la 50 de planuri odată, pe orice platformă. Planurile create deja se sar." },
   { href: "/admin/ads/cautare", title: "Plan de căutare", body: "Google Search: mai multe campanii, grupuri, cuvinte cheie și negative, într-o singură cerere." },
@@ -110,7 +111,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
         {!plans.ok ? <p className="mt-4 text-[14px] text-[var(--ap-error)]">{STORE_FAILURE_MESSAGE[plans.reason]}</p> : null}
         {plans.ok && groups.length === 0 ? (
           <p className="mt-4 max-w-xl rounded-xl border border-dashed border-hair-strong px-5 py-6 text-[14.5px] text-dim">
-            Niciun plan creat {all ? "încă" : `pentru ${client?.name}`}. Începe din „Importă JSON” sau din „Lot”.
+            Niciun plan creat {all ? "încă" : `pentru ${client?.name}`}. Începe din „Creează”, din „Importă JSON” sau din „Lot”.
           </p>
         ) : null}
 

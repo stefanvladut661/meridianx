@@ -10,7 +10,10 @@ import { adapterFor, type PlatformAdapter } from "@/lib/ads/platform";
 import { BATCH_DUPLICATE_DAYS } from "@/lib/ads/plan-batch";
 import type { Plan } from "@/lib/ads/plan-schema";
 import { validatePlan } from "@/lib/ads/plan-validate";
-import { createStagingDownload, createStagingUpload, isStagingNameOf, removeStaged } from "@/lib/ads/staging";
+import { createMaterialLinks, createStagingDownload, createStagingUpload, isStagingNameOf, removeStaged } from "@/lib/ads/staging";
+import { materialById, saveUpload, uploadOf } from "@/lib/ads/materials";
+import type { MaterialUploadRow } from "@/lib/ads/materials-shared";
+import { createAdminClient } from "@/lib/supabase/clients";
 import { STORE_FAILURE_MESSAGE, findRecentDuplicate, knownAccounts } from "@/lib/ads/store";
 import { runAdsSync } from "@/lib/ads/sync";
 import type { CheckResponse, CreateResponse, LibraryResponse, UploadStatus } from "@/lib/ads/types";
@@ -557,6 +560,92 @@ export async function checkVideoUploadStatus(input: {
     return { ok: true, status };
   } catch (error) {
     return { ok: false, message: context.adapter.describeError(error, "citirea stării video-ului", context.workspace.tokenEnv) };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Materiale (v2): un material din biblioteca portalului, trimis în contul ales
+// ---------------------------------------------------------------------------
+
+/**
+ * Trimite materialul în biblioteca contului (o singură dată pe cont): platforma
+ * îl descarcă de la un link semnat, ca la „Fișier nou”. Fișierul rămâne în
+ * Materiale. Dacă a fost deja trimis, întoarce ce știm despre el.
+ */
+export async function sendMaterialToAccount(input: {
+  materialId: string;
+  workspace: string;
+  adAccount: string;
+}): Promise<{ ok: true; upload: MaterialUploadRow } | Failure> {
+  const context = await accountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  if (!/^[0-9a-f-]{36}$/i.test(input.materialId)) return { ok: false, message: "Materialul nu există." };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, message: "Supabase nu e configurat pe server." };
+
+  const material = await materialById(admin, input.materialId);
+  if (!material.ok) return material;
+  if (!material.data || material.data.status !== "ready") return { ok: false, message: "Materialul nu mai e în bibliotecă (sau urcarea lui n-a terminat)." };
+  const known = await uploadOf(admin, input.materialId, context.workspace.platform, context.adAccount);
+  if (!known.ok) return known;
+  if (known.data && known.data.status !== "failed") return { ok: true, upload: known.data };
+
+  const links = await createMaterialLinks([material.data.storage_path]);
+  const fileUrl = links.get(material.data.storage_path);
+  if (!fileUrl) return { ok: false, message: "Fișierul materialului nu mai e în stocare. Urcă-l din nou în Materiale." };
+  try {
+    const { videoId } = await context.adapter.sendVideo(context.workspace, context.adAccount, { fileUrl, title: material.data.name });
+    const upload: MaterialUploadRow = {
+      platform: context.workspace.platform,
+      workspace: context.workspace.id,
+      adAccount: context.adAccount,
+      uploadId: videoId,
+      // Pe Meta și TikTok id-ul întors e chiar cel din bibliotecă; pe Google, abia la final.
+      videoId: context.workspace.platform === "google" ? null : videoId,
+      status: "sent",
+      message: null,
+      updatedAt: new Date().toISOString(),
+    };
+    const saved = await saveUpload(admin, { materialId: input.materialId, ...upload });
+    if (!saved.ok) return saved;
+    return { ok: true, upload };
+  } catch (error) {
+    return { ok: false, message: context.adapter.describeError(error, `trimiterea materialului „${material.data.name}” în cont`, context.workspace.tokenEnv) };
+  }
+}
+
+/** Starea unui material trimis: platforma a terminat? Ținută minte, ca a doua folosire să nu mai aștepte. */
+export async function materialUploadStatus(input: {
+  materialId: string;
+  workspace: string;
+  adAccount: string;
+}): Promise<{ ok: true; status: UploadStatus; upload: MaterialUploadRow } | Failure> {
+  const context = await accountSession(input.workspace, input.adAccount);
+  if (!context.ok) return context;
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, message: "Supabase nu e configurat pe server." };
+  const known = await uploadOf(admin, input.materialId, context.workspace.platform, context.adAccount);
+  if (!known.ok) return known;
+  if (!known.data) return { ok: false, message: "Materialul n-a fost trimis în contul ăsta." };
+  if (known.data.status === "ready" && known.data.videoId) {
+    return { ok: true, status: { state: "ready", progress: 100, message: null }, upload: known.data };
+  }
+  try {
+    const status = await context.adapter.videoStatus(context.workspace, context.adAccount, known.data.uploadId);
+    const upload: MaterialUploadRow = {
+      ...known.data,
+      status: status.state === "ready" ? "ready" : status.state === "error" ? "failed" : "sent",
+      videoId: status.state === "ready" ? (status.finalId ?? known.data.uploadId) : known.data.videoId,
+      message: status.state === "error" ? status.message : null,
+      updatedAt: new Date().toISOString(),
+    };
+    if (upload.status !== known.data.status || upload.videoId !== known.data.videoId) {
+      const saved = await saveUpload(admin, { materialId: input.materialId, ...upload });
+      if (!saved.ok) return saved;
+    }
+    return { ok: true, status, upload };
+  } catch (error) {
+    return { ok: false, message: context.adapter.describeError(error, "citirea stării materialului", context.workspace.tokenEnv) };
   }
 }
 

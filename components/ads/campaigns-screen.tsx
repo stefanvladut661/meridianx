@@ -68,6 +68,7 @@ export function CampaignsScreen({
   range,
   actions,
   importHref,
+  createHref,
   calls,
   callsHref,
 }: {
@@ -79,6 +80,8 @@ export function CampaignsScreen({
   range: DateRange;
   actions: ScreenActions;
   importHref: string;
+  /** „Creează” pe pași (v2). */
+  createHref: string;
   /** „Apeluri notate” pe campanie, în perioadă (din pagina Apeluri). */
   calls: Record<string, CallCount>;
   callsHref: string;
@@ -317,9 +320,12 @@ export function CampaignsScreen({
           })}
         </div>
         <div className="flex items-center gap-2 pb-2">
-          <Link href={importHref} className="btn btn-light !min-h-9 !gap-1.5 !px-3.5 !py-1.5 !text-[13.5px]">
-            <IconPlus size={16} />
+          <Link href={importHref} className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]">
             Importă JSON
+          </Link>
+          <Link href={createHref} className="btn btn-light !min-h-9 !gap-1.5 !px-3.5 !py-1.5 !text-[13.5px]">
+            <IconPlus size={16} />
+            Creează
           </Link>
         </div>
       </div>

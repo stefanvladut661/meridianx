@@ -41,7 +41,7 @@ function steps(label: string) {
 const POLL_MS = 3000;
 const POLL_LIMIT_MS = 15 * 60 * 1000;
 
-function megabytes(bytes: number): string {
+export function megabytes(bytes: number): string {
   return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 1 }).format(bytes / 1024 / 1024);
 }
 
@@ -56,7 +56,7 @@ function localCheck(file: File): string | null {
 }
 
 /** PUT prin XHR: `fetch` nu raportează progresul unei urcări. */
-function putFile(
+export function putFile(
   url: string,
   file: File,
   onProgress: (loaded: number, total: number) => void,

@@ -607,6 +607,345 @@ function VideosEditor({
 }
 
 // ---------------------------------------------------------------------------
+// Bucățile formularului — aceleași în editorul JSON și în „Creează” (v2)
+// ---------------------------------------------------------------------------
+
+export function BudgetFields() {
+  return (
+    <Grid className="sm:grid-cols-[minmax(0,9rem)_minmax(0,7rem)]">
+      <NumberField path="campaign.daily_budget" label="Buget pe zi" />
+      <SelectField path="campaign.currency" label="Moneda" options={CURRENCIES.map((currency) => [currency, currency] as const)} />
+    </Grid>
+  );
+}
+
+export function AudienceFields({ platform }: { platform: Platform }) {
+  return (
+    <>
+      <PathMessages path="audience" />
+      <LocationsEditor platform={platform} />
+      <Grid className="sm:grid-cols-3">
+        <NumberField path="audience.age_min" label="Vârsta de la" hint="Implicit 18" />
+        <NumberField path="audience.age_max" label="până la" hint="65 = 65 și peste" />
+        <SelectField
+          path="audience.gender"
+          label="Gen"
+          options={entries(["all", "male", "female"] as const, GENDER_LABEL)}
+          placeholder="toate genurile (implicit)"
+        />
+      </Grid>
+      <LanguagesField />
+      <NamedListEditor
+        path="audience.interests"
+        label="Interese"
+        itemLabel="Interesul"
+        addLabel="interes"
+        emptyText="Fără interese: publicul e doar locație, vârstă și limbă."
+      />
+      <NamedListEditor
+        path="audience.behaviors"
+        label="Comportamente"
+        itemLabel="Comportamentul"
+        addLabel="comportament"
+        emptyText="Fără comportamente."
+      />
+      <p className="text-[12.5px] leading-snug text-dim">
+        Interesele, comportamentele, orașele și limbile fără id se caută după nume la verificarea pe
+        platformă, iar portalul îți arată ce a găsit înainte să creeze ceva.
+      </p>
+    </>
+  );
+}
+
+export function ConversionFields({ platform }: { platform: Platform }) {
+  const eventOptions = (Object.keys(CONVERSION_EVENT_LABEL) as Array<keyof typeof CONVERSION_EVENT_LABEL>)
+    .filter((event) => CONVERSION_EVENT_NAME[event][platform] !== null)
+    .map((event) => [event, `${CONVERSION_EVENT_LABEL[event]} · ${CONVERSION_EVENT_NAME[event][platform]}`] as const);
+  return (
+    <>
+      <PathMessages path="conversion" />
+      <Grid>
+        <TextField
+          path="conversion.pixel_id"
+          label={platform === "google" ? "Acțiunea de conversie" : "Pixel"}
+          mono
+          placeholder={platform === "google" ? "id din Google Ads → Conversii" : platform === "tiktok" ? "id sau codul pixelului" : "id din Events Manager"}
+        />
+        <SelectField path="conversion.event" label="Eveniment" options={eventOptions} />
+      </Grid>
+    </>
+  );
+}
+
+export function DestinationFields({ summary }: { summary: PlanSummary }) {
+  return (
+    <>
+      <PathMessages path="destination" />
+      <PathMessages path="destination.type" />
+      <TextField path="destination.url" label="Pagina" placeholder="https://www.meridianx.ro/video" mono />
+      <div className="grid gap-x-3 gap-y-4 sm:grid-cols-3">
+        {UTM_KEYS.map((key) => (
+          <TextField key={key} path={`destination.utm.${key}`} label={`utm_${key}`} mono />
+        ))}
+      </div>
+      <div>
+        <p className={LABEL}>Unde ajunge omul după clic</p>
+        <p className="mt-1.5 break-all rounded-panel-sm border border-hair bg-ink/60 px-3.5 py-2.5 font-md-mono text-[12.5px] leading-relaxed text-bone/85">
+          {summary.finalUrl ?? "—"}
+        </p>
+      </div>
+    </>
+  );
+}
+
+/** Coperta, textele, butonul și variantele — tot materialul, mai puțin video-urile. */
+export function CreativeTextFields({ platform }: { platform: Platform }) {
+  const { draft, update } = usePlanForm();
+  const thumbnail = getIn(draft, "creative.thumbnail");
+  const videoCount = Array.isArray(getIn(draft, "creative.videos")) ? asArray(getIn(draft, "creative.videos")).length : 1;
+  return (
+    <>
+      {videoCount === 1 || asRecord(thumbnail) ? (
+        <RadioRow
+          name="thumbnail"
+          legend="Copertă"
+          value={thumbnail === undefined || thumbnail === "auto" ? "auto" : "url"}
+          options={[
+            ["auto", "Propusă de platformă"],
+            ["url", "Imagine de la o adresă"],
+          ]}
+          onChange={(value) => update("creative.thumbnail", value === "auto" ? "auto" : { url: "" })}
+        />
+      ) : (
+        <p className="text-[13px] leading-snug text-dim">Copertă: cea propusă de platformă, pentru fiecare video.</p>
+      )}
+      <PathMessages path="creative.thumbnail" />
+      {asRecord(thumbnail) ? <TextField path="creative.thumbnail.url" label="Adresa imaginii" mono placeholder="https://…" /> : null}
+
+      <TextListField
+        path="creative.primary_texts"
+        label={platform === "google" ? "Texte principale (titluri lungi)" : "Texte principale"}
+        itemLabel={(index) => `Textul ${index + 1}`}
+        max={MAX_TEXT_VARIANTS}
+        multiline
+        counter={
+          platform === "tiktok"
+            ? { limit: TIKTOK_AD_TEXT_MAX, hard: true }
+            : platform === "google"
+              ? { limit: GOOGLE_LONG_HEADLINE_MAX, hard: true }
+              : { limit: META_PRIMARY_TEXT_VISIBLE }
+        }
+        addLabel="text"
+      />
+      {platform !== "tiktok" ? (
+        <>
+          <TextListField
+            path="creative.headlines"
+            label="Titluri"
+            itemLabel={(index) => `Titlul ${index + 1}`}
+            max={MAX_TEXT_VARIANTS}
+            counter={platform === "google" ? { limit: GOOGLE_HEADLINE_MAX, hard: true } : { limit: META_HEADLINE_VISIBLE }}
+            addLabel="titlu"
+            emptyText={platform === "google" ? "Fără titlu — Google cere cel puțin unul." : "Fără titlu."}
+          />
+          <TextListField
+            path="creative.descriptions"
+            label="Descrieri"
+            itemLabel={(index) => `Descrierea ${index + 1}`}
+            max={MAX_TEXT_VARIANTS}
+            counter={platform === "google" ? { limit: GOOGLE_DESCRIPTION_MAX, hard: true } : undefined}
+            addLabel="descriere"
+            emptyText={platform === "google" ? "Fără descriere — Google cere cel puțin una." : "Fără descriere."}
+          />
+        </>
+      ) : (
+        <PathMessages path="creative.headlines" />
+      )}
+      <Grid>
+        <SelectField
+          path="creative.cta"
+          label="Butonul"
+          options={(Object.keys(CTA_LABEL) as Array<keyof typeof CTA_LABEL>).map((cta) => [cta, `${CTA_LABEL[cta]} · ${cta}`] as const)}
+          hint="Textul exact îl pune platforma, în limba celui care vede reclama."
+        />
+        <SelectField
+          path="creative.variants"
+          label="Variantele"
+          options={entries(VARIANT_MODES, VARIANT_MODE_LABEL)}
+          placeholder={`${VARIANT_MODE_LABEL.one_ad_per_text} (implicit)`}
+        />
+      </Grid>
+    </>
+  );
+}
+
+/** Ce cere doar platforma: pagina și DSA pe Meta, firma și sigla pe Google, identitatea pe TikTok. */
+export function PlatformFields({ platform }: { platform: Platform }) {
+  const { draft, update } = usePlanForm();
+  const placements = getIn(draft, "meta.placements");
+  const categories = asArray(getIn(draft, "meta.special_ad_categories")).map(String);
+
+  if (platform === "meta") {
+    return (
+      <>
+        <PathMessages path="meta" />
+        <Grid>
+          <TextField path="meta.page_id" label="Pagina de Facebook" mono placeholder="id pagină" />
+          <TextField path="meta.instagram_account_id" label="Instagram (opțional)" mono placeholder="id cont" />
+        </Grid>
+        <Grid>
+          <TextField
+            path="meta.dsa_beneficiary"
+            label="Beneficiar (DSA)"
+            placeholder="implicit: setarea contului"
+            hint="Firma care beneficiază de reclamă. Obligatoriu în UE."
+          />
+          <TextField
+            path="meta.dsa_payor"
+            label="Plătitor (DSA)"
+            placeholder="implicit: setarea contului"
+            hint="Cine plătește reclama. Apare pe reclamă, ca beneficiarul."
+          />
+        </Grid>
+        <CheckboxGrid
+          legend="Categorie specială"
+          options={entries(META_SPECIAL_CATEGORIES, META_SPECIAL_CATEGORY_LABEL)}
+          selected={categories}
+          describedBy={`${fieldId("meta.special_ad_categories")}-msg`}
+          onToggle={(value, on) => {
+            const next = on ? [...categories, value] : categories.filter((item) => item !== value);
+            update("meta.special_ad_categories", next.length > 0 ? next : undefined);
+          }}
+        />
+        <PathMessages path="meta.special_ad_categories" />
+        <div className="divide-y divide-hair rounded-panel border border-hair px-4">
+          <ToggleField
+            path="meta.advantage_audience"
+            title="Advantage+ audience"
+            body="Pornit, Meta tratează vârsta și interesele ca sugestii."
+            dangerWhenOn
+          />
+        </div>
+        <RadioRow
+          name="meta-placements"
+          legend="Plasări"
+          value={Array.isArray(placements) ? "manual" : "automatic"}
+          options={[
+            ["automatic", "Automate (Advantage+ placements)"],
+            ["manual", "Alese de mine"],
+          ]}
+          onChange={(value) => update("meta.placements", value === "automatic" ? undefined : ["instagram_reels", "facebook_reels"])}
+        />
+        {Array.isArray(placements) ? (
+          <CheckboxGrid
+            legend="Unde apare"
+            options={entries(META_PLACEMENTS, META_PLACEMENT_LABEL)}
+            selected={placements.map(String)}
+            onToggle={(value, on) => {
+              const current = placements.map(String);
+              update("meta.placements", on ? [...current, value] : current.filter((item) => item !== value));
+            }}
+          />
+        ) : null}
+        <PathMessages path="meta.placements" />
+      </>
+    );
+  }
+
+  if (platform === "google") {
+    return (
+      <>
+        <PathMessages path="google" />
+        <Grid>
+          <TextField
+            path="google.business_name"
+            label="Numele firmei"
+            placeholder="MERIDIAN"
+            hint={`Apare pe reclamă. Cel mult ${GOOGLE_BUSINESS_NAME_MAX} de caractere.`}
+          />
+          <TextField
+            path="google.logo_url"
+            label="Sigla (adresă https)"
+            mono
+            placeholder="https://…/sigla.png"
+            hint="Pătrată, minim 128×128, PNG sau JPEG. Portalul o urcă în cont."
+          />
+        </Grid>
+        <RadioRow
+          name="google-channels"
+          legend="Unde apare"
+          value={Array.isArray(getIn(draft, "google.channels")) ? "manual" : "all"}
+          options={[
+            ["all", "Peste tot (YouTube, Discover, Gmail, Display)"],
+            ["manual", "Aleg eu"],
+          ]}
+          onChange={(value) => update("google.channels", value === "all" ? undefined : ["youtube_in_stream", "youtube_in_feed", "youtube_shorts"])}
+        />
+        {Array.isArray(getIn(draft, "google.channels")) ? (
+          <CheckboxGrid
+            legend="Canalele"
+            options={entries(GOOGLE_CHANNELS, GOOGLE_CHANNEL_LABEL)}
+            selected={asArray(getIn(draft, "google.channels")).map(String)}
+            onToggle={(value, on) => {
+              const current = asArray(getIn(draft, "google.channels")).map(String);
+              update("google.channels", on ? [...current, value] : current.filter((item) => item !== value));
+            }}
+          />
+        ) : null}
+        <PathMessages path="google.channels" />
+        <div className="divide-y divide-hair rounded-panel border border-hair px-4">
+          <ToggleField
+            path="google.optimized_targeting"
+            title="Lărgirea automată a publicului (optimized targeting)"
+            body="Pornită, Google livrează și în afara intereselor din plan."
+            dangerWhenOn
+          />
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PathMessages path="tiktok" />
+      <Grid>
+        <SelectField path="tiktok.identity_type" label="Identitatea de pe reclamă" options={entries(TIKTOK_IDENTITY_TYPES, TIKTOK_IDENTITY_LABEL)} />
+        <TextField path="tiktok.identity_id" label="Id identitate" mono />
+      </Grid>
+      {getIn(draft, "tiktok.identity_type") === "BC_AUTH_TT" ? <TextField path="tiktok.identity_bc_id" label="Id Business Center (al identității)" mono /> : null}
+      <SelectField
+        path="tiktok.placements"
+        label="Plasări"
+        options={entries(TIKTOK_PLACEMENTS, TIKTOK_PLACEMENT_LABEL)}
+        placeholder={`${TIKTOK_PLACEMENT_LABEL.tiktok_only} (implicit)`}
+      />
+    </>
+  );
+}
+
+const PLATFORM_SECTION_ASIDE: Partial<Record<Platform, string>> = {
+  google: "Campanie Demand Gen: reclame video pe YouTube, Discover și Gmail.",
+};
+
+export function EnhancementsFields({ platform }: { platform: Platform }) {
+  return (
+    <div className="divide-y divide-hair rounded-panel border border-hair px-4">
+      {platform === "meta"
+        ? META_ENHANCEMENTS.map((key) => (
+            <ToggleField key={key} path={`meta.enhancements.${key}`} title={META_ENHANCEMENT_LABEL[key].title} body={META_ENHANCEMENT_LABEL[key].body} dangerWhenOn />
+          ))
+        : platform === "google"
+          ? GOOGLE_ENHANCEMENTS.map((key) => (
+              <ToggleField key={key} path={`google.enhancements.${key}`} title={GOOGLE_ENHANCEMENT_LABEL[key].title} body={GOOGLE_ENHANCEMENT_LABEL[key].body} dangerWhenOn />
+            ))
+          : TIKTOK_ENHANCEMENTS.map((key) => (
+              <ToggleField key={key} path={`tiktok.enhancements.${key}`} title={TIKTOK_ENHANCEMENT_LABEL[key].title} body={TIKTOK_ENHANCEMENT_LABEL[key].body} dangerWhenOn />
+            ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Formularul
 // ---------------------------------------------------------------------------
 
@@ -638,18 +977,9 @@ export function PlanForm({
     typeof objective === "string" && OBJECTIVES_WITH_CONVERSION.includes(objective as Objective);
   const hasConversion = draft.conversion !== undefined;
 
-  const thumbnail = getIn(draft, "creative.thumbnail");
-  const videoCount = Array.isArray(getIn(draft, "creative.videos")) ? asArray(getIn(draft, "creative.videos")).length : 1;
-  const placements = getIn(draft, "meta.placements");
-  const categories = asArray(getIn(draft, "meta.special_ad_categories")).map(String);
-
-  const eventOptions = (Object.keys(CONVERSION_EVENT_LABEL) as Array<keyof typeof CONVERSION_EVENT_LABEL>)
-    .filter((event) => CONVERSION_EVENT_NAME[event][platform] !== null)
-    .map((event) => [event, `${CONVERSION_EVENT_LABEL[event]} · ${CONVERSION_EVENT_NAME[event][platform]}`] as const);
-
   return (
     <div>
-      <Section title="Unde" prefixes={["format", "workspace", "ad_account"]}>
+      <Section title="Unde" prefixes={["format", "channel", "workspace", "ad_account"]}>
         <Grid>
           <SelectField
             path="workspace"
@@ -683,6 +1013,7 @@ export function PlanForm({
           </div>
         ) : null}
         <PathMessages path="format" />
+        <PathMessages path="channel" />
       </Section>
 
       <Section
@@ -704,51 +1035,12 @@ export function PlanForm({
       </Section>
 
       <Section title="Publicul" prefixes={["audience"]}>
-        <PathMessages path="audience" />
-        <LocationsEditor platform={platform} />
-        <Grid className="sm:grid-cols-3">
-          <NumberField path="audience.age_min" label="Vârsta de la" hint="Implicit 18" />
-          <NumberField path="audience.age_max" label="până la" hint="65 = 65 și peste" />
-          <SelectField
-            path="audience.gender"
-            label="Gen"
-            options={entries(["all", "male", "female"] as const, GENDER_LABEL)}
-            placeholder="toate genurile (implicit)"
-          />
-        </Grid>
-        <LanguagesField />
-        <NamedListEditor
-          path="audience.interests"
-          label="Interese"
-          itemLabel="Interesul"
-          addLabel="interes"
-          emptyText="Fără interese: publicul e doar locație, vârstă și limbă."
-        />
-        <NamedListEditor
-          path="audience.behaviors"
-          label="Comportamente"
-          itemLabel="Comportamentul"
-          addLabel="comportament"
-          emptyText="Fără comportamente."
-        />
-        <p className="text-[12.5px] leading-snug text-dim">
-          Interesele, comportamentele, orașele și limbile fără id se caută după nume la verificarea pe
-          platformă, iar portalul îți arată ce a găsit înainte să creeze ceva.
-        </p>
+        <AudienceFields platform={platform} />
       </Section>
 
       {needsConversion || hasConversion ? (
         <Section title="Conversia" prefixes={["conversion"]}>
-          <PathMessages path="conversion" />
-          <Grid>
-            <TextField
-              path="conversion.pixel_id"
-              label={platform === "google" ? "Acțiunea de conversie" : "Pixel"}
-              mono
-              placeholder={platform === "google" ? "id din Google Ads → Conversii" : platform === "tiktok" ? "id sau codul pixelului" : "id din Events Manager"}
-            />
-            <SelectField path="conversion.event" label="Eveniment" options={eventOptions} />
-          </Grid>
+          <ConversionFields platform={platform} />
           {!needsConversion ? (
             <button
               type="button"
@@ -762,283 +1054,25 @@ export function PlanForm({
       ) : null}
 
       <Section title="Destinația" prefixes={["destination"]}>
-        <PathMessages path="destination" />
-        <PathMessages path="destination.type" />
-        <TextField path="destination.url" label="Pagina" placeholder="https://www.meridianx.ro/video" mono />
-        <div className="grid gap-x-3 gap-y-4 sm:grid-cols-3">
-          {UTM_KEYS.map((key) => (
-            <TextField key={key} path={`destination.utm.${key}`} label={`utm_${key}`} mono />
-          ))}
-        </div>
-        <div>
-          <p className={LABEL}>Unde ajunge omul după clic</p>
-          <p className="mt-1.5 break-all rounded-panel-sm border border-hair bg-ink/60 px-3.5 py-2.5 font-md-mono text-[12.5px] leading-relaxed text-bone/85">
-            {summary.finalUrl ?? "—"}
-          </p>
-        </div>
+        <DestinationFields summary={summary} />
       </Section>
 
       <Section title="Materialul" prefixes={["creative"]}>
         <PathMessages path="creative" />
         <VideosEditor platform={platform} loadLibrary={loadLibrary} upload={upload} />
-
-
-        {videoCount === 1 || asRecord(thumbnail) ? (
-          <RadioRow
-            name="thumbnail"
-            legend="Copertă"
-            value={thumbnail === undefined || thumbnail === "auto" ? "auto" : "url"}
-            options={[
-              ["auto", "Propusă de platformă"],
-              ["url", "Imagine de la o adresă"],
-            ]}
-            onChange={(value) => update("creative.thumbnail", value === "auto" ? "auto" : { url: "" })}
-          />
-        ) : (
-          <p className="text-[13px] leading-snug text-dim">Copertă: cea propusă de platformă, pentru fiecare video.</p>
-        )}
-        <PathMessages path="creative.thumbnail" />
-        {asRecord(thumbnail) ? (
-          <TextField path="creative.thumbnail.url" label="Adresa imaginii" mono placeholder="https://…" />
-        ) : null}
-
-        <TextListField
-          path="creative.primary_texts"
-          label={platform === "google" ? "Texte principale (titluri lungi)" : "Texte principale"}
-          itemLabel={(index) => `Textul ${index + 1}`}
-          max={MAX_TEXT_VARIANTS}
-          multiline
-          counter={
-            platform === "tiktok"
-              ? { limit: TIKTOK_AD_TEXT_MAX, hard: true }
-              : platform === "google"
-                ? { limit: GOOGLE_LONG_HEADLINE_MAX, hard: true }
-                : { limit: META_PRIMARY_TEXT_VISIBLE }
-          }
-          addLabel="text"
-        />
-        {platform !== "tiktok" ? (
-          <>
-            <TextListField
-              path="creative.headlines"
-              label="Titluri"
-              itemLabel={(index) => `Titlul ${index + 1}`}
-              max={MAX_TEXT_VARIANTS}
-              counter={platform === "google" ? { limit: GOOGLE_HEADLINE_MAX, hard: true } : { limit: META_HEADLINE_VISIBLE }}
-              addLabel="titlu"
-              emptyText={platform === "google" ? "Fără titlu — Google cere cel puțin unul." : "Fără titlu."}
-            />
-            <TextListField
-              path="creative.descriptions"
-              label="Descrieri"
-              itemLabel={(index) => `Descrierea ${index + 1}`}
-              max={MAX_TEXT_VARIANTS}
-              counter={platform === "google" ? { limit: GOOGLE_DESCRIPTION_MAX, hard: true } : undefined}
-              addLabel="descriere"
-              emptyText={platform === "google" ? "Fără descriere — Google cere cel puțin una." : "Fără descriere."}
-            />
-          </>
-        ) : (
-          <>
-            <PathMessages path="creative.headlines" />
-          </>
-        )}
-        <Grid>
-          <SelectField
-            path="creative.cta"
-            label="Butonul"
-            options={(Object.keys(CTA_LABEL) as Array<keyof typeof CTA_LABEL>).map(
-              (cta) => [cta, `${CTA_LABEL[cta]} · ${cta}`] as const
-            )}
-            hint="Textul exact îl pune platforma, în limba celui care vede reclama."
-          />
-          <SelectField
-            path="creative.variants"
-            label="Variantele"
-            options={entries(VARIANT_MODES, VARIANT_MODE_LABEL)}
-            placeholder={`${VARIANT_MODE_LABEL.one_ad_per_text} (implicit)`}
-          />
-        </Grid>
+        <CreativeTextFields platform={platform} />
       </Section>
 
-      {platform === "meta" ? (
-        <Section title="Meta" prefixes={["meta"]}>
-          <PathMessages path="meta" />
-          <Grid>
-            <TextField path="meta.page_id" label="Pagina de Facebook" mono placeholder="id pagină" />
-            <TextField path="meta.instagram_account_id" label="Instagram (opțional)" mono placeholder="id cont" />
-          </Grid>
-          <Grid>
-            <TextField
-              path="meta.dsa_beneficiary"
-              label="Beneficiar (DSA)"
-              placeholder="implicit: setarea contului"
-              hint="Firma care beneficiază de reclamă. Obligatoriu în UE."
-            />
-            <TextField
-              path="meta.dsa_payor"
-              label="Plătitor (DSA)"
-              placeholder="implicit: setarea contului"
-              hint="Cine plătește reclama. Apare pe reclamă, ca beneficiarul."
-            />
-          </Grid>
-          <CheckboxGrid
-            legend="Categorie specială"
-            options={entries(META_SPECIAL_CATEGORIES, META_SPECIAL_CATEGORY_LABEL)}
-            selected={categories}
-            describedBy={`${fieldId("meta.special_ad_categories")}-msg`}
-            onToggle={(value, on) => {
-              const next = on ? [...categories, value] : categories.filter((item) => item !== value);
-              update("meta.special_ad_categories", next.length > 0 ? next : undefined);
-            }}
-          />
-          <PathMessages path="meta.special_ad_categories" />
-          <div className="divide-y divide-hair rounded-panel border border-hair px-4">
-            <ToggleField
-              path="meta.advantage_audience"
-              title="Advantage+ audience"
-              body="Pornit, Meta tratează vârsta și interesele ca sugestii."
-              dangerWhenOn
-            />
-          </div>
-          <RadioRow
-            name="meta-placements"
-            legend="Plasări"
-            value={Array.isArray(placements) ? "manual" : "automatic"}
-            options={[
-              ["automatic", "Automate (Advantage+ placements)"],
-              ["manual", "Alese de mine"],
-            ]}
-            onChange={(value) =>
-              update("meta.placements", value === "automatic" ? undefined : ["instagram_reels", "facebook_reels"])
-            }
-          />
-          {Array.isArray(placements) ? (
-            <CheckboxGrid
-              legend="Unde apare"
-              options={entries(META_PLACEMENTS, META_PLACEMENT_LABEL)}
-              selected={placements.map(String)}
-              onToggle={(value, on) => {
-                const current = placements.map(String);
-                update(
-                  "meta.placements",
-                  on ? [...current, value] : current.filter((item) => item !== value)
-                );
-              }}
-            />
-          ) : null}
-          <PathMessages path="meta.placements" />
-        </Section>
-      ) : platform === "google" ? (
-        <Section title="Google" prefixes={["google"]} aside="Campanie Demand Gen: reclame video pe YouTube, Discover și Gmail.">
-          <PathMessages path="google" />
-          <Grid>
-            <TextField
-              path="google.business_name"
-              label="Numele firmei"
-              placeholder="MERIDIAN"
-              hint={`Apare pe reclamă. Cel mult ${GOOGLE_BUSINESS_NAME_MAX} de caractere.`}
-            />
-            <TextField
-              path="google.logo_url"
-              label="Sigla (adresă https)"
-              mono
-              placeholder="https://…/sigla.png"
-              hint="Pătrată, minim 128×128, PNG sau JPEG. Portalul o urcă în cont."
-            />
-          </Grid>
-          <RadioRow
-            name="google-channels"
-            legend="Unde apare"
-            value={Array.isArray(getIn(draft, "google.channels")) ? "manual" : "all"}
-            options={[
-              ["all", "Peste tot (YouTube, Discover, Gmail, Display)"],
-              ["manual", "Aleg eu"],
-            ]}
-            onChange={(value) =>
-              update("google.channels", value === "all" ? undefined : ["youtube_in_stream", "youtube_in_feed", "youtube_shorts"])
-            }
-          />
-          {Array.isArray(getIn(draft, "google.channels")) ? (
-            <CheckboxGrid
-              legend="Canalele"
-              options={entries(GOOGLE_CHANNELS, GOOGLE_CHANNEL_LABEL)}
-              selected={asArray(getIn(draft, "google.channels")).map(String)}
-              onToggle={(value, on) => {
-                const current = asArray(getIn(draft, "google.channels")).map(String);
-                update("google.channels", on ? [...current, value] : current.filter((item) => item !== value));
-              }}
-            />
-          ) : null}
-          <PathMessages path="google.channels" />
-          <div className="divide-y divide-hair rounded-panel border border-hair px-4">
-            <ToggleField
-              path="google.optimized_targeting"
-              title="Lărgirea automată a publicului (optimized targeting)"
-              body="Pornită, Google livrează și în afara intereselor din plan."
-              dangerWhenOn
-            />
-          </div>
-        </Section>
-      ) : (
-        <Section title="TikTok" prefixes={["tiktok"]}>
-          <PathMessages path="tiktok" />
-          <Grid>
-            <SelectField
-              path="tiktok.identity_type"
-              label="Identitatea de pe reclamă"
-              options={entries(TIKTOK_IDENTITY_TYPES, TIKTOK_IDENTITY_LABEL)}
-            />
-            <TextField path="tiktok.identity_id" label="Id identitate" mono />
-          </Grid>
-          {getIn(draft, "tiktok.identity_type") === "BC_AUTH_TT" ? (
-            <TextField path="tiktok.identity_bc_id" label="Id Business Center (al identității)" mono />
-          ) : null}
-          <SelectField
-            path="tiktok.placements"
-            label="Plasări"
-            options={entries(TIKTOK_PLACEMENTS, TIKTOK_PLACEMENT_LABEL)}
-            placeholder={`${TIKTOK_PLACEMENT_LABEL.tiktok_only} (implicit)`}
-          />
-        </Section>
-      )}
+      <Section title={PLATFORM_LABEL[platform]} prefixes={[platform]} aside={PLATFORM_SECTION_ASIDE[platform]}>
+        <PlatformFields platform={platform} />
+      </Section>
 
       <Section
         title="Îmbunătățiri automate"
         prefixes={[`${platform}.enhancements`]}
         aside="Toate oprite implicit. Un testimonial filmat nu se lasă rescris de platformă."
       >
-        <div className="divide-y divide-hair rounded-panel border border-hair px-4">
-          {platform === "meta"
-            ? META_ENHANCEMENTS.map((key) => (
-                <ToggleField
-                  key={key}
-                  path={`meta.enhancements.${key}`}
-                  title={META_ENHANCEMENT_LABEL[key].title}
-                  body={META_ENHANCEMENT_LABEL[key].body}
-                  dangerWhenOn
-                />
-              ))
-            : platform === "google"
-              ? GOOGLE_ENHANCEMENTS.map((key) => (
-                  <ToggleField
-                    key={key}
-                    path={`google.enhancements.${key}`}
-                    title={GOOGLE_ENHANCEMENT_LABEL[key].title}
-                    body={GOOGLE_ENHANCEMENT_LABEL[key].body}
-                    dangerWhenOn
-                  />
-                ))
-              : TIKTOK_ENHANCEMENTS.map((key) => (
-                  <ToggleField
-                    key={key}
-                    path={`tiktok.enhancements.${key}`}
-                    title={TIKTOK_ENHANCEMENT_LABEL[key].title}
-                    body={TIKTOK_ENHANCEMENT_LABEL[key].body}
-                    dangerWhenOn
-                  />
-                ))}
-        </div>
+        <EnhancementsFields platform={platform} />
       </Section>
     </div>
   );

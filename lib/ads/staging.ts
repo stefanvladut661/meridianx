@@ -40,6 +40,8 @@ function stagingName(workspaceId: string, type: VideoUploadType): string {
   return `${workspaceId}--${Date.now()}--${randomUUID()}.${EXTENSION[type]}`;
 }
 
+const STAGING_NAME = /^[a-z0-9-]+--\d{13}--[0-9a-f-]{36}\.(mp4|mov)$/;
+
 /** Un nume venit înapoi din browser e acceptat doar dacă e al spațiului ăsta. */
 export function isStagingNameOf(workspaceId: string, name: string): boolean {
   const escaped = workspaceId.replace(/[^a-z0-9-]/g, "");
@@ -62,8 +64,9 @@ async function sweepStale(): Promise<void> {
       .from(STAGING_BUCKET)
       .list("", { limit: 100, sortBy: { column: "created_at", order: "asc" } });
     const cutoff = Date.now() - STALE_AFTER_MS;
+    // Doar fișierele anticamerei (`spațiu--moment--uuid.mp4`): dosarul `materiale/` rămâne.
     const stale = (data ?? [])
-      .filter((item) => item.created_at && Date.parse(item.created_at) < cutoff)
+      .filter((item) => STAGING_NAME.test(item.name) && item.created_at && Date.parse(item.created_at) < cutoff)
       .map((item) => item.name);
     if (stale.length > 0) await supabase.storage.from(STAGING_BUCKET).remove(stale);
   } catch {
@@ -122,6 +125,55 @@ export async function createStagingDownload(name: string): Promise<StagingResult
     };
   }
   return { ok: true, data: { url: data.signedUrl, size: typeof info?.size === "number" ? info.size : null } };
+}
+
+// ---------------------------------------------------------------------------
+// Materiale (v2, migrarea 15): același bucket, sub `materiale/`, fără curățenie
+// ---------------------------------------------------------------------------
+
+export const MATERIALS_PREFIX = "materiale/";
+
+/** `materiale/<id>.mp4` — calea unui material, din id-ul lui. */
+export function materialPath(id: string, type: VideoUploadType): string {
+  return `${MATERIALS_PREFIX}${id}.${EXTENSION[type]}`;
+}
+
+export function isMaterialPath(path: string): boolean {
+  return /^materiale\/[0-9a-f-]{36}\.(mp4|mov)$/.test(path);
+}
+
+/** URL-ul semnat pe care browserul urcă materialul (o singură dată, fără suprascriere). */
+export async function createMaterialUpload(path: string): Promise<StagingResult<{ uploadUrl: string }>> {
+  if (!isMaterialPath(path)) return { ok: false, message: "Calea materialului nu e validă." };
+  const supabase = createAdminClient();
+  if (!supabase) return { ok: false, message: "Supabase nu e configurat pe server." };
+  const { data, error } = await supabase.storage.from(STAGING_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) {
+    const message = error?.message ?? "";
+    return { ok: false, message: missingBucket(message) ? NO_BUCKET : `Stocarea a refuzat urcarea: ${message}` };
+  }
+  return { ok: true, data: { uploadUrl: data.signedUrl } };
+}
+
+/** Mărimea fișierului urcat; `null` = nu e (încă) în stocare. */
+export async function materialSize(path: string): Promise<number | null> {
+  if (!isMaterialPath(path)) return null;
+  const supabase = createAdminClient();
+  if (!supabase) return null;
+  const { data } = await supabase.storage.from(STAGING_BUCKET).info(path).catch(() => ({ data: null }));
+  return typeof data?.size === "number" ? data.size : null;
+}
+
+/** Linkuri de citire semnate: pentru platformă (3 ore) sau pentru previzualizarea din pagină (1 oră). */
+export async function createMaterialLinks(paths: string[], seconds = DOWNLOAD_LINK_SECONDS): Promise<Map<string, string>> {
+  const links = new Map<string, string>();
+  const valid = paths.filter(isMaterialPath);
+  if (valid.length === 0) return links;
+  const supabase = createAdminClient();
+  if (!supabase) return links;
+  const { data } = await supabase.storage.from(STAGING_BUCKET).createSignedUrls(valid, seconds);
+  for (const item of data ?? []) if (item.path && item.signedUrl) links.set(item.path, item.signedUrl);
+  return links;
 }
 
 export async function removeStaged(name: string): Promise<void> {

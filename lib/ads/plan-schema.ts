@@ -11,6 +11,7 @@ import {
   META_PLACEMENTS,
   META_SPECIAL_CATEGORIES,
   OBJECTIVES,
+  PLATFORMS,
   TIKTOK_IDENTITY_TYPES,
   TIKTOK_PLACEMENTS,
   VARIANT_MODES,
@@ -292,6 +293,11 @@ export const googleSchema = z.strictObject({
 export const planSchema = z.strictObject({
   /** Opțional. Dacă există, trebuie să fie exact `meridian-ads/1`. */
   format: z.literal(PLAN_FORMAT).optional(),
+  /**
+   * v2, opțional: canalul (`meta`, `google`, `tiktok`). Îl scrie formularul
+   * „Creează”; dacă există, trebuie să fie platforma spațiului de lucru.
+   */
+  channel: z.enum(PLATFORMS).optional(),
   workspace: z.enum(WORKSPACE_IDS),
   /** Meta: `act_` + cifre (sau doar cifrele). TikTok: advertiser_id, doar cifre. */
   ad_account: z.string().trim().min(1).max(40),

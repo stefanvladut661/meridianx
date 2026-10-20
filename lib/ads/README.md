@@ -347,6 +347,49 @@ refuzată, trei apeluri (TikTok cu campanie, „Nu știu” fără campanie, Met
 fila Grupuri fără coloană, ștergerea unei note, lista filtrată pe TikTok, fără depășire
 orizontală la 360, 768, 1024 și 1440 px. Consola curată.
 
+**Faza 6 (2026-10-20) — „Creează” pe pași și Materiale.**
+
+- **Materiale** (`/admin/ads/materiale`, migrarea 15): video-urile agenției, urcate o dată din
+  browser în bucket-ul privat `ads-uploads`, sub `materiale/<id>.mp4` (URL semnat pentru un
+  singur fișier, ca la „Fișier nou”; tokenurile nu ajung în browser). Browserul citește din
+  fișier durata și formatul (9:16, 16:9…) înainte de urcare. Fiecare material e al unui client
+  sau al agenției; lista arată materialele clientului din bara de sus și pe cele ale agenției,
+  cu previzualizare (link semnat, o oră) și cu conturile în care a ajuns deja. „Scoate din
+  listă” doar îl ascunde: fișierul și campaniile făcute cu el rămân. Curățenia anticamerei (6
+  ore) atinge acum doar fișierele cu nume de anticameră, nu dosarul `materiale/`.
+- **„Creează”** (`/admin/ads/creeaza`, butonul principal din Campanii; „Importă JSON” rămâne
+  lângă el): canal (contul clientului, pe Meta, Google sau TikTok) → obiectiv (cu numele propus
+  „client · obiectiv · luna”, pixelul și pagina de destinație) → public și buget → reclame
+  (video-urile alese din Materiale, textele, butonul, ce cere platforma, îmbunătățirile, toate
+  oprite) → verificare → „Creează pe pauză”. Câmpurile sunt aceleași ca în editorul JSON
+  (`plan-form.tsx`, împărțit în bucăți refolosite), cu aceleași erori sub fiecare câmp, arătate
+  abia după „Continuă” pe pasul respectiv.
+- **Același plan JSON:** formularul scrie exact formatul din „Importă JSON”, extins cu
+  `"channel"` (opțional; dacă există, trebuie să fie platforma spațiului — eroare clară
+  altfel). Planul se vede la verificare și se poate deschide în „Importă JSON”.
+- **Verificarea:** întâi materialele alese care nu sunt încă în contul ales se trimit acolo
+  (platforma le descarcă de la un link semnat de 3 ore; Google le primește de la server, ca la
+  „Fișier nou”), cu starea fiecăruia pe ecran; o trimitere reușită se ține minte
+  (`ads_material_uploads`), deci același video nu se trimite de două ori în același cont. Apoi
+  `plan-validate` local și verificarea platformei, ca la „Importă JSON”; crearea trece prin
+  aceeași `createPausedCampaign` (amprentă, dublură, lucrare reluabilă la limite).
+
+Testat pe Supabase fals (cu stocare: urcare semnată, informații, linkuri semnate), Meta și
+TikTok falși care descarcă fișierul de la link, în Chrome: două video-uri urcate în Materiale
+(durata și formatul citite corect, previzualizare, redenumire); „Creează” pe TikTok — pașii
+blocați cu mesaj fără cont, fără pixel și pagină, fără video; video-ul trimis în cont la
+verificare (TikTok-ul fals a descărcat toți cei 1.475.819 octeți), verificare, campania creată
+`DISABLE` cu reclama pe video-ul trimis, planul cu `"channel": "tiktok"`; „Creează” pe Meta cu
+două video-uri (ambele trimise, o campanie, două reclame, toate `PAUSED`); Materiale arată apoi
+conturile fiecărui video. 25 de încărcări ale paginilor noi pe build-ul de producție, fără erori
+de hidratare; fără depășire orizontală la 360, 768, 1024 și 1440 px.
+
+**De testat cu tokenul real:** că Meta și TikTok descarcă un link semnat Supabase din
+`materiale/` (același drum ca „Fișier nou”, încă neconfirmat pe un cont real); trimiterea unui
+material pe Google (prin YouTube, din server — Google-ul fals nu are urcarea pe YouTube, deci
+drumul ăsta n-a fost rulat cap-coadă); fișierele peste 50 MB cer Supabase Pro (limita din
+„Faza 3 — video nou, din browser”).
+
 Decizii (faza 2): perioada implicită e 7 zile (ca în schiță); „Rezultate” adună campaniile măsurate,
 iar sub cifră scrie din ce („94 de conversii · 16 apeluri”) și câte sunt nemăsurate; costul
 per rezultat împarte doar cheltuiala campaniilor măsurate; meniul arată Materiale și
@@ -2965,3 +3008,9 @@ Lista crește la fiecare fază; ce e bifat aici e făcut de tine, nu de cod.
    refaci autorizarea și pui tokenul nou.
 7. **Migrarea 14** (`supabase/migrations/00000000000014_ads_calls.sql`): apelurile notate. Fără
    ea, pagina Apeluri spune că lipsește tabelul, iar coloana „Apeluri notate” rămâne goală.
+8. **Migrarea 15** (`supabase/migrations/00000000000015_ads_materials.sql`): Materiale și
+   evidența trimiterilor în conturi. Folosește bucket-ul `ads-uploads` din migrarea 7. Fără ea,
+   pagina Materiale spune că lipsesc tabelele, iar „Creează” nu are ce video-uri să arate.
+9. **Prima campanie din „Creează”, pe fiecare platformă:** urmărește la verificare că video-ul
+   ajunge în biblioteca contului (Meta/TikTok îl descarcă din Materiale). Dacă platforma spune că
+   nu poate descărca linkul, scrie-mi mesajul exact.

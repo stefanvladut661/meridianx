@@ -178,6 +178,7 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
         channel={selection.channel}
         range={selection.range}
         importHref="/admin/ads/nou"
+        createHref={`/admin/ads/creeaza?${selectionQuery({ ...selection, clientId: client.id })}`}
         calls={calls.counts}
         callsHref={`/admin/ads/apeluri?${selectionQuery({ ...selection, clientId: client.id })}`}
         actions={{ pause: pauseAction, days: entityDaysAction, setResult: setResultAction }}

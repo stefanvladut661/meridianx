@@ -96,6 +96,7 @@ export type PlanValidation =
 const LABELS: Record<string, string> = {
   "": "Planul",
   format: "Câmpul format",
+  channel: "Canalul (channel)",
   workspace: "Spațiul de lucru (workspace)",
   ad_account: "Contul de reclame (ad_account)",
   campaign: "Secțiunea campaign",
@@ -765,6 +766,13 @@ function crossRules(raw: Record<string, unknown>, context: ValidationContext): P
   const platform = workspace.platform;
   const errors: PlanProblem[] = [];
   const name = workspaceName(workspace);
+
+  if (typeof raw.channel === "string" && raw.channel !== platform && (PLATFORMS as readonly string[]).includes(raw.channel)) {
+    errors.push({
+      path: "channel",
+      message: `Planul spune canalul ${PLATFORM_LABEL[raw.channel as Platform]}, dar ${name} e pe ${PLATFORM_LABEL[platform]}. Corectează canalul sau spațiul de lucru.`,
+    });
+  }
 
   if (context.currentWorkspace && context.currentWorkspace !== workspace.id) {
     const current = findWorkspace(context.currentWorkspace);
