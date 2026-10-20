@@ -2,10 +2,13 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { runAdsSync } from "@/lib/ads/sync";
 import { runSearchTermsSync } from "@/lib/ads/google/terms/sync";
+import { runModelSync } from "@/lib/ads/model/sync";
 
 /**
  * GET /admin/ads/sincronizare — cron-ul zilnic al cifrelor (Meta, TikTok,
- * Google) și, din faza 12, al termenilor de căutare Google.
+ * Google) și, din faza 12, al termenilor de căutare Google. Din v2, întâi
+ * modelul comun: structura și cifrele conturilor urmărite (`lib/ads/model/sync.ts`),
+ * cu o limită de timp — ce nu încape rămâne pentru rularea următoare.
  *
  * Vercel Cron trimite `Authorization: Bearer <CRON_SECRET>`. Fără secret, în
  * producție ruta refuză tot: o sincronizare deschisă oricui ar consuma din
@@ -41,6 +44,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // v2: conturile urmărite, pe trei niveluri. O problemă aici nu oprește restul.
+    const model = await runModelSync({ trigger: "cron", budgetMs: 30_000 }).catch((error: unknown) => {
+      console.error("[ads-sync] modelul comun n-a pornit:", error instanceof Error ? error.message : "necunoscut");
+      return null;
+    });
     const outcome = await runAdsSync({ trigger: "cron" });
     // Faza 12: termenii de căutare, după cifre, în aceeași rulare. O problemă aici
     // nu strică sincronizarea cifrelor; starea fiecărui cont stă pe rândul lui de reguli.
@@ -56,6 +64,7 @@ export async function GET(request: NextRequest) {
         problems: outcome.problems.length,
         skipped: outcome.skipped.length,
         terms: terms ? { accounts: terms.accounts, rows: terms.rows, problems: terms.problems.length } : { failed: true },
+        model: model ? { status: model.status, accounts: model.accounts, rows: model.rows, problems: model.problems.length, leftover: model.leftover } : { failed: true },
       },
       { status: outcome.status === "failed" ? 502 : 200, headers: { "Cache-Control": "no-store" } }
     );

@@ -133,6 +133,41 @@ ramuri înainte de `main` sunt `redesign-larven`, `feat/carduri-proiecte-simple`
 făcută din `origin/main` fără legătură de urmărire spre `main`; fiecare push merge cu
 destinație explicită (`git push origin feat/ads-portal-v2:refs/heads/feat/ads-portal-v2`).
 
+**Faza 1 (2026-10-20) — modelul comun, pe Google.**
+
+- **Migrarea 12** (`supabase/migrations/00000000000012_ads_model.sql`): clienții, conturile,
+  rândurile (campanie / grup / reclamă), cifrele pe zi cu zilele vechi înghețate, rezultatul
+  ales pe campanie, jurnalul acțiunilor, jurnalul sincronizărilor și două funcții de citire
+  (`ads_entity_totals`, `ads_entity_days`) — sumele se fac în bază, pentru că API-ul Supabase
+  întoarce cel mult 1.000 de rânduri pe cerere. RLS ca peste tot: citire doar pentru admini.
+- **`lib/ads/model/`**: tipurile comune, stările normalizate (`status.ts`), rezultatele cu
+  „nemăsurat” și pluralul românesc („1 apel”, „4 apeluri”, „20 de apeluri”, `results.ts`),
+  moștenirea stării (o reclamă sub o campanie pe pauză e „Pe pauză”, `inherit.ts`), stocarea
+  (`store.ts`), sincronizarea (`sync.ts`) și conturile vizibile tokenului (`discover.ts`).
+- **Google în modelul comun** (`lib/ads/google/structure.ts`, GAQL v26, doar citiri):
+  campaniile, grupurile și reclamele cu `status` + `primary_status` (+ aprobarea reclamei);
+  cifrele pe zi citite separat pe fiecare nivel (Performance Max n-are grupuri, deci nu se
+  adună din reclame); conversiile principale (`g:conversions`) și, pe acțiuni, toate
+  conversiile (`g:ca:<id>`). Câmpurile și valorile verificate pe referința v26.
+- **Pagina „Clienți”** (`/admin/ads/clienti`): client nou (banii agenției sau ai clientului),
+  conturile pe care le vede tokenul spațiului sau un id scris de mână, urmărirea pornită /
+  oprită pe cont, „Actualizează acum”. Un cont se leagă doar printr-un spațiu cu același
+  proprietar ca al clientului — plafonul rămâne al spațiului.
+- **Cron-ul** rulează întâi modelul comun (30 de secunde cel mult; ce nu încape rămâne pentru
+  rularea următoare), apoi cifrele vechi și termenii, ca până acum.
+
+Testat pe Google și Supabase falși, în Chrome: clientul nou (și refuzul aceluiași nume),
+contul văzut prin MCC, prima actualizare (11 campanii, 3 grupuri, 4 reclame, 1.184 de zile;
+stările Activă, Pe pauză, În verificare, Respinsă; campania = suma grupurilor ei pe fiecare
+zi; conversiile pe acțiuni), a doua actualizare după două minute (doar ultimele 7 zile, fără
+dubluri), o campanie ștearsă între timp în Google (rândul rămâne, cu starea „Ștearsă”), 360 px
+fără derulare laterală, consola curată. **De testat cu tokenul real:** citirea pe un cont
+Google adevărat (doar citiri).
+
+Decizii: clientul e un nume în Supabase, nu un spațiu nou — spațiile rămân tokenul și
+plafonul; prima sincronizare aduce 90 de zile (nu 37 de luni, ca sincronizarea veche):
+destul pentru „luna trecută” comparată cu cea dinainte și repede pe conturi mari.
+
 ---
 
 ## Regula care nu se negociază
@@ -2609,3 +2644,8 @@ Lista crește la fiecare fază; ce e bifat aici e făcut de tine, nu de cod.
    Fără ea, după alegerea contului Google ajungi pe prima pagină a site-ului de producție, nu
    în portalul de pe preview. Variabilele Supabase, `ADMIN_EMAILS` și tokenurile trebuie să
    fie bifate și pe *Preview* în Vercel → Settings → Environment Variables.
+2. **Migrarea 12** (`supabase/migrations/00000000000012_ads_model.sql`): Supabase → SQL
+   Editor → tab nou → lipești tot fișierul → Run. Se poate rula de mai multe ori. Fără ea,
+   pagina „Clienți” și ecranul nou spun că lipsesc tabelele; restul portalului merge.
+3. **Primul client**: `/admin/ads/clienti` → numele → „Banii clientului” (sau „Banii agenției”
+   pentru Meridian) → la fiecare platformă, contul din listă → „Actualizează acum”.

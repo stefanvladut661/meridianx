@@ -21,6 +21,7 @@ const LINKS: ReadonlyArray<{ href: string; label: string; exact: boolean; google
   { href: "/admin/ads/lot", label: "Lot", exact: false },
   { href: "/admin/ads/claude", label: "Pentru Claude", exact: false },
   { href: "/admin/ads/statistici", label: "Statistici", exact: false },
+  { href: "/admin/ads/clienti", label: "Clienți", exact: false },
 ];
 
 export function AdsNav({ platform }: { platform: Platform }) {
