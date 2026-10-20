@@ -95,22 +95,9 @@ Fără Supabase configurat, în dezvoltare API-ul răspunde 201 cu id sintetic �
 
 1. Importă repo-ul în Vercel. Framework-ul e detectat automat.
 2. Setează variabilele de mediu de mai jos în **Project Settings → Environment Variables**, pentru Production și Preview.
-3. Rulează migrările din `supabase/migrations/`, în ordinea numerelor, apoi pornește intrarea cu Google (mai jos, „Intrarea în admin”) și pune adresa Google în `ADMIN_EMAILS`.
+3. Rulează **ambele** migrări din `supabase/migrations/`, în ordinea numerelor, apoi creează contul de admin (Authentication → Users → Add user) și pune aceeași adresă în `ADMIN_EMAILS`.
 4. Conectează domeniul și verifică `NEXT_PUBLIC_SITE_URL` — din el se construiesc canonical, sitemap și robots.
 5. Verifică după deploy: `/api/health` (trebuie `"ready": true`), `/sitemap.xml`, `/robots.txt`, `/og.png?division=video&title=test`.
-
-### Intrarea în admin — doar cu Google
-
-`/admin` (lead-uri și reclame) se deschide doar cu un cont Google a cărui adresă e în `ADMIN_EMAILS`. Nu există parolă și nici formular de parolă. Poarta (`getAdminUser()`) refuză și o sesiune deschisă cu parola direct prin API-ul Supabase.
-
-O singură dată, pe proiect:
-
-1. **Google Cloud** → APIs & Services → Credentials → Create credentials → OAuth client ID → tip **Web application**. La „Authorized redirect URIs” pui adresa de întoarcere pe care ți-o arată Supabase la pasul 2 (`https://<proiect>.supabase.co/auth/v1/callback`). Dacă cere ecranul de consimțământ: tip External, numele aplicației, emailul tău.
-2. **Supabase** → Authentication → Sign In / Providers → **Google**: pornit, cu Client ID și Client Secret de la pasul 1.
-3. **Supabase** → Authentication → URL Configuration → **Redirect URLs**: adaugă `https://www.meridianx.ro/admin/auth/callback` (și `http://localhost:3000/admin/auth/callback` pentru lucru local). Fără ea, Supabase trimite omul pe prima pagină a site-ului și intrarea nu se termină.
-4. **Vercel** → `ADMIN_EMAILS` = adresa Google (mai multe, cu virgulă), apoi redeploy. **Supabase** → SQL Editor, aceeași adresă în tabela din migrarea 5: `insert into public.admin_emails (email) values ('adresa@gmail.com') on conflict do nothing;`. Pe cele vechi le scoți din amândouă.
-
-Prima intrare cu Google creează contul în Supabase. Dacă ai oprit înregistrările noi, creează-l întâi din Authentication → Users → Add user, cu aceeași adresă; Supabase leagă singur Google de el.
 
 ### Verificarea backendului
 
@@ -146,7 +133,7 @@ Declanșare de mână: logat în `/admin`, deschide `/api/cron/keepalive/report`
 | `NEXT_PUBLIC_SUPABASE_URL` | da | nu se salvează niciun lead |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | da | idem |
 | `SUPABASE_SERVICE_ROLE_KEY` | da | insert-ul de pe server |
-| `ADMIN_EMAILS` | **da în producție** | adresele Google cu acces în `/admin`; fără listă, orice cont Google care intră ar vedea toate lead-urile — panoul se blochează intenționat |
+| `ADMIN_EMAILS` | **da în producție** | fără listă, orice cont creat pe proiectul Supabase ar vedea toate lead-urile — panoul se blochează intenționat |
 | `RESEND_API_KEY` | da | nu pleacă emailuri de notificare |
 | `LEAD_NOTIFICATION_EMAIL` | da | nu se știe cui se trimit lead-urile |
 | `RESEND_FROM_EMAIL` | da | dacă domeniul nu e verificat în Resend, nu pleacă nimic |

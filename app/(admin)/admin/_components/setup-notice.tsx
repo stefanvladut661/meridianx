@@ -25,9 +25,9 @@ const STEPS: Array<{ title: string; body: string; code?: string }> = [
     code: "NEXT_PUBLIC_SUPABASE_URL · NEXT_PUBLIC_SUPABASE_ANON_KEY · SUPABASE_SERVICE_ROLE_KEY",
   },
   {
-    title: "Pornește intrarea cu Google și trece-te pe listă",
-    body: "Panoul se deschide doar cu Google. În Supabase: Authentication → Sign In / Providers → Google, cu un client OAuth de tip Web din Google Cloud, și adresa /admin/auth/callback la Redirect URLs. Apoi pune adresa ta Google în ADMIN_EMAILS — fără listă, orice cont Google care intră ar vedea toate lead-urile.",
-    code: "ADMIN_EMAILS · /admin/auth/callback",
+    title: "Creează contul de admin și trece-l pe listă",
+    body: "Authentication → Users → Add user, cu email și parolă. Nu există înregistrare din site: contul se face manual, intenționat. Apoi pune aceeași adresă în ADMIN_EMAILS — proiectele Supabase acceptă înregistrări implicit, iar fără listă orice cont creat pe proiect ar vedea toate lead-urile.",
+    code: "ADMIN_EMAILS",
   },
   {
     title: "Pornește emailurile",

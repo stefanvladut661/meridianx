@@ -1137,28 +1137,3 @@ ultima întrebare).
   `registry.ts`. Pagina și ruta sunt generice.
 - **Verificat:** tsc, eslint, POST valid/gol/slug necunoscut/honeypot,
   360 și 390 fără overflow, desktop.
-
-## Intrarea în admin doar cu Google (2026-10-20)
-
-Branch `feat/admin-google-login`. Formularul cu email și parolă a dispărut:
-`/admin/login` are un singur buton, „Continuă cu Google”, link spre
-`/admin/auth/google` (pornește OAuth cu PKCE prin Supabase). Întoarcerea e
-la `/admin/auth/callback`: schimbă codul pe sesiune și verifică
-`ADMIN_EMAILS`. Erorile ajung la login ca un cod scurt în `?eroare=`.
-
-- **Garda (`getAdminUser`)** cere în plus ca sesiunea să fie deschisă prin
-  OAuth (claim-ul `amr` din token). O sesiune deschisă cu parola direct
-  prin API-ul Supabase nu mai intră, nici în lead-uri, nici în reclame.
-- **Vault-ul nu e atins**: are login-ul lui, cu parolă.
-- **De făcut de către om, ÎNAINTE de merge în main** (altfel panoul rămâne
-  fără cale de intrare): clientul OAuth în Google Cloud, Google pornit în
-  Supabase, `/admin/auth/callback` la Redirect URLs, adresa Google în
-  `ADMIN_EMAILS` (Vercel) și în `admin_emails` (Supabase). Pașii: README →
-  „Intrarea în admin — doar cu Google”.
-- **Verificat** pe un Supabase fals, local, în Chrome: Google oprit, omul
-  renunță, înregistrări oprite, cont din afara listei (iese fără sesiune),
-  contul de pe listă (intră în `/admin` și `/admin/ads`), sesiune cu parola
-  (refuzată); 360 fără overflow; build, tsc, eslint.
-- **Neverificat fără Supabase real:** forma exactă a erorilor trimise de
-  Supabase la întoarcere (`error_code=signup_disabled`) și claim-ul `amr`
-  pe sesiunile reale de Google (documentat ca `oauth`).

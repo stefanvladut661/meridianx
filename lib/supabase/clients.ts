@@ -33,26 +33,6 @@ export function isAuthConfigured(): boolean {
 }
 
 /**
- * E pornit Google în Supabase (Authentication → Providers)? Din setările
- * publice ale autentificării. `null` când nu se pot citi — atunci decide
- * răspunsul lui Supabase la intrare.
- */
-export async function isGoogleSignInEnabled(): Promise<boolean | null> {
-  if (!SUPABASE_URL || !ANON_KEY) return null;
-  try {
-    const response = await fetch(`${SUPABASE_URL}/auth/v1/settings`, {
-      headers: { apikey: ANON_KEY },
-      cache: "no-store",
-    });
-    if (!response.ok) return null;
-    const settings = (await response.json()) as { external?: Record<string, unknown> };
-    return settings.external?.google === true;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Client cu service role — ocolește RLS.
  * Se folosește DOAR pe căile în care ruta a decis deja cine are voie:
  * insert-ul public de lead (anon nu are politică de insert) și scrierile
@@ -155,41 +135,17 @@ export function checkAdminEmail(email: string | null | undefined): AdminVerdict 
 
 export const ADMIN_ACCESS_MESSAGES: Record<Exclude<AdminVerdict, "allowed">, string> = {
   not_allowlisted:
-    "Contul Google ales nu are acces la panou. Intră cu alt cont sau cere să-ți fie adăugată adresa în ADMIN_EMAILS.",
+    "Contul ăsta nu are acces la panou. Cere-i administratorului să îți adauge adresa în ADMIN_EMAILS.",
   allowlist_missing:
     "Panoul e blocat până se setează ADMIN_EMAILS în variabilele de mediu — altfel orice cont Supabase ar putea intra. Adaugă adresa ta acolo și redeploy.",
 };
 
 /**
- * Sesiunea a fost deschisă prin OAuth? Din claim-ul `amr` al tokenului.
- * Google e singurul furnizor OAuth pornit pentru admin.
+ * Utilizatorul autentificat ȘI cu drept de admin, sau `null`.
+ * `getUser()` (nu `getSession()`) — verifică tokenul la Supabase, nu are
+ * încredere în cookie-ul local.
  *
- * DE CE: panoul se deschide doar cu Google, dar cheia anon e publică. Un
- * cont de pe listă care are și parolă în Supabase ar putea deschide o
- * sesiune cu parola direct prin API-ul Supabase, ocolind pagina de login.
- * Tokenul e validat de `getUser(token)` înainte să ajungă aici.
- */
-function openedWithOAuth(accessToken: string): boolean {
-  try {
-    const payload = JSON.parse(
-      Buffer.from(accessToken.split(".")[1] ?? "", "base64url").toString("utf8")
-    ) as { amr?: unknown };
-    return (
-      Array.isArray(payload.amr) &&
-      payload.amr.some((entry) => (entry as { method?: unknown } | null)?.method === "oauth")
-    );
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Utilizatorul autentificat cu Google ȘI cu drept de admin, sau `null`.
- * Tokenul din cookie (reîmprospătat de Supabase dacă a expirat) se
- * validează la Supabase cu `getUser(token)` — nu avem încredere în
- * cookie-ul local —, iar metoda de intrare se citește din același token.
- *
- * Poarta e AICI, nu în pagina de login: rutele API și acțiunile de
+ * Poarta e AICI, nu în formularul de login: rutele API și acțiunile de
  * server trec toate prin funcția asta, deci un cont scos din listă pierde
  * accesul la următoarea cerere, nu la următoarea autentificare.
  */
@@ -197,23 +153,12 @@ export async function getAdminUser(): Promise<{ id: string; email: string | null
   const supabase = await createReadOnlySessionClient();
   if (!supabase) return null;
 
-  const { data: stored } = await supabase.auth.getSession();
-  const accessToken = stored.session?.access_token;
-  if (!accessToken) return null;
-
-  const { data, error } = await supabase.auth.getUser(accessToken);
+  const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
 
   if (checkAdminEmail(data.user.email) !== "allowed") {
     console.warn(
       `[admin] acces refuzat pentru ${data.user.email ?? "cont fără email"} — nu e în ADMIN_EMAILS.`
-    );
-    return null;
-  }
-
-  if (!openedWithOAuth(accessToken)) {
-    console.warn(
-      `[admin] acces refuzat pentru ${data.user.email ?? "cont fără email"} — sesiunea nu e deschisă cu Google.`
     );
     return null;
   }
