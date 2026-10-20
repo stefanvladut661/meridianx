@@ -4,6 +4,7 @@ import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { Mark } from "@/components/site/mark";
 import { LoginForm } from "../_components/login-form";
 import { MeridianRing } from "../_components/meridian-ring";
+import { loginErrorMessage } from "./messages";
 
 export const metadata: Metadata = {
   title: "Autentificare — MERIDIAN Admin",
@@ -16,13 +17,19 @@ export const metadata: Metadata = {
  * altfel s-ar redirecta la infinit spre el însuși.
  *
  * Un singur obiect pe ecran: fișa de intrare, așezată pe arcul de
- * meridian. Nimic de citit înainte de a te loga.
+ * meridian. Nimic de citit înainte de a te loga. Intrarea e doar cu
+ * Google; `?eroare=` vine de la rutele din `/admin/auth/`.
  */
-export default async function AdminLoginPage() {
+export default async function AdminLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ eroare?: string | string[] }>;
+}) {
   const user = await getAdminUser();
   if (user) redirect("/admin");
 
   const configured = isAuthConfigured();
+  const error = loginErrorMessage((await searchParams).eroare);
 
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-5 py-16">
@@ -48,18 +55,17 @@ export default async function AdminLoginPage() {
         <p className="eyebrow mt-8 flex items-center gap-2 !text-[11.5px]">
           <span aria-hidden className="h-2 w-2 rounded-full bg-[#2f5bff]" />
           <span aria-hidden className="-ml-1 h-2 w-2 rounded-full bg-[#1fb583]" />
-          Admin · Lead-uri
+          Admin · Lead-uri · Reclame
         </p>
         <h1 className="display mt-3 text-[2.125rem] text-bone">
           Intră în panou
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-dim">
-          Acces doar pentru echipă. Nu există înregistrare — contul se creează
-          din Supabase.
+          Acces doar pentru echipă, cu contul Google de pe lista de admini.
         </p>
 
         {configured ? (
-          <LoginForm />
+          <LoginForm error={error} />
         ) : (
           <div className="mt-8 rounded-panel border border-hair-strong bg-ink/60 p-5">
             <p className="eyebrow">Nu e configurat</p>
