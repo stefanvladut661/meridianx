@@ -11,6 +11,7 @@ import { STATUS_ORDER, canPause } from "@/lib/ads/model/status";
 import type { AccountSummary, EntityRow, Figures, Level } from "@/lib/ads/model/types";
 import type { EntityDay } from "@/lib/ads/model/read";
 import type { PauseRequestResult } from "@/lib/ads/model/pause";
+import { callBreakdown, type CallCount } from "@/lib/ads/model/calls-shared";
 import { cn } from "@/lib/utils";
 import { ChannelIcon } from "./channel-icon";
 import { IconPause, IconPlus, IconSearch, IconSort } from "./icons";
@@ -32,7 +33,7 @@ const LEVEL_EMPTY: Record<Level, string> = { campaign: "Nicio campanie", group: 
 /** Platformele cu pauza din portal (funcția separată de pauză, cu garda ei). */
 const PAUSE_PLATFORMS = new Set(["google", "meta", "tiktok"]);
 
-type SortKey = "name" | "status" | "budget" | "spend" | "results" | "cost" | "impressions" | "clicks" | "ctr" | `x:${string}`;
+type SortKey = "name" | "status" | "budget" | "spend" | "results" | "calls" | "cost" | "impressions" | "clicks" | "ctr" | `x:${string}`;
 type Sort = { key: SortKey; dir: "asc" | "desc" };
 
 function parseLevel(value: string | null): Level {
@@ -41,7 +42,7 @@ function parseLevel(value: string | null): Level {
 
 function parseSort(value: string | null): Sort {
   const [key, dir] = (value ?? "").split(".");
-  const known = ["name", "status", "budget", "spend", "results", "cost", "impressions", "clicks", "ctr"];
+  const known = ["name", "status", "budget", "spend", "results", "calls", "cost", "impressions", "clicks", "ctr"];
   if ((known.includes(key) || key?.startsWith("x:")) && (dir === "asc" || dir === "desc")) return { key: key as SortKey, dir };
   return { key: "spend", dir: "desc" };
 }
@@ -67,6 +68,8 @@ export function CampaignsScreen({
   range,
   actions,
   importHref,
+  calls,
+  callsHref,
 }: {
   entities: EntityRow[];
   totals: Record<string, Figures>;
@@ -76,6 +79,9 @@ export function CampaignsScreen({
   range: DateRange;
   actions: ScreenActions;
   importHref: string;
+  /** „Apeluri notate” pe campanie, în perioadă (din pagina Apeluri). */
+  calls: Record<string, CallCount>;
+  callsHref: string;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -184,6 +190,8 @@ export function CampaignsScreen({
           return entity.dailyBudget ?? entity.lifetimeBudget ?? -1;
         case "results":
           return f.results ?? -1;
+        case "calls":
+          return calls[entity.id]?.total ?? 0;
         case "cost":
           return f.costPerResult ?? Number.POSITIVE_INFINITY;
         case "impressions":
@@ -206,7 +214,11 @@ export function CampaignsScreen({
       const order = typeof x === "string" ? x.localeCompare(String(y), "ro") : x - (y as number);
       return (sort.dir === "asc" ? order : -order) || a.name.localeCompare(b.name, "ro");
     });
-  }, [entities, level, showRemoved, figures, campaigns, groups, query, sort, parentCampaign, parentGroup, columns]);
+  }, [entities, level, showRemoved, figures, campaigns, groups, query, sort, parentCampaign, parentGroup, columns, calls]);
+
+  // Apelurile se notează pe campanie: coloana stă doar pe fila Campanii.
+  const showCalls = level === "campaign";
+  const callsTotal = showCalls ? rows.reduce((sum, entity) => sum + (calls[entity.id]?.total ?? 0), 0) : 0;
 
   const selected = level === "campaign" ? campaigns : level === "group" ? groups : ads;
   const setSelected = level === "campaign" ? setCampaigns : level === "group" ? setGroups : setAds;
@@ -401,6 +413,7 @@ export function CampaignsScreen({
                   {sortButton("budget", "Buget")}
                   {sortButton("spend", "Cheltuit")}
                   {sortButton("results", "Rezultate", "apel, lead sau formular — ce numără campania")}
+                  {showCalls ? sortButton("calls", "Apeluri notate", "notate de mână, în Apeluri") : null}
                   {sortButton("cost", "Cost / rez.", "cost per rezultat")}
                   {sortButton("impressions", "Afișări")}
                   {sortButton("clicks", "Clickuri")}
@@ -448,6 +461,18 @@ export function CampaignsScreen({
                       </td>
                       <td className="whitespace-nowrap border-b border-hair px-3 py-2 text-right align-top font-semibold tabular-nums text-bone">{formatAmount(f.spend, entity.currency ?? "")}</td>
                       <td className={cn("whitespace-nowrap border-b border-hair px-3 py-2 text-right align-top tabular-nums", f.results === null ? "text-dim" : "text-bone")}>{resultText(f)}</td>
+                      {showCalls ? (
+                        <td className="whitespace-nowrap border-b border-hair px-3 py-2 text-right align-top tabular-nums">
+                          {calls[entity.id]?.total ? (
+                            <span title={callBreakdown(calls[entity.id])} className="text-bone">
+                              {calls[entity.id].total}
+                              <span className="sr-only"> ({callBreakdown(calls[entity.id])})</span>
+                            </span>
+                          ) : (
+                            <span className="text-dim">—</span>
+                          )}
+                        </td>
+                      ) : null}
                       <td className="whitespace-nowrap border-b border-hair px-3 py-2 text-right align-top tabular-nums text-bone/85">{f.costPerResult === null ? "—" : formatAmount(f.costPerResult, entity.currency ?? "")}</td>
                       <td className="whitespace-nowrap border-b border-hair px-3 py-2 text-right align-top tabular-nums text-bone/85">{formatCount(f.impressions)}</td>
                       <td className="whitespace-nowrap border-b border-hair px-3 py-2 text-right align-top tabular-nums text-bone/85">{formatCount(f.clicks)}</td>
@@ -473,6 +498,14 @@ export function CampaignsScreen({
                     {footer.currency ? formatAmount(footer.spend, footer.currency) : "monede diferite"}
                   </td>
                   <td className="px-3 py-2" />
+                  {showCalls ? (
+                    <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-bone/85">
+                      <Link href={callsHref} className="hover:text-[var(--md-a1)] hover:underline">
+                        {callsTotal}
+                        <span className="sr-only"> apeluri notate — deschide Apeluri</span>
+                      </Link>
+                    </td>
+                  ) : null}
                   <td className="px-3 py-2" />
                   <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-bone/85">{formatCount(footer.impressions)}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-bone/85">{formatCount(footer.clicks)}</td>
@@ -517,6 +550,11 @@ export function CampaignsScreen({
                       <dd className="tabular-nums text-bone">{f.costPerResult === null ? "—" : formatAmount(f.costPerResult, entity.currency ?? "")}</dd>
                     </div>
                   </dl>
+                  {showCalls && calls[entity.id]?.total ? (
+                    <p className="mt-1.5 text-[13px] text-bone/85">
+                      <span className="text-dim">Apeluri notate:</span> {calls[entity.id].total} · {callBreakdown(calls[entity.id])}
+                    </p>
+                  ) : null}
                   {canPause(entity.status) && PAUSE_PLATFORMS.has(entity.platform) ? (
                     <button type="button" onClick={() => setPauseIds([entity.id])} className="btn btn-ghost mt-3 !min-h-10 w-full !gap-1.5 !text-[13.5px]">
                       <IconPause size={15} />

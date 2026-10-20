@@ -322,6 +322,31 @@ după una reușită.
 
 **De testat cu tokenul real (TikTok):** lista din „TikTok — conexiunea v2”, la final.
 
+**Faza 5 (2026-10-20) — Apeluri.** Migrarea 14 (`ads_calls`) și ecranul `/admin/ads/apeluri`:
+
+- **Notează un apel:** ziua (nu în viitor), clientul (implicit cel din bara de sus), de unde a
+  aflat (Meta / Google / TikTok / „Nu știu”), campania dacă se știe (lista campaniilor
+  clientului pe canalul bifat; „Nu știu” la canal arată toate campaniile, iar campania aleasă
+  dă canalul), ce a ieșit (doar întrebare / programat / semnat) și o notă de cel mult 1.000 de
+  caractere. Aceeași schemă Zod în browser și pe server (`model/calls-shared.ts`); serverul
+  verifică în plus că campania e a clientului și pe canalul bifat. Erorile stau sub câmpul lor,
+  focusul merge pe primul, iar rezultatul se anunță („Apel notat. Poți nota următorul.”).
+- **Lista** urmează bara de sus (client, perioadă, canal), pe zile: câte apeluri, câte din
+  fiecare fel și o bară cu proporția lor. Un apel scris greșit se poate șterge („Șterge nota”, cu
+  confirmare pe loc) — e doar nota din portal, nimic din platforme.
+- **Campanii:** coloana „Apeluri notate” lângă „Rezultate”, doar pe fila Campanii (apelul se
+  leagă de campanie, nu de grup sau reclamă), cu defalcarea la trecerea mouse-ului și pentru
+  cititorul de ecran; subsolul tabelului duce la Apeluri. Apelurile fără campanie apar doar în
+  Apeluri. Pe telefon, cardul campaniei arată „Apeluri notate: 1 · 1 semnat”.
+- „Rezultate” rămâne ce numără platforma; apelurile notate nu se adună la el, ca o cifră să nu
+  fie numărată de două ori (un apel din butonul „Sună” al reclamei e deja în Rezultate).
+
+Testat pe Supabase fals, în Chrome: trimis gol (două erori, focus pe canal), zi în viitor
+refuzată, trei apeluri (TikTok cu campanie, „Nu știu” fără campanie, Meta cu campanie), lista
+„3 apeluri · 1 semnat · 1 programat · 1 doar întrebare”, coloana în Campanii (1 și 1, subsol 2),
+fila Grupuri fără coloană, ștergerea unei note, lista filtrată pe TikTok, fără depășire
+orizontală la 360, 768, 1024 și 1440 px. Consola curată.
+
 Decizii (faza 2): perioada implicită e 7 zile (ca în schiță); „Rezultate” adună campaniile măsurate,
 iar sub cifră scrie din ce („94 de conversii · 16 apeluri”) și câte sunt nemăsurate; costul
 per rezultat împarte doar cheltuiala campaniilor măsurate; meniul arată Materiale și
@@ -2938,3 +2963,5 @@ Lista crește la fiecare fază; ce e bifat aici e făcut de tine, nu de cod.
    Center-ul Meridian, aplicația cu permisiunile din tabel, autorizarea cu **toate** conturile
    bifate, tokenul în `TIKTOK_TOKEN_CLIENTI` și `TIKTOK_TOKEN_MERIDIAN`). La fiecare client nou:
    refaci autorizarea și pui tokenul nou.
+7. **Migrarea 14** (`supabase/migrations/00000000000014_ads_calls.sql`): apelurile notate. Fără
+   ea, pagina Apeluri spune că lipsește tabelul, iar coloana „Apeluri notate” rămâne goală.

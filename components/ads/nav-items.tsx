@@ -44,7 +44,7 @@ export const NAV_ITEMS: NavItem[] = [
     ready: true,
   },
   { key: "materiale", href: "/admin/ads/materiale", label: "Materiale", icon: <IconMaterials />, match: /^\/admin\/ads\/materiale/, ready: false },
-  { key: "apeluri", href: "/admin/ads/apeluri", label: "Apeluri", icon: <IconCalls />, match: /^\/admin\/ads\/apeluri/, ready: false },
+  { key: "apeluri", href: "/admin/ads/apeluri", label: "Apeluri", icon: <IconCalls />, match: /^\/admin\/ads\/apeluri/, ready: true },
   { key: "istoric", href: "/admin/ads/istoric", label: "Istoric", icon: <IconHistory />, match: /^\/admin\/ads\/istoric/, ready: true },
 ];
 

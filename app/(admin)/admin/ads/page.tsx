@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { clientsForRequest, readClientView } from "@/lib/ads/model/read";
 import { readSelection } from "@/lib/ads/model/selection.server";
-import { CHANNEL_LABEL, PERIOD_LABEL } from "@/lib/ads/model/selection";
+import { CHANNEL_LABEL, PERIOD_LABEL, selectionQuery } from "@/lib/ads/model/selection";
+import { callCountsByCampaign } from "@/lib/ads/model/calls";
 import { rowFigures, totalsByCurrency } from "@/lib/ads/model/rows";
 import { PLATFORM_LABEL } from "@/lib/ads/constants";
 import { KpiTiles } from "@/components/ads/kpi-tiles";
@@ -90,7 +91,10 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
   }
 
   const client = clients.data.find((item) => item.id === selection.clientId) ?? clients.data[0];
-  const view = await readClientView({ client, channel: selection.channel, range: selection.range });
+  const [view, calls] = await Promise.all([
+    readClientView({ client, channel: selection.channel, range: selection.range }),
+    callCountsByCampaign({ clientId: client.id, from: selection.range.from, to: selection.range.to }),
+  ]);
   const subtitle = `${client.name} · ${PERIOD_LABEL[selection.period]} · ${CHANNEL_LABEL[selection.channel]}`;
 
   if (!view.ok) {
@@ -150,6 +154,8 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
         </Notice>
       ) : null}
 
+      {calls.missing ? <Notice title="Coloana „Apeluri notate” e goală.">{calls.missing}</Notice> : null}
+
       <div className="mt-5">
         <KpiTiles
           current={current}
@@ -172,6 +178,8 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
         channel={selection.channel}
         range={selection.range}
         importHref="/admin/ads/nou"
+        calls={calls.counts}
+        callsHref={`/admin/ads/apeluri?${selectionQuery({ ...selection, clientId: client.id })}`}
         actions={{ pause: pauseAction, days: entityDaysAction, setResult: setResultAction }}
       />
     </main>
