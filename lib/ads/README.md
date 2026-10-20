@@ -16,6 +16,123 @@ pe care fazele 8–14 **nu** le mai ating.
 **Citește întâi `GHID.md`** — ce e de făcut după fiecare fază și ce e de hotărât.
 Promptul complet al portalului e în `PROMPT.md`.
 
+**Din 2026-10-20: portalul v2** (ramura `feat/ads-portal-v2`, din `main`) — un singur
+ecran pentru Meta, Google și TikTok, cu structura din Meta Ads Manager. Planul, deciziile
+și jurnalul fazelor: secțiunea următoare. Ce ai de făcut tu: „De făcut de om (v2)”, la final.
+
+---
+
+## Portalul v2 — Meta, Google și TikTok în același loc
+
+### De unde pornim (citit în faza 0)
+
+Promptul v2 spune că portalul creează azi doar pe Google. **Nu e chiar așa:** crearea pe
+pauză din JSON există și pe Meta (fazele 2–3) și pe TikTok (faza 5), cu garda ei, cu video
+urcat din browser și cu lotul. Doar că n-a fost încercată niciodată pe un cont real, pentru
+că tokenurile nu există încă. V2 construiește peste ea, nu pe lângă ea.
+
+Ce lipsește de fapt față de cerere:
+
+| Cerut | Azi | Ce face v2 |
+|---|---|---|
+| Campanii → grupuri → reclame, pe toate conturile clientului | se citesc doar campaniile **create din portal**, doar la nivel de campanie (`ads_metrics_daily`) | modelul comun (faza 1): toate campaniile, grupurile și reclamele conturilor urmărite, cu cifrele pe zi la fiecare nivel |
+| Clientul ales sus, cu filtrul Toate / Meta / Google / TikTok | un spațiu de lucru = o platformă × un proprietar (`meta-clienti`); nimic nu leagă contul Meta al unui client de contul lui Google | **clientul**: un nume în Supabase care adună conturile lui de pe cele trei platforme; fiecare cont trece în continuare prin spațiul lui (token + plafon) |
+| „Pune pe pauză” pe orice platformă | doar pe Google (`googlePause`) | pauza pe Meta și TikTok, fiecare cu o funcție separată și garda ei, ca la Google |
+| „Rezultate” = apel, lead sau formular, ales pe campanie; „nemăsurat” când nu e conversie | rezultatul e ghicit din obiectivul planului; o campanie fără conversie arată 0 | catalogul conversiilor fiecărui cont + alegerea pe campanie; fără conversie = „nemăsurat” |
+| Limitele Meta: așteaptă, reia fără dubluri, arată progresul | la o eroare după campanie, crearea se oprește („parțial”) | crearea ca lucrare pe pași, salvată după fiecare pas; reluarea caută întâi obiectul creat |
+| Materiale păstrate, din care se aleg reclamele | `ads-uploads` e o anticameră: fișierul se șterge după ce platforma îl are | biblioteca „Materiale” în același bucket, cu evidența video-ului urcat pe fiecare cont |
+| Apeluri notate de mână | nu există | faza 5 |
+| „Creează” pe pași | doar JSON lipit | faza 6, produce același plan JSON |
+
+### Modelul comun (faza 1)
+
+Aceleași trei niveluri pe toate platformele. Meta: campanie → *ad set* → reclamă; Google și
+TikTok: campanie → *ad group* → reclamă. Portalul le numește **Campanie → Grup → Reclamă**.
+
+| Tabel (migrarea 12) | Ce ține |
+|---|---|
+| `ads_clients` | clientul: numele (doar în bază — repo-ul e public) și proprietarul (`agentie` / `clienti`, ca la spații) |
+| `ads_accounts` | conturile clientului: platforma, spațiul (deci tokenul și plafonul), id-ul contului, moneda, fusul orar, catalogul conversiilor, starea sincronizării |
+| `ads_entities` | un rând pe campanie, grup sau reclamă: nivelul, părintele, numele, starea (normalizată + cea brută), bugetul, setările (doar citire), rezultatul implicit, legătura cu rândul din `ads_campaigns` dacă a fost creată din portal |
+| `ads_entity_daily` | cifrele pe zi la fiecare nivel: cheltuit, afișări, clicuri, conversiile pe tipuri (`jsonb`), cifrele specifice canalului (`jsonb`); zilele mai vechi de 7 înghețate, ca în migrarea 6 |
+| `ads_result_choices` | ce conversie se numără ca „rezultat” pe o campanie, când omul alege altceva decât implicitul |
+| `ads_changes` | jurnalul acțiunilor pe conturi, pe toate platformele (pauzele din ecranul nou) |
+
+`ads_campaigns`, `ads_metrics_daily`, `ads_runs` și tabelele Google (10, 11) rămân cum
+sunt: planurile create, protecția la lot și istoricul vechi nu se mută.
+
+**Starea**, aceeași etichetă pe toate platformele: **Activă**, **Pe pauză**, **În
+verificare**, **Respinsă**; plus, doar când e cazul: Ștearsă, Arhivată, Cu probleme,
+Încheiată. Starea brută a platformei rămâne în panou.
+
+**Rezultatele**: fiecare cont are un catalog de conversii (Meta: tipurile de acțiune — pixel,
+formular instant, apel; Google: acțiunile de conversie, cu categoria lor; TikTok: evenimentele
+pixelului). Fiecare tip are un fel: **apel**, **lead**, **formular** sau altceva. Implicitul
+campaniei vine din ce optimizează ea (setul Meta pe `LEAD` → lead-urile din pixel; grupul
+TikTok pe `FORM`; pe Google, conversiile principale ale contului). Omul poate alege altceva
+din panou. Fără nicio conversie în cont, sau la o campanie de trafic fără alegere, scrie
+**„nemăsurat”**, nu 0.
+
+**Sincronizarea**: un cont = citirea structurii (campanii, grupuri, reclame, stare, buget) +
+cifrele pe zi pe fiecare nivel, prima dată pe ultimele 90 de zile, apoi pe ultimele 7 plus
+golul de la ultima reușită. Pornește din același cron (`/admin/ads/sincronizare`, deja în
+`vercel.json`), cu întâi conturile cele mai vechi și cu o limită de timp pe rulare, și din
+butonul „Actualizează” de sus (doar clientul ales). Ecranele citesc doar din bază.
+
+### Designul (faza 2)
+
+Referințele: `ideas/redesign reclame/` — aspectul (`exemple-culori-aspect.png`) și schița
+structurii (`prompul-vizualizat.png`).
+
+- **Alb, linii gri subțiri, un singur accent: albastrul site-ului (`#2f5bff`)**. Tema
+  portalului se schimbă dintr-un singur fișier al zonei (`app/(admin)/admin/ads/portal.css`):
+  variabilele sistemului de design (`--md-*`) primesc valori deschise doar sub portal. Așa
+  devin albe și ecranele vechi (Plan nou, Lot, Termeni, Conversii) fără să le rescriu, iar
+  `globals.css` rămâne neatins.
+- **Meniu în stânga**: Campanii, Planuri, Statistici, Căutări (doar cu Google în filtru),
+  Materiale, Apeluri, Istoric. Pe telefon, o bară jos cu primele patru și „Mai mult”.
+- **Bara de sus**: clientul (cu „Gestionează clienții”), perioada (7 / 30 / 90 de zile, luna
+  aceasta, luna trecută) și canalul: Toate / Meta / Google / TikTok. Alegerea stă în adresă
+  (se poate trimite un link) și în cookie.
+- **Patru cifre**: Cheltuit, Rezultate, Cost per rezultat, Clickuri — pe ce e ales sus.
+  Monedele nu se adună: două monede = două rânduri. Costul per rezultat împarte doar
+  cheltuiala campaniilor măsurate.
+- **File Campanii / Grupuri / Reclame + tabelul**. Bifezi o campanie, treci la Grupuri și vezi
+  doar grupurile ei (bifa stă în adresă). Coloanele comune: nume (cu iconița canalului),
+  stare, buget, cheltuit, rezultate, apeluri notate (faza 5), cost per rezultat, afișări,
+  clickuri, CTR. Cele ale canalului apar doar cu filtrul pe el. Sortare pe coloane, căutare
+  după nume.
+- **Panoul din dreapta**, fără să pleci din tabel: cifrele, graficul pe zile, setările (doar
+  citire), reclamele, „Pune pe pauză”, „Deschide în Meta / Google Ads / TikTok”.
+- **Pe telefon**: cifrele și o listă de rânduri cu „Pune pe pauză”; panoul devine ecran întreg.
+- **Nicio cifră inventată**: fără cont, fără sincronizare sau fără conversie, ecranul spune ce
+  lipsește și ce faci.
+
+### Fazele v2
+
+| Fază | Ce | Unde se testează |
+|---|---|---|
+| 0 | Citirea codului, planul (aici) | — |
+| 1 | Modelul comun: migrarea 12, clienții și conturile, sincronizarea Google pe trei niveluri | Google și Supabase falși |
+| 2 | Designul nou, pe datele Google; pauza din tabel (Google) | Chrome, build de producție |
+| 3 | Meta: citirea (structura + cifrele), pauza, crearea ca lucrare reluabilă la limite | Meta fals, scris după documentația oficială |
+| 4 | TikTok: la fel | TikTok fals, după documentația oficială |
+| 5 | Apelurile (migrarea 14) | Supabase fals |
+| 6 | „Creează” pe pași + Materiale | cap-coadă, pe falși |
+
+Ce cere tokenuri reale rămâne marcat **„de testat cu tokenul real”** în jurnalul fazei.
+
+### Jurnalul fazelor v2
+
+**Faza 0 (2026-10-20)** — citit `CLAUDE.md`, acest README, `GHID.md`, `PROMPT.md`, codul din
+`lib/ads/` (platformele, garda, planul, lotul, sincronizarea, statisticile), migrările 5–11 și
+paginile portalului. Verificat înainte de lucru: nicio ramură nemergeuită nu atinge
+`lib/ads`, `components/ads`, `app/(admin)/admin/ads` sau `supabase/migrations` (singurele
+ramuri înainte de `main` sunt `redesign-larven`, `feat/carduri-proiecte-simple`, `materiale`
+și o ramură locală de lucru — niciuna în zona portalului). Ramura `feat/ads-portal-v2` e
+făcută din `origin/main` fără legătură de urmărire spre `main`; fiecare push merge cu
+destinație explicită (`git push origin feat/ads-portal-v2:refs/heads/feat/ads-portal-v2`).
+
 ---
 
 ## Regula care nu se negociază
@@ -2482,3 +2599,13 @@ exact ce și de ce.
    **verificarea mărcii** (OAuth brand verification), apoi Google Ads API →
    Overview → „Upgrade access level” → nivelul următor Basic → „Apply for access”.
    Basic dă și 15.000 de operații pe zi în loc de 2.880.
+
+## De făcut de om (v2)
+
+Lista crește la fiecare fază; ce e bifat aici e făcut de tine, nu de cod.
+
+1. **Ca să intri pe preview-ul ramurii** (`*.vercel.app`): Supabase → Authentication → URL
+   Configuration → Redirect URLs → adaugă `https://*-stefanvladut661s-projects.vercel.app/**`.
+   Fără ea, după alegerea contului Google ajungi pe prima pagină a site-ului de producție, nu
+   în portalul de pe preview. Variabilele Supabase, `ADMIN_EMAILS` și tokenurile trebuie să
+   fie bifate și pe *Preview* în Vercel → Settings → Environment Variables.
