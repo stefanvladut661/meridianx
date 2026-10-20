@@ -281,6 +281,47 @@ Decizii: un singur utilizator de sistem (cum cere promptul), același token în
 lui) și plafonul spațiului — vezi pasul 4 din „Meta — conexiunea v2”. Creativele și copertele
 nu se caută după nume la reluare: sunt în biblioteca contului, nu cheltuie și nu apar nicăieri.
 
+**Faza 4 (2026-10-20) — TikTok: citirea, pauza, crearea reluabilă.** Același tipar ca la Meta,
+după documentația TikTok API for Business v1.3 și SDK-ul oficial:
+
+- **Citirea** (`tiktok/structure.ts`): campaniile, grupurile și reclamele (`/…/get/`, pagini de
+  1000), cu starea din `secondary_status` (etichetele din `model/status.ts`: activă, pe pauză, în
+  verificare, respinsă, ștearsă…), bugetul pe zi sau total (`budget_mode`; „la grupuri” când e pe
+  grup). Cele șterse nu vin în listă: se citesc după id cu `primary_status: STATUS_DELETE`, iar
+  cifrele lor intră (`ad_status: STATUS_ALL` în raport). Cifrele: raportul de bază la nivel de
+  reclamă, pe zi, ferestre de 30 de zile; grupul și campania sunt suma reclamelor.
+- **Rezultatele:** metricile raportului care numără ceva (`form`, `onsite_form`,
+  `online_consult`, `button_click`, `user_registration`, `complete_payment`, `conversion`), cu
+  implicitul din ce optimizează grupul (formular pe site → `form`, formular instant →
+  `onsite_form`); trafic și acoperire = „nemăsurat”. TikTok nu are o metrică de apel telefonic.
+  Coloanele TikTok: CPM, CPC, vizionări de 2 și 6 secunde.
+- **Pauza** (`tiktok/pause.ts`): starea se recitește, se trimit doar cele pornite, câte 20 pe
+  cerere, prin `tiktokPause` — al doilea POST din `tiktok/api.ts`, cu corpul construit în funcție
+  și garda `assertTikTokPauseOnly` (exact `advertiser_id`, lista de id-uri, `operation_status:
+  DISABLE`). Căile de pauză stau doar în `meta/paused.ts`; în `lib/ads/tiktok` nu apare nicio cale
+  `/update/` sau `/delete/` (verificat de `verify-paused.mjs`, acum 219 verificări).
+- **Crearea** (`tiktok/create.ts`) e o lucrare pe pași: copertele → campania → grupul →
+  reclamele (într-o cerere). La limită (40100, 40016, 40133) așteaptă 5 minute (TikTok nu dă un
+  antet cu timpul rămas) și se reia de la pasul oprit; fără răspuns, așteaptă un minut și caută
+  întâi: campania după nume printre cele create de la pornirea lucrării
+  (`creation_filter_start_time`), grupul sub campanie, reclamele sub grup.
+
+Testat pe un TikTok fals scris după documentație (cont, structură, raport, căutări, identitate,
+pixel, video, creare, pauză, limita 40100, un răspuns pierdut), pe Supabase fals, în Chrome: contul
+scris de mână și citit (4 campanii — activă, activă cu buget pe campanie, pe pauză cu buget total,
+ștearsă —, 4 grupuri, 5 reclame, inclusiv una respinsă); campania = suma reclamelor pe zi; „289 de
+lead-uri” (formular pe site), „82 de formulare” (instant), „nemăsurat” la trafic; pauza din panou
+(în jurnal doar `POST /campaign/status/update/` cu un id și `DISABLE`); crearea oprită de limită
+la pasul 3 din 4 și reluată din Planuri (o campanie, un grup, două reclame, totul `DISABLE`);
+același plan prins ca dublură, apoi creat intenționat cu răspunsul campaniei pierdut (o singură
+cerere de campanie, nicio dublură). Consola curată.
+
+Tot în faza 4: „Actualizează acum” nu mai așteaptă cele 2 minute după o actualizare **eșuată** —
+după ce repari un token sau un acces, reîncerci imediat. Pauza dintre actualizări rămâne doar
+după una reușită.
+
+**De testat cu tokenul real (TikTok):** lista din „TikTok — conexiunea v2”, la final.
+
 Decizii (faza 2): perioada implicită e 7 zile (ca în schiță); „Rezultate” adună campaniile măsurate,
 iar sub cifră scrie din ce („94 de conversii · 16 apeluri”) și câte sunt nemăsurate; costul
 per rezultat împarte doar cheltuiala campaniilor măsurate; meniul arată Materiale și
@@ -344,6 +385,65 @@ adsets, ads*, *reference/ad-campaign-group, ad-campaign, adgroup* (`effective_st
 și *insights/best-practices*, *ads-action-stats*, *overview/rate-limiting* (BUC, antetul
 `X-Business-Use-Case-Usage`), *business-management-apis/system-users*, *marketing-api/businessmanager/business-to-business*,
 *graph-api/overview/access-levels*; SDK-ul oficial `facebook-python-business-sdk` v26.0.2.
+
+### TikTok — conexiunea v2 (pas cu pas)
+
+Cum cere promptul: **o aplicație în TikTok API for Business, autorizată prin Business Center-ul
+Meridian, care primește conturile clienților ca partener.** O diferență față de Meta, cerută de
+documentație: TikTok **nu are utilizator de sistem**. Echivalentul cel mai simplu și sigur e
+tokenul pe termen lung pe care îl dă autorizarea aplicației de către un om din Business
+Center: nu expiră, se invalidează doar dacă retragi autorizarea, și vede **doar conturile
+bifate la autorizare**. Asta am ales; alternativa (câte o autorizare făcută de fiecare client
+în contul lui) ar însemna câte un token pe client și n-are loc în variabilele din Vercel.
+
+1. **Id-ul Business Center-ului Meridian:** business.tiktok.com → Business Center-ul Meridian →
+   *Business settings* → *Business info* → copiezi „Business Center ID”.
+2. **Fiecare client** (o dată, el sau tu cu el la telefon): în Business Center-ul **lui** →
+   *Users* → *Partners* → *Add partner* → id-ul de la pasul 1 → alege contul de reclame și rolul
+   **Operator** (creează și administrează reclame, fără plăți; *Admin* ar da și facturarea). Sau
+   invers, de la Meridian: *Assets* → *Advertiser accounts* → *Add* → *Request access* → id-ul
+   contului clientului → clientul aprobă. Contul apare la Meridian printre conturile primite.
+3. **Omul care autorizează** (tu, admin în Business Center-ul Meridian): *Assets* → *Advertiser
+   accounts* → contul clientului → *Assign members* → tu, cu *Operator* sau *Admin*. Autorizarea
+   de la pasul 6 arată doar conturile la care omul logat are acces.
+4. **Aplicația:** [business-api.tiktok.com/portal](https://business-api.tiktok.com/portal) → *My
+   Apps* → *Create an app* (pașii și tabelul de permisiuni din „TikTok — token pe termen lung”, mai
+   jos). Permisiunile 201, 211 și 221 se numesc la TikTok *Create and **Update*** și includ
+   `…/status/update/` — de acolo vine pauza. Pornirea și ștergerea trec pe aceeași cale, dar
+   portalul nu le poate trimite: garda `assertTikTokPauseOnly` lasă doar `DISABLE`, iar
+   `verify-paused.mjs` verifică asta la fiecare build. TikTok verifică aplicația 2–3 zile
+   lucrătoare.
+5. Opțional, doar dacă vrei ca portalul să citească lista conturilor din Business Center:
+   *Read Business Center* (150) și *Business Center Asset* (153). Portalul de acum nu le
+   folosește — contul TikTok se scrie de mână în pagina Clienți.
+6. **Autorizarea:** deschizi *Advertiser authorization URL* al aplicației, logat cu contul de la
+   pasul 3, și **bifezi toate conturile** — al Meridian și ale clienților primite ca partener.
+   Codul (`auth_code`) îl schimbi pe token cum scrie la „TikTok — token pe termen lung”, pașii
+   3–4 (dintr-un terminal deschis de tine, nu din conversația cu Claude).
+7. **Vercel** → proiectul → *Settings → Environment Variables* → `TIKTOK_TOKEN_CLIENTI` = tokenul
+   (Production și Preview) și `TIKTOK_TOKEN_MERIDIAN` = același token → *Redeploy*. Separarea
+   banilor o țin clientul (proprietarul lui) și plafonul spațiului, ca la Meta. `app_id` și
+   `secret` **nu** intră în Vercel.
+8. **Portalul:** Clienți → clientul → „Clienți · TikTok” → scrii advertiser_id-ul (TikTok Ads
+   Manager, sus, sub numele contului) → „Adaugă contul” → „Actualizează acum”.
+9. **Un client nou, mai târziu:** pașii 2–3 pentru el, apoi refaci autorizarea (pasul 6) cu toate
+   conturile bifate și pui tokenul nou în ambele variabile. Tokenul vechi vede doar conturile
+   bifate atunci.
+10. **Pe fiecare cont, o dată, în TikTok Ads Manager:** plătitorul (*Payer information*, DSA),
+    identitatea Spark și pixelul — lista de la „TikTok — token pe termen lung”, sub pași.
+
+**De testat cu tokenul real (TikTok):** dacă ecranul de autorizare arată și conturile primite ca
+partener (documentația nu o spune explicit; dacă nu le arată, clientul îți dă acces de membru pe
+cont, în Business Center-ul lui, și autorizezi tu de acolo); dacă filtrul `primary_status:
+STATUS_DELETE` întoarce campaniile, grupurile și reclamele șterse la fel pe toate trei nivelurile
+(portalul încearcă și `STATUS_ALL` dacă e refuzat); dacă raportul cu `ad_status: STATUS_ALL` include
+reclamele șterse; răspunsul real la pauză (`data.campaign_ids` etc. — dacă lipsește, portalul
+consideră pauza făcută pe toate id-urile trimise, pentru că TikTok a răspuns `code: 0`).
+
+Sursele (citite pe 2026-10-20): business-api.tiktok.com/portal/docs — *Campaign / Ad Group / Ad:
+get, create, status/update*, *Reporting: basic reports, metrics, dimensions, filters*, *App
+permissions* (tabelul de permisiuni), *Authorization*, *Business Center: partners, assets*, *Rate
+limits*; SDK-ul oficial `tiktok-business-api-sdk` (fișierele `yml_files`).
 
 ---
 
@@ -2431,8 +2531,10 @@ permisiunile bifate la autorizare, nu pe toate cele cerute de aplicație.
 
    Plus ce oferă aplicația pentru căutările de targetare (regiuni, limbi,
    interese) — documentația nu spune ce permisiune le acoperă; dacă
-   verificarea spune „nu are voie” la locații, adaugă-o. **Nu cere**
-   permisiuni de actualizare sau ștergere: portalul nu le folosește.
+   verificarea spune „nu are voie” la locații, adaugă-o. 201, 211 și 221
+   sunt la TikTok „Create and Update” și includ schimbarea stării: portalul
+   o folosește doar pentru pauză (v2), prin garda ei. **Nu cere** alte
+   permisiuni (audiențe, bugete, Business Center): portalul nu le folosește.
    Aplicația intră în verificare la TikTok (2–3 zile lucrătoare).
 2. **Autorizarea.** După aprobare, deschizi *Advertiser authorization URL* al
    aplicației, logat cu contul TikTok for Business care e admin în Business
@@ -2832,3 +2934,7 @@ Lista crește la fiecare fază; ce e bifat aici e făcut de tine, nu de cod.
    partener la conturile clienților, tokenul în `META_TOKEN_CLIENTI` și `META_TOKEN_MERIDIAN`).
    La primul cont de client, apasă „Actualizează”: dacă dă eroarea 200, 10 sau 270, ceri
    Advanced Access pentru `ads_management` și `ads_read` (pasul 6).
+6. **TikTok:** pașii din „TikTok — conexiunea v2” (accesul de partener al clienților în Business
+   Center-ul Meridian, aplicația cu permisiunile din tabel, autorizarea cu **toate** conturile
+   bifate, tokenul în `TIKTOK_TOKEN_CLIENTI` și `TIKTOK_TOKEN_MERIDIAN`). La fiecare client nou:
+   refaci autorizarea și pui tokenul nou.

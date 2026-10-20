@@ -62,7 +62,7 @@ export async function checkOnTikTok(workspace: AdsWorkspace, plan: Plan): Promis
   if (!account) {
     errors.push({
       path: "ad_account",
-      message: `Tokenul spațiului ${workspaceName(workspace)} nu vede contul TikTok ${advertiserId}. Contul trebuie bifat când autorizezi aplicația (pașii din lib/ads/README.md → „Tokenurile TikTok”); dacă l-ai adăugat după, refă autorizarea și pune tokenul nou în Vercel.`,
+      message: `Tokenul spațiului ${workspaceName(workspace)} nu vede contul TikTok ${advertiserId}. Contul trebuie bifat când autorizezi aplicația (pașii din lib/ads/README.md → „TikTok — conexiunea v2”); dacă l-ai adăugat după, refă autorizarea și pune tokenul nou în Vercel.`,
     });
     return emptyContext(workspace, plan, advertiserId, errors);
   }

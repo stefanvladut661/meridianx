@@ -7,6 +7,7 @@ import { findWorkspace, workspaceName, type AdsWorkspace } from "../workspaces";
 import { workspaceToken } from "../workspaces.server";
 import { googleStructureReader } from "../google/structure";
 import { metaStructureReader } from "../meta/structure";
+import { tiktokStructureReader } from "../tiktok/structure";
 import type { EntitySnapshot, Level, StructureReader } from "./types";
 import { inheritStatus } from "./inherit";
 import {
@@ -60,6 +61,8 @@ export function readerFor(workspace: AdsWorkspace): StructureReader | null {
       return googleStructureReader(workspace);
     case "meta":
       return metaStructureReader(workspace);
+    case "tiktok":
+      return tiktokStructureReader(workspace);
     default:
       return null;
   }
@@ -137,7 +140,10 @@ export async function runModelSync(options: {
 
   let accounts = await accountsToSync(admin, { clientId: options.clientId, accountIds: options.accountIds });
   if (options.trigger === "manual") {
-    const fresh = accounts.filter((account) => account.lastSyncedAt && Date.now() - Date.parse(account.lastSyncedAt) < MANUAL_COOLDOWN_MS);
+    // Doar după o actualizare reușită: una eșuată (token greșit, acces lipsă) se reîncearcă imediat după reparație.
+    const fresh = accounts.filter(
+      (account) => account.lastSyncStatus === "ok" && account.lastSyncedAt && Date.now() - Date.parse(account.lastSyncedAt) < MANUAL_COOLDOWN_MS
+    );
     outcome.fresh = fresh.length;
     accounts = accounts.filter((account) => !fresh.includes(account));
   }

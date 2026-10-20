@@ -224,6 +224,7 @@ export interface SyncAccount {
   workspace: string;
   adAccount: string;
   lastSyncedAt: string | null;
+  lastSyncStatus: string | null;
   syncedThrough: string | null;
 }
 
@@ -242,6 +243,7 @@ export async function accountsToSync(admin: Db, filter: { clientId?: string; acc
       workspace: row.workspace,
       adAccount: row.ad_account,
       lastSyncedAt: row.last_synced_at,
+      lastSyncStatus: row.last_sync_status,
       syncedThrough: row.synced_through,
     }))
     .sort((a, b) => (a.lastSyncedAt ?? "").localeCompare(b.lastSyncedAt ?? ""));

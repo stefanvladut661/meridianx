@@ -3,11 +3,13 @@ import "server-only";
 import { readJob, type JobRow } from "./jobs";
 import { findWorkspace } from "./workspaces";
 import { continueMetaJob, metaJobView, type MetaJobState } from "./meta/create";
+import { continueTikTokJob, tiktokJobView, type TikTokJobState } from "./tiktok/create";
 import type { CreateResponse, JobView } from "./types";
 
 /** Lucrarea, cum o vede ecranul (pașii, ce s-a creat, până când așteaptă). */
 export function jobViewOf(job: JobRow<unknown>): JobView {
   if (job.platform === "meta") return metaJobView(job as JobRow<MetaJobState>);
+  if (job.platform === "tiktok") return tiktokJobView(job as JobRow<TikTokJobState>);
   return {
     id: job.id,
     platform: job.platform,
@@ -36,6 +38,8 @@ export async function continueJob(jobId: string): Promise<CreateResponse> {
   switch (job.data.platform) {
     case "meta":
       return continueMetaJob(workspace, jobId);
+    case "tiktok":
+      return continueTikTokJob(workspace, jobId);
     default:
       return { ok: false, message: "Reluarea pe platforma asta vine într-o fază următoare." };
   }

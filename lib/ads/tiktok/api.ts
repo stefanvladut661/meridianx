@@ -2,7 +2,14 @@ import "server-only";
 
 import type { AdsWorkspace } from "../workspaces";
 import { workspaceToken } from "../workspaces.server";
-import { assertTikTokDisabled, type TikTokCreatePath } from "../meta/paused";
+import {
+  TIKTOK_DISABLED,
+  TIKTOK_PAUSE_PATHS,
+  assertTikTokDisabled,
+  assertTikTokPauseOnly,
+  type TikTokCreatePath,
+  type TikTokPausePath,
+} from "../meta/paused";
 
 /**
  * Clientul TikTok API for Business (v1.3) — SINGURUL loc care vorbește cu TikTok.
@@ -14,9 +21,11 @@ import { assertTikTokDisabled, type TikTokCreatePath } from "../meta/paused";
  *                      grup de reclame, reclame, video/imagine din URL), cu
  *                      `assertTikTokDisabled` rulat pe fiecare corp ÎNAINTE de rețea.
  *
- * Nu există funcție de actualizare (`/…/update/`, `/…/status/update/`) și nici
- * de ștergere: pe acolo s-ar porni o campanie. Activarea o face omul, în
- * TikTok Ads Manager.
+ *   - `tiktokPause`  — (v2) singura schimbare de stare: `…/status/update/` cu
+ *                      `operation_status: DISABLE`, după `assertTikTokPauseOnly`.
+ *
+ * Nu există altă funcție de actualizare (`/…/update/`) și nici de ștergere: pe
+ * acolo s-ar porni o campanie. Activarea o face omul, în TikTok Ads Manager.
  *
  * Tokenul: citit în funcția care face apelul, trimis în antetul
  * `Access-Token`, niciodată logat, niciodată întors.
@@ -164,6 +173,25 @@ export async function tiktokCreate<T>(workspace: AdsWorkspace, path: TikTokCreat
   }
   assertTikTokDisabled(path, payload);
   return request<T>(workspace, "POST", path, payload);
+}
+
+/**
+ * Pauza (v2) — SINGURA schimbare de stare pe care o poate trimite portalul spre
+ * TikTok: `…/status/update/` cu `operation_status: DISABLE`, pe 1–20 campanii,
+ * grupuri sau reclame existente. Corpul îl construiește funcția însăși și trece
+ * prin `assertTikTokPauseOnly` înainte de rețea.
+ */
+export async function tiktokPause(
+  workspace: AdsWorkspace,
+  path: TikTokPausePath,
+  advertiserId: string,
+  ids: string[]
+): Promise<{ ids: string[] }> {
+  const payload = { advertiser_id: advertiserId, [TIKTOK_PAUSE_PATHS[path]]: ids, operation_status: TIKTOK_DISABLED };
+  assertTikTokPauseOnly(path, payload);
+  const data = await request<Record<string, unknown>>(workspace, "POST", path, payload);
+  const done = data[TIKTOK_PAUSE_PATHS[path]];
+  return { ids: Array.isArray(done) ? done.map(String) : [] };
 }
 
 /** Toate paginile unei liste (`page` / `page_size` + `page_info.total_page`), cu o limită. */

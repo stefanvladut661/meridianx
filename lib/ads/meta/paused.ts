@@ -485,6 +485,49 @@ export function assertGooglePauseOnly(customerId: string, operations: ReadonlyAr
   });
 }
 
+// ---------------------------------------------------------------------------
+// TikTok: pauza (v2) — singura schimbare de stare, cu garda ei
+// ---------------------------------------------------------------------------
+
+/** Căile de pauză, pe nivel, cu cheia listei de id-uri (v1.3: 1–20 id-uri pe cerere). */
+export const TIKTOK_PAUSE_PATHS = {
+  "/campaign/status/update/": "campaign_ids",
+  "/adgroup/status/update/": "adgroup_ids",
+  "/ad/status/update/": "ad_ids",
+} as const;
+export type TikTokPausePath = keyof typeof TIKTOK_PAUSE_PATHS;
+
+/** Calea de pauză pentru fiecare nivel din portal. Căile stau doar aici, nu în `lib/ads/tiktok`. */
+export const TIKTOK_PAUSE_PATH_BY_LEVEL = {
+  campaign: "/campaign/status/update/",
+  group: "/adgroup/status/update/",
+  ad: "/ad/status/update/",
+} as const satisfies Record<"campaign" | "group" | "ad", TikTokPausePath>;
+
+/**
+ * Garda lui `tiktokPause`: corpul e EXACT `{ advertiser_id, <campaign|adgroup|ad>_ids,
+ * operation_status: "DISABLE" }` pe una dintre căile de mai sus, cu 1–20 id-uri
+ * numerice. Orice alt câmp, altă valoare (pornirea, ștergerea) sau altă cale e
+ * refuzat. Pauza poate doar să oprească cheltuiala.
+ */
+export function assertTikTokPauseOnly(path: string, payload: Record<string, unknown>): void {
+  if (!(path in TIKTOK_PAUSE_PATHS)) throw new NotPausedError(`Pauza pe TikTok: calea „${path}” nu e una de pauză.`);
+  const idsKey = TIKTOK_PAUSE_PATHS[path as TikTokPausePath];
+  const keys = Object.keys(payload ?? {}).sort();
+  const expected = ["advertiser_id", idsKey, "operation_status"].sort();
+  if (keys.join(",") !== expected.join(",")) {
+    throw new NotPausedError(`Pauza pe TikTok: se trimit doar ${expected.join(", ")}, nu ${keys.join(", ") || "nimic"}.`);
+  }
+  if (payload.operation_status !== TIKTOK_DISABLED) {
+    throw new NotPausedError(`Pauza pe TikTok: starea trimisă poate fi doar ${TIKTOK_DISABLED}, nu ${JSON.stringify(payload.operation_status)}.`);
+  }
+  if (!/^\d{5,25}$/.test(String(payload.advertiser_id ?? ""))) throw new NotPausedError("Pauza pe TikTok: contul (advertiser_id) nu e valid.");
+  const ids = payload[idsKey];
+  if (!Array.isArray(ids) || ids.length < 1 || ids.length > 20 || !ids.every((value) => /^\d{5,25}$/.test(String(value)))) {
+    throw new NotPausedError(`Pauza pe TikTok: ${idsKey} trebuie să fie 1–20 id-uri numerice.`);
+  }
+}
+
 export function assertTikTokDisabled(path: string, payload: Record<string, unknown>): void {
   if (!(TIKTOK_CREATE_PATHS as readonly string[]).includes(path)) {
     throw new NotPausedError(`Calea TikTok „${path}” nu e una de creare a portalului.`);

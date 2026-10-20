@@ -133,7 +133,8 @@ export function EntityPanel({
     return (
       <div className="rounded-lg border border-hair px-3 py-2.5">
         <dt className="text-[12px] text-dim">{label}</dt>
-        <dd className="mt-0.5 truncate text-[16px] font-semibold tabular-nums text-bone">{value}</dd>
+        {/* „289 de lead-uri” încape întreg, pe două rânduri dacă trebuie — nu tăiat. */}
+        <dd className={cn("mt-0.5 font-semibold leading-snug tabular-nums text-bone", value.length > 11 ? "text-[14px]" : "text-[16px]")}>{value}</dd>
         {change && change.percent !== null ? (
           <dd className={cn("text-[11.5px]", change.tone === "good" ? "text-[var(--ap-ok)]" : change.tone === "bad" ? "text-[var(--ap-error)]" : "text-dim")}>
             {formatDelta(change)} <span className="text-dim">față de înainte</span>

@@ -20,6 +20,15 @@ export const TIKTOK_VIDEO_TRANSCODING = 40901;
 const VIDEO_UNREACHABLE = 40902;
 const VIDEO_TOO_LARGE = 40907;
 
+/**
+ * O limită de cereri a TikTok (40100 pe aplicație, 40016, 40133 pe cont): câte
+ * minute de așteptat. Documentația v1.3 spune 5 minute după o depășire pe minut
+ * și nu dă un antet cu timpul rămas. null = altă eroare.
+ */
+export function tiktokRateLimit(error: unknown): { minutes: number } | null {
+  return error instanceof TikTokApiError && error.info.code !== null && RATE_CODES.has(error.info.code) ? { minutes: 5 } : null;
+}
+
 function tiktokSays(error: TikTokApiError): string {
   const { message, code, requestId } = error.info;
   const details = [code !== null ? `cod ${code}` : null, requestId ? `request ${requestId}` : null].filter(Boolean);
@@ -47,7 +56,7 @@ export function describeTikTokError(error: unknown, what: string, tokenEnv: stri
     return `TikTok limitează temporar cererile. Așteaptă cinci minute și încearcă din nou. ${tiktokSays(error)}`;
   }
   if (code !== null && TOKEN_CODES.has(code)) {
-    return `Tokenul ${tokenEnv} nu mai e valid — autorizarea aplicației a fost retrasă sau tokenul e greșit. Refă autorizarea (pașii din lib/ads/README.md → „Tokenurile TikTok”) și pune tokenul nou în Vercel. ${tiktokSays(error)}`;
+    return `Tokenul ${tokenEnv} nu mai e valid — autorizarea aplicației a fost retrasă sau tokenul e greșit. Refă autorizarea (pașii din lib/ads/README.md → „TikTok — conexiunea v2”) și pune tokenul nou în Vercel. ${tiktokSays(error)}`;
   }
   if (code !== null && PERMISSION_CODES.has(code)) {
     return `Tokenul spațiului nu are voie să facă ${what}: contul de reclame nu e printre cele autorizate pentru aplicație, sau aplicației îi lipsește un permis (scope). ${tiktokSays(error)}`;
