@@ -11,6 +11,8 @@ import { readEntityDays, type EntityDay } from "@/lib/ads/model/read";
 import { pauseEntities, type PauseRequestResult } from "@/lib/ads/model/pause";
 import { NO_RESULT } from "@/lib/ads/model/results";
 import type { ConversionType } from "@/lib/ads/model/types";
+import { continueJob } from "@/lib/ads/job-runner";
+import type { CreateResponse } from "@/lib/ads/types";
 
 /**
  * Acțiunile ecranului v2: alegerea din bara de sus, zilele unui rând (graficul
@@ -89,6 +91,19 @@ export async function setResultAction(input: { entityId: string; key: string | n
   if (!saved.ok) return saved;
   revalidatePath("/admin/ads", "layout");
   return { ok: true };
+}
+
+/**
+ * „Continuă” o creare pe pași (migrarea 13): de unde a rămas, fără dubluri.
+ * Lucrarea își știe spațiul; nu cere ca spațiul de pe ecran să fie același.
+ */
+export async function continueJobAction(input: { jobId: string }): Promise<CreateResponse> {
+  const user = await getAdminUser();
+  if (!user) return { ok: false, message: SESSION_EXPIRED };
+  if (!UUID.test(input.jobId)) return { ok: false, message: "Lucrarea nu există." };
+  const result = await continueJob(input.jobId);
+  revalidatePath("/admin/ads", "layout");
+  return result;
 }
 
 export async function pauseAction(input: { entityIds: string[] }): Promise<({ ok: true } & PauseRequestResult) | Failure> {

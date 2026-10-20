@@ -10,6 +10,10 @@ import { formatLeadDateTime } from "@/app/(admin)/admin/_components/format-date"
 import { ChannelIcon } from "@/components/ads/channel-icon";
 import { campaignStatusLabel } from "@/components/ads/campaign-status";
 import { cn } from "@/lib/utils";
+import { JOBS_MIGRATION_MISSING, listUnfinishedJobs } from "@/lib/ads/jobs";
+import { jobViewOf } from "@/lib/ads/job-runner";
+import { UnfinishedJobs, type UnfinishedJob } from "@/components/ads/unfinished-jobs";
+import { continueJobAction } from "../v2-actions";
 
 export const metadata: Metadata = {
   title: "Planuri — MERIDIAN Reclame",
@@ -32,7 +36,10 @@ const ENTRIES = [
 export default async function PlansPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const selection = await readSelection(params);
-  const [plans, clients] = await Promise.all([listCampaigns(500), clientsForRequest()]);
+  const [plans, clients, jobs] = await Promise.all([listCampaigns(500), clientsForRequest(), listUnfinishedJobs()]);
+  const unfinished: UnfinishedJob[] = jobs.ok
+    ? jobs.data.map((job) => ({ view: jobViewOf(job), planName: job.planName, createdAt: job.createdAt, createdByEmail: job.createdByEmail }))
+    : [];
   const client = clients.ok ? (clients.data.find((item) => item.id === selection.clientId) ?? clients.data[0] ?? null) : null;
   const all = params.toate === "1" || !client;
   const accounts = new Set((client?.accounts ?? []).map((account) => `${account.platform}|${account.adAccount}`));
@@ -76,6 +83,17 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
           </li>
         ))}
       </ul>
+
+      {unfinished.length > 0 ? (
+        <section aria-labelledby="neterminate" className="mt-8">
+          <h2 id="neterminate" className="text-[15px] font-semibold text-bone">
+            Creări neterminate
+          </h2>
+          <p className="mt-0.5 text-[13px] text-dim">Așteaptă limita de cereri a platformei sau au rămas la jumătate. Ce s-a creat e pe pauză.</p>
+          <UnfinishedJobs jobs={unfinished} continueJob={continueJobAction} />
+        </section>
+      ) : null}
+      {!jobs.ok && jobs.message === JOBS_MIGRATION_MISSING ? <p className="mt-6 text-[13.5px] text-dim">{jobs.message}</p> : null}
 
       <section aria-labelledby="create" className="mt-8">
         <div className="flex flex-wrap items-baseline justify-between gap-3">

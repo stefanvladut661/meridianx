@@ -163,7 +163,8 @@ export interface NewCampaignRecord {
   creation: "complete" | "partial";
   creationError: string | null;
   platformObjects: PlatformObjects;
-  createdBy: { id: string; email: string | null };
+  /** id null = creatorul nu se mai știe (o lucrare reluată după ce contul lui a fost șters). */
+  createdBy: { id: string | null; email: string | null };
 }
 
 /**

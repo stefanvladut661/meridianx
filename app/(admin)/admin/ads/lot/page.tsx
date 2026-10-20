@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { BatchEditor } from "@/components/ads/batch-editor";
 import { checkBatchPlan, createBatchPlan } from "../actions";
+import { continueJobAction } from "../v2-actions";
 
 export const metadata: Metadata = {
   title: "Lot de planuri — MERIDIAN Reclame",
@@ -34,7 +35,7 @@ export default async function BatchPage() {
         <BatchEditor
           workspaces={workspaces}
           currentWorkspaceId={currentId}
-          actions={{ checkBatchPlan, createBatchPlan }}
+          actions={{ checkBatchPlan, createBatchPlan, continueJob: continueJobAction }}
         />
       </div>
     </main>

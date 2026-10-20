@@ -107,7 +107,30 @@ export type CreateResponse =
       duplicate?: { createdAt: string; adsManagerUrl: string; recordId: string };
       /** Ce apucase să se creeze înainte de eroare — totul pe pauză. */
       partial?: { adsManagerUrl: string; created: CreatedObject[]; recordId: string | null };
+      /**
+       * v2: crearea e o lucrare care încă merge — așteaptă limita de cereri a
+       * platformei sau a atins limita de timp a unei cereri. Se reia cu
+       * „continuă”, de unde a rămas, fără dubluri.
+       */
+      job?: JobView;
     };
+
+/** O creare pe pași (migrarea 13), cum o vede browserul. */
+export interface JobView {
+  id: string;
+  platform: Platform;
+  status: "running" | "waiting" | "done" | "failed";
+  stepsDone: number;
+  stepsTotal: number;
+  /** Pasul următor, spus omului („reclama 2 din 3”). */
+  next: string | null;
+  /** Până când așteaptă (ISO), la limita de cereri. */
+  waitUntil: string | null;
+  message: string | null;
+  /** Ce s-a creat deja, tot pe pauză. */
+  created: CreatedObject[];
+  adsManagerUrl: string | null;
+}
 
 export interface LibraryVideo {
   id: string;

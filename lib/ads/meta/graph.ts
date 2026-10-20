@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AdsWorkspace } from "../workspaces";
 import { workspaceToken } from "../workspaces.server";
-import { assertPaused, type CreateEdge } from "./paused";
+import { PAUSED, assertMetaPauseOnly, assertPaused, type CreateEdge } from "./paused";
 
 /**
  * Clientul Graph API al portalului — SINGURUL loc care vorbește cu Meta.
@@ -15,10 +15,12 @@ import { assertPaused, type CreateEdge } from "./paused";
  *                    contului.
  * Amândouă trec prin `metaPost`, care rulează `assertPaused` pe fiecare
  * corp de cerere ÎNAINTE de rețea.
+ *   - `metaPause` (v2) — singura actualizare: `POST /{id}` cu `status: PAUSED`,
+ *                    după garda ei, `assertMetaPauseOnly`.
  *
- * Nu există funcție de actualizare (`POST /{id}`) și nici de ștergere: o
- * actualizare e drumul prin care o campanie se pornește. Activarea o face
- * omul, în Ads Manager.
+ * Nu există altă funcție de actualizare și nici de ștergere: o actualizare
+ * oarecare e drumul prin care o campanie se pornește. Activarea o face omul,
+ * în Ads Manager.
  *
  * Tokenul: citit în funcția care face apelul, trimis în antet (nu în URL —
  * URL-urile ajung în loguri), niciodată logat, niciodată întors. Dacă un
@@ -59,6 +61,26 @@ export interface MetaErrorInfo {
   userTitle: string | null;
   userMessage: string | null;
   fbtraceId: string | null;
+  /**
+   * Când Meta limitează cererile: peste câte minute se poate relua, din antetul
+   * `X-Business-Use-Case-Usage` (`estimated_time_to_regain_access`). null = nespus.
+   */
+  regainMinutes?: number | null;
+}
+
+/** Cel mai mare `estimated_time_to_regain_access` (minute) din antetul BUC, dacă există. */
+export function regainMinutesOf(header: string | null): number | null {
+  if (!header) return null;
+  try {
+    const usage = JSON.parse(header) as Record<string, Array<{ estimated_time_to_regain_access?: number }>>;
+    const minutes = Object.values(usage)
+      .flat()
+      .map((entry) => Number(entry?.estimated_time_to_regain_access))
+      .filter((value) => Number.isFinite(value) && value > 0);
+    return minutes.length ? Math.max(...minutes) : null;
+  } catch {
+    return null;
+  }
 }
 
 export class MetaApiError extends Error {
@@ -162,6 +184,7 @@ async function request<T>(
       userTitle: asText(error?.error_user_title),
       userMessage: asText(error?.error_user_msg) ? redact(String(error?.error_user_msg), token) : null,
       fbtraceId: asText(error?.fbtrace_id),
+      regainMinutes: regainMinutesOf(response.headers.get("x-business-use-case-usage")),
     });
   }
 
@@ -247,6 +270,20 @@ export async function metaUploadVideoFromUrl(
   const id = asText(result.id);
   if (!id) throw missing("id-ul video-ului urcat");
   return { id };
+}
+
+/**
+ * Pauza (v2) — SINGURA actualizare pe care o poate trimite portalul spre Meta:
+ * `POST /{id}` cu `status: PAUSED`, pe o campanie, un set sau o reclamă
+ * existente. Corpul îl construiește funcția însăși și trece prin
+ * `assertMetaPauseOnly` înainte de rețea: alt câmp, altă valoare sau alt id sunt
+ * refuzate. Meta răspunde `{ "success": true }`.
+ */
+export async function metaPause(workspace: AdsWorkspace, objectId: string): Promise<void> {
+  const payload = { status: PAUSED };
+  assertMetaPauseOnly(objectId, payload);
+  const result = await request<Record<string, unknown>>(workspace, "POST", `/${objectId}`, payload);
+  if (result.success !== true) throw missing("confirmarea pauzei");
 }
 
 /**

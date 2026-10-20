@@ -10,7 +10,7 @@ import { replaceSmartQuotes } from "@/lib/ads/plan-json";
 import { asRecord, getIn } from "@/lib/ads/plan-path";
 import type { PlanProblem } from "@/lib/ads/plan-validate";
 import { managerName } from "@/lib/ads/links";
-import type { CheckResponse, CreateResponse, PlatformCheck } from "@/lib/ads/types";
+import type { CheckResponse, CreateResponse, JobView, PlatformCheck } from "@/lib/ads/types";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { cn } from "@/lib/utils";
 import { PauseSeal } from "./pause-seal";
@@ -39,13 +39,19 @@ type CheckState =
 
 type CreateState =
   | { state: "creating" }
+  /** v2: crearea pe pași merge sau așteaptă limita de cereri a platformei. */
+  | { state: "waiting"; job: JobView }
   | { state: "done"; result: Extract<CreateResponse, { ok: true }> }
   | { state: "failed"; result: Extract<CreateResponse, { ok: false }> };
 
 export interface BatchEditorActions {
   checkBatchPlan: (input: { plan: unknown; screenWorkspace: string }) => Promise<CheckResponse>;
   createBatchPlan: (input: { plan: unknown; screenWorkspace: string; fingerprint: string }) => Promise<CreateResponse>;
+  /** v2: „Continuă” o creare pe pași, de unde a rămas. */
+  continueJob?: (input: { jobId: string }) => Promise<CreateResponse>;
 }
+
+const clockTime = new Intl.DateTimeFormat("ro-RO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Bucharest" });
 
 interface Row {
   item: BatchItem;
@@ -60,6 +66,13 @@ type Tone = "ok" | "warning" | "error" | "busy" | "none";
 function rowStatus(row: Row): { tone: Tone; text: string; link: string | null } {
   const { item, check, create } = row;
   if (create?.state === "creating") return { tone: "busy", text: "Se creează pe pauză…", link: null };
+  if (create?.state === "waiting") {
+    const { job } = create;
+    const step = `pasul ${job.stepsDone + 1} din ${job.stepsTotal}`;
+    return job.status === "waiting" && job.waitUntil
+      ? { tone: "busy", text: `${PLATFORM_LABEL[job.platform]} a cerut o pauză — reiau la ${clockTime.format(new Date(job.waitUntil))}, de la ${step}`, link: job.adsManagerUrl }
+      : { tone: "busy", text: `Se creează pe pauză — ${step}`, link: job.adsManagerUrl };
+  }
   if (create?.state === "done") return { tone: "ok", text: "Creată — oprită", link: create.result.adsManagerUrl };
   if (create?.state === "failed") {
     const result = create.result;
@@ -211,7 +224,7 @@ export function BatchEditor({
     row.create?.state === "done" || (row.create?.state === "failed" && Boolean(row.create.result.duplicate || row.create.result.partial));
   const checkable = rows.filter((row) => row.item.valid && row.tokenConfigured && !row.needsUpload && !isCreated(row));
   const creatable = rows.filter(
-    (row) => row.check?.state === "done" && row.check.check.ok && !isCreated(row) && row.create?.state !== "creating"
+    (row) => row.check?.state === "done" && row.check.check.ok && !isCreated(row) && row.create?.state !== "creating" && row.create?.state !== "waiting"
   );
   const created = rows.filter((row) => row.create?.state === "done");
   const problemRows = rows.filter((row) => rowProblems(row).length > 0);
@@ -254,12 +267,22 @@ export function BatchEditor({
       setCreates((previous) => ({ ...previous, [row.item.key]: { state: "creating" } }));
       let next: CreateState;
       try {
-        const response = await actions.createBatchPlan({
+        let response = await actions.createBatchPlan({
           plan: row.item.raw,
           screenWorkspace: current.id,
           fingerprint: check.fingerprint,
         });
-        next = response.ok ? { state: "done", result: response } : { state: "failed", result: response };
+        // v2: o creare pe pași care așteaptă limita platformei se reia aici, la ora
+        // spusă, înainte de planul următor (lotul nu sare peste ea în tăcere).
+        while (!response.ok && response.job && actions.continueJob && (response.job.status === "running" || response.job.status === "waiting")) {
+          const job = response.job;
+          setCreates((previous) => ({ ...previous, [row.item.key]: { state: "waiting", job } }));
+          const until = job.status === "waiting" && job.waitUntil ? Date.parse(job.waitUntil) : 0;
+          while (Date.now() < until && !stopRef.current) await new Promise((resolve) => window.setTimeout(resolve, 1000));
+          if (stopRef.current) break;
+          response = await actions.continueJob({ jobId: job.id });
+        }
+        next = response.ok ? { state: "done", result: response } : response.job && !response.partial ? { state: "waiting", job: response.job } : { state: "failed", result: response };
         // Verificarea veche nu mai e de încredere: s-a schimbat ceva de atunci.
         if (!response.ok && response.recheck) {
           setChecks((previous) => {

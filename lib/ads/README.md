@@ -218,11 +218,132 @@ coloanele Google, canalul fără cont, „Căutări”; fără derulare lateral�
 curată. **De testat cu tokenul real:** pauza pe un cont Google adevărat (o faci tu, din
 portal, pe o campanie de test).
 
-Decizii: perioada implicită e 7 zile (ca în schiță); „Rezultate” adună campaniile măsurate,
+**Faza 3 (2026-10-20) — Meta: citirea, pauza, crearea reluabilă.** Totul verificat pe
+documentația Marketing API v26 (citită pe 2026-10-20; rezumatul, cu sursele, în „Meta —
+conexiunea v2”, mai jos).
+
+- **Citirea** (`lib/ads/meta/structure.ts`): campaniile, seturile și reclamele contului,
+  inclusiv cele arhivate (filtrul `effective_status`; implicit Meta le ascunde), cu
+  `effective_status` → stările portalului (`status.ts`; „Activă” e scrisă doar ca cheie, ca
+  garda să rămână valabilă); bugetele din subunități (6000 → 60 lei; fără subunități la
+  JPY, KRW, HUF, CLP, TWD, ISK); setările (obiectivul, optimizarea, evenimentul, pixelul);
+  textele și adresa reclamei. Obiectele șterse se citesc doar după id (`GET /?ids=`), deci
+  le aduce `readMissing` când cifrele le pomenesc.
+- **Cifrele**: o cerere `insights` pe cont la nivel de reclamă, pe zi, cu reclamele șterse
+  și arhivate incluse (`ad.effective_status`, altfel sumele ar ieși mai mici); seturile și
+  campaniile sunt suma reclamelor lor (acoperirea nu se adună pe zile, deci nu se ține).
+  Ferestre de 30 de zile; la timeout de raport (100/1504018, 2/1504038, -3/1504045)
+  fereastra se înjumătățește. Se păstrează doar tipurile de acțiune care pot fi „rezultat”
+  (pixel, formulare instant, apeluri, contact, programări, conversii personalizate).
+- **Rezultatul implicit** pe campanie, din ce optimizează seturile ei: conversii pe site cu
+  `LEAD` → lead-urile din pixel; `LEAD_GENERATION` → formularele instant; apeluri →
+  apelurile din reclamă; conversații → conversațiile începute; trafic, acoperire, ThruPlay →
+  **nemăsurat** (se poate alege altceva din panou). Contul e „măsurat” dacă are un pixel, o
+  conversie personalizată sau o campanie care optimizează pe o conversie.
+- **Pauza** (`meta/pause.ts`, `graph.ts → metaPause`): a doua (și ultima) ușă de scriere spre
+  Meta, cu garda ei (`assertMetaPauseOnly`): exact `POST /{id}` cu `{ status: PAUSED }` pe un
+  id numeric de campanie, set sau reclamă — orice alt câmp, altă valoare, contul `act_…` sau o
+  cale sunt refuzate. Starea se recitește chiar înainte (doar ce e pornit și e în contul de
+  pe ecran). `verify-paused.mjs`: **210 verificări**; regula „un singur POST în graph.ts” a
+  devenit „două POST-uri, fiecare după garda lui”.
+- **Crearea pe pași, reluabilă** (migrarea 13, `lib/ads/jobs.ts`, `meta/create.ts`): fiecare
+  creare e o lucrare (coperte → campanie → set → creativ + reclamă × N). Pasul se notează
+  „trimis” înainte de cerere și „gata”, cu id-ul, după ea. La limita Meta (codurile 4, 17, 32,
+  613, 800xx), lucrarea trece „în așteptare” până la ora din antetul
+  `X-Business-Use-Case-Usage` (`estimated_time_to_regain_access`, minute; implicit 5) și se
+  reia singură de acolo; fără răspuns de la Meta (rețea, timp expirat), așteaptă un minut și
+  caută întâi campania / setul / reclama după nume, ca să nu le creeze de două ori. Un plan nu
+  poate avea două lucrări deschise (index unic în bază). Progresul se vede în „Plan nou”
+  (`job-progress.tsx`: pașii, pasul următor, ora reluării cu numărătoare inversă), în Lot
+  (planul așteaptă și se reia înainte de următorul) și în „Planuri → Creări neterminate”, cu
+  „Reia”.
+
+Testat pe un Meta fals scris după documentație (conturi, structură, insights, căutări,
+creare, pauză, limita BUC cu antetul ei, un răspuns pierdut), pe Supabase fals, în Chrome:
+contul Meta legat de client și citit (5 campanii — activă, pe pauză, arhivată, ștearsă —, 5
+seturi, 6 reclame, inclusiv una respinsă; campania = suma reclamelor; bugetul pe campanie, pe
+set și total; „24 de lead-uri”, „32 de formulare”, „nemăsurat” la trafic; coloanele Meta: CPM,
+CPC, toate clicurile, ThruPlay); pauza (în jurnalul falsului doar `POST /{id}` cu
+`status=PAUSED`); crearea oprită de limită la pasul 4 din 7 și reluată singură (o campanie, două
+reclame, totul `PAUSED`); același plan prins ca dublură, apoi creat intenționat cu răspunsul
+campaniei pierdut (o singură cerere de campanie, nicio dublură); o creare în așteptare cu
+fereastra închisă, reluată din Planuri. Consola curată.
+
+**De testat cu tokenul real (Meta):** că `/me/adaccounts` arată conturile primite ca partener
+și atribuite utilizatorului de sistem; forma reală a antetului `X-Business-Use-Case-Usage` la o
+limită; răspunsul `{ "success": true }` la pauza unui set și a unei reclame (documentat explicit
+doar pe campanie); dacă insights cu filtrul `ad.effective_status` include și reclamele șterse;
+dacă accesul de bază ajunge pe conturile clienților sau Meta cere Advanced Access (vezi „Meta —
+conexiunea v2”, pasul 6).
+
+Decizii: un singur utilizator de sistem (cum cere promptul), același token în
+`META_TOKEN_CLIENTI` și `META_TOKEN_MERIDIAN`; separarea banilor o țin clientul (proprietarul
+lui) și plafonul spațiului — vezi pasul 4 din „Meta — conexiunea v2”. Creativele și copertele
+nu se caută după nume la reluare: sunt în biblioteca contului, nu cheltuie și nu apar nicăieri.
+
+Decizii (faza 2): perioada implicită e 7 zile (ca în schiță); „Rezultate” adună campaniile măsurate,
 iar sub cifră scrie din ce („94 de conversii · 16 apeluri”) și câte sunt nemăsurate; costul
 per rezultat împarte doar cheltuiala campaniilor măsurate; meniul arată Materiale și
 Apeluri abia în fazele care le construiesc (un link spre nimic e un drum înfundat); fișa
 veche a unei campanii create din portal (`/admin/ads/[id]`) rămâne, legată din panou.
+
+### Meta — conexiunea v2 (pas cu pas)
+
+Cum cere promptul: **o aplicație Meta în Business Manager-ul Meridian, cu Marketing API, și un
+utilizator de sistem care primește conturile clienților ca partener.** Conturile rămân ale
+clienților; Meridian doar lucrează în ele. (Pașii vechi, cu un portofoliu și o aplicație pe
+fiecare spațiu, sunt mai jos, la „Cum generezi tokenurile” — v2 îi înlocuiește.)
+
+1. **Id-ul Business Manager-ului Meridian:** business.facebook.com → Setări (rotița) →
+   Informații despre business (*Business info*) → copiezi „ID business portfolio”.
+2. **Aplicația:** developers.facebook.com → *My Apps* → *Create app* → cazul de utilizare
+   „Create & manage ads with Marketing API” → tip *Business* → la „Business portfolio” alegi
+   Meridian. În aplicație: *App settings → Advanced* → **„Require App Secret” oprit** (portalul nu
+   trimite semnătura).
+3. **Utilizatorul de sistem:** business.facebook.com → Setări → *Users → System users → Add* →
+   nume `meridian-portal`, rol *Employee* (nu Admin: nu are nevoie să gestioneze alți
+   utilizatori). Pe el: *Add assets → Apps* → aplicația de la pasul 2, cu *Manage app*.
+4. **Contul Meridian** (pentru clientul „Meridian” din portal): *Add assets → Ad accounts* →
+   contul agenției, cu *Manage ad account* (control total); la fel pagina (*Create ads*),
+   pixelul / dataset-ul (*Use dataset*) și Instagramul. La accesul de bază Meta permite un
+   singur utilizator de sistem obișnuit (plus unul admin), deci același utilizator ține și
+   conturile clienților — separarea banilor o face portalul: fiecare cont e legat de un client
+   cu proprietarul lui (agenția sau clientul), iar plafonul vine din spațiu. Când aplicația
+   trece la accesul complet (pasul 6), poți face un al doilea utilizator doar pentru contul
+   Meridian și să-i pui tokenul în `META_TOKEN_MERIDIAN`.
+5. **Fiecare client** (o dată, el sau tu cu el la telefon): în Business Manager-ul **lui** →
+   Setări → *Partners* → *Add* → „Give a partner access to your assets” → id-ul de la pasul 1 →
+   alege contul de reclame (*Manage campaigns*, sau control total), pagina (*Create ads*),
+   pixelul (*Use dataset*) și, dacă e cazul, Instagramul. Sau invers: la Meridian → Setări →
+   *Accounts → Ad accounts → Add → Request access to an ad account* → id-ul contului clientului →
+   clientul aprobă notificarea. Apoi, la Meridian: *Accounts → Ad accounts* → contul clientului
+   (apare ca partajat) → *Assign people* → `meridian-portal` → *Manage campaigns*; la fel pagina
+   și pixelul.
+6. **Nivelul de acces:** aplicația pornește pe accesul de bază (*Limited*, fost „Standard”: puține
+   cereri pe oră pe cont — de aici așteptările din creare). Documentația Meta spune că pentru
+   conturi care aparțin **altor** firme e nevoie de **Advanced Access** la `ads_management` și
+   `ads_read` (*App Review → Permissions and features → Request advanced access*), cu verificarea
+   firmei (*Business Verification*, în Setări → *Security center*). Nu spune explicit că accesul de
+   partener te scutește. **Încearcă întâi fără:** dacă la „Actualizează” un cont de client dă
+   eroarea 200, 10 sau 270, ceri Advanced Access. Trecerea la accesul complet (*Full*, mai multe
+   cereri) se cere din *App Review* după cel puțin 500 de cereri în 15 zile, cu sub 15% erori.
+7. **Tokenul:** *System users* → `meridian-portal` → *Generate new token* → aplicația → expirare
+   **Never** (dacă nu apare, 60 de zile — și îl regenerezi la expirare) → permisiunile
+   `ads_management`, `ads_read`, `pages_show_list`, `pages_read_engagement`, `pages_manage_ads`
+   (+ `business_management` doar dacă la pasul 9 conturile partajate nu apar). Copiezi tokenul
+   **o singură dată**; nu-l lipi nicăieri altundeva.
+8. **Vercel** → proiectul → *Settings → Environment Variables* → `META_TOKEN_CLIENTI` = tokenul
+   (Production și Preview) și `META_TOKEN_MERIDIAN` = același token → *Redeploy*.
+9. **Portalul:** Clienți → clientul → „Clienți · Meta” (sau „Meridian · Meta”) → „Arată conturile
+   pe care le vede tokenul” → *Adaugă* → „Actualizează acum”.
+10. **Pe fiecare cont, o dată, în Ads Manager:** beneficiarul și plătitorul (DSA) la setările
+    contului — fără ele, crearea pentru public din UE cere câmpurile în plan.
+
+Sursele (citite pe 2026-10-20): developers.facebook.com/docs/marketing-api — *reference/ad-account/campaigns,
+adsets, ads*, *reference/ad-campaign-group, ad-campaign, adgroup* (`effective_status`), *insights*
+și *insights/best-practices*, *ads-action-stats*, *overview/rate-limiting* (BUC, antetul
+`X-Business-Use-Case-Usage`), *business-management-apis/system-users*, *marketing-api/businessmanager/business-to-business*,
+*graph-api/overview/access-levels*; SDK-ul oficial `facebook-python-business-sdk` v26.0.2.
 
 ---
 
@@ -2705,3 +2826,9 @@ Lista crește la fiecare fază; ce e bifat aici e făcut de tine, nu de cod.
    pagina „Clienți” și ecranul nou spun că lipsesc tabelele; restul portalului merge.
 3. **Primul client**: `/admin/ads/clienti` → numele → „Banii clientului” (sau „Banii agenției”
    pentru Meridian) → la fiecare platformă, contul din listă → „Actualizează acum”.
+4. **Migrarea 13** (`supabase/migrations/00000000000013_ads_jobs.sql`): crearea pe pași,
+   reluabilă. Fără ea, crearea pe Meta spune că lipsește tabelul și nu trimite nimic.
+5. **Meta:** pașii din „Meta — conexiunea v2” (aplicația, utilizatorul de sistem, accesul de
+   partener la conturile clienților, tokenul în `META_TOKEN_CLIENTI` și `META_TOKEN_MERIDIAN`).
+   La primul cont de client, apasă „Actualizează”: dacă dă eroarea 200, 10 sau 270, ceri
+   Advanced Access pentru `ads_management` și `ads_read` (pasul 6).

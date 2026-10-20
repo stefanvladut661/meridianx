@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { PauseGlyph } from "./pause-seal";
 import { ProblemList } from "./problem-list";
 import { ERROR_TEXT, WARNING_TEXT } from "./tone";
+import { JobProgress } from "./job-progress";
 
 /**
  * Rezultatul creării: ce există acum în Meta, oprit, cu link direct.
@@ -72,17 +73,32 @@ export function CreateResult({
   platform,
   onCreateAnyway,
   pending,
+  continueJob,
+  onResult,
 }: {
   result: CreateResponse;
   platform: Platform;
   onCreateAnyway: () => void;
   pending: boolean;
+  /** v2: reluarea unei creări pe pași (limita de cereri a platformei). */
+  continueJob?: (input: { jobId: string }) => Promise<CreateResponse>;
+  onResult?: (result: CreateResponse) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const manager = managerName(platform);
   useEffect(() => {
     ref.current?.focus({ preventScroll: false });
   }, [result]);
+
+  if (!result.ok && result.job && continueJob && onResult && (result.job.status === "running" || result.job.status === "waiting")) {
+    const job = result.job;
+    return (
+      <div ref={ref} tabIndex={-1}>
+        {/* O stare nouă = o componentă nouă: reluarea automată pornește din nou pentru ea. */}
+        <JobProgress key={`${job.id}|${job.stepsDone}|${job.status}|${job.waitUntil ?? ""}`} job={job} continueJob={continueJob} onResult={onResult} />
+      </div>
+    );
+  }
 
   if (result.ok) {
     const ads = result.created.filter((object) => object.kind === "ad").length;

@@ -83,6 +83,29 @@ export function assertPaused(edge: string, payload: Record<string, unknown>): vo
 }
 
 // ---------------------------------------------------------------------------
+// Meta: pauza (v2) — singura actualizare, cu garda ei
+// ---------------------------------------------------------------------------
+
+/**
+ * Garda lui `metaPause`: cererea e EXACT `POST /{id}` cu corpul `{ status: "PAUSED" }`,
+ * pe un obiect existent (id numeric — campanie, set sau reclamă; niciodată contul
+ * `act_…`). Orice alt câmp (buget, nume, program), altă valoare sau alt id e
+ * refuzat. Pauza poate doar să oprească cheltuiala.
+ */
+export function assertMetaPauseOnly(objectId: string, payload: Record<string, unknown>): void {
+  if (!/^\d{5,25}$/.test(objectId)) {
+    throw new NotPausedError(`Pauza pe Meta: „${objectId}” nu e id-ul unei campanii, al unui set sau al unei reclame.`);
+  }
+  const keys = Object.keys(payload ?? {});
+  if (keys.length !== 1 || keys[0] !== "status") {
+    throw new NotPausedError(`Pauza pe Meta: se trimite doar „status”, nu ${keys.join(", ") || "nimic"}.`);
+  }
+  if (payload.status !== PAUSED) {
+    throw new NotPausedError(`Pauza pe Meta: statusul trimis poate fi doar ${PAUSED}, nu ${JSON.stringify(payload.status)}.`);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // TikTok: aceeași regulă, alt vocabular
 // ---------------------------------------------------------------------------
 

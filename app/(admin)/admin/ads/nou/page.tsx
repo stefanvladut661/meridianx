@@ -10,6 +10,7 @@ import {
   prepareVideoUpload,
   sendStagedVideo,
 } from "../actions";
+import { continueJobAction } from "../v2-actions";
 
 export const metadata: Metadata = {
   title: "Plan nou — MERIDIAN Reclame",
@@ -52,6 +53,7 @@ export default async function NewPlanPage() {
             chooseWorkspace,
             checkPlan,
             createPaused: createPausedCampaign,
+            continueJob: continueJobAction,
             listLibrary: listLibraryVideos,
             prepareUpload: prepareVideoUpload,
             sendUpload: sendStagedVideo,

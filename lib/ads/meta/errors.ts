@@ -15,6 +15,18 @@ import { NotPausedError } from "./paused";
 const RATE_LIMIT_CODES = new Set([4, 17, 32, 613, 80000, 80003, 80004, 80014]);
 const PERMISSION_CODES = new Set([10, 200, 294, 299]);
 
+/**
+ * O limită de cereri a Meta (codurile 4, 17, 32, 613, 800xx): câte minute de
+ * așteptat înainte de reluare — din antetul `X-Business-Use-Case-Usage` dacă îl
+ * dă, altfel 5 (blocarea la nivelul de dezvoltare e de 300 de secunde). null =
+ * altă eroare.
+ */
+export function metaRateLimit(error: unknown): { minutes: number } | null {
+  if (!(error instanceof MetaApiError) || error.info.code === null || !RATE_LIMIT_CODES.has(error.info.code)) return null;
+  const minutes = error.info.regainMinutes;
+  return { minutes: minutes && minutes > 0 ? Math.min(Math.ceil(minutes), 60) : 5 };
+}
+
 function metaSays(error: MetaApiError): string {
   const { userTitle, userMessage, message, fbtraceId } = error.info;
   const human = userMessage ?? message;

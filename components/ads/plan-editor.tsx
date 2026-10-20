@@ -111,6 +111,8 @@ export interface PlanEditorActions {
     fingerprint: string;
     allowDuplicate: boolean;
   }) => Promise<CreateResponse>;
+  /** v2: „Continuă” o creare pe pași (limita de cereri a platformei). */
+  continueJob?: (input: { jobId: string }) => Promise<CreateResponse>;
   listLibrary: (input: { workspace: string; adAccount: string }) => Promise<LibraryResponse>;
   prepareUpload: (input: {
     workspace: string;
@@ -623,6 +625,8 @@ export function PlanEditor({
               platform={current.platform}
               pending={creating}
               onCreateAnyway={() => runCreate(true)}
+              continueJob={actions.continueJob}
+              onResult={setResult}
             />
           </div>
         ) : null}

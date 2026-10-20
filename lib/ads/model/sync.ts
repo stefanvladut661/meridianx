@@ -6,6 +6,7 @@ import { adapterFor } from "../platform";
 import { findWorkspace, workspaceName, type AdsWorkspace } from "../workspaces";
 import { workspaceToken } from "../workspaces.server";
 import { googleStructureReader } from "../google/structure";
+import { metaStructureReader } from "../meta/structure";
 import type { EntitySnapshot, Level, StructureReader } from "./types";
 import { inheritStatus } from "./inherit";
 import {
@@ -57,6 +58,8 @@ export function readerFor(workspace: AdsWorkspace): StructureReader | null {
   switch (workspace.platform) {
     case "google":
       return googleStructureReader(workspace);
+    case "meta":
+      return metaStructureReader(workspace);
     default:
       return null;
   }

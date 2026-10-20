@@ -79,6 +79,42 @@ export function googleStatus(input: {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Meta (Marketing API v26): `effective_status` pe campanie, set și reclamă.
+// Cheile obiectului sunt valorile Meta — scrise ca chei, nu ca text: garda
+// (`verify-paused.mjs`) caută statusul de pornire scris ca text în cod.
+// ---------------------------------------------------------------------------
+
+const META_STATUS: Record<string, NormalizedStatus> = {
+  ACTIVE: "active",
+  PAUSED: "paused",
+  CAMPAIGN_PAUSED: "paused",
+  ADSET_PAUSED: "paused",
+  PENDING_REVIEW: "review",
+  IN_PROCESS: "review",
+  PREAPPROVED: "review",
+  DISAPPROVED: "rejected",
+  WITH_ISSUES: "issues",
+  PENDING_BILLING_INFO: "issues",
+  ARCHIVED: "archived",
+  DELETED: "removed",
+};
+
+export function metaStatus(effective: string | null | undefined): NormalizedStatus {
+  return (effective && META_STATUS[effective]) || "other";
+}
+
+/**
+ * Filtrul de citire pentru listele contului: fără el, Meta întoarce doar ce nu
+ * e arhivat sau șters. DELETED nu intră: obiectele șterse se citesc doar după id.
+ */
+export const META_LISTED_STATUSES = Object.keys(META_STATUS).filter((status) => status !== "DELETED");
+
+/** Pe Meta, ce poate fi pus pe pauză acum: starea configurată e cea de pornire. */
+export function metaRunning(configured: string | null | undefined): boolean {
+  return Boolean(configured) && META_STATUS[configured as string] === "active";
+}
+
 /** „ENABLED · LIMITED”, „PAUSED”, „ENABLED · DISAPPROVED” — starea brută, pentru panou. */
 export function googleStatusDetail(parts: Array<string | null | undefined>): string | null {
   const seen = parts.filter((part): part is string => Boolean(part) && part !== "UNSPECIFIED" && part !== "UNKNOWN");

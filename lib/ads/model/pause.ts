@@ -6,6 +6,7 @@ import { adapterFor } from "../platform";
 import { findWorkspace, type AdsWorkspace } from "../workspaces";
 import { workspaceToken } from "../workspaces.server";
 import { pauseOnGoogle, type PauseItem, type PlatformPauseOutcome } from "../google/pause";
+import { pauseOnMeta } from "../meta/pause";
 import { canPause } from "./status";
 import { recordModelChange } from "./store";
 import type { Level, NormalizedStatus } from "./types";
@@ -47,6 +48,7 @@ type Pauser = (workspace: AdsWorkspace, adAccount: string, items: PauseItem[]) =
 
 const PAUSERS: Partial<Record<Platform, Pauser>> = {
   google: pauseOnGoogle,
+  meta: pauseOnMeta,
 };
 
 const LEVEL_WORD: Record<Level, [string, string]> = {

@@ -29,7 +29,8 @@ export interface ScreenActions {
 const LEVEL_PARAM: Record<Level, string> = { campaign: "campanii", group: "grupuri", ad: "reclame" };
 const LEVEL_TAB: Record<Level, string> = { campaign: "Campanii", group: "Grupuri", ad: "Reclame" };
 const LEVEL_EMPTY: Record<Level, string> = { campaign: "Nicio campanie", group: "Niciun grup", ad: "Nicio reclamă" };
-const PAUSE_PLATFORMS = new Set(["google"]);
+/** Platformele cu pauza din portal (funcția separată de pauză, cu garda ei). */
+const PAUSE_PLATFORMS = new Set(["google", "meta"]);
 
 type SortKey = "name" | "status" | "budget" | "spend" | "results" | "cost" | "impressions" | "clicks" | "ctr" | `x:${string}`;
 type Sort = { key: SortKey; dir: "asc" | "desc" };
