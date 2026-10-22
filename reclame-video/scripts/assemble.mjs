@@ -13,7 +13,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const MT = "E:/MiniTool MovieMaker/bin/ffmpeg.exe";
+const MT = process.env.FFMPEG ?? "E:/MiniTool MovieMaker/bin/ffmpeg.exe";
 const FPS = 30;
 const args = process.argv.slice(2);
 const opt = (name, def) => {
@@ -48,6 +48,10 @@ const run = (argv, label) => {
   return r.stderr;
 };
 const AF = "aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo";
+// Cu ffmpeg 9, după un atrim care nu pornește de la 0, adelay mută doar timpii,
+// iar amix îi ignoră: bucata cânta de la începutul clipului, peste hook.
+// aresample=async=1 transformă întârzierea în liniște reală.
+const DELAY = (ms) => `adelay=${ms}|${ms},aresample=async=1`;
 
 /** Mixajul: voci + muzică cu sidechain + efecte → wav la -14 LUFS. */
 function mixAudio({ D, style, voices, cues }, outWav) {
@@ -58,7 +62,7 @@ function mixAudio({ D, style, voices, cues }, outWav) {
   voices.forEach((v, k) => {
     inputs.push("-i", join(root, "public", v.src));
     const ms = Math.round((v.at / FPS) * 1000);
-    f.push(`[${inputs.length / 2 - 1}:a]${AF},atrim=start=${(v.trimBefore / FPS).toFixed(4)}:duration=${(v.dur / FPS).toFixed(4)},asetpts=PTS-STARTPTS,adelay=${ms}|${ms},apad,atrim=0:${total}[v${k}]`);
+    f.push(`[${inputs.length / 2 - 1}:a]${AF},atrim=start=${(v.trimBefore / FPS).toFixed(4)}:duration=${(v.dur / FPS).toFixed(4)},asetpts=PTS-STARTPTS,${DELAY(ms)},apad,atrim=0:${total}[v${k}]`);
     vLabels.push(`[v${k}]`);
   });
   if (vLabels.length > 1) f.push(`${vLabels.join("")}amix=inputs=${vLabels.length}:dropout_transition=0,volume=${vLabels.length}[voice]`);
@@ -75,7 +79,7 @@ function mixAudio({ D, style, voices, cues }, outWav) {
     if (!file) return;
     inputs.push("-i", join(root, file));
     const ms = Math.max(0, Math.round((c.f / FPS) * 1000));
-    f.push(`[${inputs.length / 2 - 1}:a]${AF},adelay=${ms}|${ms},volume=${SFX_DB + (c.gain ?? 0)}dB,apad,atrim=0:${total}[s${k}]`);
+    f.push(`[${inputs.length / 2 - 1}:a]${AF},${DELAY(ms)},volume=${SFX_DB + (c.gain ?? 0)}dB,apad,atrim=0:${total}[s${k}]`);
     sLabels.push(`[s${k}]`);
   });
   const all = ["[voiceOut]", "[mus]", ...sLabels];

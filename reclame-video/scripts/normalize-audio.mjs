@@ -10,7 +10,7 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const ffmpeg = `${process.env.LOCALAPPDATA}/CapCut/Apps/9.4.0.4015/ffmpeg.exe`;
+const ffmpeg = process.env.FFMPEG ?? `${process.env.LOCALAPPDATA}/CapCut/Apps/9.4.0.4015/ffmpeg.exe`;
 const out = join(root, "public/norm");
 mkdirSync(out, { recursive: true });
 
