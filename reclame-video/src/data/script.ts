@@ -8,8 +8,8 @@ export type StyleId = "larven" | "shopify";
 export type PieceId = HookId | "b1" | CtaId;
 
 export const PIECE_TEXT: Record<PieceId, string[]> = {
-  h1: ["Căutăm trei restaurante din Sectorul 1 pe care să le ajutăm să se dezvolte."],
-  h2: ["Căutăm trei restaurante din Sectorul 1 pentru un parteneriat de marketing pe termen lung."],
+  h1: ["Căutăm trei restaurante din Sectorul 6 pe care să le ajutăm să se dezvolte."],
+  h2: ["Căutăm trei restaurante din Sectorul 6 pentru un parteneriat de marketing pe termen lung."],
   h3: ["Bucătăria ta are un șef.", "Imaginea ta online are?"],
   h4: ["Ai construit un restaurant bun.", "Imaginea lui online ar trebui să arate la fel."],
   h5: ["Prezența online a restaurantului tău n-ar trebui să depindă de timpul tău liber."],
