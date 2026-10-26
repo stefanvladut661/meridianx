@@ -368,3 +368,17 @@ Concluzia de acum: importul CSV săptămânal costă zero. Legătura automată m
   - emailul cu arhiva atașată;
   - zip-ul refăcut, care nu se include pe el însuși;
   - 360 px.
+
+### Faza 7 — accese
+
+- **Migrarea 22** (`00000000000022_firma_accese.sql`): `firma_conturi`, cu numele, categoria, adresa, contul cu care se intră (de obicei un email), cine are acces, 2FA (da / nu / nu știu), **unde e parola**, abonamentul (sumă, monedă, lunar/anual), reînnoirea și notele. **Niciun câmp de parolă sau de cheie.**
+- **Paza contra parolelor:** câmpurile text refuză ce arată a parolă sau a cheie: un cuvânt lung cu litere și cifre, ori prefixe de chei (`sk-`, `ghp_`, `eyJ`…). Mesajul spune că parolele stau în managerul de parole și că aici se scrie doar unde sunt. Testat pe 8 texte: cele normale trec, parolele și cheile sunt prinse. În istoric intră doar numele contului.
+- **„Adaugă lista de bază”:** conturile din prompt (BT Go, Oblio, Google, Meta, TikTok, Vercel, Supabase, GitHub, domeniul), plus Resend și Anthropic, folosite de admin. Doar numele și adresa; ce există deja nu se dublează.
+- **Reînnoirea:** din data trecută și ciclu se calculează următoarea reînnoire (31 ianuarie, lunar → 31 octombrie). Alertă când cade în următoarele 7 zile: sus pe pagină și pe rând („în 5 zile”). Intră și în panou și în rezumatul de dimineață (faza 8).
+- **Sus:** câte conturi sunt, abonamentele aduse la o sumă lunară și câte n-au 2FA.
+- **Verificat:**
+  - lista de bază, apăsată de două ori (a doua oară nu adaugă nimic);
+  - o parolă pusă la „Unde e parola”, refuzată;
+  - contul completat;
+  - alerta de reînnoire;
+  - 360 px.
