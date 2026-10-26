@@ -72,7 +72,18 @@ Zona modulului: `app/(admin)/admin/firma/**`, `lib/firma/**`,
 
 ## Variabilele din Vercel
 
-Le completez pe măsură ce fazele le cer. Lista completă și pașii sunt la „De făcut de om”.
+| Variabilă | Ce e | Faza |
+|---|---|---|
+| `OBLIO_EMAIL` | Emailul cu care intri în Oblio (`client_id` la API). | 1 |
+| `OBLIO_API_SECRET` | Oblio → Setări → Date cont → „Secret API” (`client_secret`). **Se schimbă când se resetează parola contului Oblio**: după o resetare, pune-l din nou în Vercel. | 1 |
+| `OBLIO_CIF` | CUI-ul firmei tale, cum apare în Oblio (cu sau fără „RO”, ca acolo). | 1 |
+
+### Oblio (pas cu pas)
+
+1. Intră în Oblio → **Setări → Date cont** și copiază **Secretul API**.
+2. Vercel → proiectul → **Settings → Environment Variables** → adaugă `OBLIO_EMAIL`, `OBLIO_API_SECRET`, `OBLIO_CIF` pentru *Production* și *Preview*.
+3. **Redeploy** (Deployments → ultimul → Redeploy), ca variabilele noi să fie citite.
+4. În admin → **Firmă → Setări**, „Oblio” trebuie să arate „Legat”. Apoi, în **Clienți → Client nou → Caută în Oblio**, caută un client existent după CUI: dacă vin datele lui, legătura merge.
 
 ---
 
@@ -85,7 +96,7 @@ Le completez pe măsură ce fazele le cer. Lista completă și pașii sunt la �
 
 ## De testat cu cheile reale
 
-Se completează la fiecare fază.
+- **Faza 1 — căutarea în Oblio:** `GET /nomenclature/clients` după `clientCif` și după `name`. Am construit-o după documentație și am testat-o pe un Oblio simulat. De verificat pe contul real: că un client existent vine cu adresa, orașul, județul și emailul completate.
 
 ---
 
@@ -96,3 +107,19 @@ Se completează la fiecare fază.
 - Am citit `CLAUDE.md`, adminul existent (lead-uri, autentificarea, portalul de reclame) și ramura `feat/ads-portal-v2`. Componentele ei de cadru și tema sunt deja pe `main`.
 - Ramura: `feat/admin-firma`, din `main`.
 - Planul și deciziile de mai sus.
+
+### Faza 1 — clienți și contracte
+
+- **Migrarea 16** (`00000000000016_firma_baza.sql`): setările, istoricul, clienții, persoanele de contact, contractele și prețurile pe perioade. RLS doar pentru `is_lead_admin()`.
+- **Cadrul** (`components/firma/`): meniu în stânga, bara de sus cu luna (și clientul, pe ecranele care îl folosesc), panou lateral cu focusul ținut înăuntru și Escape. Pe telefon, bară jos cu „Mai mult”. Tema albă e cea a portalului (`../ads/portal.css`), neatinsă.
+- **Clienți** (`/admin/firma/clienti`): tabelul cu contractul din luna aleasă, abonamentul lunii, termenii de facturare, legătura cu reclamele și emailul de facturare. Din panou:
+  - datele firmei, cu „Caută în Oblio” după CUI sau nume (doar citire);
+  - persoanele de contact (măcar un telefon sau un email);
+  - contractele cu servicii, ziua emiterii (1–28, ca să existe în fiecare lună), scadența, moneda și bugetul de reclame recomandat, marcat „nu se facturează”;
+  - prețul pe perioade, pe luni întregi. Două perioade care acoperă aceeași lună sunt refuzate;
+  - legătura cu clientul din portalul de reclame (citită cu `clientsForRequest`, fără nicio schimbare în modulul de reclame);
+  - arhivarea în loc de ștergere, ca facturile și istoricul să rămână legate.
+- **Istoric** (`/admin/firma/istoric`): fiecare acțiune, filtrabilă pe zone. **Setări** (`/admin/firma/setari`): seria, emailul contabilului, folderul de pe Drive și modelul de nume al lunii, plus starea legăturilor din Vercel (fără să arate cheile).
+- **Meniul comun:** „Firmă” e în bara panoului de lead-uri. În meniul reclamelor nu, vezi „Decizii”.
+- **Sumele se citesc ca în română:** „1.500” înseamnă 1500, „1.234,50” înseamnă 1234,5. Testul a prins varianta greșită, în care „1.500” devenea 1,50.
+- **Verificat pe Supabase și Oblio simulate:** client adăugat din Oblio, persoană de contact cu validare, contract cu două perioade (suprapunerea e refuzată), prețul corect pe septembrie, decembrie și august (fără contract), istoricul, setările, 360 px fără scroll lateral, Escape și focusul.
