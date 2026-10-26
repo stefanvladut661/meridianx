@@ -22,6 +22,9 @@ export function failure(error: { code?: string; message?: string } | null | unde
   if (code === "42P01" || code === "PGRST205" || /does not exist|schema cache/i.test(message)) {
     return { ok: false, message: `Tabelele modulului lipsesc: rulează migrarea ${migration} în Supabase → SQL Editor.` };
   }
+  if (code === "42703" || code === "PGRST204") {
+    return { ok: false, message: "Baza nu are încă toate coloanele modulului: rulează migrările firmei (16–23) în Supabase → SQL Editor." };
+  }
   if (code === "23505") return { ok: false, message: "Există deja un rând cu aceleași date (de exemplu, același CUI la alt client activ)." };
   console.error(`[firma] eroare de bază (${code || "fără cod"}):`, message);
   return { ok: false, message: "Baza de date n-a răspuns. Reîncearcă; dacă se repetă, vezi Supabase → Logs." };

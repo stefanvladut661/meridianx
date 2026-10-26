@@ -108,6 +108,23 @@ Promptul cerea un cont de serviciu cu acces de editor la folder. Un cont de serv
 
 **Apoi, la ambele:** în **Firmă → Setări**, lipește adresa folderului rădăcină și alege modelul de nume al lunii. Salvează. Cardul „Drive” trebuie să arate „Merge”, iar „Fă acum folderul …” creează folderul lunii curente.
 
+### Jobul programat (intrarea din `vercel.json` — o adaugi tu)
+
+Adaugă în `vercel.json`, la `crons`, lângă cele existente:
+
+```json
+{ "path": "/admin/firma/cron", "schedule": "0 5 * * *" }
+```
+
+Rulează zilnic la 05:00 UTC, adică 08:00 vara și 07:00 iarna, ora României. Folosește același `CRON_SECRET` ca celelalte joburi, deja pus în Vercel. Fără el, ruta refuză orice apel în producție.
+
+Ce face, în ordine. Nimic fiscal, nimic către clienți:
+1. folderul lunii pe Drive, dacă e legat;
+2. ciornele lunii din contracte (rămân ciorne până le aprobi);
+3. starea e-Factura și încasările din Oblio (doar citire);
+4. în primele 15 zile ale lunii, verificarea pachetului lunii trecute;
+5. alertele și, doar dacă sunt, rezumatul pe email către adresa din Setări, o singură dată pe zi.
+
 ### Exportul din BT Go (ce îmi dai)
 
 - **Formatul:** CSV. E cel mai ușor de citit sigur. PDF-ul extrasului nu se poate citi rând cu rând fără ghicit. Un XLS/XLSX ar cere un pachet nou.
@@ -143,8 +160,17 @@ Concluzia de acum: importul CSV săptămânal costă zero. Legătura automată m
 
 ## De făcut de om
 
-1. **Schimbă cheia de service din Supabase** (`SUPABASE_SERVICE_ROLE_KEY`) înainte să intre date financiare în admin. Apoi pune-o pe cea nouă în Vercel și redeploy.
-2. Rulează migrările 16 și următoarele în Supabase → SQL Editor. Fișierul cu toate apare pe Desktop la final.
+1. **Schimbă cheia de service din Supabase** (`SUPABASE_SERVICE_ROLE_KEY`) **înainte să intre date financiare în admin.** Supabase → Project Settings → API → generezi o cheie nouă. O pui în Vercel (Production și Preview), dai **Redeploy**, apoi o revoci pe cea veche.
+2. **Rulează migrările 16–23** în Supabase → SQL Editor: tot fișierul `C:\Users\PC\Desktop\meridian-firma-migrari-16-23.sql`, apoi Run. La final, toate rândurile verificării trebuie să fie `true`.
+3. **Oblio:** pune `OBLIO_EMAIL`, `OBLIO_API_SECRET`, `OBLIO_CIF` în Vercel (pașii la „Oblio”). **Secretul API se schimbă când resetezi parola contului Oblio**: după o resetare, pune-l din nou în Vercel. Apoi alege seria în Firmă → Setări.
+4. **Testul emiterii cu cheile reale**, cu o proformă, nu cu o factură: `node --env-file=.env.local lib/firma/oblio/test-proforma.mjs <seria-de-proforma>`. **Apoi șterge proforma din Oblio, de mână.**
+5. **Drive:** alege varianta A (OAuth, pentru „My Drive”) sau B (cont de serviciu, pentru Shared Drive) și urmează pașii de la „Drive”. Apoi pune folderul rădăcină în Setări. Când muți facturile pe Drive-ul ăsta, spune-mi structura finală a folderului.
+6. **Citirea bonurilor:** `ANTHROPIC_API_KEY` în Vercel.
+7. **Emailurile** folosesc `RESEND_API_KEY` și `RESEND_FROM_EMAIL`, deja puse pentru lead-uri. Domeniul expeditorului trebuie verificat în Resend.
+8. **Jobul de dimineață:** adaugă intrarea în `vercel.json` (vezi „Jobul programat”) și pune adresa pentru rezumat în Setări.
+9. **Un export real din BT Go** (CSV; poți acoperi numele și sumele), ca să fixez formatul implicit.
+10. **Emailul contabilului** în Setări.
+11. **Meniul reclamelor:** linkul „Firmă” lipsește din meniul din stânga al portalului de reclame (`components/ads/sidebar.tsx`, zona celuilalt terminal). E un rând de adăugat acolo, de tine sau de terminalul acela.
 
 ---
 
@@ -172,6 +198,21 @@ Concluzia de acum: importul CSV săptămânal costă zero. Legătura automată m
 - **Faza 1 — căutarea în Oblio:** `GET /nomenclature/clients` după `clientCif` și după `name`. Am construit-o după documentație și am testat-o pe un Oblio simulat. De verificat pe contul real: că un client existent vine cu adresa, orașul, județul și emailul completate.
 
 ---
+
+## Previzualizările Vercel (ramura `feat/admin-firma`)
+
+| Faza | Commit | Preview |
+|---|---|---|
+| 0 — planul | `851abff` | https://meridianx-4rrx6xeag-stefanvladut661s-projects.vercel.app |
+| 1 — clienți și contracte | `6233a48` | https://meridianx-a2825hljh-stefanvladut661s-projects.vercel.app |
+| 2 — facturi | `a33ba2a` | https://meridianx-o60p1e9dg-stefanvladut661s-projects.vercel.app |
+| 3 — Drive | `8c75d59` | https://meridianx-csofcsklr-stefanvladut661s-projects.vercel.app |
+| 4 — cheltuieli | `86c4843` | https://meridianx-jnkwcq4nw-stefanvladut661s-projects.vercel.app |
+| 5 — încasări | `4a48578` | https://meridianx-9fr8urppx-stefanvladut661s-projects.vercel.app |
+| 6 — pachetul pentru contabil | `599b985` | https://meridianx-7dhx67hks-stefanvladut661s-projects.vercel.app |
+| 7 — accese | `5cf68d4` | https://meridianx-5a8ag00bt-stefanvladut661s-projects.vercel.app |
+
+Pe preview, modulul arată ce migrare lipsește până rulezi migrările 16–23 în Supabase.
 
 ## Jurnal
 
@@ -381,4 +422,35 @@ Concluzia de acum: importul CSV săptămânal costă zero. Legătura automată m
   - o parolă pusă la „Unde e parola”, refuzată;
   - contul completat;
   - alerta de reînnoire;
+  - 360 px.
+
+### Faza 8 — panou și alerte
+
+- **Migrarea 23** (`00000000000023_firma_alerte.sql`): `firma_setari.email_rezumat` și `firma_rezumate` (un rezumat pe zi, ca să nu plece de două ori).
+- **Panoul** (`/admin/firma`, acum prima pagină a modulului):
+  - **facturat** în lună (facturile emise);
+  - **încasat** în lună: din extras, adică plățile legate de facturi, exact, când luna are extras importat; altfel din Oblio (ultima încasare a facturii în lună), cu sursa scrisă sub cifră;
+  - **de încasat** (în termen) și **întârziat** (scadența trecută);
+  - **cheltuielile** lunii;
+  - **banii pe reclame pe client**, din portalul de reclame, doar pentru clienții legați. Se adună doar campaniile, ca grupurile și reclamele să nu fie numărate de trei ori, separat pe monede. Citirea folosește doar funcțiile de citire ale portalului (`clientsForRequest`, `readClientView`), fără nicio schimbare acolo.
+- **Nicio cifră inventată:** o cifră fără date e „—”, nu 0. Sub panou, „Ca să apară toate cifrele” spune ce lipsește (Oblio, Drive, extrasul lunii, clienții, bonurile).
+- **Alertele**, fiecare cu link spre locul unde se rezolvă:
+  - o factură întârziată (cu câte zile și cât);
+  - un contract care se termină în 30 de zile;
+  - pachetul pentru contabil pe luna trecută, netrimis (cu numărul de lipsuri);
+  - un abonament care se reînnoiește în 7 zile;
+  - ciorne de facturi de aprobat;
+  - emailuri de facturi neplecate.
+- **Jobul de dimineață** (`/admin/firma/cron`, `lib/firma/rezumat.ts`), cu același `CRON_SECRET`:
+  - folderul lunii, ciornele (doar ciorne), starea din Oblio (doar citire), verificarea pachetului (zilele 1–15), alertele;
+  - rezumatul pe email, doar în zilele cu alerte și o singură dată pe zi;
+  - totul intră în istoric. Ce face și intrarea din `vercel.json` sunt la „Jobul programat”;
+  - jobul nu citește banii pe reclame: portalul citește cu sesiunea omului (RLS), iar un cron n-o are. Alertele nu depind de ei.
+- **Setări:** adresa (sau adresele) pentru rezumatul de dimineață.
+- **Verificat:**
+  - cifrele lunii, potrivite cu datele de test;
+  - cheltuiala pe reclame: 200 lei din campanie, cu grupul neadunat; „—” pe o lună fără cheltuială;
+  - toate tipurile de alerte;
+  - jobul: 401 fără secret, rezumatul trimis o dată, „deja-trimis” la al doilea apel în aceeași zi. Jobul a citit din Oblio că o factură „întârziată” din datele de test era de fapt încasată și a scos alerta: Oblio e sursa;
+  - ultimul rezumat afișat în panou;
   - 360 px.

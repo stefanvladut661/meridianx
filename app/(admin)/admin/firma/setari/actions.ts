@@ -31,6 +31,12 @@ const settingsSchema = z.object({
       return value === "" ? null : (match?.[1] ?? value);
     })
     .refine((value) => value === null || /^[A-Za-z0-9_-]{10,200}$/.test(value), "Lipește adresa folderului din Drive sau id-ul lui."),
+  emailRezumat: z
+    .string()
+    .trim()
+    .transform((value) => value.split(/[,;\s]+/).map((item) => item.trim().toLowerCase()).filter(Boolean))
+    .refine((list) => list.length <= 5 && list.every((item) => z.email().safeParse(item).success), "Adresele pentru rezumat nu arată bine (cel mult cinci, despărțite prin virgulă).")
+    .transform((list) => (list.length ? list.join(", ") : null)),
   driveModelLuna: z
     .string()
     .trim()

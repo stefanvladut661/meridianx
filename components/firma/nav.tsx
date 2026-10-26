@@ -20,7 +20,7 @@ export interface FirmaNavItem {
 }
 
 export const FIRMA_NAV: FirmaNavItem[] = [
-  { key: "panou", href: "/admin/firma", label: "Panou", icon: <IconPanel />, match: /^\/admin\/firma\/?$/, month: true, client: false, ready: false },
+  { key: "panou", href: "/admin/firma", label: "Panou", icon: <IconPanel />, match: /^\/admin\/firma\/?$/, month: true, client: false, ready: true },
   { key: "clienti", href: "/admin/firma/clienti", label: "Clienți", icon: <IconClients />, match: /^\/admin\/firma\/clienti/, month: true, client: false, ready: true },
   { key: "facturi", href: "/admin/firma/facturi", label: "Facturi", icon: <IconInvoice />, match: /^\/admin\/firma\/facturi/, month: true, client: true, ready: true },
   { key: "cheltuieli", href: "/admin/firma/cheltuieli", label: "Cheltuieli", icon: <IconExpense />, match: /^\/admin\/firma\/cheltuieli/, month: true, client: false, ready: true },

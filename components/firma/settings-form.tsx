@@ -24,6 +24,7 @@ export function SettingsForm({
     emailContabil: settings.emailContabil ?? "",
     driveRadacina: settings.driveRadacina ?? "",
     driveModelLuna: settings.driveModelLuna,
+    emailRezumat: settings.emailRezumat ?? "",
   });
   const [error, setError] = useState<{ field?: string; message: string } | null>(null);
   const [saved, setSaved] = useState(false);
@@ -80,6 +81,9 @@ export function SettingsForm({
             <input id="set-emailContabil" type="email" value={values.emailContabil} onChange={(e) => set("emailContabil", e.currentTarget.value)} className={inputClass} maxLength={200} />
           </Field>
         </div>
+        <Field id="set-emailRezumat" label="Emailul pentru rezumatul de dimineață" error={fieldError("emailRezumat")} hint="Pleacă doar în zilele cu alerte (facturi întârziate, contracte care se termină, pachetul contabilului, abonamente, ciorne). Gol = fără rezumat.">
+          <input id="set-emailRezumat" value={values.emailRezumat} onChange={(e) => set("emailRezumat", e.currentTarget.value)} className={inputClass} placeholder="tu@exemplu.ro" />
+        </Field>
       </section>
 
       <section aria-labelledby="drive-set" className="grid gap-3">
