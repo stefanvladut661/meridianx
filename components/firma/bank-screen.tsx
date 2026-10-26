@@ -55,7 +55,8 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
   const router = useRouter();
   const [notice, setNotice] = useState<{ tone: "ok" | "warn" | "error"; text: string } | null>(null);
   const [pending, start] = useTransition();
-  const pendingLines = data.lines.filter((line) => line.potrivire === "de_confirmat" || (line.potrivire === "nepotrivita" && line.directie === "in"));
+  // De confirmat: tot ce n-are pereche — încasări fără factură și plăți fără document (le legi sau le ignori).
+  const pendingLines = data.lines.filter((line) => line.potrivire === "de_confirmat" || line.potrivire === "nepotrivita");
   const incoming = data.lines.filter((line) => line.directie === "in").reduce((sum, line) => sum + line.suma, 0);
   const outgoing = data.lines.filter((line) => line.directie === "out").reduce((sum, line) => sum + line.suma, 0);
 
@@ -94,7 +95,9 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
           <h2 id="de-confirmat" className="text-[15px] font-semibold text-bone">
             De confirmat ({pendingLines.length})
           </h2>
-          <p className="mt-0.5 text-[13px] text-dim">Încasări pe care adminul nu le-a putut lega sigur. Alege factura (încasarea se marchează în Oblio) sau ignoră rândul.</p>
+          <p className="mt-0.5 text-[13px] text-dim">
+            Încasări fără factură sigură — alege factura (încasarea se marchează în Oblio) — și plăți fără document — alege cheltuiala urcată. Ce nu ține de o factură sau un bon (dobânzi, comisioane, taxe) ignoră.
+          </p>
           <ul className="mt-3 grid gap-2">
             {pendingLines.map((line) => (
               <ConfirmRow
@@ -206,15 +209,21 @@ function ConfirmRow({
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [pending, start] = useTransition();
   const others = options.filter((option) => !line.candidati.some((candidate) => candidate.id === option.id));
+  const incoming = line.directie === "in";
   return (
     <li className="rounded-xl border border-hair bg-white p-3 text-[13.5px]">
       <p>
-        <span className="font-semibold tabular-nums text-[var(--ap-ok)]">+{money(line.suma, line.moneda)}</span> · {dayLabel(line.data)} · <span className="font-medium">{line.contrapartida ?? "fără nume"}</span>
+        <span className={cn("font-semibold tabular-nums", incoming ? "text-[var(--ap-ok)]" : "text-bone")}>
+          {incoming ? "+" : "−"}
+          {money(Math.abs(line.suma), line.moneda)}
+        </span>{" "}
+        · {dayLabel(line.data)} · <span className="font-medium">{line.contrapartida ?? "fără nume"}</span>
+        <span className="ml-2 text-[12px] text-dim">{incoming ? "încasare" : "plată"}</span>
       </p>
       <p className="mt-0.5 text-dim">{line.detalii ?? ""}</p>
       <p className="mt-1 text-[12.5px] text-dim">De ce: {line.motiv}</p>
       <fieldset className="mt-2 grid gap-1">
-        <legend className="sr-only">Factura plătită</legend>
+        <legend className="sr-only">{incoming ? "Factura plătită" : "Cheltuiala plătită"}</legend>
         {line.candidati.map((candidate) => (
           <label key={candidate.id} className="flex items-start gap-2">
             <input type="radio" name={`c-${line.id}`} value={candidate.id} checked={choice === candidate.id} onChange={() => setChoice(candidate.id)} className="mt-1" />
@@ -224,7 +233,7 @@ function ConfirmRow({
           </label>
         ))}
         <label className="mt-1 flex flex-wrap items-center gap-2">
-          <span className="text-dim">Altă factură:</span>
+          <span className="text-dim">{line.candidati.length ? (incoming ? "Altă factură:" : "Altă cheltuială:") : incoming ? "Factura:" : "Cheltuiala:"}</span>
           <select
             value={line.candidati.some((candidate) => candidate.id === choice) ? "" : choice}
             onChange={(event) => setChoice(event.currentTarget.value)}
@@ -251,7 +260,7 @@ function ConfirmRow({
                 return;
               }
               const warn = /n-a putut/.test(done.message ?? "");
-              onDone({ tone: warn ? "warn" : "ok", text: `${money(line.suma, line.moneda)} de la ${line.contrapartida ?? "plătitor"}: ${done.message ?? "legat."}` });
+              onDone({ tone: warn ? "warn" : "ok", text: `${money(Math.abs(line.suma), line.moneda)} ${incoming ? "de la" : "către"} ${line.contrapartida ?? (incoming ? "plătitor" : "beneficiar")}: ${done.message ?? "legat."}` });
             })
           }
           className="btn btn-light !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]"
@@ -270,7 +279,7 @@ function ConfirmRow({
           }
           className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]"
         >
-          Ignoră (nu e o factură)
+          {incoming ? "Ignoră (nu e o factură)" : "Ignoră (n-are document)"}
         </button>
         {message ? (
           <span role="status" className={cn("text-[13px]", message.tone === "ok" ? "text-[var(--ap-ok)]" : "text-[var(--ap-error)]")}>

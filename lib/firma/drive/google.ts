@@ -183,6 +183,32 @@ export async function renameFile(fileId: string, name: string): Promise<DriveFil
   return toFile((await response.json()) as Record<string, unknown>);
 }
 
+export interface DriveListed extends DriveFile {
+  mimeType: string;
+  size: number | null;
+}
+
+/** Fișierele dintr-un folder (`files.list`, paginat). */
+export async function listChildren(folderId: string): Promise<DriveListed[]> {
+  const out: DriveListed[] = [];
+  let pageToken: string | null = null;
+  do {
+    const q = `${quote(folderId)} in parents and trashed = false`;
+    const page: string = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : "";
+    const response = await driveFetch(`/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name,mimeType,size,webViewLink)&pageSize=200&supportsAllDrives=true&includeItemsFromAllDrives=true${page}`);
+    const data = (await response.json()) as { nextPageToken?: string; files?: Record<string, unknown>[] };
+    for (const file of data.files ?? []) out.push({ ...toFile(file), mimeType: String(file.mimeType ?? ""), size: file.size ? Number(file.size) : null });
+    pageToken = data.nextPageToken ?? null;
+  } while (pageToken && out.length < 2000);
+  return out;
+}
+
+/** Conținutul unui fișier (`files.get` cu `alt=media`; nu merge pe documentele native Google). */
+export async function downloadFile(fileId: string): Promise<Buffer> {
+  const response = await driveFetch(`/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`, {}, 120_000);
+  return Buffer.from(await response.arrayBuffer());
+}
+
 const SIMPLE_LIMIT = 5 * 1024 * 1024;
 
 /** Urcă un fișier în folder: multipart sub 5 MB, resumable peste. */

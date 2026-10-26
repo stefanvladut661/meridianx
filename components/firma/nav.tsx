@@ -15,6 +15,8 @@ export interface FirmaNavItem {
   month: boolean;
   client: boolean;
   ready: boolean;
+  /** Luna implicită, față de luna curentă (pachetul pentru contabil e pentru luna trecută). */
+  defaultMonthOffset?: number;
 }
 
 export const FIRMA_NAV: FirmaNavItem[] = [
@@ -23,7 +25,7 @@ export const FIRMA_NAV: FirmaNavItem[] = [
   { key: "facturi", href: "/admin/firma/facturi", label: "Facturi", icon: <IconInvoice />, match: /^\/admin\/firma\/facturi/, month: true, client: true, ready: true },
   { key: "cheltuieli", href: "/admin/firma/cheltuieli", label: "Cheltuieli", icon: <IconExpense />, match: /^\/admin\/firma\/cheltuieli/, month: true, client: false, ready: true },
   { key: "incasari", href: "/admin/firma/incasari", label: "Încasări", icon: <IconBank />, match: /^\/admin\/firma\/incasari/, month: true, client: false, ready: true },
-  { key: "contabil", href: "/admin/firma/contabil", label: "Contabil", icon: <IconPackage />, match: /^\/admin\/firma\/contabil/, month: true, client: false, ready: false },
+  { key: "contabil", href: "/admin/firma/contabil", label: "Contabil", icon: <IconPackage />, match: /^\/admin\/firma\/contabil/, month: true, client: false, ready: true, defaultMonthOffset: -1 },
   { key: "accese", href: "/admin/firma/accese", label: "Accese", icon: <IconKey />, match: /^\/admin\/firma\/accese/, month: false, client: false, ready: false },
   { key: "istoric", href: "/admin/firma/istoric", label: "Istoric", icon: <IconHistory />, match: /^\/admin\/firma\/istoric/, month: false, client: false, ready: true },
   { key: "setari", href: "/admin/firma/setari", label: "Setări", icon: <IconSettings />, match: /^\/admin\/firma\/setari/, month: false, client: false, ready: true },

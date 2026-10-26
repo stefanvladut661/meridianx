@@ -22,7 +22,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const item = navItemFor(pathname);
-  const month = isMonth(params.get("luna")) ? (params.get("luna") as string) : currentMonth();
+  const month = isMonth(params.get("luna")) ? (params.get("luna") as string) : addMonths(currentMonth(), item?.defaultMonthOffset ?? 0);
   const clientId = params.get("client") ?? "";
   const months = Array.from({ length: 24 }, (_, i) => addMonths(currentMonth(), 2 - i));
   if (!months.includes(month)) months.push(month);

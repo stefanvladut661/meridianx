@@ -335,3 +335,36 @@ Concluzia de acum: importul CSV săptămânal costă zero. Legătura automată m
   - extrasul o singură dată pe Drive;
   - facturile apar „Încasată”;
   - 360 px.
+
+### Faza 6 — pachetul pentru contabil
+
+- **Migrarea 21** (`00000000000021_firma_contabil.sql`): `firma_pachete`, câte un rând pe lună. Ține:
+  - verificarea și ce lipsea;
+  - zip-ul (în stocare și pe Drive);
+  - emailul și starea lui.
+- **Verificarea lunii** (`/admin/firma/contabil`, implicit luna trecută; bara de sus știe asta):
+  - **lipsește** (oprește zip-ul):
+    - o factură emisă fără PDF pe Drive;
+    - o cheltuială fără sumă sau dată, ori fără document pe Drive;
+    - o plată din extras fără document (o legi de o cheltuială sau o ignori în Încasări, ex. taxe și comisioane);
+    - extrasul neimportat sau nepus pe Drive;
+  - **de verificat** (nu oprește): ciorne de facturi neaprobate, prima sau ultima tranzacție importată departe de capetele lunii. Datele din extras sunt ale tranzacțiilor, nu ale perioadei exportate, așa că acoperirea lunii nu poate fi sigură;
+  - fiecare lipsă are butonul sau linkul care o rezolvă („Urcă pe Drive PDF-urile facturilor”, Cheltuieli, Încasări). Rezultatul se salvează, pentru alertele de dimineață din faza 8.
+- **Încasări:** lista „De confirmat” cuprinde acum și plățile fără document, cu cheltuielile urcate ca variante și „Ignoră (n-are document)”.
+- **Zip-ul** (`lib/firma/zip.ts`, fără pachete noi):
+  - formatul ZIP cu deflate și CRC-32 din `node:zlib`, nume în UTF-8; PDF-urile și pozele se pun necomprimate;
+  - **conținutul:** tot ce e în folderul lunii de pe Drive, inclusiv ce ai pus acolo de mână, cu extrasul. Documentele native Google sunt sărite și numite (trebuie exportate ca PDF). Zip-urile făcute înainte nu intră;
+  - fără Drive legat, se folosesc copiile adminului: bonurile și extrasele din stocare, facturile din Oblio;
+  - zip-ul se pune în stocare și în folderul lunii, ca „pentru contabil - {luna an} - {data ora}.zip”. „Fă zip-ul” e activ doar când luna e completă; altfel e „Fă zip-ul oricum”.
+- **Emailul către contabil:**
+  - adresa din Setări, subiectul „Documentele pentru {luna an}”, textul cu numărul de fișiere, mărimea și linkul de pe Drive; toate se pot schimba;
+  - pleacă doar la **„Trimite”**, cu zip-ul atașat dacă are cel mult 10 MB, altfel doar cu linkul;
+  - răspunsul vine la adminul care trimite.
+- **Verificat pe Supabase, Drive și Resend simulate:**
+  - luna implicită (septembrie: „extrasul nu e importat”);
+  - octombrie cu 6 lipsuri, rezolvate din aplicație: PDF-urile facturilor, cheltuiala, extrasul reimportat fără rânduri dublate, plata de hosting ignorată;
+  - luna completă, zip-ul cu 6 fișiere, citit de Python (CRC corect, nume cu diacritice);
+  - zip-ul pe Drive;
+  - emailul cu arhiva atașată;
+  - zip-ul refăcut, care nu se include pe el însuși;
+  - 360 px.
