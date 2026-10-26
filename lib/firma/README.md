@@ -211,6 +211,7 @@ Concluzia de acum: importul CSV săptămânal costă zero. Legătura automată m
 | 5 — încasări | `4a48578` | https://meridianx-9fr8urppx-stefanvladut661s-projects.vercel.app |
 | 6 — pachetul pentru contabil | `599b985` | https://meridianx-7dhx67hks-stefanvladut661s-projects.vercel.app |
 | 7 — accese | `5cf68d4` | https://meridianx-5a8ag00bt-stefanvladut661s-projects.vercel.app |
+| 8 — panou și alerte | `247b134` | https://meridianx-9oim3rp5w-stefanvladut661s-projects.vercel.app |
 
 Pe preview, modulul arată ce migrare lipsește până rulezi migrările 16–23 în Supabase.
 
