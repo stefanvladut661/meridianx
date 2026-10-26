@@ -108,6 +108,30 @@ Promptul cerea un cont de serviciu cu acces de editor la folder. Un cont de serv
 
 **Apoi, la ambele:** în **Firmă → Setări**, lipește adresa folderului rădăcină și alege modelul de nume al lunii. Salvează. Cardul „Drive” trebuie să arate „Merge”, iar „Fă acum folderul …” creează folderul lunii curente.
 
+### Exportul din BT Go (ce îmi dai)
+
+- **Formatul:** CSV. E cel mai ușor de citit sigur. PDF-ul extrasului nu se poate citi rând cu rând fără ghicit. Un XLS/XLSX ar cere un pachet nou.
+- **De unde:** în BT Go → contul firmei → Tranzacții (sau Extrase) → Export → CSV, pe perioada dorită (o săptămână sau o lună).
+- **Ce fac cu el:**
+  - îl urci în **Firmă → Încasări → Importă exportul din BT Go**;
+  - la primul import alegi coloanele: data, suma (sau debit și credit), detaliile, plătitorul/beneficiarul, referința. Alegerea se ține minte după antet;
+  - **trimite-mi un export real** (poți acoperi numele și sumele) și fixez formatul BT Go ca implicit, ca prima alegere să nu mai fie nevoie.
+- Același rând din două exporturi (săptămâna, apoi luna) intră o singură dată.
+
+### Legătura automată cu banca (pentru mai târziu — neconstruită)
+
+Accesul direct la API-urile PSD2 ale băncii cere licență de prestator de informații despre conturi (AISP). Pentru o firmă mică, drumul realist e un agregator licențiat. Variantele găsite, cu ce e public despre costuri:
+
+| Varianta | Ce e | Cost (public) |
+|---|---|---|
+| **Enable Banking** | Agregator PSD2 european, cu API pentru conturile din România. | După volum (conturi și plăți pe lună), cu un minim lunar care include o cotă. Prețul exact se cere de la vânzări. ([FAQ](https://enablebanking.com/docs/faq)) |
+| **Salt Edge** | Agregator PSD2 cu acoperire largă; unele liste îl dau ca agregator pentru BT. | Personalizat, negociat cu vânzările; fără listă publică. |
+| **GoCardless Bank Account Data** (fost Nordigen) | API de date de cont. | Pagina lor arată €100/lună + €0,25 pe consimțământ. O sursă spune că din iulie 2025 nu mai primesc conturi noi, de verificat. ([pagina](https://gocardless.com/bank-account-data)) |
+| **Finqware** | Start-up românesc, partener BT pentru open banking. | Neafișat; se cere ofertă. |
+| **BT Open Banking** (direct) | Platforma de API a băncii, cu sandbox. | Gratuită pentru prestatorii licențiați; fără licență nu se poate folosi direct. |
+
+Concluzia de acum: importul CSV săptămânal costă zero. Legătura automată merită când volumul de facturi face importul obositor. Cea mai previzibilă ca preț e GoCardless, dacă primește conturi noi. Altfel, Enable Banking, cu ofertă cerută.
+
 ### Oblio (pas cu pas)
 
 1. Intră în Oblio → **Setări → Date cont** și copiază **Secretul API**.
@@ -126,6 +150,11 @@ Promptul cerea un cont de serviciu cu acces de editor la folder. Un cont de serv
 
 ## De testat cu cheile reale
 
+- **Faza 5 — exportul real BT Go:** importul e construit cu alegerea coloanelor de către om, tocmai fiindcă n-am avut un export real. De verificat cu primul export adevărat:
+  - separatorul, codarea (diacriticele) și rândul antetului;
+  - dacă BT Go dă o coloană de sumă cu semn sau debit și credit separat;
+  - cum arată detaliile plăților primite, ca potrivirea după numărul facturii și numele clientului să prindă.
+- **Faza 5 — încasarea în Oblio:** `PUT /docs/invoice/collect` (ordin de plată, cu referința din extras ca număr de document), precedat de `GET /docs/invoice` ca să nu dubleze o încasare existentă. Construit după documentație, testat pe Oblio simulat.
 - **Faza 4 — citirea cu Claude:** o cerere reală cu `ANTHROPIC_API_KEY` pe câteva bonuri și facturi adevărate (o poză de pe telefon, un PDF de la un furnizor de software). De verificat cât de bine nimerește furnizorul, CUI-ul, data, totalul și categoria. Testat pe un API simulat, cu forma cererii verificată.
 - **Faza 4 — urcarea din telefon:** o poză făcută din admin pe un telefon real (iPhone salvează HEIC; Safari o dă ca JPEG la urcare, dar de verificat). Plus linkul semnat de urcare în Supabase-ul real, cu bucket-ul din migrarea 19.
 - **Faza 3 — Drive:**
@@ -270,4 +299,39 @@ Promptul cerea un cont de serviciu cu acces de editor la folder. Un cont de serv
   - data mutată în octombrie: fișierul s-a mutat și s-a redenumit;
   - PDF-ul ilizibil: nu e pe Drive până la completare, apoi e urcat cu nume corect;
   - validarea, limita de cereri, scoaterea din listă;
+  - 360 px.
+
+### Faza 5 — încasări (BT Go)
+
+- **Migrarea 20** (`00000000000020_firma_incasari.sql`):
+  - `firma_formate_banca`: formatul ales de om, recunoscut după antet;
+  - `firma_importuri_banca`: fiecare fișier importat, și unde e pe Drive;
+  - `firma_tranzactii`: rândurile, cu amprentă unică (SHA-256 pe dată, sumă, monedă, detalii, contrapartidă, referință și numărul apariției), ca același rând să nu intre de două ori.
+- **Citirea CSV-ului** (`lib/firma/csv.ts`, fără pachete noi):
+  - UTF-8 sau Windows-1250, fără BOM;
+  - separatorul găsit după consecvența rândurilor;
+  - ghilimele după RFC 4180;
+  - date românești („28.09.2026”, „28/09/26”, „2026-09-28 10:00”);
+  - sume ca în română, cu semn sau în paranteze, ori debit și credit separat;
+  - rândurile fără dată (sold, totaluri) sunt sărite și raportate.
+- **Formatul nu se ghicește:** la primul import vezi primele rânduri și alegi coloanele. Antetul și coloanele sunt propuse după numele din antet, dar le confirmi tu. Alegerea se ține minte după antet; la următorul export apare „Format recunoscut” și importul merge direct.
+- **Potrivirea** (`lib/firma/incasari-match.ts`, testată separat pe 11 cazuri):
+  - **încasare sigură:** suma exactă (restul de încasat), plus numărul facturii („FCT 42”, „FCT42”, „factura nr 42”, cu zerouri în față; dar nu „FCT 420”) sau clientul (CUI-ul ori cuvintele importante din nume, fără „SRL” & co.) în plată, la o singură factură. Se marchează încasată în Oblio;
+  - **de confirmat:** doar suma, doar clientul, mai multe facturi la fel sau o sumă parțială. Le confirmi tu, alegând factura (propusă sau oricare deschisă), apoi încasarea se marchează în Oblio. Sau „Ignoră (nu e o factură)”;
+  - **plățile ieșite:** se leagă de o cheltuială urcată, cu aceeași sumă și monedă, la cel mult 10 zile de data documentului, când e una singură. Când sunt mai multe, aștepți tu.
+- **Încasarea în Oblio** (`collectForLine`, singurul loc care are voie să o facă, verificat de `verify-oblio.mjs`):
+  - întâi citește factura din Oblio. Dacă încasările de acolo o acoperă deja (ai marcat-o tu sau un import anterior) sau au aceeași referință, nu mai adaugă nimic („era deja în Oblio”);
+  - altfel trimite un ordin de plată, cu referința din extras, data plății și suma (cel mult restul);
+  - o încasare făcută în Oblio nu se scoate din admin: textul spune să o ștergi din Oblio, de mână, dacă e greșită.
+- **Extrasul pe Drive:** fișierul importat, în folderul lunii ultimei tranzacții, ca „Extras BT {de la} - {până la}.csv”. Același fișier importat de două ori nu se dublează pe Drive.
+- **„Potrivește din nou”:** reia rândurile nepotrivite după ce apar facturi sau cheltuieli noi.
+- **Verificat pe Supabase, Oblio și Drive simulate:**
+  - primul import, cu coloanele propuse și confirmate, plus rândul „Sold final” sărit;
+  - încasarea sigură marcată în Oblio;
+  - plata POS legată de cheltuiala de benzină;
+  - încasarea doar cu suma, confirmată și marcată în Oblio;
+  - o încasare deja făcută de mână în Oblio, nedublată;
+  - al doilea import al aceluiași fișier: 0 noi, 5 sărite, format recunoscut;
+  - extrasul o singură dată pe Drive;
+  - facturile apar „Încasată”;
   - 360 px.
