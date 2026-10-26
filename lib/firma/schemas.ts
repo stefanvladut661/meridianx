@@ -78,6 +78,48 @@ export const contractSchema = z
   .refine((value) => value.seTermina === "" || value.seTermina >= value.incepe, { message: "Sfârșitul contractului e înaintea începutului.", path: ["seTermina"] });
 export type ContractInput = z.output<typeof contractSchema>;
 
+export const randFacturaSchema = z.object({
+  denumire: z.string().trim().min(1, "Scrie denumirea rândului.").max(300),
+  descriere: z
+    .string()
+    .trim()
+    .max(500)
+    .nullable()
+    .transform((value) => (value ? value : null)),
+  cantitate: z.number({ error: "Scrie cantitatea." }).positive("Cantitatea trebuie să fie mai mare ca 0.").max(100_000),
+  um: z.string().trim().min(1, "Scrie unitatea (ex. buc, lună, oră).").max(20),
+  pretUnitar: z.number({ error: "Scrie prețul." }).positive("Prețul trebuie să fie mai mare ca 0.").max(10_000_000),
+});
+
+export const draftSchema = z.object({
+  randuri: z.array(randFacturaSchema).min(1, "Factura are nevoie de măcar un rând.").max(50),
+  zileScadenta: z.number().int().min(0, "Scadența: între 0 și 120 de zile.").max(120, "Scadența: între 0 și 120 de zile."),
+  dataPlanificata: z.string().refine((value) => isDay(value), "Alege data planificată."),
+  mentiuni: z
+    .string()
+    .trim()
+    .max(1000, "Mențiunile: cel mult 1000 de caractere.")
+    .transform((value) => (value === "" ? null : value)),
+});
+export type DraftSchemaOutput = z.output<typeof draftSchema>;
+
+export const manualSchema = draftSchema.extend({
+  clientId: z.uuid({ error: "Alege clientul." }),
+  moneda: z.enum(["RON", "EUR"]),
+});
+
+export const invoiceEmailSchema = z.object({
+  to: z
+    .string()
+    .trim()
+    .min(1, "Scrie adresa clientului.")
+    .transform((value) => value.split(/[,;\s]+/).map((item) => item.trim().toLowerCase()).filter(Boolean))
+    .refine((list) => list.length > 0 && list.length <= 5, "Pune între una și cinci adrese, despărțite prin virgulă.")
+    .refine((list) => list.every((item) => z.email().safeParse(item).success), "O adresă nu arată bine. Verifică @ și domeniul."),
+  subject: z.string().trim().min(1, "Scrie subiectul.").max(300),
+  text: z.string().trim().min(1, "Scrie textul emailului.").max(5000),
+});
+
 /** Prima eroare, ca text pentru om, și câmpul ei. */
 export function firstIssue(error: z.ZodError): { field: string; message: string } {
   const issue = error.issues[0];

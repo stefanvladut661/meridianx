@@ -328,6 +328,7 @@ export interface OblioListedInvoice {
   link: string;
   einvoice: EinvoiceStatus | null;
   collected: number;
+  collects: OblioCollect[];
 }
 
 /** `GET /docs/invoice/list` — facturile dintr-un interval, cu starea e-Factura și încasările (max 100 pe pagină). */
@@ -350,6 +351,7 @@ export async function listInvoices(filter: { issuedAfter: string; issuedBefore: 
       link: String(row.link ?? ""),
       einvoice: status ? { text: String(status.text ?? ""), sent: status.sent === true || status.sent === 1, code: Number(status.code ?? -1) } : null,
       collected: collects.reduce((sum, item) => sum + Number(item.value ?? 0), 0),
+      collects: collects.map((item) => ({ issueDate: String(item.issueDate ?? ""), type: String(item.type ?? ""), number: String(item.number ?? ""), value: Number(item.value ?? 0) })),
     };
   });
 }

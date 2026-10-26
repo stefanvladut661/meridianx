@@ -8,7 +8,17 @@ import { Field, inputClass } from "./ui";
 type SettingsResult = { ok: true } | { ok: false; field?: string; message: string };
 
 /** Formularul setărilor din admin: seria, emailul contabilului, folderul de pe Drive. */
-export function SettingsForm({ settings, save }: { settings: Setari; save: (raw: unknown) => Promise<SettingsResult> }) {
+export function SettingsForm({
+  settings,
+  series,
+  seriesError,
+  save,
+}: {
+  settings: Setari;
+  series: string[];
+  seriesError: string | null;
+  save: (raw: unknown) => Promise<SettingsResult>;
+}) {
   const [values, setValues] = useState({
     serieFactura: settings.serieFactura ?? "",
     emailContabil: settings.emailContabil ?? "",
@@ -47,8 +57,24 @@ export function SettingsForm({ settings, save }: { settings: Setari; save: (raw:
           Facturi și contabil
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field id="set-serieFactura" label="Seria facturilor din Oblio" error={fieldError("serieFactura")} hint="Numele seriei, exact ca în Oblio (Setări → Serii).">
-            <input id="set-serieFactura" value={values.serieFactura} onChange={(e) => set("serieFactura", e.currentTarget.value)} className={inputClass} maxLength={20} />
+          <Field
+            id="set-serieFactura"
+            label="Seria facturilor din Oblio"
+            error={fieldError("serieFactura")}
+            hint={series.length > 0 ? "Seriile de factură din contul Oblio." : seriesError ? `N-am putut citi seriile din Oblio (${seriesError}); scrie numele exact.` : "Numele seriei, exact ca în Oblio (Setări → Serii)."}
+          >
+            {series.length > 0 ? (
+              <select id="set-serieFactura" value={values.serieFactura} onChange={(e) => set("serieFactura", e.currentTarget.value)} className={inputClass}>
+                <option value="">Alege seria</option>
+                {[...new Set([...series, ...(values.serieFactura ? [values.serieFactura] : [])])].map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input id="set-serieFactura" value={values.serieFactura} onChange={(e) => set("serieFactura", e.currentTarget.value)} className={inputClass} maxLength={20} />
+            )}
           </Field>
           <Field id="set-emailContabil" label="Emailul contabilului" error={fieldError("emailContabil")} hint="Aici pleacă pachetul lunar, după „Trimite”.">
             <input id="set-emailContabil" type="email" value={values.emailContabil} onChange={(e) => set("emailContabil", e.currentTarget.value)} className={inputClass} maxLength={200} />

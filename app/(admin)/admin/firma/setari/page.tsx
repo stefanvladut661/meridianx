@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { readSettings } from "@/lib/firma/setari";
-import { isOblioConfigured } from "@/lib/firma/oblio/api";
+import { isOblioConfigured, oblioSeries, OblioError } from "@/lib/firma/oblio/api";
 import { isEmailConfigured } from "@/lib/email/send";
 import { SettingsForm } from "@/components/firma/settings-form";
 import { Notice, PageHead, Tag } from "@/components/firma/ui";
@@ -16,6 +16,15 @@ export const dynamic = "force-dynamic";
  */
 export default async function SetariPage() {
   const settings = await readSettings();
+  // Seriile de factură din Oblio, ca seria să se aleagă, nu să se scrie (doar citire).
+  let series: { names: string[]; error: string | null } = { names: [], error: null };
+  if (isOblioConfigured()) {
+    try {
+      series = { names: (await oblioSeries()).filter((item) => item.type.toLowerCase().startsWith("factur")).map((item) => item.name), error: null };
+    } catch (error) {
+      series = { names: [], error: error instanceof OblioError ? error.message : "Oblio n-a răspuns." };
+    }
+  }
   const links = [
     { name: "Oblio", ok: isOblioConfigured(), missing: "OBLIO_EMAIL, OBLIO_API_SECRET, OBLIO_CIF" },
     { name: "Email (Resend)", ok: isEmailConfigured(), missing: "RESEND_API_KEY" },
@@ -42,7 +51,7 @@ export default async function SetariPage() {
           {settings.message}
         </Notice>
       ) : (
-        <SettingsForm settings={settings.data} save={saveSettingsAction} />
+        <SettingsForm settings={settings.data} series={series.names} seriesError={series.error} save={saveSettingsAction} />
       )}
     </main>
   );

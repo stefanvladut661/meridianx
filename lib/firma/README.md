@@ -96,6 +96,10 @@ Zona modulului: `app/(admin)/admin/firma/**`, `lib/firma/**`,
 
 ## De testat cu cheile reale
 
+- **Faza 2 — emiterea, cu o proformă de test** (nu cu o factură): `node --env-file=.env.local lib/firma/oblio/test-proforma.mjs <seria-de-proforma>`. Scriptul face o proformă de 1 leu, marcată „TEST — NU SE PLĂTEȘTE”, pe firma ta (nu pe un client). Arată răspunsul Oblio și linkul. **După test, șterge proforma din Oblio, de mână.** Adminul nu are funcție de ștergere.
+- **Faza 2 — e-Factura:** `POST /docs/einvoice` și codurile din răspuns (`-1`, `2`, `0`, `1`), mai ales textul unei respingeri reale.
+- **Faza 2 — PDF-ul:** emailul ia PDF-ul din `link`-ul dat de Oblio. De verificat că linkul real se descarcă fără sesiune Oblio (testul a pornit de la presupunerea că da). Dacă nu, emailul refuză să plece și spune de ce.
+- **Faza 2 — fără TVA:** rândurile pleacă fără cotă (`vatIncluded: 1`, fără `vatName`). Oblio aplică regimul firmei neplătitoare de TVA. De verificat pe prima factură reală că PDF-ul nu arată TVA.
 - **Faza 1 — căutarea în Oblio:** `GET /nomenclature/clients` după `clientCif` și după `name`. Am construit-o după documentație și am testat-o pe un Oblio simulat. De verificat pe contul real: că un client existent vine cu adresa, orașul, județul și emailul completate.
 
 ---
@@ -123,3 +127,47 @@ Zona modulului: `app/(admin)/admin/firma/**`, `lib/firma/**`,
 - **Meniul comun:** „Firmă” e în bara panoului de lead-uri. În meniul reclamelor nu, vezi „Decizii”.
 - **Sumele se citesc ca în română:** „1.500” înseamnă 1500, „1.234,50” înseamnă 1234,5. Testul a prins varianta greșită, în care „1.500” devenea 1,50.
 - **Verificat pe Supabase și Oblio simulate:** client adăugat din Oblio, persoană de contact cu validare, contract cu două perioade (suprapunerea e refuzată), prețul corect pe septembrie, decembrie și august (fără contract), istoricul, setările, 360 px fără scroll lateral, Escape și focusul.
+
+### Faza 2 — facturi (Oblio)
+
+- **Migrarea 17** (`00000000000017_firma_facturi.sql`): `firma_facturi`. Indexuri unice pe:
+  - `(contract_id, luna)`: o singură factură de contract pe lună;
+  - `(serie, numar)`;
+  - `cheie_idempotenta`.
+- **Ciornele** („Pregătește ciornele pentru luna X”, apoi și cron-ul din faza 8):
+  - din contractele active cu preț pe luna aceea;
+  - rândul e „{textul prețului} — {luna an}”, iar data planificată e ziua de emitere din contract;
+  - contractele fără preț pe lună sunt sărite, cu motivul;
+  - nimic nu ajunge în Oblio în pasul ăsta.
+- **Corectura:** rândurile, cantitatea, prețul, scadența, data planificată și mențiunile. Se poate corecta și o ciornă refuzată de Oblio la emitere (nu are număr).
+- **„Aprobă și emite”**, singurul drum spre Oblio:
+  1. **Verificarea:** seria e aleasă în Setări, iar clientul are CUI, adresă, oraș și județ, cerute de e-Factura. Dacă lipsesc, aprobarea e refuzată înainte de Oblio.
+  2. **Emiterea:** `POST /docs/invoice`, cu data de azi, scadența după zilele din contract și `idempotencyKey` = cheia facturii. Pornește doar după o trecere condiționată în „in_lucru” (comparare-și-schimbare): un dublu-click nu emite de două ori. O reluare după o întrerupere primește de la Oblio același document. Testul a șters numărul din admin și a aprobat din nou: în Oblio a rămas un singur document.
+  3. **e-Factura:** `POST /docs/einvoice`. Un refuz nu oprește restul: factura e emisă, iar pasul se reia cu „Reia pașii rămași”.
+  4. **PDF-ul pe Drive:** sărit până la faza 3, cu motivul scris.
+  5. **Emailul către client:** doar pregătit (către, subiect, text, toate editabile). Pleacă la **„Trimite emailul”**, cu PDF-ul luat din Oblio atașat și cu răspunsul către adminul care trimite. Dacă PDF-ul nu se poate lua, emailul nu pleacă.
+- **Factura manuală:** clientul, rândurile, data, scadența, moneda și mențiunile. Se face ca ciornă, apoi trece prin aceeași aprobare.
+- **„Renunță la ciornă”:** doar pentru ciorne (n-au existat niciodată în Oblio). Rândul rămâne marcat, ca ciorna lunii să nu se refacă singură. O factură emisă nu se corectează și nu se anulează aici; textul o spune.
+- **Lista:** stările „ciornă”, „emisă”, „trimisă în e-Factura”, „încasată” și „întârziată” (emisă, neîncasată integral, cu scadența trecută). Sus, ce e de făcut: ciorne de aprobat, emailuri de trimis, întârzieri și suma de încasat.
+- **„Actualizează din Oblio”:** citește starea e-Factura și încasările facturilor deschise (`GET /docs/invoice/list`). Doar citire. O încasare marcată de tine în Oblio apare aici ca „Încasată”.
+- **Seria** se alege din seriile de factură citite din Oblio, în Setări.
+- **Regula „nu anulează, nu stornează, nu șterge”** e verificată de `node lib/firma/verify-oblio.mjs`, cu 158 de verificări:
+  - nicio cale `cancel`, `restore` sau `DELETE`;
+  - lista de cereri e fixă;
+  - doar `facturi.ts` emite, și numai după trecerea condiționată;
+  - doar `incasari.ts` (faza 5) marchează încasări;
+  - proforma de test e singura excepție.
+  O cale de anulare adăugată de probă a fost prinsă.
+- **Emailurile** pleacă prin Resend direct (`lib/firma/email.ts`), vezi „Decizii”.
+- **Verificat pe Supabase, Oblio și Resend simulate:**
+  - ciornele de două ori (a doua oară nu face nimic);
+  - corectura;
+  - emiterea refuzată, apoi reluată;
+  - idempotența;
+  - e-Factura refuzată, apoi reluată;
+  - emailul cu adresă greșită, apoi trimis la două adrese, cu PDF-ul atașat;
+  - factura manuală;
+  - renunțarea la ciornă;
+  - încasarea venită din Oblio;
+  - nicio cerere interzisă în jurnalul Oblio;
+  - 360 px.

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Tone } from "@/lib/firma/tone";
 import { cn } from "@/lib/utils";
 
 /**
@@ -60,7 +61,7 @@ export function Field({
   );
 }
 
-export type Tone = "ok" | "warn" | "error" | "accent" | "neutral" | "muted";
+export type { Tone };
 
 const TONE: Record<Tone, string> = {
   ok: "bg-[var(--ap-ok-soft)] text-[var(--ap-ok)]",
