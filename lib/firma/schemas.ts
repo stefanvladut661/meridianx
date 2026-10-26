@@ -120,6 +120,18 @@ export const invoiceEmailSchema = z.object({
   text: z.string().trim().min(1, "Scrie textul emailului.").max(5000),
 });
 
+export const expenseSchema = z.object({
+  furnizor: z.string().trim().min(1, "Scrie furnizorul.").max(200),
+  furnizorCui: cui,
+  nrDocument: optionalText(60, "Numărul documentului"),
+  dataDoc: z.string().refine((value) => isDay(value), "Alege data documentului."),
+  suma: z.number({ error: "Scrie suma." }).min(0, "Suma nu poate fi negativă.").max(10_000_000),
+  moneda: z.enum(["RON", "EUR", "USD", "altele"]),
+  categoria: z.enum(["software", "echipament", "transport", "reclame", "altele"]),
+  descriere: optionalText(500, "Descrierea"),
+});
+export type ExpenseInput = z.output<typeof expenseSchema>;
+
 /** Prima eroare, ca text pentru om, și câmpul ei. */
 export function firstIssue(error: z.ZodError): { field: string; message: string } {
   const issue = error.issues[0];

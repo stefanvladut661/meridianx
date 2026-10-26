@@ -2,7 +2,7 @@ import { db, failure, NO_DB, type Result } from "../db";
 import { LUNI, monthStart } from "../format";
 import { logEvent } from "../istoric";
 import { readSettings } from "../setari";
-import { checkFolder, createFolder, DriveError, driveMode, DRIVE_MISSING, findChild, uploadFile, type DriveMode } from "./google";
+import { checkFolder, createFolder, DriveError, driveMode, DRIVE_MISSING, findChild, moveFile, renameFile, uploadFile, type DriveMode } from "./google";
 
 /**
  * Folderul lunii și fișierele urcate (migrarea 18). Folderul rădăcină și
@@ -109,6 +109,43 @@ export async function saveToDrive(input: { month: string; kind: FileKind; source
       .insert({ luna: monthStart(input.month), felul: input.kind, sursa_id: input.sourceId, nume: safeName, drive_file_id: file.id, link: file.link, marime: input.bytes.length, created_by: input.actor });
     if (saveError && saveError.code !== "23505") return failure(saveError, MIGRATION);
     return { ok: true, data: { fileId: file.id, link: file.link, existed: Boolean(sameName) } };
+  } catch (caught) {
+    return { ok: false, message: caught instanceof DriveError ? caught.message : "Drive n-a răspuns." };
+  }
+}
+
+/** Mută un fișier deja urcat în folderul altei luni (ex. data unei cheltuieli corectată). */
+export async function moveToMonth(kind: FileKind, sourceId: string, month: string, actor: string): Promise<Result<{ moved: boolean }>> {
+  const admin = db();
+  if (!admin) return { ok: false, message: NO_DB };
+  const { data: file, error } = await admin.from("firma_fisiere").select("*").eq("felul", kind).eq("sursa_id", sourceId).maybeSingle();
+  if (error) return failure(error, MIGRATION);
+  if (!file || String(file.luna) === monthStart(month)) return { ok: true, data: { moved: false } };
+  const { data: from } = await admin.from("firma_luni_drive").select("folder_id").eq("luna", file.luna).maybeSingle();
+  const to = await ensureMonthFolder(month, actor);
+  if (!to.ok) return to;
+  if (!from) return { ok: false, message: "Nu știu în ce folder e fișierul acum; mută-l de mână pe Drive." };
+  try {
+    await moveFile(String(file.drive_file_id), to.data.id, String(from.folder_id));
+    await admin.from("firma_fisiere").update({ luna: monthStart(month) }).eq("id", file.id);
+    return { ok: true, data: { moved: true } };
+  } catch (caught) {
+    return { ok: false, message: caught instanceof DriveError ? caught.message : "Drive n-a răspuns." };
+  }
+}
+
+/** Numele fișierului pe Drive, dacă s-a schimbat (ex. furnizorul corectat). */
+export async function renameRegistered(kind: FileKind, sourceId: string, name: string): Promise<Result<{ renamed: boolean }>> {
+  const admin = db();
+  if (!admin) return { ok: false, message: NO_DB };
+  const safeName = name.replace(/[\\/:*?"<>|]+/g, "_").slice(0, 250);
+  const { data: file, error } = await admin.from("firma_fisiere").select("id, nume, drive_file_id").eq("felul", kind).eq("sursa_id", sourceId).maybeSingle();
+  if (error) return failure(error, MIGRATION);
+  if (!file || String(file.nume) === safeName) return { ok: true, data: { renamed: false } };
+  try {
+    await renameFile(String(file.drive_file_id), safeName);
+    await admin.from("firma_fisiere").update({ nume: safeName }).eq("id", file.id);
+    return { ok: true, data: { renamed: true } };
   } catch (caught) {
     return { ok: false, message: caught instanceof DriveError ? caught.message : "Drive n-a răspuns." };
   }

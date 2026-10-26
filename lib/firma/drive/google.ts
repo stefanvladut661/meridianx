@@ -170,6 +170,19 @@ export async function createFolder(parentId: string, name: string): Promise<Driv
   return toFile((await response.json()) as Record<string, unknown>);
 }
 
+/** Mută un fișier din folderul unei luni în altul (`files.update` cu addParents/removeParents). */
+export async function moveFile(fileId: string, toParent: string, fromParent: string): Promise<DriveFile> {
+  const query = `addParents=${encodeURIComponent(toParent)}&removeParents=${encodeURIComponent(fromParent)}&supportsAllDrives=true&fields=${FIELDS}`;
+  const response = await driveFetch(`/drive/v3/files/${encodeURIComponent(fileId)}?${query}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: "{}" });
+  return toFile((await response.json()) as Record<string, unknown>);
+}
+
+/** Redenumește un fișier (ex. furnizorul unei cheltuieli corectat). */
+export async function renameFile(fileId: string, name: string): Promise<DriveFile> {
+  const response = await driveFetch(`/drive/v3/files/${encodeURIComponent(fileId)}?supportsAllDrives=true&fields=${FIELDS}`, { method: "PATCH", headers: { "Content-Type": "application/json; charset=UTF-8" }, body: JSON.stringify({ name }) });
+  return toFile((await response.json()) as Record<string, unknown>);
+}
+
 const SIMPLE_LIMIT = 5 * 1024 * 1024;
 
 /** Urcă un fișier în folder: multipart sub 5 MB, resumable peste. */

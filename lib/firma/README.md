@@ -65,6 +65,7 @@ Zona modulului: `app/(admin)/admin/firma/**`, `lib/firma/**`,
   - **cont de serviciu** (`GOOGLE_SERVICE_ACCOUNT_JSON`): pentru un Shared Drive;
   - **OAuth ca tine** (`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN`): pentru Drive-ul personal. Fișierele rămân ale tale.
 - **Structura folderului de pe Drive** nu e încă hotărâtă (folderul real e pe alt Drive). Rădăcina și modelul de nume al lunii se setează în „Setări”, iar valoarea provizorie e `{luna} {an}`, de exemplu „aprilie 2026”. Nu se scrie nimic pe Drive până nu e setată rădăcina.
+- **Citirea cheltuielilor cu Claude, plus o dependență nouă.** Citirea bonurilor și a facturilor primite folosește SDK-ul oficial `@anthropic-ai/sdk`. E singurul pachet nou și singura atingere în afara zonei (`package.json` și `package-lock.json`). Detaliile, la faza 4. Dacă nu-l vrei, scoate pachetul: cheltuielile merg mai departe cu completarea de mână.
 - **Emailurile.** `lib/email/send.ts` exportă doar emailurile lead-urilor și ale sondei, nu un trimițător general cu atașamente. Modulul trimite prin Resend direct (`lib/firma/email.ts`), cu aceleași variabile (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`). `lib/email/**` rămâne neatins.
 - **Exportul BT Go.** Fără un export real nu ghicesc coloanele. Importul citește CSV-ul sau tabelul, iar la primul import îmi arăți tu care coloană e data, suma, detaliile și contrapartida. Maparea se salvează după antetul fișierului și se refolosește. Când îmi dai un export real, fixez formatul lui ca implicit.
 
@@ -80,6 +81,8 @@ Zona modulului: `app/(admin)/admin/firma/**`, `lib/firma/**`,
 
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN` | Drive prin OAuth, ca tine. Pentru un folder din „My Drive” (cont Gmail). | 3 |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Drive prin cont de serviciu: JSON-ul cheii, ca text sau base64. **Doar** pentru un folder dintr-un Shared Drive (Google Workspace). | 3 |
+
+| `ANTHROPIC_API_KEY` | Cheia API Anthropic ([console.anthropic.com](https://console.anthropic.com) → *API Keys*), pentru citirea bonurilor și a facturilor de la furnizori. Fără ea, datele cheltuielilor se completează de mână. | 4 |
 
 ### Drive (pas cu pas)
 
@@ -123,6 +126,8 @@ Promptul cerea un cont de serviciu cu acces de editor la folder. Un cont de serv
 
 ## De testat cu cheile reale
 
+- **Faza 4 — citirea cu Claude:** o cerere reală cu `ANTHROPIC_API_KEY` pe câteva bonuri și facturi adevărate (o poză de pe telefon, un PDF de la un furnizor de software). De verificat cât de bine nimerește furnizorul, CUI-ul, data, totalul și categoria. Testat pe un API simulat, cu forma cererii verificată.
+- **Faza 4 — urcarea din telefon:** o poză făcută din admin pe un telefon real (iPhone salvează HEIC; Safari o dă ca JPEG la urcare, dar de verificat). Plus linkul semnat de urcare în Supabase-ul real, cu bucket-ul din migrarea 19.
 - **Faza 3 — Drive:**
   - tokenul real (OAuth sau cont de serviciu);
   - `files.get` pe folderul tău (cu `canAddChildren`);
@@ -233,3 +238,36 @@ Promptul cerea un cont de serviciu cu acces de editor la folder. Un cont de serv
   - o factură nouă, cu pasul Drive făcut la aprobare;
   - refuzul `storageQuotaExceeded`, cu mesajul pentru om și reluarea lui;
   - registrul fișierelor și istoricul.
+
+### Faza 4 — cheltuieli
+
+- **Migrarea 19** (`00000000000019_firma_cheltuieli.sql`):
+  - `firma_cheltuieli`;
+  - bucket-ul privat `firma-docs` (50 MB, doar tipurile de fișiere folosite). Ține bonurile, extrasele (faza 5) și zip-ul lunii (faza 6).
+- **Urcarea din telefon** (`/admin/firma/cheltuieli`):
+  - un buton mare, „Urcă un bon sau o factură”, cu poză sau PDF; merg și mai multe odată;
+  - poza se micșorează în browser la 2400 px pe latura lungă (JPEG 0,88): în test, 700 KB au devenit 216 KB, iar documentul rămâne lizibil;
+  - fișierul urcă direct în stocare, printr-un link semnat, fără limita de mărime a acțiunilor serverului;
+  - pentru fiecare fișier se vede pasul: se pregătește, se urcă (%), se citește, gata sau eroarea.
+- **Citirea** (`lib/firma/ocr.ts`):
+  - SDK-ul oficial Anthropic, `client.beta.messages.parse` cu `claude-opus-5-5`, efort `low` (o extragere nu cere raționament lung);
+  - răspunsul e structurat și validat cu o schemă zod (`betaZodOutputFormat`): furnizor, CUI, dată, total, monedă, număr, descriere, categorie, plus „lizibil”;
+  - imaginea pleacă ca bloc `image`, PDF-ul ca bloc `document`;
+  - CUI-ul firmei (`OBLIO_CIF`) e trecut în cerere, ca modelul să nu-l pună la furnizor;
+  - `fallbacks: "default"` (server-side fallback): dacă filtrele de siguranță refuză cererea, serverul încearcă singur alt model. E opțiunea implicită recomandată pentru modelul ăsta. Se poate scoate dacă nu o vrei;
+  - erorile au tipul lor (limită de cereri, cheie greșită, fișier refuzat, rețea), cu un mesaj pentru om și „Citește din nou”.
+- **Corectura:** furnizorul, CUI-ul, numărul, data, suma, moneda, categoria (software și abonamente, echipament, transport, reclame, altele) și descrierea. „Salvează” le marchează confirmate.
+- **Pe Drive:**
+  - fișierul ajunge în folderul lunii documentului, cu un nume ca în folderul tău: „Furnizor - descriere AAAA-LL-ZZ.jpg”;
+  - un document fără furnizor și dată (ilizibil) așteaptă completarea, ca să nu ajungă pe Drive cu un nume fără sens;
+  - dacă schimbi data în altă lună, cheltuiala și fișierul se mută acolo (`files.update`, addParents/removeParents), iar panoul o urmează;
+  - dacă schimbi furnizorul, fișierul se redenumește.
+- **„Scoate din listă”:** o cheltuială urcată din greșeală dispare din listă. Rândul rămâne în bază, marcat, iar fișierul de pe Drive nu se atinge.
+- **Lista:** totalul lunii (pe monede), totalul pe categorii (în lei), cheltuielile de verificat și starea datelor (citite, confirmate, de completat), plus starea Drive.
+- **Verificat pe Supabase, Drive și Anthropic simulate:**
+  - poza mare, micșorată, citită și pusă pe Drive în septembrie;
+  - cererea către Claude: model, efort, format JSON cu schema, beta pentru fallback, imaginea și CUI-ul;
+  - data mutată în octombrie: fișierul s-a mutat și s-a redenumit;
+  - PDF-ul ilizibil: nu e pe Drive până la completare, apoi e urcat cu nume corect;
+  - validarea, limita de cereri, scoaterea din listă;
+  - 360 px.
