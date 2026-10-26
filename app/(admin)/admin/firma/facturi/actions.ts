@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { actorEmail, SESSION_EXPIRED } from "@/lib/firma/db";
 import { logEvent } from "@/lib/firma/istoric";
-import { approveInvoice, createManual, discardDraft, prepareMonth, refreshFromOblio, saveDraft, sendInvoiceEmail, type PrepareOutcome } from "@/lib/firma/facturi";
+import { approveInvoice, createManual, discardDraft, prepareMonth, refreshFromOblio, saveDraft, sendInvoiceEmail, uploadMissingToDrive, type PrepareOutcome } from "@/lib/firma/facturi";
 import { draftSchema, firstIssue, invoiceEmailSchema, manualSchema } from "@/lib/firma/schemas";
 import { isMonth } from "@/lib/firma/format";
 
@@ -75,6 +75,17 @@ export async function sendEmailAction(id: string, raw: unknown): Promise<Invoice
   revalidatePath(PATH);
   if (!result.ok) return { ok: false, message: result.message };
   return { ok: true, message: `Emailul a plecat către ${parsed.data.to.join(", ")}.` };
+}
+
+export async function uploadMissingDriveAction(month: string): Promise<InvoiceActionResult> {
+  const actor = await actorEmail();
+  if (!actor) return { ok: false, message: SESSION_EXPIRED };
+  if (!isMonth(month)) return { ok: false, message: "Luna nu e validă." };
+  const result = await uploadMissingToDrive(month, actor);
+  revalidatePath(PATH);
+  if (!result.ok) return { ok: false, message: result.message };
+  if (result.data.failed.length > 0) return { ok: false, message: `${result.data.uploaded} urcate; n-au mers: ${result.data.failed.join("; ")}` };
+  return { ok: true, message: result.data.uploaded === 0 ? "Toate PDF-urile erau deja pe Drive." : `${result.data.uploaded} ${result.data.uploaded === 1 ? "PDF urcat" : "PDF-uri urcate"} pe Drive.` };
 }
 
 export async function refreshOblioAction(): Promise<InvoiceActionResult> {

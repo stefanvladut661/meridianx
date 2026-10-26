@@ -6,6 +6,8 @@ import { actorEmail, SESSION_EXPIRED } from "@/lib/firma/db";
 import { logEvent } from "@/lib/firma/istoric";
 import { updateSettings } from "@/lib/firma/setari";
 import { firstIssue } from "@/lib/firma/schemas";
+import { ensureMonthFolder } from "@/lib/firma/drive";
+import { currentMonth } from "@/lib/firma/format";
 
 export type SettingsResult = { ok: true } | { ok: false; field?: string; message: string };
 
@@ -36,6 +38,16 @@ const settingsSchema = z.object({
     .max(80)
     .refine((value) => value.includes("{luna}") || value.includes("{ll}"), "Modelul trebuie să conțină {luna} sau {ll}, ca lunile să aibă nume diferite."),
 });
+
+/** Folderul lunii curente pe Drive, acum (altfel îl face cron-ul la începutul lunii). */
+export async function createMonthFolderAction(): Promise<{ ok: true; message: string; link: string | null } | { ok: false; message: string }> {
+  const actor = await actorEmail();
+  if (!actor) return { ok: false, message: SESSION_EXPIRED };
+  const month = currentMonth();
+  const result = await ensureMonthFolder(month, actor);
+  if (!result.ok) return result;
+  return { ok: true, message: `Folderul „${result.data.name}” e pe Drive.`, link: result.data.link };
+}
 
 export async function saveSettingsAction(raw: unknown): Promise<SettingsResult> {
   const actor = await actorEmail();

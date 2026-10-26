@@ -24,6 +24,7 @@ export function InvoicesScreen({
   series,
   oblio,
   email,
+  drive,
   initialOpen,
   actions,
 }: {
@@ -34,6 +35,7 @@ export function InvoicesScreen({
   series: string | null;
   oblio: boolean;
   email: boolean;
+  drive: boolean;
   initialOpen: string | null;
   actions: InvoiceActions;
 }) {
@@ -75,6 +77,15 @@ export function InvoicesScreen({
       router.refresh();
     });
 
+  const missingOnDrive = invoices.filter((invoice) => invoice.numar && invoice.pasi.drive?.stare !== "ok").length;
+  const uploadMissing = () =>
+    start(async () => {
+      setNotice(null);
+      const result = await actions.uploadMissingDrive(month);
+      setNotice(result.ok ? { tone: "ok", text: result.message ?? "Gata." } : { tone: "error", text: result.message });
+      router.refresh();
+    });
+
   return (
     <>
       {!oblio ? (
@@ -105,6 +116,11 @@ export function InvoicesScreen({
         <button type="button" disabled={pending || !oblio} onClick={refresh} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
           Actualizează din Oblio
         </button>
+        {drive && missingOnDrive > 0 ? (
+          <button type="button" disabled={pending} onClick={uploadMissing} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+            Urcă pe Drive {missingOnDrive === 1 ? "PDF-ul lipsă" : `cele ${missingOnDrive} PDF-uri lipsă`}
+          </button>
+        ) : null}
         {pending ? <span className="text-[13px] text-dim">Se lucrează…</span> : null}
       </div>
       {notice ? (

@@ -352,7 +352,8 @@ export async function approveInvoice(id: string, actor: string): Promise<Result<
 
   // 3. PDF-ul pe Drive.
   if (pasi.drive?.stare !== "ok") {
-    const drive = await saveInvoicePdfToDrive();
+    const pdf = invoice.linkOblio ? await downloadPdf(invoice.linkOblio) : null;
+    const drive = await saveInvoicePdfToDrive(invoice, pdf, actor);
     pasi.drive = drive.pas;
     await save(drive.fileId ? { drive_file_id: drive.fileId, drive_link: drive.link } : {});
     if (drive.pas.stare === "eroare") {
@@ -427,6 +428,30 @@ export async function sendInvoiceEmail(id: string, edits: { to: string[]; subjec
   await logEvent({ actor, zona: "facturi", actiune: "emailul facturii", tinta: id, rezultat: sent.ok ? "ok" : "eroare", mesaj: sent.ok ? `${invoice.serie} ${invoice.numar} către ${edits.to.join(", ")}` : sent.message });
   if (!sent.ok) return { ok: false, message: sent.message };
   return { ok: true, data: null };
+}
+
+/**
+ * PDF-urile facturilor emise care nu sunt încă pe Drive (emise înainte de
+ * legarea Drive-ului, sau cu pasul căzut): le urcă acum, în folderul lunii emiterii.
+ */
+export async function uploadMissingToDrive(month: string, actor: string): Promise<Result<{ uploaded: number; failed: string[] }>> {
+  const admin = db();
+  if (!admin) return { ok: false, message: NO_DB };
+  const list = await listInvoices({ month });
+  if (!list.ok) return list;
+  const missing = list.data.filter((invoice) => invoice.numar && invoice.pasi.drive?.stare !== "ok");
+  let uploaded = 0;
+  const failed: string[] = [];
+  for (const invoice of missing) {
+    const pdf = await invoicePdf(invoice);
+    const drive = await saveInvoicePdfToDrive(invoice, pdf, actor);
+    const pasi = { ...invoice.pasi, drive: drive.pas };
+    await admin.from("firma_facturi").update({ pasi, ...(drive.fileId ? { drive_file_id: drive.fileId, drive_link: drive.link } : {}) }).eq("id", invoice.id);
+    if (drive.pas.stare === "ok") uploaded += 1;
+    else failed.push(`${invoice.serie ?? ""} ${invoice.numar}: ${drive.pas.mesaj}`);
+  }
+  await logEvent({ actor, zona: "drive", actiune: `facturile din ${monthLabel(month)} urcate pe Drive`, rezultat: failed.length ? "eroare" : "ok", mesaj: `${uploaded} urcate${failed.length ? `; ${failed.join("; ")}` : ""}` });
+  return { ok: true, data: { uploaded, failed } };
 }
 
 // ------------------------------------------------------------ starea din Oblio

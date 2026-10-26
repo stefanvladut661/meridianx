@@ -7,7 +7,8 @@ import { isOblioConfigured } from "@/lib/firma/oblio/api";
 import { isEmailReady } from "@/lib/firma/email";
 import { InvoicesScreen } from "@/components/firma/invoices-screen";
 import { Notice, PageHead } from "@/components/firma/ui";
-import { approveAction, createManualAction, discardDraftAction, prepareMonthAction, refreshOblioAction, saveDraftAction, sendEmailAction } from "./actions";
+import { driveMode } from "@/lib/firma/drive/google";
+import { approveAction, createManualAction, discardDraftAction, prepareMonthAction, refreshOblioAction, saveDraftAction, sendEmailAction, uploadMissingDriveAction } from "./actions";
 
 export const metadata: Metadata = { title: "Facturi — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -42,8 +43,10 @@ export default async function FacturiPage({ searchParams }: { searchParams: Prom
           series={settings.ok ? settings.data.serieFactura : null}
           oblio={isOblioConfigured()}
           email={isEmailReady()}
+          drive={Boolean(driveMode() && settings.ok && settings.data.driveRadacina)}
           initialOpen={typeof params.rand === "string" ? params.rand : null}
           actions={{
+            uploadMissingDrive: uploadMissingDriveAction,
             prepareMonth: prepareMonthAction,
             saveDraft: saveDraftAction,
             createManual: createManualAction,

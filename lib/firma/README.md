@@ -78,6 +78,33 @@ Zona modulului: `app/(admin)/admin/firma/**`, `lib/firma/**`,
 | `OBLIO_API_SECRET` | Oblio → Setări → Date cont → „Secret API” (`client_secret`). **Se schimbă când se resetează parola contului Oblio**: după o resetare, pune-l din nou în Vercel. | 1 |
 | `OBLIO_CIF` | CUI-ul firmei tale, cum apare în Oblio (cu sau fără „RO”, ca acolo). | 1 |
 
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN` | Drive prin OAuth, ca tine. Pentru un folder din „My Drive” (cont Gmail). | 3 |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Drive prin cont de serviciu: JSON-ul cheii, ca text sau base64. **Doar** pentru un folder dintr-un Shared Drive (Google Workspace). | 3 |
+
+### Drive (pas cu pas)
+
+Promptul cerea un cont de serviciu cu acces de editor la folder. Un cont de serviciu nu poate însă urca fișiere într-un folder din „My Drive” (vezi „Decizii”). Alege varianta după unde stă folderul:
+
+**A. Folderul e în „My Drive” (cont Gmail) — OAuth, ca tine**
+1. [Google Cloud Console](https://console.cloud.google.com) → un proiect (sau unul nou) → **APIs & Services → Library** → activează **Google Drive API**.
+2. **OAuth consent screen**: tip *External*. Adaugă-te la *Test users*, apoi apasă **Publish app** (*In production*). În modul *Testing*, Google face ca tokenul să expire după 7 zile. Google va arăta că aplicația „nu e verificată”: e normal pentru o aplicație folosită doar de tine.
+3. **Credentials → Create credentials → OAuth client ID** → *Web application* → la *Authorized redirect URIs* pune `https://developers.google.com/oauthplayground`.
+4. Deschide [OAuth Playground](https://developers.google.com/oauthplayground):
+   - rotița din dreapta-sus → *Use your own OAuth credentials* → pune ID-ul și secretul de la pasul 3;
+   - la *Step 1* scrie scope-ul `https://www.googleapis.com/auth/drive` → **Authorize APIs** → intră cu contul care are folderul;
+   - *Step 2* → **Exchange authorization code for tokens** → copiază **Refresh token**.
+
+   Scope-ul complet `drive` e necesar fiindcă folderul există deja: scope-ul îngust `drive.file` vede doar ce creează aplicația.
+5. Vercel → `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN` → **Redeploy**.
+
+**B. Folderul e într-un Shared Drive (Google Workspace) — cont de serviciu**
+1. Google Cloud Console → activează **Google Drive API** (ca la A.1).
+2. **IAM & Admin → Service Accounts → Create service account**, fără roluri. Apoi **Keys → Add key → JSON**: se descarcă un fișier.
+3. Vercel → `GOOGLE_SERVICE_ACCOUNT_JSON` = tot conținutul fișierului → **Redeploy**.
+4. În admin, **Firmă → Setări → Drive** arată adresa contului de serviciu. În Drive, partajează folderul rădăcină cu adresa aceea, ca **Editor** (*Content manager* în Shared Drive).
+
+**Apoi, la ambele:** în **Firmă → Setări**, lipește adresa folderului rădăcină și alege modelul de nume al lunii. Salvează. Cardul „Drive” trebuie să arate „Merge”, iar „Fă acum folderul …” creează folderul lunii curente.
+
 ### Oblio (pas cu pas)
 
 1. Intră în Oblio → **Setări → Date cont** și copiază **Secretul API**.
@@ -96,6 +123,14 @@ Zona modulului: `app/(admin)/admin/firma/**`, `lib/firma/**`,
 
 ## De testat cu cheile reale
 
+- **Faza 3 — Drive:**
+  - tokenul real (OAuth sau cont de serviciu);
+  - `files.get` pe folderul tău (cu `canAddChildren`);
+  - găsirea folderului unei luni după nume (`files.list` cu `q`);
+  - crearea folderului;
+  - urcarea unui PDF (multipart) și a unui fișier peste 5 MB (resumable, la zip-ul din faza 6).
+
+  Toate sunt construite după documentația Drive v3 și testate pe un Drive simulat. Când muți facturile pe Drive-ul ăsta, verifică modelul de nume al lunii (provizoriu „{luna} {an}”).
 - **Faza 2 — emiterea, cu o proformă de test** (nu cu o factură): `node --env-file=.env.local lib/firma/oblio/test-proforma.mjs <seria-de-proforma>`. Scriptul face o proformă de 1 leu, marcată „TEST — NU SE PLĂTEȘTE”, pe firma ta (nu pe un client). Arată răspunsul Oblio și linkul. **După test, șterge proforma din Oblio, de mână.** Adminul nu are funcție de ștergere.
 - **Faza 2 — e-Factura:** `POST /docs/einvoice` și codurile din răspuns (`-1`, `2`, `0`, `1`), mai ales textul unei respingeri reale.
 - **Faza 2 — PDF-ul:** emailul ia PDF-ul din `link`-ul dat de Oblio. De verificat că linkul real se descarcă fără sesiune Oblio (testul a pornit de la presupunerea că da). Dacă nu, emailul refuză să plece și spune de ce.
@@ -171,3 +206,30 @@ Zona modulului: `app/(admin)/admin/firma/**`, `lib/firma/**`,
   - încasarea venită din Oblio;
   - nicio cerere interzisă în jurnalul Oblio;
   - 360 px.
+
+### Faza 3 — Drive
+
+- **Migrarea 18** (`00000000000018_firma_drive.sql`):
+  - `firma_luni_drive`: folderul fiecărei luni, legat de rădăcina în care a fost făcut;
+  - `firma_fisiere`: registrul celor urcate, unic pe (fel, sursă), ca nimic să nu se urce de două ori.
+- **`lib/firma/drive/google.ts`** — Drive v3 după documentație:
+  - token OAuth (refresh) sau JWT RS256 al contului de serviciu, semnat cu `node:crypto`, fără pachete noi;
+  - `files.get`, `files.list` cu `q`, `files.create` și încărcarea multipart sau resumable, toate cu `supportsAllDrives`;
+  - erorile spuse pe înțeles. Mai ales `storageQuotaExceeded`: contul de serviciu nu poate urca în „My Drive”.
+- **Folderul lunii** (`lib/firma/drive/index.ts`):
+  - numele vine din modelul din Setări (`{luna}`, `{Luna}`, `{an}`, `{ll}`; provizoriu „{luna} {an}”);
+  - întâi se caută după nume în rădăcină (dacă l-ai făcut deja de mână), abia apoi se creează;
+  - se face din Setări („Fă acum folderul …”) și din cron, la început de lună (faza 8).
+- **Facturile pe Drive:**
+  - pasul 3 al aprobării pune PDF-ul din Oblio în folderul lunii emiterii, cu numele în stilul celor descărcate din Oblio, ca în folderul tău: `FacturaFCT42-NUME_CLIENT.pdf`;
+  - un fișier cu același nume pus de mână în folder nu se dublează: se înregistrează;
+  - „Urcă pe Drive cele N PDF-uri lipsă” (în Facturi) recuperează facturile emise înainte de legarea Drive-ului sau cele cu pasul căzut.
+- **Setări → Drive:** modul legăturii, adresa contului de serviciu (cu care se partajează folderul), dacă rădăcina se vede și se poate scrie în ea, și folderul lunii curente.
+- **Decizia cu contul de serviciu** e explicată sus, la „Decizii”, iar pașii pentru ambele variante sunt la „Drive (pas cu pas)”.
+- **Verificat pe Drive simulat:**
+  - starea în Setări;
+  - folderul lunii, de două ori (a doua oară nu se dublează);
+  - cele două PDF-uri lipsă urcate (butonul dispare apoi);
+  - o factură nouă, cu pasul Drive făcut la aprobare;
+  - refuzul `storageQuotaExceeded`, cu mesajul pentru om și reluarea lui;
+  - registrul fișierelor și istoricul.

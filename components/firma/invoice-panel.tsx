@@ -19,6 +19,7 @@ export interface InvoiceActions {
   approve: (id: string) => Promise<Result>;
   sendEmail: (id: string, raw: unknown) => Promise<Result>;
   refresh: () => Promise<Result>;
+  uploadMissingDrive: (month: string) => Promise<Result>;
 }
 
 export interface InvoiceClient {

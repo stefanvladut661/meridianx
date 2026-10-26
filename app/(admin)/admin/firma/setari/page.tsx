@@ -4,7 +4,10 @@ import { isOblioConfigured, oblioSeries, OblioError } from "@/lib/firma/oblio/ap
 import { isEmailConfigured } from "@/lib/email/send";
 import { SettingsForm } from "@/components/firma/settings-form";
 import { Notice, PageHead, Tag } from "@/components/firma/ui";
-import { saveSettingsAction } from "./actions";
+import { DriveStatusCard } from "@/components/firma/drive-status";
+import { driveStatus, monthFolderName } from "@/lib/firma/drive";
+import { currentMonth } from "@/lib/firma/format";
+import { createMonthFolderAction, saveSettingsAction } from "./actions";
 
 export const metadata: Metadata = { title: "Setări — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -29,6 +32,8 @@ export default async function SetariPage() {
     { name: "Oblio", ok: isOblioConfigured(), missing: "OBLIO_EMAIL, OBLIO_API_SECRET, OBLIO_CIF" },
     { name: "Email (Resend)", ok: isEmailConfigured(), missing: "RESEND_API_KEY" },
   ];
+  // O citire la Google: folderul rădăcină se vede și se poate scrie în el?
+  const drive = await driveStatus(true);
 
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
@@ -46,6 +51,15 @@ export default async function SetariPage() {
           ))}
         </ul>
       </section>
+      <DriveStatusCard
+        mode={drive.mode?.kind ?? null}
+        serviceEmail={drive.mode?.kind === "service" ? drive.mode.email : null}
+        rootName={drive.rootName}
+        ok={drive.ok}
+        message={drive.message}
+        folderName={monthFolderName(currentMonth(), drive.pattern)}
+        createMonthFolder={createMonthFolderAction}
+      />
       {!settings.ok ? (
         <Notice tone="error" className="mt-5 max-w-3xl">
           {settings.message}
