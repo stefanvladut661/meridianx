@@ -135,11 +135,67 @@ Pașii exacți, la „Ce ai de făcut”, mai jos.
 
 ## Ce ai de făcut
 
-*Se completează pe faze.*
+### Pentru terminalul de reclame (pe calculator)
+
+Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
+
+**Unde pune clipurile**
+- Drive pentru desktop ține Drive-ul pe `G:`. Folderul e `G:\My Drive\meridian reclame` (cu interfața în română: `G:\Drive-ul meu\meridian reclame`). Ce se copiază acolo urcă singur pe Drive.
+- **Un subfolder pe lot:** `meridian reclame\lot-1`, `meridian reclame\lot-2`… Planul de postări arată spre un subfolder, iar fișierele se dau cu numele lor de acolo.
+- **Ordinea:** întâi copiază clipurile, abia apoi scrie `manifest.json`. Fă-l într-un fișier temporar (`manifest.json.tmp`) și redenumește-l la final, ca Drive să nu urce un manifest pe jumătate.
+- **Nu suprascrie un clip** care e deja într-un plan. Dacă refaci un clip, pune-l într-un lot nou sau dă-i alt nume. Adminul recunoaște fișierul după id-ul de pe Drive și după mărime.
+
+**Cum trebuie să fie clipurile** (verificate din fișier, înainte de aprobarea planului)
+- Vertical **9:16**: 1080×1920.
+- Video **H.264**, sunet **AAC**, cel mult 48 kHz, stereo.
+- Între 23 și 60 de cadre pe secundă; 30 e bine.
+- **`-movflags +faststart`** (indexul `moov` la început). Instagram îl cere, iar `assemble.mjs` îl pune deja.
+- **Debitul video:** cel mult 25 Mbps (limita Instagram). La CRF 14, un clip cu multă mișcare poate trece de ea.
+- **Mărimea, pentru Instagram:** cel mult **50 MB** pe clip. Instagram ia clipul printr-o copie temporară în Supabase, iar planul gratuit Supabase primește cel mult 50 MB pe fișier. Pentru un clip de până la 30 de secunde, `-maxrate 12M -bufsize 24M` îl ține sub limită fără pierdere vizibilă.
+- **Durata:** între 3 secunde (minimul Instagram) și 10 minute (maximul TikTok prin API).
+
+**`manifest.json`** (în același subfolder cu clipurile)
+
+```json
+{
+  "versiune": 1,
+  "lot": "lot-1",
+  "produs": "Meniu digital și reclame video pentru restaurante",
+  "clipuri": [
+    {
+      "fisier": "333f_h3-c2_9x16_larven.mp4",
+      "voce": "333f",
+      "hook": { "cod": "h3", "text": "Ai mese goale marțea seara?" },
+      "cta": { "cod": "c2", "text": "Scrie-ne pe WhatsApp" },
+      "stil": "larven",
+      "format": "9x16",
+      "durata": 27.4
+    }
+  ]
+}
+```
+
+- **Obligatorii:** `clipuri` și, la fiecare clip, `fisier` (numele exact din folder).
+- **Restul ajută la descrieri:** din `voce`, `hook`, `cta` și `stil`, Claude scrie descrierea și hashtag-urile fiecărui clip.
+- **Câmpuri în plus:** se păstrează și ajung la Claude ca context. Pe primul nivel, de exemplu `produs`, `oferta`, `oras`; la un clip, `public` sau `nota`.
+- **Citirea e iertătoare:**
+  - `fișier` sau `fisier`, fără diferență de litere mari;
+  - `durata` ca număr de secunde (`27.4`) sau ca text (`"27,4 s"`, `"0:27"`);
+  - `hook` și `cta` ca `{ "cod", "text" }` sau ca text simplu;
+  - `format` ca `"9x16"` sau `"9:16"`.
+- **Ce verifică adminul:** clipurile din manifest care lipsesc din folder și clipurile din folder care lipsesc din manifest (ecranul „Clipuri”).
+
+### În admin
+
+1. **Rulează migrarea 24** (`supabase/migrations/00000000000024_postari_baza.sql`) în Supabase → SQL Editor. Verificarea de la final trebuie să arate `true` pe ambele rânduri.
+2. **Postări → Setări:** lipește adresa folderului „meridian reclame” de pe Drive. Contul legat la adminul firmei (OAuth) trebuie să-l vadă; dacă folderul e al aceluiași cont Google, îl vede.
 
 ## De făcut de om
 
-*Se completează pe faze.*
+1. **Migrarea 24** în Supabase (vezi „În admin”).
+2. **Folderul principal** în Postări → Setări.
+3. **Instrucțiunile pentru terminalul de reclame** (secțiunea de mai sus) date terminalului care face clipurile.
+4. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
 
 ## De testat cu contul real
 
@@ -151,6 +207,7 @@ Pașii exacți, la „Ce ai de făcut”, mai jos.
 
 | Faza | Commit | Preview |
 |---|---|---|
+| 0 — planul | `d7320b7` | https://meridianx-lgrv91ko2-stefanvladut661s-projects.vercel.app |
 
 ## Jurnal
 
@@ -159,3 +216,33 @@ Pașii exacți, la „Ce ai de făcut”, mai jos.
 - Am citit `CLAUDE.md`, adminul firmei, conexiunea Drive, portalul de reclame și scriptul care face clipurile.
 - Am verificat în documentația oficială Meta, TikTok, Supabase și Vercel tot ce ține de formatul cererilor și al răspunsurilor. Citatele sunt în „Decizii” și în codul fiecărei faze.
 - Ramura: `feat/postari`, din `feat/admin-firma`, într-un worktree separat (`../meridianx-postari`).
+
+### Faza 1 — Drive și `manifest.json`
+
+- **Migrarea 24** (`00000000000024_postari_baza.sql`): `postari_setari` (un rând), `postari_istoric`, `postari_clipuri` (ce s-a citit din fiecare clip). RLS doar pentru `is_lead_admin()`.
+- **Drive** (`lib/postari/drive.ts`), doar cu funcțiile exportate de `lib/firma/drive/google.ts`:
+  - **Folderul principal** se alege în Setări, prin adresă sau id. La salvare se citește la Google, ca să se vadă că există și ca să i se țină numele.
+  - **Calea din plan** se parcurge segment cu segment. Merge și cu numele folderului principal în față (`meridian reclame/lot-1`), și fără (`lot-1`). Numele se compară fără litere mari și fără diacritice. Un segment greșit spune ce subfoldere există de fapt acolo.
+  - **Lista** desparte subfolderele, clipurile (MP4/MOV) și `manifest.json`.
+- **`manifest.json`** (`lib/postari/manifest.ts`): formatul e scris mai sus, pentru terminalul de reclame. Citirea e iertătoare (chei cu sau fără diacritice, durata ca număr sau text, hookul și CTA-ul ca obiect sau text). Câmpurile necunoscute se păstrează pentru Claude.
+- **Cititorul de MP4** (`lib/postari/mp4.ts`, fără pachete), după standardul ISO BMFF. Scoate dimensiunile (cu rotația), durata, cadrele pe secundă, codecurile, frecvența și canalele audio, debitul video și ordinea `moov` / `mdat`.
+  - **Comparat cu `ffprobe`** pe 6 clipuri generate cu ffmpeg (1080×1920 și 720×1280, 16:9, 2 s, fără `faststart`, 25 și 30 fps, mono și stereo): aceleași valori la toate.
+- **Limitele** (`lib/postari/limite.ts`) sunt luate din documentația Instagram și TikTok, cu citatele în cod:
+  - **9:16:** cu 1% toleranță;
+  - **Instagram:** MP4/MOV, `moov` la început, H.264/HEVC, AAC de cel mult 48 kHz, 23–60 de cadre pe secundă, lățime de cel mult 1920, cel mult 25 Mbps, între 3 s și 15 min, cel mult 300 MB, plus limita stocării temporare;
+  - **TikTok:** H.264/H.265/VP8/VP9, 23–60 de cadre pe secundă, între 360 și 4096 px, cel mult 10 min.
+- **Ecranul „Clipuri”** (`/admin/postari/clipuri`):
+  - subfolderele, cu calea navigabilă;
+  - `manifest.json` ca tabel, cu clipurile care lipsesc din folder și cele din folder care lipsesc din manifest;
+  - clipurile, cu ce s-a citit și cu „Instagram: da/nu”, „TikTok: da/nu” și motivul;
+  - „Citește clipurile” le ia pe rând, cu progres anunțat. Fiecare se descarcă o singură dată, iar rezultatul rămâne în `postari_clipuri`;
+  - „Vezi clipul” deschide playerul Drive-ului doar la cerere.
+- **Setări** (`/admin/postari/setari`): legătura Drive, folderul principal (citit la Google), sloturile implicite, distanța minimă, plafoanele (Instagram 50, TikTok 5), limita stocării temporare și emailul pentru alerte.
+- **Verificat** pe Postgres real (migrarea rulată), cu PostgREST, Drive și autentificarea simulate, în Chrome headless:
+  - folderul inexistent e refuzat, apoi folderul bun salvat, cu numele citit;
+  - orele sunt sortate și completate („9:30” → „09:30”);
+  - calea scrisă cu numele rădăcinii și cu litere mari („meridian reclame/LOT-1”) e găsită;
+  - manifestul: fișierul lipsă e marcat, clipurile din afara manifestului sunt numite, cheia `fișier` e citită;
+  - cele 5 clipuri sunt citite; 16:9 e refuzat, 2 s și fără `faststart` sunt refuzate pe Instagram;
+  - citirile se țin minte; subfolderul inexistent e explicat; istoricul e scris;
+  - la 360 px, fără scroll lateral; consola e curată.
