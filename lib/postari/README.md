@@ -9,7 +9,9 @@ Totul pornește dintr-un plan JSON (lipit de tine sau scris de Claude din `manif
 
 Zona modulului: `app/(admin)/admin/postari/**`, `lib/postari/**`, `components/postari/**` și migrările `00000000000024_*` în sus. Din `lib/firma` se importă doar conexiunea Drive (`lib/firma/drive/google.ts`), fără nicio schimbare acolo.
 
-**Ramura:** `feat/postari`, pornită din `feat/admin-firma`, pentru că `feat/admin-firma` nu e încă în `main` (la 27 octombrie 2026 `main` e la „Portal reclame v2, faza 6”). Când `feat/admin-firma` intră în `main`, ramura asta se poate muta peste `main` fără conflicte: nu atinge fișiere din afara zonei.
+**Ramura:** `feat/postari`, pornită din `feat/admin-firma`, pentru că `feat/admin-firma` nu era în `main` (la 27 octombrie 2026 `main` era la „Portal reclame v2, faza 6”).
+
+**În `main` din 28 octombrie 2026**, la cererea ta, împreună cu `feat/admin-firma` (adminul firmei, fazele 0–8), de care modulul are nevoie pentru Drive. Codul e în producție, dar modulul merge abia după pașii din „De făcut de om”.
 
 ---
 
@@ -302,20 +304,21 @@ Cum merge coada:
 
 În ordinea asta. Fiecare pas are detaliile mai sus.
 
-1. **Migrările 24–27** în Supabase → SQL Editor (vezi „În admin”).
+1. **Migrările 24–27** în Supabase → SQL Editor (vezi „În admin”). Toate patru, într-un singur fișier: `C:\Users\PC\Desktop\meridian-postari-migrari-24-27.sql` (în afara repo-ului). Lipești tot și dai Run. Nu depind de migrările firmei (16–23), dar paginile firmei au nevoie de ele; fișierul lor e `C:\Users\PC\Desktop\meridian-firma-migrari-16-23.sql`.
 2. **Variabilele noi în Vercel** (Production), apoi **Redeploy**. Le găsești la „Variabilele din Vercel”:
-   - `POSTARI_TOKEN_KEY`: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. **Nu o schimba după ce conectezi conturile**; schimbată, tokenurile vechi nu se mai pot decripta și conectezi conturile din nou;
-   - `POSTARI_CRON_SECRET`: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`;
+   - `POSTARI_TOKEN_KEY` și `POSTARI_CRON_SECRET`: valorile sunt gata făcute în `C:\Users\PC\Desktop\meridian-postari-chei-vercel.txt` (în afara repo-ului; îl ștergi după ce le-ai pus). Le poți face și tu: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` pentru cheie, aceeași comandă cu `'base64url'` pentru secret. **Cheia nu o schimba după ce conectezi conturile**; schimbată, tokenurile vechi nu se mai pot decripta și conectezi conturile din nou;
+   - **Drive** (`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN`): la 28 octombrie 2026 nu sunt în Vercel. Fără ele, modulul nu vede clipurile. Pașii sunt în `lib/firma/README.md`, la „Drive (pas cu pas)”, varianta A;
+   - `ANTHROPIC_API_KEY`: nici ea nu e încă în Vercel. E opțională: fără ea, planul îl lipești tu, fără descrieri scrise de Claude;
    - `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, după pasul 6.
-   Cele de la adminul firmei (Google Drive, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`) rămân cum sunt.
+   `RESEND_API_KEY` și `RESEND_FROM_EMAIL` sunt deja puse, pentru lead-uri.
 3. **Postări → Setări:** folderul „meridian reclame” de pe Drive și, dacă vrei, adresa pentru alerte (fără ea, alertele pleacă la ADMIN_EMAILS).
-4. **Programarea:** `lib/postari/supabase-cron.sql` în Supabase, cu același secret ca `POSTARI_CRON_SECRET` (vezi „Programarea”). După 10 minute, Setări → „Programarea și alertele” trebuie să arate „Supabase Cron: da”.
+4. **Programarea:** `lib/postari/supabase-cron.sql` în Supabase, cu același secret ca `POSTARI_CRON_SECRET` (vezi „Programarea”). Gata completat cu secretul din pasul 2: `C:\Users\PC\Desktop\meridian-postari-programare.sql` (în afara repo-ului; îl ștergi după rulare). După 10 minute, Setări → „Programarea și alertele” trebuie să arate „Supabase Cron: da”.
 5. **Instagram la Meta** (vezi „Instagram”): produsul Instagram, rolul de tester pentru contul Meridian, permisiunile, tokenul. Apoi Setări → Conturi → „Conectează Instagram”.
 6. **TikTok la TikTok for Developers** (vezi „TikTok”): aplicația, Login Kit cu adresa de întoarcere `https://www.meridianx.ro/admin/postari/conturi/tiktok/callback`, Content Posting API → Upload (`video.upload`), sandbox-ul cu contul Meridian. Cheile în Vercel, apoi Setări → Conturi → „Conectează TikTok”, **pe www.meridianx.ro**.
 7. **Terminalul de reclame:** dă-i secțiunea „Pentru terminalul de reclame”: unde pune clipurile pe `G:`, ce format trebuie să aibă și cum arată `manifest.json`.
 8. **Proba reală cu un singur clip**, întâi Instagram, apoi TikTok (vezi „De testat cu contul real”).
 9. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
-10. **Merge în `main`**, după probă. Ramura pornește din `feat/admin-firma`, deci intră după ea (vezi începutul fișierului). Nu fac push pe `main` și nu fac merge fără tine.
+10. ~~**Merge în `main`**~~: făcut la 28 octombrie 2026, la cererea ta, împreună cu `feat/admin-firma`.
 
 ## De testat cu contul real
 

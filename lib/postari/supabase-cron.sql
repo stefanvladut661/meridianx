@@ -17,8 +17,19 @@ create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
 -- 2. Secretul, în Supabase Vault (seiful bazei de date Supabase, nu vault-ul
---    MERIDIAN din /vault). Rulează asta o singură dată.
-select vault.create_secret('<SECRETUL>', 'postari_cron_secret', 'Postări: secretul cu care Supabase Cron pornește coada');
+--    MERIDIAN din /vault). Rulat din nou, înlocuiește secretul vechi.
+do $$
+declare
+  existent uuid;
+begin
+  select id into existent from vault.secrets where name = 'postari_cron_secret';
+  if existent is null then
+    perform vault.create_secret('<SECRETUL>', 'postari_cron_secret', 'Postări: secretul cu care Supabase Cron pornește coada');
+  else
+    perform vault.update_secret(existent, '<SECRETUL>', 'postari_cron_secret', 'Postări: secretul cu care Supabase Cron pornește coada');
+  end if;
+end;
+$$;
 
 -- 3. Jobul. Rulat din nou cu același nume, îl înlocuiește pe cel vechi.
 select cron.schedule(
