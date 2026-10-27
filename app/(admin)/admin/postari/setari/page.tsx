@@ -4,6 +4,7 @@ import { readSettings } from "@/lib/postari/setari";
 import { checkRoot, DRIVE_MISSING, driveMode, folderLink } from "@/lib/postari/drive";
 import { listAccounts } from "@/lib/postari/conturi";
 import { keyProblem } from "@/lib/postari/cripto";
+import { redirectUri, tiktokConfigured, TIKTOK_MISSING } from "@/lib/postari/tiktok";
 import { AccountsPanel } from "@/components/postari/accounts-panel";
 import { SettingsForm } from "@/components/postari/settings-form";
 import { IconExternal } from "@/components/postari/icons";
@@ -19,13 +20,26 @@ export const dynamic = "force-dynamic";
  * sloturile, plafoanele, alertele și conturile Instagram și TikTok. Cheile nu
  * se văd și nu se scriu aici; tokenurile conturilor nu se mai văd după salvare.
  */
-export default async function SetariPage() {
+const TIKTOK_RESULT: Record<string, { tone: "ok" | "error" | "warn"; text: string }> = {
+  conectat: { tone: "ok", text: "TikTok e conectat. Clipurile TikTok din coadă pleacă în ciornele din aplicație la ora lor." },
+  refuzat: { tone: "warn", text: "Conectarea TikTok a fost anulată în TikTok. Nimic nu s-a schimbat; poți încerca din nou." },
+  stare: { tone: "error", text: "Întoarcerea din TikTok nu se potrivește cu cererea (link vechi sau deschis în alt browser). Apasă din nou „Conectează TikTok”, din același browser." },
+  permisiune: { tone: "error", text: "TikTok n-a dat permisiunea de urcare a clipurilor (video.upload). Conectează din nou și lasă bifată permisiunea." },
+  neconfigurat: { tone: "warn", text: TIKTOK_MISSING },
+  eroare: { tone: "error", text: "Conectarea TikTok n-a mers." },
+};
+
+export default async function SetariPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
+  const tiktokResult = typeof params.tiktok === "string" ? TIKTOK_RESULT[params.tiktok] ?? null : null;
+  const motiv = typeof params.motiv === "string" ? params.motiv.slice(0, 200) : null;
   const settings = await readSettings();
   const mode = driveMode();
   // O citire la Google: folderul principal se vede cu contul legat?
   const root = settings.ok && settings.data.driveFolderId && mode ? await checkRoot(settings.data.driveFolderId) : null;
   const accounts = await listAccounts();
   const instagram = accounts.ok ? (accounts.data.find((account) => account.platforma === "instagram") ?? null) : null;
+  const tiktok = accounts.ok ? (accounts.data.find((account) => account.platforma === "tiktok") ?? null) : null;
 
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
@@ -79,12 +93,27 @@ export default async function SetariPage() {
         <SettingsForm settings={settings.data} save={saveSettingsAction} />
       )}
 
+      {tiktokResult ? (
+        <Notice tone={tiktokResult.tone} role={tiktokResult.tone === "ok" ? "status" : "alert"} className="mt-8 max-w-3xl">
+          {tiktokResult.text}
+          {motiv && params.tiktok === "eroare" ? ` Motivul: ${motiv}` : ""}
+        </Notice>
+      ) : null}
       {!accounts.ok ? (
         <Notice tone="error" className="mt-8 max-w-3xl">
           {accounts.message}
         </Notice>
       ) : (
-        <AccountsPanel instagram={instagram} keyProblem={keyProblem()} fus={settings.ok ? settings.data.sloturiFus : "Europe/Bucharest"} connectInstagram={connectInstagramAction} disconnect={disconnectAction} />
+        <AccountsPanel
+          instagram={instagram}
+          tiktok={tiktok}
+          tiktokMissing={tiktokConfigured() ? null : TIKTOK_MISSING}
+          redirectUri={redirectUri()}
+          keyProblem={keyProblem()}
+          fus={settings.ok ? settings.data.sloturiFus : "Europe/Bucharest"}
+          connectInstagram={connectInstagramAction}
+          disconnect={disconnectAction}
+        />
       )}
     </main>
   );

@@ -5,7 +5,7 @@ import { runQueue } from "@/lib/postari/coada";
 import { actorEmail, SESSION_EXPIRED } from "@/lib/postari/db";
 import { logEvent } from "@/lib/postari/istoric";
 import { PLATFORMA_LABEL } from "@/lib/postari/limite";
-import { removePost, retryPost } from "@/lib/postari/postari";
+import { markPublishedByHand, removePost, retryPost } from "@/lib/postari/postari";
 import { setQueueRunning } from "@/lib/postari/setari";
 import { momentLabel } from "@/lib/postari/timp";
 
@@ -60,4 +60,16 @@ export async function runNowAction(): Promise<ActionResult> {
   if (s.coadaOprita) return { ok: true, message: "Coada e oprită: rularea n-a luat nimic. Pornește coada întâi." };
   if (s.luate === 0) return { ok: true, message: `Nimic de trimis acum: nicio postare nu e la timp.${s.intarziate ? ` ${s.intarziate} rămase în urmă au fost marcate eșuate.` : ""}` };
   return { ok: true, message: `Rulare terminată: ${s.luate} luate, ${s.publicate} publicate, ${s.ciorne} în ciorne, ${s.asteapta} în așteptare, ${s.reincercari} de reîncercat, ${s.esuate} eșuate${s.amanate ? `, ${s.amanate} continuă la rularea următoare` : ""}.` };
+}
+
+/** „Publicat”, din „De publicat pe TikTok”: ai publicat ciorna din aplicație. */
+export async function markTiktokPublishedAction(id: unknown): Promise<ActionResult> {
+  const actor = await actorEmail();
+  if (!actor) return { ok: false, message: SESSION_EXPIRED };
+  if (typeof id !== "string" || !UUID.test(id)) return { ok: false, message: "Postarea nu e validă." };
+  const result = await markPublishedByHand(id, actor);
+  if (!result.ok) return result;
+  await logEvent({ actor, zona: "tiktok", actiune: "marcată publicată", tinta: id, rezultat: "ok", mesaj: `„${result.data.fisier}”: publicată din aplicația TikTok.` });
+  revalidatePath("/admin/postari", "layout");
+  return { ok: true, message: `„${result.data.fisier}” e marcată publicată.` };
 }

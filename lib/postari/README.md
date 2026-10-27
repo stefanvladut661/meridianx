@@ -188,7 +188,8 @@ Un plan e un lot de postări dintr-un singur subfolder de pe Drive. Îl lipești
 | `ANTHROPIC_API_KEY` | Aceeași ca la adminul firmei, pentru descrierile scrise de Claude. | 3 |
 | `POSTARI_CRON_SECRET` | Secretul cu care Supabase Cron apelează coada. Orice șir aleator de 32+ caractere. Același șir merge în Supabase Vault (vezi „Programarea”). | 4 |
 | `POSTARI_TOKEN_KEY` | Cheia care criptează tokenurile Instagram și TikTok: 32 de octeți în base64 (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`). Nu se mai schimbă după conectarea conturilor. | 5 |
-| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Aplicația de dezvoltator TikTok (Login Kit + Content Posting API). | 6 |
+| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Aplicația de dezvoltator TikTok (Login Kit + Content Posting API, Upload). Pași la „TikTok”. | 6 |
+| `TIKTOK_REDIRECT_URI` (opțional) | Doar dacă adresa de întoarcere e alta decât `https://www.meridianx.ro/admin/postari/conturi/tiktok/callback`. | 6 |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Aceleași ca la lead-uri, pentru alerte. | 7 |
 
 Pașii exacți, la „Ce ai de făcut”, mai jos.
@@ -263,6 +264,18 @@ Contul Meridian trebuie să fie **profesional** (Business sau Creator). Publicar
 5. **În admin:** Postări → Setări → **Conturi** → lipește tokenul → „Conectează Instagram”. Adminul verifică la Instagram contul și permisiunea de publicare, apoi salvează tokenul criptat.
 6. **De aici:** tokenul se reînnoiește singur, săptămânal (`refresh_access_token`). Dacă reînnoirea pică definitiv, coada se oprește și primești alertă pe email. Atunci repeți pașii 4–5.
 
+### TikTok (la TikTok for Developers)
+
+TikTok primește prin API clipul în ciornele tale, fără descriere: `inbox/video/init` are doar `source_info`. Descrierea o copiezi din „De publicat pe TikTok”.
+
+1. **Aplicația.** developers.tiktok.com → *Manage apps* → *Connect an app*. Completezi iconița, numele, categoria, descrierea și linkurile paginilor de termeni și confidențialitate de pe meridianx.ro (TikTok le verifică). Platforma: **Web**, cu site-ul `https://www.meridianx.ro`.
+2. **Login Kit** → *Redirect URI* pentru Web: **`https://www.meridianx.ro/admin/postari/conturi/tiktok/callback`**. Adresa trebuie scrisă exact așa (fără parametri), și apare și în admin, la Setări → Conturi → TikTok. Conectarea merge doar pe www.meridianx.ro, nu pe linkurile de preview.
+3. **Content Posting API** → îl adaugi și pornești **Upload** (permisiunea `video.upload`). Postarea directă (*Direct Post*) nu trebuie pornită. Dacă TikTok cere verificarea domeniului (*URL properties → Verify*), verifici `www.meridianx.ro`.
+4. **Permisiunile (scopes):** `user.info.basic` și `video.upload`.
+5. **Sandbox, pentru proba ta:** *Sandbox* → creezi unul → *Target users* → adaugi contul TikTok Meridian (poate dura până la o oră să apară). Iei *Client key* și *Client secret* din sandbox. Documentația nu spune dacă sandbox-ul permite trimiterea în ciorne. Dacă nu merge, trimiți aplicația la review (*Submit for review*, cu un clip demo al fluxului).
+6. **Vercel:** `TIKTOK_CLIENT_KEY` și `TIKTOK_CLIENT_SECRET` (din sandbox sau din aplicația aprobată), pentru Production, apoi **Redeploy**.
+7. **În admin, pe www.meridianx.ro:** Postări → Setări → Conturi → **Conectează TikTok**. Intri cu contul Meridian și dai voie la urcare. Accesul (24 de ore) se reînnoiește singur. Conectarea ține un an, iar cu 14 zile înainte de expirare primești alertă să o refaci.
+
 ### Programarea (Supabase Cron)
 
 Vercel Hobby rulează joburi programate doar o dată pe zi („Hobby accounts are limited to daily cron jobs”), așa că pe coadă o pornește Supabase Cron, la 5 minute. Nu se atinge `vercel.json`.
@@ -293,7 +306,8 @@ Cum merge coada:
 5. **Migrarea 27** (`00000000000027_postari_conturi.sql`): conturile și bucket-ul `postari-temp`.
 6. **`POSTARI_TOKEN_KEY` în Vercel** (Production): `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. **Nu o schimba după ce ai conectat conturile.** Dacă o schimbi, tokenurile vechi nu se mai pot decripta și conectezi conturile din nou.
 7. **Instagram la Meta** (pașii de la „Instagram”), apoi tokenul în Setări → Conturi.
-8. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
+8. **TikTok la TikTok for Developers** (pașii de la „TikTok”), `TIKTOK_CLIENT_KEY` și `TIKTOK_CLIENT_SECRET` în Vercel, apoi „Conectează TikTok” în Setări → Conturi, pe www.meridianx.ro.
+9. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
 
 ## De testat cu contul real
 
@@ -306,7 +320,14 @@ Cum merge coada:
    - încearcă o dată și un Trial Reel (`"tip": "trial_reel"`): trebuie să apară în aplicație ca Trial Reel. Cu `"absolvire": "automat"`, Instagram îl trece singur la urmăritori dacă merge bine.
    Toate formatele răspunsurilor sunt cele din documentația Meta, testate pe un Instagram simulat care descarcă clipul de la linkul semnat ca cel real. Neverificat pe real: forma exactă a răspunsului `GET /me`. Documentația arată `data[0]`, referința arată un obiect plat, iar codul le primește pe amândouă.
 4. **Copia temporară pe Supabase-ul real:** urcarea TUS pe `<proiect>.storage.supabase.co` cu cheia de service. Testată pe o stocare simulată care cere protocolul TUS și bucăți de exact 6 MB.
-5. **Jobul din Supabase Cron:** `pg_cron`, `pg_net` și Vault nu există în Postgres-ul de test. Endpoint-ul a fost testat direct (secret, rulări, rulări simultane), dar SQL-ul jobului rulează prima oară la tine. După 10 minute, „Ultima rulare” trebuie să arate „Supabase Cron”.
+5. **TikTok, cu un singur clip:**
+   - conectarea pe www.meridianx.ro (redirectul înregistrat la TikTok);
+   - un plan cu **o** postare TikTok, aprobat; la ora ei, „Rulează acum”;
+   - pe telefon vine notificarea TikTok, iar clipul e în ciorne;
+   - „De publicat pe TikTok” → „Copiază descrierea” → lipești în TikTok → „Postează” → „Publicat”;
+   - verifică și că, dacă nu apeși „Publicat”, adminul o marchează singur în cel mult 30 de minute (TikTok raportează `PUBLISH_COMPLETE`).
+   Neverificat pe real: dacă un sandbox sau o aplicație neauditată poate trimite în ciorne (documentația nu spune).
+6. **Jobul din Supabase Cron:** `pg_cron`, `pg_net` și Vault nu există în Postgres-ul de test. Endpoint-ul a fost testat direct (secret, rulări, rulări simultane), dar SQL-ul jobului rulează prima oară la tine. După 10 minute, „Ultima rulare” trebuie să arate „Supabase Cron”.
 
 ---
 
@@ -319,6 +340,7 @@ Cum merge coada:
 | 2 — planul JSON | `546cfea` | https://meridianx-73d11136i-stefanvladut661s-projects.vercel.app |
 | 3 — planul scris de Claude | `b85b594` | https://meridianx-omorz28za-stefanvladut661s-projects.vercel.app |
 | 4 — coada și programarea | `ed7c814` | https://meridianx-b4uoaua12-stefanvladut661s-projects.vercel.app |
+| 5 — Instagram | `03f488a` | https://meridianx-7vizaf64d-stefanvladut661s-projects.vercel.app |
 
 ## Jurnal
 
@@ -483,3 +505,45 @@ Cum merge coada:
   - plafonul atins: postarea a așteptat 30 de minute, fără încercare consumată și fără container;
   - tokenul: reînnoit singur după 7 zile; apoi refuzat la reînnoire, cu contul „expirat”, coada oprită și alerta trimisă. Ecranul arată motivul, iar Setările arată „Token expirat” și formularul;
   - nicio cerere neașteptată către Instagram sau stocare.
+
+### Faza 6 — TikTok
+
+- **Clientul TikTok** (`lib/postari/tiktok.ts`), după documentația oficială: Login Kit for Web (`v2/auth/authorize`, `v2/oauth/token`, `v2/oauth/revoke`), `v2/user/info`, `inbox/video/init`, urcarea pe bucăți și `status/fetch`. **Nicio postare directă, ștergere sau editare.**
+  - **Bucățile**, după ghidul de transfer: sub 10 MB, clipul pleacă întreg (sub 5 MB așa cere documentația); peste 10 MB, bucăți de 10 MB, iar ultima ia restul. Numărul de bucăți e mărimea împărțită la bucată, rotunjită în jos.
+  - **Erorile** sunt clasificate după codurile din documentație: `access_token_invalid`, `scope_not_authorized`, `spam_risk_too_many_pending_share`, `rate_limit_exceeded`, `invalid_param(s)`, plus motivele `fail_reason` (`file_format_check_failed`, `internal`, `auth_removed`…).
+- **Pașii** (`lib/postari/tiktok-handler.ts`):
+  - **plafonul:** cel mult 5 ciorne în 24 de ore, sau cât e în Setări, dacă e mai puțin;
+  - **descărcarea:** de pe Drive, cu verificarea mărimii față de cea de la aprobare;
+  - **init:** `publish_id` și adresa de urcare se scriu în rând înainte de prima bucată;
+  - **urcarea:** bucățile în ordine, cu progresul scris după fiecare;
+  - **verificarea:** `SEND_TO_USER_INBOX` înseamnă trimisă în ciorne;
+  - **după trimitere:** o verificare la 30 de minute, timp de 7 zile. `PUBLISH_COMPLETE` înseamnă că ai publicat-o din aplicație, iar postarea se marchează singură.
+- **Fără dubluri:** o trimitere întreruptă continuă de la bucata la care a rămas. Una veche (adresa de urcare are o oră) se verifică întâi la TikTok: dacă TikTok are deja clipul, nu se trimite din nou.
+- **Tokenurile:**
+  - accesul (24 de ore) se reînnoiește cu 10 minute înainte să expire, iar tokenul de reînnoire nou se salvează, fiindcă TikTok îl poate schimba;
+  - dacă reînnoirea e refuzată, contul trece la „expirat”, coada se oprește și primești alertă;
+  - conectarea ține 365 de zile, iar cu 14 zile înainte primești alertă.
+- **Conectarea:**
+  - `/admin/postari/conturi/tiktok` pornește OAuth, cu `state` aleator într-un cookie httpOnly de 10 minute. Doar un admin autentificat o poate porni;
+  - `/admin/postari/conturi/tiktok/callback` verifică `state`, cere `video.upload`, salvează tokenurile criptate și te întoarce la Setări, cu rezultatul spus;
+  - „Deconectează” revocă accesul și la TikTok.
+- **„De publicat pe TikTok”** (`/admin/postari/tiktok`), făcută pentru telefon:
+  - cei patru pași, apoi fiecare ciornă cu descrierea mare (16 px), „Copiază descrierea” (cu selectare, dacă browserul nu lasă clipboard-ul) și „Publicat”, butoane de 48–52 px;
+  - plus „Urmează”, eșuatele cu link spre coadă și publicatele din ultimele 7 zile;
+  - în bara de jos a telefonului, a doua după Coada.
+- **`lib/postari/verify-api.mjs`** (`node lib/postari/verify-api.mjs`) verifică în cod că Instagram și TikTok folosesc doar endpoint-urile și metodele permise. Pică la orice apel nou nelistat. L-am verificat: un apel DELETE adăugat într-o copie e prins în patru feluri.
+- **Verificat** pe TikTok simulat, care cere regulile de bucăți, ordinea, `Content-Range` și doar `source_info` la init (32 de verificări, toate trecute):
+  - conectarea:
+    - anulată în TikTok, fără `video.upload` și cu `state` greșit: toate refuzate, explicate, nimic salvat;
+    - cea bună: tokenurile criptate, refresh-ul de 365 de zile; adresa finală nu mai are codul în ea;
+  - trimiterea: 25 MB în 2 bucăți (10 MB și 15,2 MB), un clip de 2,8 MB într-una singură; init cu doar `source_info`, apoi `SEND_TO_USER_INBOX` și „în ciorne”;
+  - la 360 px:
+    - descrierea întreagă, cu diacritice și emoji, iar „Copiază descrierea” pune exact textul în clipboard;
+    - „Publicat” marchează postarea, cu numele tău;
+    - fără scroll lateral, butoane de cel puțin 44 px;
+  - `PUBLISH_COMPLETE` raportat de TikTok: marcată singură, iar istoricul o are;
+  - urcarea întreruptă la bucata 2: încercare ratată; reluarea a continuat aceeași trimitere de la bucata 2, fără init nou;
+  - plafonul din Setări și refuzul TikTok pentru prea multe ciorne: postarea așteaptă, fără încercare consumată;
+  - `file_format_check_failed`: eșuată pe loc, cu motivul în română;
+  - tokenul reînnoit înainte să expire; refresh-ul refuzat oprește coada, cu alertă;
+  - „Deconectează” revocă accesul la TikTok; nicio cerere neașteptată.

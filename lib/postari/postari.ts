@@ -243,6 +243,27 @@ export async function retryPost(id: string, actor: string): Promise<Result<PostR
   return { ok: true, data: toPostRow(data[0] as Record<string, unknown>) };
 }
 
+/** „Publicat” pe o ciornă TikTok: doar starea din admin; postarea din aplicație nu se atinge. */
+export async function markPublishedByHand(id: string, actor: string): Promise<Result<PostRow>> {
+  const admin = db();
+  if (!admin) return { ok: false, message: NO_DB };
+  const now = new Date().toISOString();
+  const { data, error } = await admin
+    .from("postari")
+    .update({ stare: "publicata", publicata_la: now, publicata_de: actor, verificare_pana_la: null, urmatoarea_incercare: null, updated_at: now })
+    .eq("id", id)
+    .eq("platforma", "tiktok")
+    .eq("stare", "in_ciorne")
+    .select("*");
+  if (error) return failure(error, MIGRATION);
+  if (!data || data.length === 0) {
+    const current = await readPost(id);
+    if (current.ok && current.data?.stare === "publicata") return { ok: true, data: current.data };
+    return { ok: false, message: "Ciorna nu mai e în listă (poate a fost marcată deja). Reîncarcă pagina." };
+  }
+  return { ok: true, data: toPostRow(data[0] as Record<string, unknown>) };
+}
+
 export interface RunInfo {
   id: string;
   sursa: "cron" | "manual";

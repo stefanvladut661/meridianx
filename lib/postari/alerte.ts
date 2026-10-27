@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { SITE_URL } from "@/lib/site-url";
 import { db } from "./db";
 import { todayIn, RO_TZ } from "./timp";
 
@@ -58,7 +59,7 @@ export async function raiseAlert(alerta: Alerta, emailAlerte: string | null): Pr
       from: FROM(),
       to,
       subject: `Postări: ${alerta.subiect}`,
-      text: `${alerta.mesaj}\n\nDeschide coada: ${(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.meridianx.ro").replace(/\/$/, "")}/admin/postari\n\n— adminul MERIDIAN`,
+      text: `${alerta.mesaj}\n\nDeschide coada: ${SITE_URL}/admin/postari\n\n— adminul MERIDIAN`,
     });
     if (sendError) {
       await admin.from("postari_alerte").update({ eroare: String(sendError.message ?? "Resend a refuzat").slice(0, 500) }).eq("id", id);

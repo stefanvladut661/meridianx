@@ -41,14 +41,19 @@ export function AccountsPanel({
   fus,
   connectInstagram,
   disconnect,
-  tiktokSlot,
+  tiktok,
+  tiktokMissing,
+  redirectUri,
 }: {
   instagram: ContView | null;
   keyProblem: string | null;
   fus: string;
   connectInstagram: (token: string) => Promise<AccountResult>;
   disconnect: (platform: "instagram" | "tiktok") => Promise<AccountResult>;
-  tiktokSlot?: ReactNode;
+  tiktok: ContView | null;
+  /** Mesajul când TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET lipsesc; `null` = configurat. */
+  tiktokMissing: string | null;
+  redirectUri: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -141,7 +146,45 @@ export function AccountsPanel({
             </div>
           )}
         </AccountCard>
-        {tiktokSlot}
+        <AccountCard
+          title="TikTok"
+          account={tiktok}
+          footer={
+            tiktokMissing ? null : (
+              <div className="flex flex-wrap gap-2">
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- rută de server care redirecționează spre TikTok: are nevoie de încărcare completă, nu de navigarea din client. */}
+                <a href="/admin/postari/conturi/tiktok" className={btnPrimary} aria-disabled={Boolean(keyProblem) || undefined} onClick={(event) => keyProblem && event.preventDefault()}>
+                  {tiktok ? "Conectează din nou" : "Conectează TikTok"}
+                </a>
+                {tiktok ? (
+                  <button type="button" disabled={pending} onClick={() => run(() => disconnect("tiktok"))} className={btnSecondary}>
+                    Deconectează
+                  </button>
+                ) : null}
+              </div>
+            )
+          }
+        >
+          {tiktok ? (
+            <>
+              <p>
+                Conectat {momentLabel(tiktok.conectatLa, fus)} de {tiktok.conectatDe}. Clipurile ajung în ciornele din aplicație; le publici tu, cu descrierea din „De publicat pe TikTok”.
+              </p>
+              <p>
+                Accesul se reînnoiește singur, zilnic.
+                {tiktok.refreshExpiraLa ? ` Conectarea ține până ${momentLabel(tiktok.refreshExpiraLa, fus)}; cu 14 zile înainte primești alertă să o refaci.` : ""}
+              </p>
+              {tiktok.eroare ? <p className="text-[var(--ap-error)]">{tiktok.eroare}</p> : null}
+            </>
+          ) : tiktokMissing ? (
+            <p>{tiktokMissing}</p>
+          ) : (
+            <p>Neconectat: postările TikTok așteaptă în coadă. „Conectează TikTok” te duce la TikTok, unde intri cu contul Meridian și dai voie la urcarea clipurilor în ciorne.</p>
+          )}
+          <p className="text-[12.5px]">
+            Adresa de întoarcere, de pus în aplicația TikTok (Login Kit → Redirect URI): <span className="select-all break-all font-[family-name:var(--font-jbmono),ui-monospace,monospace] text-bone">{redirectUri}</span>
+          </p>
+        </AccountCard>
       </ul>
       <p role="status" aria-live="polite" className="sr-only">
         {message?.text}

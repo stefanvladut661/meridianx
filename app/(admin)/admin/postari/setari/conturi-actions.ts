@@ -1,12 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { deleteAccount, saveAccount } from "@/lib/postari/conturi";
+import { deleteAccount, readAccount, saveAccount } from "@/lib/postari/conturi";
 import { keyProblem } from "@/lib/postari/cripto";
 import { actorEmail, SESSION_EXPIRED } from "@/lib/postari/db";
 import { getMe, IgError, publishingLimit, verdict } from "@/lib/postari/instagram";
 import { DASHBOARD_TOKEN_MS } from "@/lib/postari/instagram-handler";
 import { logEvent } from "@/lib/postari/istoric";
+import { revokeToken, tiktokConfigured } from "@/lib/postari/tiktok";
 
 export type AccountResult = { ok: true; message: string } | { ok: false; message: string };
 
@@ -50,6 +51,11 @@ export async function disconnectAction(platform: unknown): Promise<AccountResult
   const actor = await actorEmail();
   if (!actor) return { ok: false, message: SESSION_EXPIRED };
   if (platform !== "instagram" && platform !== "tiktok") return { ok: false, message: "Platforma nu e validă." };
+  // TikTok: accesul se revocă și la TikTok (dacă nu merge, tokenul expiră oricum în 24 de ore).
+  if (platform === "tiktok" && tiktokConfigured()) {
+    const current = await readAccount("tiktok");
+    if (current.ok && current.data?.token) await revokeToken(current.data.token).catch(() => undefined);
+  }
   const result = await deleteAccount(platform);
   if (!result.ok) return result;
   const label = platform === "instagram" ? "Instagram" : "TikTok";

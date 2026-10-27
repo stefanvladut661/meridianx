@@ -59,13 +59,3 @@ export interface PlatformHandler {
   /** La fiecare rulare, înainte de postări: reînnoiește tokenul când e cazul. */
   maintain?(ctx: StepContext): Promise<MaintainOutcome>;
 }
-
-/** Contul platformei nu e legat încă: postarea așteaptă, nu se pierde. */
-export function notConnected(platform: Platforma, label: string): PlatformHandler {
-  return {
-    platform,
-    async step() {
-      return { kind: "blocked", message: `Contul ${label} nu e conectat: Postări → Setări → Conturi.`, code: "cont_neconectat", ms: 15 * 60_000, stopQueue: false };
-    },
-  };
-}

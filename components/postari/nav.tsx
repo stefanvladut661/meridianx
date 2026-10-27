@@ -22,7 +22,7 @@ export const POSTARI_NAV: PostariNavItem[] = [
   { key: "coada", href: "/admin/postari", label: "Coada", short: "Coada", icon: <IconQueue />, match: /^\/admin\/postari\/?$/, ready: true, mobile: 1 },
   { key: "plan", href: "/admin/postari/plan", label: "Plan nou", short: "Plan nou", icon: <IconPlan />, match: /^\/admin\/postari\/plan/, ready: true, mobile: 3 },
   { key: "clipuri", href: "/admin/postari/clipuri", label: "Clipuri", short: "Clipuri", icon: <IconFilm />, match: /^\/admin\/postari\/clipuri/, ready: true, mobile: 4 },
-  { key: "tiktok", href: "/admin/postari/tiktok", label: "De publicat pe TikTok", short: "TikTok", icon: <IconPhone />, match: /^\/admin\/postari\/tiktok/, ready: false, mobile: 2 },
+  { key: "tiktok", href: "/admin/postari/tiktok", label: "De publicat pe TikTok", short: "TikTok", icon: <IconPhone />, match: /^\/admin\/postari\/tiktok/, ready: true, mobile: 2 },
   { key: "istoric", href: "/admin/postari/istoric", label: "Istoric", short: "Istoric", icon: <IconHistory />, match: /^\/admin\/postari\/istoric/, ready: true, mobile: null },
   { key: "setari", href: "/admin/postari/setari", label: "Setări", short: "Setări", icon: <IconSettings />, match: /^\/admin\/postari\/setari/, ready: true, mobile: null },
 ];
