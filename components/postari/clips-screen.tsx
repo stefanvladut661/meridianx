@@ -84,7 +84,7 @@ export function ClipsScreen({ folder, clips: initial, probe }: { folder: string;
             <li key={clip.id} className="rounded-xl border border-hair bg-white px-4 py-3">
               <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
                 <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
-                  <p className="break-all font-md-mono text-[13.5px] font-medium text-bone">{clip.name}</p>
+                  <p className="break-all font-[family-name:var(--font-jbmono),ui-monospace,monospace] text-[13.5px] font-medium text-bone">{clip.name}</p>
                   <p className={cn("mt-0.5 text-[13px]", clip.probed ? "text-dim" : "text-dim/80")}>{clip.summary ?? (clip.size !== null ? `${mb(clip.size)} · necitit` : "necitit")}</p>
                 </div>
                 <div className="flex flex-wrap gap-1.5">

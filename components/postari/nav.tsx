@@ -20,7 +20,7 @@ export interface PostariNavItem {
 
 export const POSTARI_NAV: PostariNavItem[] = [
   { key: "coada", href: "/admin/postari", label: "Coada", short: "Coada", icon: <IconQueue />, match: /^\/admin\/postari\/?$/, ready: false, mobile: 1 },
-  { key: "plan", href: "/admin/postari/plan", label: "Plan nou", short: "Plan nou", icon: <IconPlan />, match: /^\/admin\/postari\/plan/, ready: false, mobile: 3 },
+  { key: "plan", href: "/admin/postari/plan", label: "Plan nou", short: "Plan nou", icon: <IconPlan />, match: /^\/admin\/postari\/plan/, ready: true, mobile: 3 },
   { key: "clipuri", href: "/admin/postari/clipuri", label: "Clipuri", short: "Clipuri", icon: <IconFilm />, match: /^\/admin\/postari\/clipuri/, ready: true, mobile: 4 },
   { key: "tiktok", href: "/admin/postari/tiktok", label: "De publicat pe TikTok", short: "TikTok", icon: <IconPhone />, match: /^\/admin\/postari\/tiktok/, ready: false, mobile: 2 },
   { key: "istoric", href: "/admin/postari/istoric", label: "Istoric", short: "Istoric", icon: <IconHistory />, match: /^\/admin\/postari\/istoric/, ready: true, mobile: null },

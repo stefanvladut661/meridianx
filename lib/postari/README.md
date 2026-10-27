@@ -118,6 +118,68 @@ Dacă briefu-ar fi fost pentru altă agenție, aș fi ajuns la „un calendar cu
 
 ---
 
+## Planul JSON
+
+Un plan e un lot de postări dintr-un singur subfolder de pe Drive. Îl lipești la **Postări → Plan nou** (sau îl încarci ca `.json`), ori îl scrie Claude din `manifest.json`.
+
+```json
+{
+  "format": "meridian-postari/1",
+  "nume": "Lot 1 — restaurante",
+  "folder": "meridian reclame/lot-1",
+  "sloturi": { "start": "2026-11-02", "ore": ["12:30", "19:00"], "fus": "Europe/Bucharest" },
+  "postari": [
+    {
+      "fisier": "333f_h3-c2_9x16_larven.mp4",
+      "platforme": ["instagram", "tiktok"],
+      "ora": null,
+      "descriere": "Ai mese goale marțea seara? …",
+      "hashtaguri": ["restaurant", "bucuresti"],
+      "instagram": { "tip": "trial_reel", "absolvire": "automat" },
+      "tiktok": { "mod": "ciorna" }
+    },
+    {
+      "fisier": "mihai_h1-c1_9x16_shopify.mp4",
+      "platforme": ["instagram"],
+      "ora": "2026-11-02 19:00",
+      "descriere": "Clienții tăi te caută pe telefon. Cere o ofertă.",
+      "hashtaguri": ["marketing"],
+      "instagram": { "tip": "reel", "in_feed": true, "coperta_ms": 1500 }
+    }
+  ]
+}
+```
+
+| Câmp | Obligatoriu | Ce e |
+|---|---|---|
+| `folder` | da | Subfolderul de pe Drive. Cu sau fără numele folderului principal în față (`meridian reclame/lot-1` = `lot-1`). Literele mari și diacriticele nu contează. |
+| `postari` | da | Lista postărilor, cel mult 200. |
+| `postari[].fisier` | da | Numele clipului din subfolder. |
+| `postari[].platforme` | da | `["instagram"]`, `["tiktok"]` sau amândouă. O postare pe două platforme devine două rânduri în coadă, la aceeași oră. |
+| `postari[].ora` | nu | `null` sau lipsă = următorul slot liber. Altfel `"AAAA-LL-ZZ HH:MM"`, în fusul planului, sau o oră ISO cu fus (`2026-11-02T19:00:00+02:00`). |
+| `postari[].descriere` | nu | Textul postării. Pe Instagram pleacă cu hashtag-urile la final. Pe TikTok îl copiezi tu, din „De publicat pe TikTok”. |
+| `postari[].hashtaguri` | nu | Cu sau fără `#`. Doar litere, cifre și `_`. Cele care apar deja în descriere nu se repetă. |
+| `postari[].instagram.tip` | nu | `reel` (implicit) sau `trial_reel`. Un Trial Reel se arată întâi doar celor care nu te urmăresc. |
+| `postari[].instagram.absolvire` | nu | Doar la `trial_reel`. `manual` (implicit): îl treci tu la urmăritori, din aplicație. `automat`: Instagram îl trece singur dacă merge bine la cei care nu te urmăresc. |
+| `postari[].instagram.in_feed` | nu | Doar la `reel`: apare și în feed, nu doar la Reels (implicit `true`). |
+| `postari[].instagram.coperta_ms` | nu | Cadrul de copertă, în milisecunde de la început. |
+| `postari[].tiktok.mod` | nu | Doar `ciorna`. Postarea directă nu e construită. |
+| `sloturi` | nu | `ore` (HH:MM), `start` (ziua de la care se caută; implicit mâine) și `fus`. Fără `sloturi`, se iau cele din Setări. |
+| `nume`, `fus`, `format` | nu | Numele lotului (în istoric și în coadă), fusul pentru orele fixe când lipsesc `sloturi`, versiunea formatului. |
+
+**Ce iartă citirea:** blocurile ` ```json ` din jur, comentariile `//` și `/* */`, virgulele de la final. **Ce nu iartă:** un câmp necunoscut (`descrire` în loc de `descriere`) e eroare, nu se ignoră, ca o descriere să nu se piardă fără să afli. La fel ghilimelele tipografice (`„ ”`) puse în locul celor drepte.
+
+**Cum se pun orele:**
+1. Întâi orele fixe. Fiecare trebuie să fie la cel puțin 10 minute de acum și la cel puțin „distanța minimă” din Setări (implicit 15 minute) de orice altă postare pe aceeași platformă, din plan sau din coadă.
+2. Apoi postările fără oră, în ordinea din listă, fiecare în primul slot liber de la `start` încolo. Un slot e liber dacă respectă distanța minimă și plafonul pe 24 de ore pe fiecare platformă a postării.
+3. **Plafoanele pe 24 de ore** se numără pe ferestre mobile de 24 de ore, cu tot ce e deja în coadă sau a plecat în ultimele 24 de ore. Instagram: plafonul din Setări (implicit 50). TikTok: cel mult 5 ciorne în 24 de ore.
+
+**Ce verifică „Verifică planul”:** folderul și fiecare fișier (citit din MP4: 9:16, codecuri, cadre pe secundă, durată, debit, `moov`, mărime), limitele fiecărei platforme, descrierea (2200 de caractere, 30 de hashtag-uri, 20 de @ pe Instagram), orele, suprapunerile și plafoanele. Atenționări, care nu opresc aprobarea: același clip de două ori pe aceeași platformă, un clip deja publicat sau deja în coadă, o postare fără descriere.
+
+**Aprobarea:** „Aprobă planul” e activ doar fără erori și cu toate clipurile citite. Serverul verifică planul din nou, chiar înainte de scriere, și aprobă doar dacă orele ies exact ca în previzualizarea pe care ai văzut-o. Același plan (același conținut) nu se aprobă de două ori.
+
+---
+
 ## Variabilele din Vercel
 
 | Variabilă | Ce e | Faza |
@@ -187,12 +249,12 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
 
 ### În admin
 
-1. **Rulează migrarea 24** (`supabase/migrations/00000000000024_postari_baza.sql`) în Supabase → SQL Editor. Verificarea de la final trebuie să arate `true` pe ambele rânduri.
+1. **Rulează migrările 24 și 25** (`supabase/migrations/00000000000024_postari_baza.sql`, apoi `00000000000025_postari_planuri.sql`) în Supabase → SQL Editor, în ordine. Verificarea de la finalul fiecăreia trebuie să arate `true`. Se pot rula de mai multe ori.
 2. **Postări → Setări:** lipește adresa folderului „meridian reclame” de pe Drive. Contul legat la adminul firmei (OAuth) trebuie să-l vadă; dacă folderul e al aceluiași cont Google, îl vede.
 
 ## De făcut de om
 
-1. **Migrarea 24** în Supabase (vezi „În admin”).
+1. **Migrările 24 și 25** în Supabase (vezi „În admin”).
 2. **Folderul principal** în Postări → Setări.
 3. **Instrucțiunile pentru terminalul de reclame** (secțiunea de mai sus) date terminalului care face clipurile.
 4. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
@@ -208,6 +270,7 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
 | Faza | Commit | Preview |
 |---|---|---|
 | 0 — planul | `d7320b7` | https://meridianx-lgrv91ko2-stefanvladut661s-projects.vercel.app |
+| 1 — Drive și manifest | `0c4945e` | https://meridianx-p3htf75bb-stefanvladut661s-projects.vercel.app |
 
 ## Jurnal
 
@@ -246,3 +309,27 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
   - cele 5 clipuri sunt citite; 16:9 e refuzat, 2 s și fără `faststart` sunt refuzate pe Instagram;
   - citirile se țin minte; subfolderul inexistent e explicat; istoricul e scris;
   - la 360 px, fără scroll lateral; consola e curată.
+
+### Faza 2 — planul JSON
+
+- **Migrarea 25** (`00000000000025_postari_planuri.sql`):
+  - `postari_planuri`: planurile aprobate, cu amprenta unică (același plan nu se aprobă de două ori);
+  - `postari`: câte un rând pe postare și platformă, cu ora rezolvată, starea și coloanele de care au nevoie fazele 4–6 ca să reia o postare întreruptă;
+  - RLS doar pentru `is_lead_admin()`.
+- **Formatul** (`lib/postari/plan-schema.ts`), descris mai sus la „Planul JSON”. Câmpurile necunoscute sunt erori, cu numele lor.
+- **Verificarea** (`lib/postari/plan-verify.ts`):
+  - folderul și fișierele, după nume;
+  - clipurile citite din MP4 (cele necitite se citesc pe loc, cu buget de timp, iar editorul repetă verificarea până le citește pe toate);
+  - limitele Instagram și TikTok, descrierile, orele fixe, sloturile, distanța minimă, plafoanele pe ferestre de 24 de ore (cu ce e deja în coadă) și dublurile.
+- **Previzualizarea** (`components/postari/plan-preview.tsx`): pe zile, fiecare postare cu ora (fixă sau slot), clipul (ce s-a citit, plus „Vezi clipul” și „Deschide în Drive”), descrierea exact cum pleacă, cu numărul de caractere, platformele cu tipul (Reel, Trial Reel manual sau automat, TikTok în ciorne) și problemele.
+- **Aprobarea** (`lib/postari/planuri.ts`): planul se verifică din nou pe server. Se aprobă doar dacă orele ies exact ca în previzualizarea văzută. Toate rândurile intră într-o singură instrucțiune: ori toate, ori niciunul.
+- **Editorul** ține ciorna în browser. Orice schimbare de text după verificare stinge „Aprobă planul” până la verificarea nouă.
+- **Verificat** pe Postgres real, cu Drive și autentificarea simulate, în Chrome headless (26 de verificări, toate trecute):
+  - sintaxa: ghilimelele tipografice explicate; blocul ```json, comentariile și virgulele de la final iertate; câmpul greșit („descrire”) numit;
+  - planul cu erori: 16:9, fișier lipsă (cu folderul în care s-a căutat), hashtag cu spațiu, două ore la 5 minute una de alta pe Instagram, același clip de două ori. „Aprobă planul” rămâne stins;
+  - planul bun: numele scris cu alte litere găsit, cu atenționare; slotul de 12:30 sărit fiindcă e luat de ora fixă; postarea pusă la 19:00;
+  - aprobarea: 3 rânduri în coadă (2 Instagram, 1 TikTok), cu orele și opțiunile corecte;
+  - al doilea plan vede coada: dublura e semnalată, iar ora fixă suprapusă cu coada e refuzată;
+  - un slot luat de alt plan între verificare și aprobare duce la refuz, fără nimic scris;
+  - istoricul are aprobarea și refuzul; la 360 px, fără scroll lateral; Tab trece din plan la „Verifică planul”; consola e curată.
+- **Observație pentru celelalte module:** în admin, clasa `font-md-mono` nu are efect (`--md-font-mono` e gol în `data-scope="gate"`), deci textul „mono” apare în Satoshi. Postările folosesc direct `var(--font-jbmono)`. Adminul firmei (`components/firma/sidebar.tsx`, `drive-status.tsx`) are aceeași problemă: e zona altui terminal, așa că doar o notez.

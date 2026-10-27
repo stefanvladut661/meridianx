@@ -165,7 +165,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
                         const onDrive = data.clips.some((file) => file.name === clip.fisier || sameName(file.name, clip.fisier));
                         return (
                           <tr key={clip.fisier}>
-                            <td className={cn(tdClass, "whitespace-nowrap font-md-mono text-[13px]")}>{clip.fisier}</td>
+                            <td className={cn(tdClass, "whitespace-nowrap font-[family-name:var(--font-jbmono),ui-monospace,monospace] text-[13px]")}>{clip.fisier}</td>
                             <td className={tdClass}>{onDrive ? <Tag tone="ok">da</Tag> : <Tag tone="error">lipsește</Tag>}</td>
                             <td className={cn(tdClass, "text-[13px]")}>{clip.voce ?? "—"}</td>
                             <td className={cn(tdClass, "min-w-[12rem] text-[13px]")}>{partLabel(clip.hook)}</td>

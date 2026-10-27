@@ -72,7 +72,7 @@ export function PostariSidebar({ email, signOut }: { email: string | null; signO
             Ieși
           </button>
         </form>
-        {email ? <p className="truncate px-3 pt-2 font-md-mono text-[11px] text-dim">{email}</p> : null}
+        {email ? <p className="truncate px-3 pt-2 font-[family-name:var(--font-jbmono),ui-monospace,monospace] text-[11px] text-dim">{email}</p> : null}
       </div>
     </aside>
   );
