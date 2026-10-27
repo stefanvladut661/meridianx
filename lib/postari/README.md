@@ -45,6 +45,7 @@ Zona modulului: `app/(admin)/admin/postari/**`, `lib/postari/**`, `components/po
 | **Coada** (`/admin/postari`) | Calendarul pe zile și lista postărilor cu starea fiecăreia: planificată, în lucru, publicată (cu link), trimisă în ciorne, eșuată (cu motivul și „Reîncearcă”), scoasă. „Oprește coada” / „Pornește coada”, „Scoate din coadă” pe o postare care n-a rulat, alertele, ultima rulare. |
 | **Plan nou** (`/admin/postari/plan`) | Lipești sau urci un plan JSON, ori îl scrie Claude din `manifest.json`. Verificarea, previzualizarea (clipul, descrierea, platformele, ora) și „Aprobă planul”. |
 | **De publicat pe TikTok** (`/admin/postari/tiktok`) | Gândit pentru telefon: fiecare clip trimis în ciorne, cu descrierea și hashtag-urile, „Copiază” și „Publicat”. |
+| **Clipuri** (`/admin/postari/clipuri`) | Subfolderele, `manifest.json`, clipurile citite din fișier (Instagram: da/nu, TikTok: da/nu) și „Scrie planul cu Claude”. |
 | **Istoric** (`/admin/postari/istoric`) | Fiecare acțiune și fiecare rulare. |
 | **Setări** (`/admin/postari/setari`) | Folderul de pe Drive, sloturile implicite, plafoanele pe 24 de ore, emailul pentru alerte, conturile Instagram și TikTok, starea programării. |
 
@@ -250,7 +251,7 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
 
 ### În admin
 
-1. **Rulează migrările 24, 25 și 26** (`supabase/migrations/00000000000024_postari_baza.sql`, `…25_postari_planuri.sql`, `…26_postari_coada.sql`) în Supabase → SQL Editor, în ordine. Verificarea de la finalul fiecăreia trebuie să arate `true`. Se pot rula de mai multe ori.
+1. **Rulează migrările 24–27** în Supabase → SQL Editor, în ordine: `supabase/migrations/00000000000024_postari_baza.sql`, `…25_postari_planuri.sql`, `…26_postari_coada.sql`, `…27_postari_conturi.sql`. Verificarea de la finalul fiecăreia trebuie să arate `true` pe toate rândurile. Se pot rula de mai multe ori.
 2. **Postări → Setări:** lipește adresa folderului „meridian reclame” de pe Drive. Contul legat la adminul firmei (OAuth) trebuie să-l vadă; dacă folderul e al aceluiași cont Google, îl vede.
 
 ### Instagram (la Meta)
@@ -299,35 +300,45 @@ Cum merge coada:
 
 ## De făcut de om
 
-1. **Migrările 24, 25 și 26** în Supabase (vezi „În admin”).
-2. **Folderul principal** în Postări → Setări.
-3. **Instrucțiunile pentru terminalul de reclame** (secțiunea de mai sus) date terminalului care face clipurile.
-4. **Programarea:** `POSTARI_CRON_SECRET` în Vercel, apoi `lib/postari/supabase-cron.sql` în Supabase (vezi „Programarea”).
-5. **Migrarea 27** (`00000000000027_postari_conturi.sql`): conturile și bucket-ul `postari-temp`.
-6. **`POSTARI_TOKEN_KEY` în Vercel** (Production): `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. **Nu o schimba după ce ai conectat conturile.** Dacă o schimbi, tokenurile vechi nu se mai pot decripta și conectezi conturile din nou.
-7. **Instagram la Meta** (pașii de la „Instagram”), apoi tokenul în Setări → Conturi.
-8. **TikTok la TikTok for Developers** (pașii de la „TikTok”), `TIKTOK_CLIENT_KEY` și `TIKTOK_CLIENT_SECRET` în Vercel, apoi „Conectează TikTok” în Setări → Conturi, pe www.meridianx.ro.
+În ordinea asta. Fiecare pas are detaliile mai sus.
+
+1. **Migrările 24–27** în Supabase → SQL Editor (vezi „În admin”).
+2. **Variabilele noi în Vercel** (Production), apoi **Redeploy**. Le găsești la „Variabilele din Vercel”:
+   - `POSTARI_TOKEN_KEY`: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. **Nu o schimba după ce conectezi conturile**; schimbată, tokenurile vechi nu se mai pot decripta și conectezi conturile din nou;
+   - `POSTARI_CRON_SECRET`: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`;
+   - `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, după pasul 6.
+   Cele de la adminul firmei (Google Drive, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`) rămân cum sunt.
+3. **Postări → Setări:** folderul „meridian reclame” de pe Drive și, dacă vrei, adresa pentru alerte (fără ea, alertele pleacă la ADMIN_EMAILS).
+4. **Programarea:** `lib/postari/supabase-cron.sql` în Supabase, cu același secret ca `POSTARI_CRON_SECRET` (vezi „Programarea”). După 10 minute, Setări → „Programarea și alertele” trebuie să arate „Supabase Cron: da”.
+5. **Instagram la Meta** (vezi „Instagram”): produsul Instagram, rolul de tester pentru contul Meridian, permisiunile, tokenul. Apoi Setări → Conturi → „Conectează Instagram”.
+6. **TikTok la TikTok for Developers** (vezi „TikTok”): aplicația, Login Kit cu adresa de întoarcere `https://www.meridianx.ro/admin/postari/conturi/tiktok/callback`, Content Posting API → Upload (`video.upload`), sandbox-ul cu contul Meridian. Cheile în Vercel, apoi Setări → Conturi → „Conectează TikTok”, **pe www.meridianx.ro**.
+7. **Terminalul de reclame:** dă-i secțiunea „Pentru terminalul de reclame”: unde pune clipurile pe `G:`, ce format trebuie să aibă și cum arată `manifest.json`.
+8. **Proba reală cu un singur clip**, întâi Instagram, apoi TikTok (vezi „De testat cu contul real”).
 9. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
+10. **Merge în `main`**, după probă. Ramura pornește din `feat/admin-firma`, deci intră după ea (vezi începutul fișierului). Nu fac push pe `main` și nu fac merge fără tine.
 
 ## De testat cu contul real
 
-1. **Descrierile scrise de Claude**, cu cheia reală: un lot mic (3–5 clipuri) din „Clipuri” → „Scrie planul cu Claude”. Citește descrierile: tonul, diacriticele, CTA-ul și dacă a inventat ceva (n-ar trebui). Testele au rulat pe un Claude simulat, care verifică doar forma cererii și a răspunsului.
-3. **Instagram, cu un singur clip** (proba ta), după ce contul e conectat:
-   - un plan cu **o** postare Instagram, la 15 minute de acum, aprobat;
-   - la ora ei, „Rulează acum” la Coada (sau aștepți jobul);
-   - în Coada: postarea trece prin „copiază clipul de pe Drive”, „Instagram procesează clipul” și ajunge „Publicată”, cu „Vezi postarea”;
-   - în Supabase → Storage → `postari-temp` nu trebuie să rămână nimic după publicare;
-   - încearcă o dată și un Trial Reel (`"tip": "trial_reel"`): trebuie să apară în aplicație ca Trial Reel. Cu `"absolvire": "automat"`, Instagram îl trece singur la urmăritori dacă merge bine.
-   Toate formatele răspunsurilor sunt cele din documentația Meta, testate pe un Instagram simulat care descarcă clipul de la linkul semnat ca cel real. Neverificat pe real: forma exactă a răspunsului `GET /me`. Documentația arată `data[0]`, referința arată un obiect plat, iar codul le primește pe amândouă.
-4. **Copia temporară pe Supabase-ul real:** urcarea TUS pe `<proiect>.storage.supabase.co` cu cheia de service. Testată pe o stocare simulată care cere protocolul TUS și bucăți de exact 6 MB.
-5. **TikTok, cu un singur clip:**
-   - conectarea pe www.meridianx.ro (redirectul înregistrat la TikTok);
+Tot ce e mai jos a fost testat pe servicii simulate, după formatele din documentația oficială. Ce urmează se vede doar cu conturile reale.
+
+1. **Descrierile scrise de Claude**, cu cheia reală: un lot mic (3–5 clipuri) din „Clipuri” → „Scrie planul cu Claude”. Citește descrierile: tonul, diacriticele, CTA-ul și dacă a inventat ceva (n-ar trebui). Claude-ul simulat a verificat doar forma cererii și a răspunsului.
+2. **Instagram, cu un singur clip**, după ce contul e conectat:
+   - un plan cu **o** postare Instagram, la 15 minute de acum, aprobat; la ora ei, „Rulează acum” la Coada (sau aștepți jobul);
+   - postarea trece prin „copiază clipul de pe Drive” și „Instagram procesează clipul”, apoi ajunge „Publicată”, cu „Vezi postarea”;
+   - în Supabase → Storage → `postari-temp` nu trebuie să rămână nimic;
+   - încearcă o dată și un Trial Reel (`"tip": "trial_reel"`): în aplicație trebuie să apară ca Trial Reel; cu `"absolvire": "automat"` (`SS_PERFORMANCE`) trece singur la urmăritori dacă merge bine;
+   - neverificat: forma exactă a răspunsului `GET /me`. Documentația arată `data[0]`, referința arată un obiect plat, iar codul le primește pe amândouă.
+3. **Copia temporară pe Supabase-ul real:** urcarea TUS pe `<proiect>.storage.supabase.co`, cu cheia de service. Stocarea simulată a cerut protocolul TUS și bucăți de exact 6 MB.
+4. **TikTok, cu un singur clip:**
+   - conectarea pe www.meridianx.ro;
    - un plan cu **o** postare TikTok, aprobat; la ora ei, „Rulează acum”;
    - pe telefon vine notificarea TikTok, iar clipul e în ciorne;
    - „De publicat pe TikTok” → „Copiază descrierea” → lipești în TikTok → „Postează” → „Publicat”;
-   - verifică și că, dacă nu apeși „Publicat”, adminul o marchează singur în cel mult 30 de minute (TikTok raportează `PUBLISH_COMPLETE`).
-   Neverificat pe real: dacă un sandbox sau o aplicație neauditată poate trimite în ciorne (documentația nu spune).
-6. **Jobul din Supabase Cron:** `pg_cron`, `pg_net` și Vault nu există în Postgres-ul de test. Endpoint-ul a fost testat direct (secret, rulări, rulări simultane), dar SQL-ul jobului rulează prima oară la tine. După 10 minute, „Ultima rulare” trebuie să arate „Supabase Cron”.
+   - verifică și că, dacă nu apeși „Publicat”, adminul o marchează singur în cel mult 30 de minute (`PUBLISH_COMPLETE`);
+   - neverificat: dacă un sandbox sau o aplicație neauditată poate trimite în ciorne. Documentația nu spune.
+5. **Jobul din Supabase Cron:** `pg_cron`, `pg_net` și Vault nu există în Postgres-ul de test. Endpoint-ul a fost testat direct (secret, rulări, rulări simultane), dar SQL-ul jobului rulează prima oară la tine.
+6. **Migrarea 27 pe Supabase:** inserarea bucket-ului în `storage.buckets` și retragerea dreptului de citire a tokenurilor (`revoke` + `grant` pe coloane) au rulat pe un Postgres de test, nu pe Supabase. Verificarea de la final trebuie să arate `true` pe toate trei rândurile.
+7. **Alertele pe email:** prima alertă reală (de exemplu, o postare eșuată) trebuie să ajungă la adresa din Setări, de la `RESEND_FROM_EMAIL`. Dacă nu ajunge, la Coada, la alertă, scrie de ce.
 
 ---
 
@@ -341,6 +352,7 @@ Cum merge coada:
 | 3 — planul scris de Claude | `b85b594` | https://meridianx-omorz28za-stefanvladut661s-projects.vercel.app |
 | 4 — coada și programarea | `ed7c814` | https://meridianx-b4uoaua12-stefanvladut661s-projects.vercel.app |
 | 5 — Instagram | `03f488a` | https://meridianx-7vizaf64d-stefanvladut661s-projects.vercel.app |
+| 6 — TikTok | `f9705b8` | https://meridianx-cf7sai2yq-stefanvladut661s-projects.vercel.app |
 
 ## Jurnal
 
@@ -547,3 +559,47 @@ Cum merge coada:
   - `file_format_check_failed`: eșuată pe loc, cu motivul în română;
   - tokenul reînnoit înainte să expire; refresh-ul refuzat oprește coada, cu alertă;
   - „Deconectează” revocă accesul la TikTok; nicio cerere neașteptată.
+
+### Faza 7 — ecranul complet, alertele și istoricul
+
+- **Calendarul** (`components/postari/queue-calendar.tsx`), în Coada:
+  - luna, cu postările fiecărei zile pe platforme (Instagram, TikTok), iar zilele cu o postare eșuată sunt marcate cu roșu;
+  - „Azi”, luna dinainte și luna următoare;
+  - o zi aleasă filtrează lista de dedesubt.
+  - Tabel cu linkuri, deci merge cu tastatura și fără JavaScript. Fiecare zi are eticheta întreagă pentru cititoarele de ecran („joi 29 octombrie 2026: 1 pe Instagram, 0 pe TikTok, 1 eșuate”).
+  - Pe ecran lat stă în dreapta, fix la derulare; pe telefon, deasupra listei.
+- **Panoul postării:** clic pe numele clipului din coadă. Arată:
+  - ora (fixă sau slot), planul, platforma și tipul, starea cu pasul, încercările, momentele (trimisă, publicată, repusă, scoasă), eroarea, descrierea întreagă și linkul spre clip pe Drive;
+  - **„Ce s-a întâmplat”**: istoricul postării, în ordine (încercările ratate, publicarea, trimiterea în ciorne…);
+  - acțiunile în subsol („Vezi postarea”, „Reîncearcă”, „Scoate din coadă”).
+  - Dialog modal: focusul intră pe titlu și nu iese cu Tab, Escape închide, iar focusul se întoarce pe rândul din care a pornit.
+- **Setări → „Programarea și alertele”:** dacă `POSTARI_CRON_SECRET` e pus, când a rulat ultima oară Supabase Cron (cu avertisment după 15 minute), unde pleacă alertele (Resend) și dacă Claude e legat. Fără nicio cheie afișată.
+- **Plan nou → „Planurile aprobate”:** ultimele 10, cu numele, numărul de postări, folderul, cine și când a aprobat.
+- **Alertele** (puse în faza 4, folosite în 5–6):
+  - pe email, prin Resend, la adresa din Setări sau, fără ea, la ADMIN_EMAILS, cel mult o dată pe zi pe motiv;
+  - pentru: o postare eșuată definitiv, coada oprită de un token, conectarea care expiră;
+  - în ecranul cozii, cu „trimisă pe email” sau motivul pentru care n-a plecat;
+  - plus avertismentul din ecran când jobul n-a mai rulat de 15 minute: atunci nu rulează nimic care să trimită email.
+- **Istoricul** (`/admin/postari/istoric`): filtrabil pe zone (Drive, Planuri, Coada, Instagram, TikTok, Conturi, Setări). Fiecare acțiune a omului și fiecare rulare a cozii intră aici, iar panoul postării arată partea ei.
+- **Verificat** (24 de verificări, toate trecute):
+  - calendarul: luna, ziua de azi cu numărul de postări, ziua cu o eșuată, filtrul pe zi, luna următoare;
+  - panoul: detaliile, istoricul în ordine, focusul, Tab prins, Escape cu întoarcerea focusului; conturul de focus vizibil;
+  - Setări: starea programării înainte și după o rulare din cron, fără chei în pagină;
+  - planurile aprobate;
+  - mișcarea redusă: panoul apare fără animație;
+  - **la 360, 768, 1024 și 1920 px**, pe toate cele 7 ecrane (Coada, Coada pe o zi, Plan nou, Clipuri, De publicat pe TikTok, Istoric, Setări): fără scroll lateral și cu consola curată, deci fără erori de hidratare. La 360 px, panoul acoperă ecranul.
+- **Regresia:** testele fazelor 2–7 au rulat din nou, unul după altul, la final (vezi „Starea la final”).
+
+### Starea la final
+
+- **Testele pe faze:**
+  - faza 1 (din sesiunea ei);
+  - faza 2: 26 de verificări; faza 3: 20; faza 4: 34; faza 5: 38; faza 6: 32; faza 7: 24.
+  - Fiecare a trecut integral după ultima schimbare de cod a fazei ei.
+- **Regresia de la final** (fazele 2–7 rulate din nou, una după alta):
+  - fazele 3, 4 și 5 au trecut integral;
+  - faza 2 a picat doar la verificarea care presupune coada goală, fiindcă testul fazei 7 lăsase rânduri în ea. E o problemă de izolare a testului, nu a codului; testul își golește acum singur coada;
+  - în timpul fazei 6, calculatorul a rămas fără memorie și Claude Code a oprit serverele de test. Fazele 6 și 7 n-au mai apucat să ruleze în regresie. Ultimele lor rulări întregi trecuseră: faza 6 după ultima ei schimbare, faza 7 după tot codul fazei, mai puțin o ajustare de aspect a etichetelor din calendar (numere în loc de „1 IG”).
+- **TypeScript și ESLint:** fără erori pe tot modulul. **`node lib/postari/verify-api.mjs`:** OK.
+- **Fișiere în afara zonei:** niciunul. Din `lib/firma` se importă doar Drive-ul, iar din `lib/site-url.ts` doar `SITE_URL`, fără nicio schimbare acolo.
+- **Uneltele de test** (Postgres și PostgREST în Docker, serviciile simulate pentru Drive, Storage, Instagram, TikTok, Anthropic și Resend, scripturile de browser) nu sunt în repo. În worktree a rămas un `.env.local` cu valori de test (localhost), ignorat de git.

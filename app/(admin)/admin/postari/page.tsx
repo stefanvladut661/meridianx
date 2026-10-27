@@ -3,11 +3,12 @@ import Link from "next/link";
 import { recentAlerts } from "@/lib/postari/alerte";
 import { lastRuns, listPosts } from "@/lib/postari/postari";
 import { readSettings } from "@/lib/postari/setari";
-import { addDays, agoLabel, momentLabel, todayIn, zonedToUtc } from "@/lib/postari/timp";
+import { addDays, agoLabel, dayLabel, isDay, momentLabel, todayIn, zonedParts, zonedToUtc } from "@/lib/postari/timp";
+import { monthGrid, QueueCalendar } from "@/components/postari/queue-calendar";
 import { QueueControls } from "@/components/postari/queue-controls";
 import { QueueList } from "@/components/postari/queue-list";
 import { Notice, PageHead } from "@/components/postari/ui";
-import { removePostAction, retryPostAction, runNowAction, setQueueAction } from "./actions";
+import { postHistoryAction, removePostAction, retryPostAction, runNowAction, setQueueAction } from "./actions";
 
 export const metadata: Metadata = { title: "Coada — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -21,13 +22,27 @@ const STALE_RUN_MS = 15 * 60_000;
  * /admin/postari — coada: ce pleacă, când și unde, starea fiecărei postări,
  * oprirea și pornirea cozii, ultima rulare și alertele.
  */
-export default async function CoadaPage() {
+export default async function CoadaPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
   const settings = await readSettings();
   const fus = settings.ok ? settings.data.sloturiFus : "Europe/Bucharest";
   const today = todayIn(fus);
-  const from = zonedToUtc(addDays(today, -3), "00:00", fus).toISOString();
-  const to = zonedToUtc(addDays(today, 60), "00:00", fus).toISOString();
+  const selected = typeof params.zi === "string" && isDay(params.zi) ? params.zi : null;
+  const month = typeof params.luna === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.luna) ? params.luna : (selected ?? today).slice(0, 7);
+  const grid = monthGrid(month);
+  // O singură citire: zilele din calendar, plus lista implicită (3 zile în urmă, 60 înainte).
+  const fromDay = [grid[0], addDays(today, -3)].sort()[0];
+  const toDay = [addDays(grid[grid.length - 1], 1), addDays(today, 60)].sort()[1];
+  const from = zonedToUtc(fromDay, "00:00", fus).toISOString();
+  const to = zonedToUtc(toDay, "00:00", fus).toISOString();
   const [posts, runs, alerts] = await Promise.all([listPosts({ from, to }), lastRuns(1), recentAlerts()]);
+  const listFrom = zonedToUtc(addDays(today, -3), "00:00", fus).toISOString();
+  const listTo = zonedToUtc(addDays(today, 60), "00:00", fus).toISOString();
+  const visible = posts.ok
+    ? posts.data.filter((post) =>
+        selected ? zonedParts(new Date(post.programataLa), fus).day === selected : (post.programataLa >= listFrom && post.programataLa < listTo) || ["in_lucru", "in_ciorne", "esuata"].includes(post.stare)
+      )
+    : [];
   const last = runs.ok ? runs.data[0] ?? null : null;
   const queueRunning = settings.ok ? settings.data.coadaPornita : true;
   const upcoming = posts.ok ? posts.data.filter((post) => post.stare === "planificata").length : 0;
@@ -90,14 +105,29 @@ export default async function CoadaPage() {
         </section>
       ) : null}
 
-      <div className="mt-6">
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+        <div className="xl:order-2 xl:sticky xl:top-[68px]">{posts.ok ? <QueueCalendar month={month} posts={posts.data} fus={fus} today={today} selected={selected} /> : null}</div>
+        <div className="min-w-0 xl:order-1">
+        {selected ? (
+          <p className="mb-3 text-[13.5px] text-dim">
+            Doar {dayLabel(selected, true)}.{" "}
+            <Link href={`/admin/postari?luna=${month}`} className="font-medium text-[var(--md-a1)] underline underline-offset-2">
+              Toate zilele
+            </Link>
+          </p>
+        ) : null}
         {posts.ok ? (
-          <QueueList posts={posts.data} fus={fus} remove={removePostAction} retry={retryPostAction} />
+          selected && visible.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-hair-strong px-5 py-8 text-center text-[14.5px] text-dim">Nicio postare în {dayLabel(selected, true)}.</p>
+          ) : (
+            <QueueList posts={visible} fus={fus} remove={removePostAction} retry={retryPostAction} history={postHistoryAction} />
+          )
         ) : (
           <Notice tone="error" className="max-w-3xl">
             {posts.message}
           </Notice>
         )}
+        </div>
       </div>
     </main>
   );

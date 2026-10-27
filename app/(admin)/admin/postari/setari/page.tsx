@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { readSettings } from "@/lib/postari/setari";
 import { checkRoot, DRIVE_MISSING, driveMode, folderLink } from "@/lib/postari/drive";
+import { isClaudeConfigured } from "@/lib/postari/claude-plan";
 import { listAccounts } from "@/lib/postari/conturi";
+import { lastCronRun } from "@/lib/postari/postari";
+import { agoLabel } from "@/lib/postari/timp";
 import { keyProblem } from "@/lib/postari/cripto";
 import { redirectUri, tiktokConfigured, TIKTOK_MISSING } from "@/lib/postari/tiktok";
 import { AccountsPanel } from "@/components/postari/accounts-panel";
@@ -37,7 +40,15 @@ export default async function SetariPage({ searchParams }: { searchParams: Promi
   const mode = driveMode();
   // O citire la Google: folderul principal se vede cu contul legat?
   const root = settings.ok && settings.data.driveFolderId && mode ? await checkRoot(settings.data.driveFolderId) : null;
-  const accounts = await listAccounts();
+  const [accounts, cronAt] = await Promise.all([listAccounts(), lastCronRun()]);
+  const cronFresh = cronAt !== null && Date.now() - new Date(cronAt).getTime() < 15 * 60_000;
+  const alertTo = settings.ok && settings.data.emailAlerte ? settings.data.emailAlerte : (process.env.ADMIN_EMAILS ?? "").split(",").map((item) => item.trim()).filter(Boolean).join(", ");
+  const status: { label: string; ok: boolean; value: string }[] = [
+    { label: "Secretul cozii (POSTARI_CRON_SECRET)", ok: Boolean(process.env.POSTARI_CRON_SECRET?.trim()), value: process.env.POSTARI_CRON_SECRET?.trim() ? "pus în Vercel" : "lipsește: fără el, endpoint-ul refuză Supabase Cron în producție" },
+    { label: "Supabase Cron", ok: cronFresh, value: cronAt ? `ultima rulare ${agoLabel(cronAt)}${cronFresh ? "" : ": jobul nu pare să ruleze la 5 minute"}` : "n-a rulat încă: rulează lib/postari/supabase-cron.sql în Supabase" },
+    { label: "Emailul alertelor (Resend)", ok: Boolean(process.env.RESEND_API_KEY), value: process.env.RESEND_API_KEY ? `pleacă la ${alertTo || "— (nicio adresă: pune una mai sus)"}` : "RESEND_API_KEY lipsește: alertele apar doar în ecran" },
+    { label: "Descrierile scrise de Claude", ok: isClaudeConfigured(), value: isClaudeConfigured() ? "ANTHROPIC_API_KEY e pusă" : "ANTHROPIC_API_KEY lipsește: planul se scrie de mână" },
+  ];
   const instagram = accounts.ok ? (accounts.data.find((account) => account.platforma === "instagram") ?? null) : null;
   const tiktok = accounts.ok ? (accounts.data.find((account) => account.platforma === "tiktok") ?? null) : null;
 
@@ -92,6 +103,24 @@ export default async function SetariPage({ searchParams }: { searchParams: Promi
       ) : (
         <SettingsForm settings={settings.data} save={saveSettingsAction} />
       )}
+
+      <section aria-labelledby="programare" className="mt-8 max-w-3xl">
+        <h2 id="programare" className="text-[15px] font-semibold text-bone">
+          Programarea și alertele
+        </h2>
+        <p className="mt-0.5 text-[13.5px] text-dim">Ce e legat în Vercel și în Supabase, fără să arate cheile. Pașii sunt în README, la „Programarea”.</p>
+        <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-white">
+          {status.map((item) => (
+            <li key={item.label} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[14px]">
+              <span className="font-medium text-bone">{item.label}</span>
+              <span className="flex items-center gap-2 text-[13px] text-dim">
+                <Tag tone={item.ok ? "ok" : "warn"}>{item.ok ? "da" : "nu"}</Tag>
+                <span className="max-w-md">{item.value}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {tiktokResult ? (
         <Notice tone={tiktokResult.tone} role={tiktokResult.tone === "ok" ? "status" : "alert"} className="mt-8 max-w-3xl">

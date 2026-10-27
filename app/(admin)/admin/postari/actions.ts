@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { runQueue } from "@/lib/postari/coada";
 import { actorEmail, SESSION_EXPIRED } from "@/lib/postari/db";
-import { logEvent } from "@/lib/postari/istoric";
+import { logEvent, readHistory, type RandIstoric } from "@/lib/postari/istoric";
 import { PLATFORMA_LABEL } from "@/lib/postari/limite";
 import { markPublishedByHand, removePost, retryPost } from "@/lib/postari/postari";
 import { setQueueRunning } from "@/lib/postari/setari";
@@ -60,6 +60,16 @@ export async function runNowAction(): Promise<ActionResult> {
   if (s.coadaOprita) return { ok: true, message: "Coada e oprită: rularea n-a luat nimic. Pornește coada întâi." };
   if (s.luate === 0) return { ok: true, message: `Nimic de trimis acum: nicio postare nu e la timp.${s.intarziate ? ` ${s.intarziate} rămase în urmă au fost marcate eșuate.` : ""}` };
   return { ok: true, message: `Rulare terminată: ${s.luate} luate, ${s.publicate} publicate, ${s.ciorne} în ciorne, ${s.asteapta} în așteptare, ${s.reincercari} de reîncercat, ${s.esuate} eșuate${s.amanate ? `, ${s.amanate} continuă la rularea următoare` : ""}.` };
+}
+
+/** Ce s-a întâmplat cu o postare, în ordine, pentru panoul ei din coadă. */
+export async function postHistoryAction(id: unknown): Promise<{ ok: true; items: RandIstoric[] } | { ok: false; message: string }> {
+  const actor = await actorEmail();
+  if (!actor) return { ok: false, message: SESSION_EXPIRED };
+  if (typeof id !== "string" || !UUID.test(id)) return { ok: false, message: "Postarea nu e validă." };
+  const result = await readHistory({ tinta: id, limit: 60 });
+  if (!result.ok) return result;
+  return { ok: true, items: [...result.data].reverse() };
 }
 
 /** „Publicat”, din „De publicat pe TikTok”: ai publicat ciorna din aplicație. */

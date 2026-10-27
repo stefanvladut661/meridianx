@@ -273,6 +273,14 @@ export interface RunInfo {
   eroare: string | null;
 }
 
+/** Ultima rulare pornită de Supabase Cron (nu de „Rulează acum”): arată dacă jobul merge. */
+export async function lastCronRun(): Promise<string | null> {
+  const admin = db();
+  if (!admin) return null;
+  const { data } = await admin.from("postari_rulari").select("inceput_la").eq("sursa", "cron").order("inceput_la", { ascending: false }).limit(1).maybeSingle();
+  return data ? String(data.inceput_la) : null;
+}
+
 export async function lastRuns(limit = 5): Promise<Result<RunInfo[]>> {
   const admin = db();
   if (!admin) return { ok: false, message: NO_DB };
