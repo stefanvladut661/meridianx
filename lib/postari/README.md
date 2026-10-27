@@ -353,6 +353,7 @@ Tot ce e mai jos a fost testat pe servicii simulate, după formatele din documen
 | 4 — coada și programarea | `ed7c814` | https://meridianx-b4uoaua12-stefanvladut661s-projects.vercel.app |
 | 5 — Instagram | `03f488a` | https://meridianx-7vizaf64d-stefanvladut661s-projects.vercel.app |
 | 6 — TikTok | `f9705b8` | https://meridianx-cf7sai2yq-stefanvladut661s-projects.vercel.app |
+| 7 — ecranul complet | `553f577` | https://meridianx-3v8at3n2c-stefanvladut661s-projects.vercel.app |
 
 ## Jurnal
 
