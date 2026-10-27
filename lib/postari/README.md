@@ -249,19 +249,42 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
 
 ### În admin
 
-1. **Rulează migrările 24 și 25** (`supabase/migrations/00000000000024_postari_baza.sql`, apoi `00000000000025_postari_planuri.sql`) în Supabase → SQL Editor, în ordine. Verificarea de la finalul fiecăreia trebuie să arate `true`. Se pot rula de mai multe ori.
+1. **Rulează migrările 24, 25 și 26** (`supabase/migrations/00000000000024_postari_baza.sql`, `…25_postari_planuri.sql`, `…26_postari_coada.sql`) în Supabase → SQL Editor, în ordine. Verificarea de la finalul fiecăreia trebuie să arate `true`. Se pot rula de mai multe ori.
 2. **Postări → Setări:** lipește adresa folderului „meridian reclame” de pe Drive. Contul legat la adminul firmei (OAuth) trebuie să-l vadă; dacă folderul e al aceluiași cont Google, îl vede.
+
+### Programarea (Supabase Cron)
+
+Vercel Hobby rulează joburi programate doar o dată pe zi („Hobby accounts are limited to daily cron jobs”), așa că pe coadă o pornește Supabase Cron, la 5 minute. Nu se atinge `vercel.json`.
+
+1. **Secretul.** Fă un șir aleator de cel puțin 32 de caractere (de exemplu, în PowerShell: `[Convert]::ToBase64String((1..32 | % { Get-Random -Max 256 }))`).
+2. **Vercel** → proiectul → *Settings → Environment Variables* → `POSTARI_CRON_SECRET` = șirul, pentru **Production**. Apoi **Redeploy**.
+3. **Supabase → SQL Editor:** deschide `lib/postari/supabase-cron.sql`, înlocuiește `<SECRETUL>` cu același șir și rulează fișierul. El face trei lucruri:
+   - pornește `pg_cron` și `pg_net`;
+   - pune secretul în Supabase Vault (seiful bazei de date, nu vault-ul MERIDIAN);
+   - programează jobul `postari-coada` la `*/5 * * * *`.
+4. **Verifică după 10 minute:** în admin, la Coada, „Ultima rulare” trebuie să arate „Supabase Cron”. Dacă nu, interogările de verificare de la finalul fișierului SQL arată ce a răspuns adminul. 401 înseamnă secret diferit între Vercel și Vault.
+
+Cum merge coada:
+- **Fără dubluri.** O rulare ia postările ajunse la timp printr-o funcție din bază (`postari_claim`), cu termen de lucru de 90 de secunde. Două rulări simultane nu iau același rând.
+- **Câte postări pe rulare.** Pe fiecare platformă pornește cel mult o postare nouă pe rulare. După o pauză, cele rămase în urmă pleacă la 5 minute una de alta, nu toate deodată.
+- **Durata unei rulări.** Lucrează cel mult 45 de secunde, sub limita de 60 a funcției. Ce nu încape se reia la rularea următoare, de la pasul la care a rămas.
+- **Reîncercările.** O eroare trecătoare se reîncearcă de încă 3 ori, la 2, 10 și 30 de minute. O eroare definitivă (de exemplu, clipul refuzat de platformă) oprește pe loc. Apoi postarea rămâne „eșuată”, cu motivul, cu „Reîncearcă” și cu alertă pe email.
+- **Peste 6 ore întârziere.** O postare care n-a pornit în 6 ore de la ora ei (coada oprită, jobul nepornit) nu mai pleacă singură. Rămâne „eșuată”, cu motivul, ca să nu plece la o oră pe care n-ai ales-o.
+- **Contul neconectat.** Postarea așteaptă, fără să consume încercări.
+- **„Rulează acum”**, la Coada, face o rulare fără să aștepte jobul. Îți folosește la proba reală.
 
 ## De făcut de om
 
-1. **Migrările 24 și 25** în Supabase (vezi „În admin”).
+1. **Migrările 24, 25 și 26** în Supabase (vezi „În admin”).
 2. **Folderul principal** în Postări → Setări.
 3. **Instrucțiunile pentru terminalul de reclame** (secțiunea de mai sus) date terminalului care face clipurile.
-4. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
+4. **Programarea:** `POSTARI_CRON_SECRET` în Vercel, apoi `lib/postari/supabase-cron.sql` în Supabase (vezi „Programarea”).
+5. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
 
 ## De testat cu contul real
 
 1. **Descrierile scrise de Claude**, cu cheia reală: un lot mic (3–5 clipuri) din „Clipuri” → „Scrie planul cu Claude”. Citește descrierile: tonul, diacriticele, CTA-ul și dacă a inventat ceva (n-ar trebui). Testele au rulat pe un Claude simulat, care verifică doar forma cererii și a răspunsului.
+2. **Jobul din Supabase Cron:** `pg_cron`, `pg_net` și Vault nu există în Postgres-ul de test. Endpoint-ul a fost testat direct (secret, rulări, rulări simultane), dar SQL-ul jobului rulează prima oară la tine. După 10 minute, „Ultima rulare” trebuie să arate „Supabase Cron”.
 
 ---
 
@@ -272,6 +295,7 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
 | 0 — planul | `d7320b7` | https://meridianx-lgrv91ko2-stefanvladut661s-projects.vercel.app |
 | 1 — Drive și manifest | `0c4945e` | https://meridianx-p3htf75bb-stefanvladut661s-projects.vercel.app |
 | 2 — planul JSON | `546cfea` | https://meridianx-73d11136i-stefanvladut661s-projects.vercel.app |
+| 3 — planul scris de Claude | `b85b594` | https://meridianx-omorz28za-stefanvladut661s-projects.vercel.app |
 
 ## Jurnal
 
@@ -359,3 +383,42 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
   - hashtag-urile curățate; planul a trecut de verificare;
   - clipul absent de pe Drive a rămas pe dinafară, iar clipul sărit de Claude a primit descriere goală;
   - istoricul are planurile scrise și eșecul; la 360 px, fără scroll lateral; consola e curată.
+
+### Faza 4 — coada și programarea
+
+- **Migrarea 26** (`00000000000026_postari_coada.sql`):
+  - `postari_claim`: luarea din coadă, cu `for update skip locked` și condiția verificată din nou pe rândul blocat; executabilă doar cu cheia de service;
+  - `postari_rulari`: fiecare rulare;
+  - `postari_alerte`: o alertă pe cheie și zi;
+  - coloanele pentru „Reîncearcă” și pentru verificarea ciornelor TikTok;
+  - RLS doar pentru `is_lead_admin()`.
+- **Rularea** (`lib/postari/coada.ts`), în ordine:
+  - întreținerea conturilor, care se face și cu coada oprită, ca tokenurile să nu expire;
+  - curățenia copiilor temporare;
+  - postările rămase în urmă peste 6 ore;
+  - luarea din coadă și pașii, cu buget de 45 de secunde.
+- **Scrierea în rânduri:** orice scriere într-un rând luat e condiționată de `lucrata_de` = rularea. Un rând scos între timp nu se suprascrie.
+- **Contractul cu platformele** (`lib/postari/platforme.ts`): fiecare pas întoarce ce s-a întâmplat (progres, așteptare, publicată, în ciorne, eroare trecătoare sau definitivă, blocată de cont). Coada decide starea, reîncercarea, alerta și istoricul. Instagram și TikTok se leagă în fazele 5 și 6; până atunci, postările lor așteaptă cu „Contul … nu e conectat”.
+- **Endpoint-ul** `POST /admin/postari/cron`, cu `Authorization: Bearer <POSTARI_CRON_SECRET>`: fără secret, 401 în producție; un GET primește 405. SQL-ul jobului e în `lib/postari/supabase-cron.sql`.
+- **Ecranul „Coada”** (`/admin/postari`):
+  - „Oprește coada”, cu motivul opțional, care apare în bara de sus pe orice ecran; „Pornește coada”; „Rulează acum”;
+  - ultima rulare, cu avertisment dacă jobul n-a mai rulat de 15 minute, și alertele din ultimele două zile;
+  - lista pe zile, cu „De văzut” (eșuatele) sus;
+  - pe fiecare postare: ora (fixă sau slot), platforma și tipul, starea, pasul sau motivul așteptării, eroarea, linkul;
+  - „Reîncearcă” pe eșuate. „Scoate din coadă” doar înainte de pasul fără întoarcere; o postare publicată nu se poate scoate.
+- **Alertele** (`lib/postari/alerte.ts`) pleacă prin Resend, la adresa din Setări sau la ADMIN_EMAILS, o dată pe zi pe cheie. Le folosesc fazele 5–7: o postare eșuată definitiv, coada oprită de un token.
+- **Găsit și ocolit:** la un UPDATE cu filtru `or`, PostgREST v12 aplică filtrul și pe rândurile întoarse. Dacă `select`-ul nu are coloanele din filtru, cererea pică cu „column does not exist”. Selecturile acelor cereri le includ acum.
+- **Verificat** pe Postgres real și PostgREST, cu Drive simulat (34 de verificări, toate trecute):
+  - endpoint-ul: 401 fără secret și cu secret greșit, 405 la GET;
+  - o rulare ia cel mult una nouă pe platformă, iar a doua o ia pe următoarea;
+  - postarea de acum 7 ore devine eșuată, cu motivul;
+  - contul neconectat: postarea se întoarce la „planificată”, așteaptă 15 minute, fără încercare consumată;
+  - două rulări simultane nu iau același rând; un rând în lucrul altei rulări nu se ia, iar unul cu termenul expirat se reia de la pasul lui;
+  - ecranul:
+    - avertismentul „n-a rulat niciodată” și „Rulează acum” cu rezumatul;
+    - eșuata la „De văzut” și „Reîncearcă”: repusa nu mai e prinsă de regula celor 6 ore;
+    - „Scoate din coadă”, cu scoasele ascunse;
+    - publicata are „Vezi postarea” și n-are „Scoate”;
+    - oprirea, cu motivul în bara de sus, și rularea care nu ia nimic cu coada oprită; pornirea;
+    - istoricul are toate acțiunile;
+  - la 360 px, fără scroll lateral; primul Tab duce la „Sari la conținut”.
