@@ -12,6 +12,8 @@ import { btnPrimary, Notice, textareaClass } from "./ui";
 
 /** Unde stă ciorna planului în browser (și unde o lasă ecranul „Clipuri” după ce scrie Claude). */
 export const PLAN_DRAFT_KEY = "meridian_postari_plan";
+/** Semnul lăsat de „Scrie planul cu Claude”: editorul arată o dată de unde vine ciorna. */
+export const PLAN_SOURCE_KEY = "meridian_postari_plan_sursa";
 
 type ApproveResponse = { ok: true; rows: number; posts: number; instagram: number; tiktok: number; first: string | null; last: string | null } | { ok: false; message: string };
 
@@ -50,9 +52,19 @@ export function PlanEditor({ example, verify, approve }: { example: string; veri
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  const [fromClaude, setFromClaude] = useState(false);
+
   useEffect(() => {
     setText(readDraft());
     setLoaded(true);
+    try {
+      if (window.sessionStorage.getItem(PLAN_SOURCE_KEY) === "claude") {
+        window.sessionStorage.removeItem(PLAN_SOURCE_KEY);
+        setFromClaude(true);
+      }
+    } catch {
+      // Fără stocare: anunțul nu apare, planul e oricum în editor.
+    }
   }, []);
   useEffect(() => {
     if (loaded) writeDraft(text);
@@ -112,6 +124,11 @@ export function PlanEditor({ example, verify, approve }: { example: string; veri
 
   return (
     <div className="mt-6 grid gap-6">
+      {fromClaude ? (
+        <Notice tone="ok" role="status">
+          Planul scris de Claude e mai jos. Citește descrierile și corectează ce nu-ți place direct în JSON, apoi apasă „Verifică planul”.
+        </Notice>
+      ) : null}
       <section aria-labelledby="plan-text" className="grid gap-2">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <label id="plan-text" htmlFor="plan-json" className="text-[15px] font-semibold text-bone">

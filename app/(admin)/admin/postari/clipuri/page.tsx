@@ -6,11 +6,14 @@ import { download, listFolder, resolveFolder, rootFolder, sameName, type FolderL
 import { parseManifest, type ManifestResult } from "@/lib/postari/manifest";
 import { readSettings } from "@/lib/postari/setari";
 import { seconds } from "@/lib/postari/limite";
+import { isClaudeConfigured } from "@/lib/postari/claude-plan";
+import { addDays, todayIn } from "@/lib/postari/timp";
+import { ClaudePlanPanel } from "@/components/postari/claude-plan-panel";
 import { ClipsScreen } from "@/components/postari/clips-screen";
 import { IconExternal, IconFolder } from "@/components/postari/icons";
 import { Empty, Notice, PageHead, Tag, tdClass, thClass } from "@/components/postari/ui";
 import { cn } from "@/lib/utils";
-import { probeClipAction } from "./actions";
+import { probeClipAction, writeCaptionsAction } from "./actions";
 
 export const metadata: Metadata = { title: "Clipuri — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -48,6 +51,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
 
   const settings = await readSettings();
   const storageLimit = settings.ok ? settings.data.stocareLimitaMb : 50;
+  const fusSettings = { ore: settings.ok ? settings.data.sloturiOre : ["12:30", "19:00"], fus: settings.ok ? settings.data.sloturiFus : "Europe/Bucharest" };
   const folder = await resolveFolder(path);
   const listing = folder.ok ? await listFolder(folder.data) : null;
   const data: FolderListing | null = listing?.ok ? listing.data : null;
@@ -183,6 +187,17 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
                   const extra = data.clips.filter((file) => !manifest.data.clipuri.some((clip) => clip.fisier === file.name || sameName(clip.fisier, file.name)));
                   return extra.length > 0 ? <p className="mt-2 text-[13px] text-dim">În folder, dar nu în manifest: {extra.map((file) => `„${file.name}”`).join(", ")}.</p> : null;
                 })()}
+                {folder.ok ? (
+                  <ClaudePlanPanel
+                    folder={crumbs.slice(1).join("/")}
+                    folderPath={folder.data.path}
+                    lot={typeof manifest.data.context.lot === "string" ? manifest.data.context.lot.slice(0, 120) : null}
+                    clips={manifest.data.clipuri.filter((clip) => data.clips.some((file) => file.name === clip.fisier || sameName(file.name, clip.fisier))).map((clip) => clip.fisier)}
+                    defaults={{ ore: fusSettings.ore, fus: fusSettings.fus, start: addDays(todayIn(fusSettings.fus), 1) }}
+                    configured={isClaudeConfigured()}
+                    write={writeCaptionsAction}
+                  />
+                ) : null}
               </>
             ) : null}
           </section>

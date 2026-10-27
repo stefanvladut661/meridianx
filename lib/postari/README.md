@@ -261,7 +261,7 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
 
 ## De testat cu contul real
 
-*Se completează pe faze.*
+1. **Descrierile scrise de Claude**, cu cheia reală: un lot mic (3–5 clipuri) din „Clipuri” → „Scrie planul cu Claude”. Citește descrierile: tonul, diacriticele, CTA-ul și dacă a inventat ceva (n-ar trebui). Testele au rulat pe un Claude simulat, care verifică doar forma cererii și a răspunsului.
 
 ---
 
@@ -271,6 +271,7 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
 |---|---|---|
 | 0 — planul | `d7320b7` | https://meridianx-lgrv91ko2-stefanvladut661s-projects.vercel.app |
 | 1 — Drive și manifest | `0c4945e` | https://meridianx-p3htf75bb-stefanvladut661s-projects.vercel.app |
+| 2 — planul JSON | `546cfea` | https://meridianx-73d11136i-stefanvladut661s-projects.vercel.app |
 
 ## Jurnal
 
@@ -333,3 +334,28 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
   - un slot luat de alt plan între verificare și aprobare duce la refuz, fără nimic scris;
   - istoricul are aprobarea și refuzul; la 360 px, fără scroll lateral; Tab trece din plan la „Verifică planul”; consola e curată.
 - **Observație pentru celelalte module:** în admin, clasa `font-md-mono` nu are efect (`--md-font-mono` e gol în `data-scope="gate"`), deci textul „mono” apare în Satoshi. Postările folosesc direct `var(--font-jbmono)`. Adminul firmei (`components/firma/sidebar.tsx`, `drive-status.tsx`) are aceeași problemă: e zona altui terminal, așa că doar o notez.
+
+### Faza 3 — planul scris de Claude
+
+- **`lib/postari/claude-plan.ts`**, după tiparul citirii bonurilor din adminul firmei:
+  - SDK-ul oficial, `claude-opus-5-5`, răspuns structurat validat cu zod (`output_config.format`);
+  - `fallbacks: "default"`: dacă filtrele de siguranță refuză cererea, serverul încearcă alt model;
+  - efort `low`: sunt texte scurte, iar un apel trebuie să încapă în cele 60 de secunde ale funcției Vercel.
+- **Ce primește Claude:** contextul lotului din manifest (`produs`, `oferta`, `lot`…), apoi pentru fiecare clip hookul, CTA-ul, vocea, stilul, durata și câmpurile în plus, plus indicațiile tale.
+- **Regulile din prompt:** română cu diacritice, vocea diviziei video (direct, sigur pe el, puțin obraznic), cel mult 300 de caractere, deschidere din hook, încheiere cu CTA-ul. Fără nimic inventat (prețuri, cifre, clienți, orașe), fără formule de agenție, fără repetiții între clipuri, 3–6 hashtag-uri.
+- **Loturi de câte 5 clipuri.** Fiecare lot primește descrierile deja scrise, ca să nu se repete. Hashtag-urile se curăță pe server (fără `#`, cu litere mici; cele cu spații sau semne se scot). Descrierile peste 300 de caractere se taie la ultimul cuvânt întreg.
+- **Ecranul „Clipuri” → „Scrie planul cu Claude”**, sub `manifest.json`:
+  - alegi platformele, Reel sau Trial Reel (cu trecerea manuală sau automată la urmăritori), ziua de început și orele sloturilor (implicit din Setări), plus indicații opționale;
+  - intră doar clipurile din manifest găsite pe Drive, în ordinea din manifest;
+  - progresul e anunțat, iar „Oprește după lotul ăsta” oprește la finalul lotului;
+  - la o eroare (limita de cereri, rețea) rămâne ce s-a scris, cu „Continuă” de unde s-a oprit și „Deschide în editor ce s-a scris”;
+  - un clip sărit de Claude primește descriere goală, iar verificarea o semnalează.
+- **Planul ajunge în editorul de la „Plan nou”**, cu anunțul „Planul scris de Claude e mai jos”. Acolo îl corectezi, îl verifici și îl aprobi ca pe orice plan. Clipurile se iau din manifestul citit pe server: din browser vin doar numele lor.
+- **Verificat** pe Anthropic simulat (20 de verificări, toate trecute):
+  - limita de cereri explicată, fără nimic pierdut;
+  - 7 clipuri scrise în două loturi (5 + 2), iar al doilea lot a primit cele 5 descrieri deja scrise;
+  - modelul, efortul, schema, `fallbacks` și antetul beta, verificate pe fiecare cerere;
+  - planul: folderul, numele lotului, orele sortate („19:00, 9:00” → `09:00`, `19:00`), Trial Reel automat și TikTok în ciorne;
+  - hashtag-urile curățate; planul a trecut de verificare;
+  - clipul absent de pe Drive a rămas pe dinafară, iar clipul sărit de Claude a primit descriere goală;
+  - istoricul are planurile scrise și eșecul; la 360 px, fără scroll lateral; consola e curată.
