@@ -54,6 +54,12 @@ export default async function AdminDashLayout({
 
           <div className="ml-auto flex items-center gap-4">
             <Link
+              href="/admin/firma"
+              className="text-[13px] text-dim underline-offset-4 hover:text-bone hover:underline"
+            >
+              Firmă
+            </Link>
+            <Link
               href="/admin/ads"
               className="text-[13px] text-dim underline-offset-4 hover:text-bone hover:underline"
             >
