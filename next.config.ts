@@ -208,6 +208,40 @@ function contentSecurityPolicy(profile: CspProfile = "site"): string {
  */
 const CSP_REPORT_ONLY = true;
 
+// ---------------------------------------------------------------------------
+// Propuneri de site pentru prospecți (/propunere/<firma>/)
+// ---------------------------------------------------------------------------
+
+/* Site-urile demo făcute de skill-ul de prospectare (meridian-rebuilder) NU
+   intră în build-ul de aici: stau în repository-ul meridianx-propuneri, publicat
+   de un proiect Vercel separat. Aici doar le servim sub domeniul nostru, ca
+   firma să vadă propunerea direct pe meridianx.ro.
+
+   Fiecare propunere e noindex (meta în pagină + antetul de mai jos), ca să nu
+   concureze în Google cu site-ul actual al firmei. */
+const PROPUNERI = (
+  process.env.PROPUNERI_ORIGIN ?? "https://meridianx-propuneri.vercel.app"
+).replace(/\/$/, "");
+
+/* Demo-urile sunt HTML static: scriptul și stilul lor, fonturi locale, poze
+   locale. Singurul lucru extern e harta Google, încărcată doar la click. Fără
+   pixeli: o propunere nu e pagina noastră de marketing. */
+function cspPropuneri(): string {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "frame-src https://www.google.com https://maps.google.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+  ].join("; ");
+}
+
 const nextConfig: NextConfig = {
   // Există un package-lock.json rătăcit în C:\Users\PC care derutează
   // detecția de workspace a Turbopack — fixăm rădăcina explicit.
@@ -216,6 +250,19 @@ const nextConfig: NextConfig = {
   // Antetul `X-Powered-By: Next.js` spune atacatorilor ce rulăm și nu
   // spune vizitatorilor nimic.
   poweredByHeader: false,
+
+  async rewrites() {
+    return {
+      beforeFiles: [
+        /* Next scoate „/” de la final, deci /propunere/firma/ ajunge aici ca
+           /propunere/firma: îi dăm direct index.html. Paginile demo au
+           <base href="/propunere/firma/">, așa că linkurile lor relative
+           merg și fără „/” la final. */
+        { source: "/propunere/:slug", destination: `${PROPUNERI}/:slug/index.html` },
+        { source: "/propunere/:slug/:path*", destination: `${PROPUNERI}/:slug/:path*` },
+      ],
+    };
+  },
 
   async headers() {
     return [
@@ -269,6 +316,19 @@ const nextConfig: NextConfig = {
               ? "Content-Security-Policy-Report-Only"
               : "Content-Security-Policy",
             value: contentSecurityPolicy("vault"),
+          },
+        ],
+      },
+      {
+        // Propunerile: CSP-ul lor (după intrarea globală, deci câștigă) și noindex.
+        source: "/propunere/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          {
+            key: CSP_REPORT_ONLY
+              ? "Content-Security-Policy-Report-Only"
+              : "Content-Security-Policy",
+            value: cspPropuneri(),
           },
         ],
       },
