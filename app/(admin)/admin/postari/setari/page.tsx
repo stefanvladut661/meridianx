@@ -2,24 +2,30 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { readSettings } from "@/lib/postari/setari";
 import { checkRoot, DRIVE_MISSING, driveMode, folderLink } from "@/lib/postari/drive";
+import { listAccounts } from "@/lib/postari/conturi";
+import { keyProblem } from "@/lib/postari/cripto";
+import { AccountsPanel } from "@/components/postari/accounts-panel";
 import { SettingsForm } from "@/components/postari/settings-form";
 import { IconExternal } from "@/components/postari/icons";
 import { Notice, PageHead, Tag } from "@/components/postari/ui";
 import { saveSettingsAction } from "./actions";
+import { connectInstagramAction, disconnectAction } from "./conturi-actions";
 
 export const metadata: Metadata = { title: "Setări — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 /**
  * /admin/postari/setari — ce se alege din admin: folderul de pe Drive,
- * sloturile, plafoanele, alertele (și, din fazele următoare, conturile și
- * programarea). Cheile nu se văd și nu se scriu aici.
+ * sloturile, plafoanele, alertele și conturile Instagram și TikTok. Cheile nu
+ * se văd și nu se scriu aici; tokenurile conturilor nu se mai văd după salvare.
  */
 export default async function SetariPage() {
   const settings = await readSettings();
   const mode = driveMode();
   // O citire la Google: folderul principal se vede cu contul legat?
   const root = settings.ok && settings.data.driveFolderId && mode ? await checkRoot(settings.data.driveFolderId) : null;
+  const accounts = await listAccounts();
+  const instagram = accounts.ok ? (accounts.data.find((account) => account.platforma === "instagram") ?? null) : null;
 
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
@@ -71,6 +77,14 @@ export default async function SetariPage() {
         </Notice>
       ) : (
         <SettingsForm settings={settings.data} save={saveSettingsAction} />
+      )}
+
+      {!accounts.ok ? (
+        <Notice tone="error" className="mt-8 max-w-3xl">
+          {accounts.message}
+        </Notice>
+      ) : (
+        <AccountsPanel instagram={instagram} keyProblem={keyProblem()} fus={settings.ok ? settings.data.sloturiFus : "Europe/Bucharest"} connectInstagram={connectInstagramAction} disconnect={disconnectAction} />
       )}
     </main>
   );

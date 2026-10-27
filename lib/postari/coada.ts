@@ -114,7 +114,7 @@ async function applyOutcome(admin: Db, post: PostRow, runId: string, outcome: St
     case "blocked": {
       summary.asteapta += 1;
       // Neînceputa se întoarce la „planificată” (se poate scoate, iar regula celor 6 ore o prinde).
-      const row = await writeOwned(admin, post, runId, { stare: post.pas || post.stare === "in_ciorne" ? post.stare : "planificata", eroare: outcome.message, eroare_cod: outcome.code, urmatoarea_incercare: new Date(now + outcome.ms).toISOString(), ...RELEASE });
+      const row = await writeOwned(admin, post, runId, { ...outcome.patch, stare: post.pas || post.stare === "in_ciorne" ? post.stare : "planificata", eroare: outcome.message, eroare_cod: outcome.code, urmatoarea_incercare: new Date(now + outcome.ms).toISOString(), ...RELEASE });
       if (outcome.stopQueue) await stopQueue(outcome.message, outcome.code, settings);
       return { row, again: false };
     }
@@ -207,7 +207,7 @@ export async function runQueue(options: { source: "cron" | "manual"; actor: stri
     const settingsResult = await readSettings();
     if (!settingsResult.ok) throw new Error(settingsResult.message);
     let settings = settingsResult.data;
-    const ctx: StepContext = { runId, deadline, settings, admin };
+    const ctx: StepContext = { runId, deadline, settings, admin, save: (post, patch) => writeOwned(admin, post, runId, patch) };
 
     // 1. Conturile: tokenurile se reînnoiesc chiar și când coada e oprită (altfel expiră).
     for (const platform of PLATFORME) {

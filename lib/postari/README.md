@@ -187,7 +187,7 @@ Un plan e un lot de postări dintr-un singur subfolder de pe Drive. Îl lipești
 | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN` (sau `GOOGLE_SERVICE_ACCOUNT_JSON`) | Aceleași ca la adminul firmei. Nu se pune nimic nou pentru Drive. | 1 |
 | `ANTHROPIC_API_KEY` | Aceeași ca la adminul firmei, pentru descrierile scrise de Claude. | 3 |
 | `POSTARI_CRON_SECRET` | Secretul cu care Supabase Cron apelează coada. Orice șir aleator de 32+ caractere. Același șir merge în Supabase Vault (vezi „Programarea”). | 4 |
-| `POSTARI_TOKEN_KEY` | Cheia care criptează tokenurile Instagram și TikTok: 32 de octeți în base64. | 5 |
+| `POSTARI_TOKEN_KEY` | Cheia care criptează tokenurile Instagram și TikTok: 32 de octeți în base64 (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`). Nu se mai schimbă după conectarea conturilor. | 5 |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | Aplicația de dezvoltator TikTok (Login Kit + Content Posting API). | 6 |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Aceleași ca la lead-uri, pentru alerte. | 7 |
 
@@ -252,11 +252,22 @@ Lipește-i secțiunea asta terminalului care face clipurile cu Remotion.
 1. **Rulează migrările 24, 25 și 26** (`supabase/migrations/00000000000024_postari_baza.sql`, `…25_postari_planuri.sql`, `…26_postari_coada.sql`) în Supabase → SQL Editor, în ordine. Verificarea de la finalul fiecăreia trebuie să arate `true`. Se pot rula de mai multe ori.
 2. **Postări → Setări:** lipește adresa folderului „meridian reclame” de pe Drive. Contul legat la adminul firmei (OAuth) trebuie să-l vadă; dacă folderul e al aceluiași cont Google, îl vede.
 
+### Instagram (la Meta)
+
+Contul Meridian trebuie să fie **profesional** (Business sau Creator). Publicarea merge prin **Instagram Login**, fără pagină de Facebook. De ce: vezi „Decizii”.
+
+1. **Produsul Instagram.** developers.facebook.com → *My Apps* → aplicația voastră (aceeași ca la reclame sau una nouă, de tip *Business*) → *Add product* → **Instagram** → *Set up* → **API setup with Instagram business login**.
+2. **Rolul de tester.** *App roles → Roles → Add people* → **Instagram Tester** → numele contului Meridian. Apoi accepți invitația din contul Meridian: pe instagram.com, *Settings → Apps and websites → Tester invites* → *Accept*. Documentația Meta: „Standard Access is intended for apps that will only be used by people who have roles on them”. Pentru propriul cont nu trebuie App Review.
+3. **Permisiunile:** `instagram_business_basic` și `instagram_business_content_publish`. Le vezi la pasul *Generate access tokens* din *API setup with Instagram business login*.
+4. **Tokenul.** În aceeași pagină, *Add account* (te autentifici cu contul Meridian), apoi **Generate token** lângă cont. Copiază tokenul. Meta spune: „Access tokens from the App Dashboard are long-lived and are valid for 60 days.”
+5. **În admin:** Postări → Setări → **Conturi** → lipește tokenul → „Conectează Instagram”. Adminul verifică la Instagram contul și permisiunea de publicare, apoi salvează tokenul criptat.
+6. **De aici:** tokenul se reînnoiește singur, săptămânal (`refresh_access_token`). Dacă reînnoirea pică definitiv, coada se oprește și primești alertă pe email. Atunci repeți pașii 4–5.
+
 ### Programarea (Supabase Cron)
 
 Vercel Hobby rulează joburi programate doar o dată pe zi („Hobby accounts are limited to daily cron jobs”), așa că pe coadă o pornește Supabase Cron, la 5 minute. Nu se atinge `vercel.json`.
 
-1. **Secretul.** Fă un șir aleator de cel puțin 32 de caractere (de exemplu, în PowerShell: `[Convert]::ToBase64String((1..32 | % { Get-Random -Max 256 }))`).
+1. **Secretul.** Fă un șir aleator: în terminal, `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`.
 2. **Vercel** → proiectul → *Settings → Environment Variables* → `POSTARI_CRON_SECRET` = șirul, pentru **Production**. Apoi **Redeploy**.
 3. **Supabase → SQL Editor:** deschide `lib/postari/supabase-cron.sql`, înlocuiește `<SECRETUL>` cu același șir și rulează fișierul. El face trei lucruri:
    - pornește `pg_cron` și `pg_net`;
@@ -279,12 +290,23 @@ Cum merge coada:
 2. **Folderul principal** în Postări → Setări.
 3. **Instrucțiunile pentru terminalul de reclame** (secțiunea de mai sus) date terminalului care face clipurile.
 4. **Programarea:** `POSTARI_CRON_SECRET` în Vercel, apoi `lib/postari/supabase-cron.sql` în Supabase (vezi „Programarea”).
-5. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
+5. **Migrarea 27** (`00000000000027_postari_conturi.sql`): conturile și bucket-ul `postari-temp`.
+6. **`POSTARI_TOKEN_KEY` în Vercel** (Production): `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. **Nu o schimba după ce ai conectat conturile.** Dacă o schimbi, tokenurile vechi nu se mai pot decripta și conectezi conturile din nou.
+7. **Instagram la Meta** (pașii de la „Instagram”), apoi tokenul în Setări → Conturi.
+8. **Meniurile celorlalte module:** linkul „Postări” lipsește din meniul firmei (`components/firma/sidebar.tsx`, `components/firma/mobile-nav.tsx`), al reclamelor (`components/ads/sidebar.tsx`) și din bara panoului de lead-uri. Sunt zonele altor terminale. E câte un rând în fiecare, de adăugat de tine sau de terminalele lor.
 
 ## De testat cu contul real
 
 1. **Descrierile scrise de Claude**, cu cheia reală: un lot mic (3–5 clipuri) din „Clipuri” → „Scrie planul cu Claude”. Citește descrierile: tonul, diacriticele, CTA-ul și dacă a inventat ceva (n-ar trebui). Testele au rulat pe un Claude simulat, care verifică doar forma cererii și a răspunsului.
-2. **Jobul din Supabase Cron:** `pg_cron`, `pg_net` și Vault nu există în Postgres-ul de test. Endpoint-ul a fost testat direct (secret, rulări, rulări simultane), dar SQL-ul jobului rulează prima oară la tine. După 10 minute, „Ultima rulare” trebuie să arate „Supabase Cron”.
+3. **Instagram, cu un singur clip** (proba ta), după ce contul e conectat:
+   - un plan cu **o** postare Instagram, la 15 minute de acum, aprobat;
+   - la ora ei, „Rulează acum” la Coada (sau aștepți jobul);
+   - în Coada: postarea trece prin „copiază clipul de pe Drive”, „Instagram procesează clipul” și ajunge „Publicată”, cu „Vezi postarea”;
+   - în Supabase → Storage → `postari-temp` nu trebuie să rămână nimic după publicare;
+   - încearcă o dată și un Trial Reel (`"tip": "trial_reel"`): trebuie să apară în aplicație ca Trial Reel. Cu `"absolvire": "automat"`, Instagram îl trece singur la urmăritori dacă merge bine.
+   Toate formatele răspunsurilor sunt cele din documentația Meta, testate pe un Instagram simulat care descarcă clipul de la linkul semnat ca cel real. Neverificat pe real: forma exactă a răspunsului `GET /me`. Documentația arată `data[0]`, referința arată un obiect plat, iar codul le primește pe amândouă.
+4. **Copia temporară pe Supabase-ul real:** urcarea TUS pe `<proiect>.storage.supabase.co` cu cheia de service. Testată pe o stocare simulată care cere protocolul TUS și bucăți de exact 6 MB.
+5. **Jobul din Supabase Cron:** `pg_cron`, `pg_net` și Vault nu există în Postgres-ul de test. Endpoint-ul a fost testat direct (secret, rulări, rulări simultane), dar SQL-ul jobului rulează prima oară la tine. După 10 minute, „Ultima rulare” trebuie să arate „Supabase Cron”.
 
 ---
 
@@ -296,6 +318,7 @@ Cum merge coada:
 | 1 — Drive și manifest | `0c4945e` | https://meridianx-p3htf75bb-stefanvladut661s-projects.vercel.app |
 | 2 — planul JSON | `546cfea` | https://meridianx-73d11136i-stefanvladut661s-projects.vercel.app |
 | 3 — planul scris de Claude | `b85b594` | https://meridianx-omorz28za-stefanvladut661s-projects.vercel.app |
+| 4 — coada și programarea | `ed7c814` | https://meridianx-b4uoaua12-stefanvladut661s-projects.vercel.app |
 
 ## Jurnal
 
@@ -422,3 +445,41 @@ Cum merge coada:
     - oprirea, cu motivul în bara de sus, și rularea care nu ia nimic cu coada oprită; pornirea;
     - istoricul are toate acțiunile;
   - la 360 px, fără scroll lateral; primul Tab duce la „Sari la conținut”.
+
+### Faza 5 — Instagram
+
+- **Migrarea 27** (`00000000000027_postari_conturi.sql`):
+  - `postari_conturi`, cu tokenurile criptate. Adminii pot citi prin REST doar coloanele de stare; tokenurile le citește doar cheia de service. Verificarea de la final o confirmă;
+  - bucket-ul privat `postari-temp`, de 50 MB, doar MP4/MOV.
+- **Criptarea** (`lib/postari/cripto.ts`): AES-256-GCM cu `POSTARI_TOKEN_KEY`, iar platforma intră în datele autentificate.
+- **Clientul Instagram** (`lib/postari/instagram.ts`), după documentația oficială (v26.0, `graph.instagram.com`):
+  - `/me?fields=user_id,username`, plus `refresh_access_token`;
+  - containerul `REELS` cu `video_url`, `caption`, `share_to_feed` sau, la Trial Reel, `trial_params.graduation_strategy`: `MANUAL` = „can be manually graduated in the native app”, `SS_PERFORMANCE` = „will be automatically graduated if the trial reel performs well”; plus `thumb_offset`;
+  - starea containerului, `media_publish`, `permalink`, ultimele Reels, `content_publishing_limit`;
+  - **nicio funcție de ștergere sau de editare.**
+  - Erorile sunt clasificate după codurile și subcodurile din documentație (2207026 format, 2207042 plafon, 2207050 cont restricționat, 2207051 spam, 190 token…): trecătoare (cu container nou sau nu), definitive, de cont (opresc coada), de limită (așteaptă).
+- **Pașii postării** (`lib/postari/instagram-handler.ts`):
+  - **copiere:** descărcarea de pe Drive, cu verificarea mărimii față de cea de la aprobare (un clip schimbat după aprobare nu se publică), apoi TUS pe bucăți de 6 MB, cu progresul scris după fiecare bucată;
+  - **container:** plafonul pe 24 de ore (cel mai mic dintre Setări și `quota_total`), linkul semnat de 2 ore, containerul;
+  - **procesare:** încă două verificări în aceeași rulare, apoi o dată pe minut, cum cere documentația. Containerul expirat sau în eroare se reface, iar procesarea de peste 30 de minute se reîncearcă;
+  - **publicare:** `ig_publicare_la` se scrie înainte de `media_publish`. Fără răspuns, rularea următoare citește containerul: `PUBLISHED` înseamnă publicată, iar postarea se caută printre ultimele Reels (fără să ia una deja atribuită). Republicarea n-are loc;
+  - copia temporară se șterge după publicare, după eșecul definitiv și, ca plasă de siguranță, la fiecare rulare.
+- **Tokenul:**
+  - se reînnoiește săptămânal sau când mai are sub 14 zile, dar abia după 24 de ore de la ultima reînnoire, cum cere documentația;
+  - dacă reînnoirea pică definitiv, contul trece la „expirat”, coada se oprește, iar alerta pleacă pe email;
+  - dacă reînnoirea pică trecător, se reîncearcă; cu sub 7 zile rămase, primești alertă.
+- **Setări → Conturi:** lipești tokenul din panoul Meta. Se verifică la Instagram contul și permisiunea de publicare. Tokenul nu se mai arată, nu intră în istoric și nu ajunge în browser. „Lipește alt token”, „Deconectează”.
+- **Verificat** pe Instagram, Storage și Resend simulate (38 de verificări, toate trecute):
+  - conectarea: tokenul greșit e refuzat; cel bun e conectat cu numele contului, criptat în bază, absent din pagină și din istoric;
+  - Trial Reel automat, clip de 25 MB:
+    - copiat în 5 bucăți (4 × 6 MB plus restul), procesat și publicat într-o singură rulare (24 s);
+    - `trial_params: SS_PERFORMANCE`, fără `share_to_feed`, iar descrierea e cea din plan;
+    - Instagram simulat a descărcat clipul de la linkul semnat;
+    - copia ștearsă, iar istoricul are linkul;
+  - Reel fără feed, cu copertă: `share_to_feed: false`, `thumb_offset: 1500`;
+  - copia întreruptă la bucata 2: încercare ratată (nu eșuată), reîncercare la 2 minute; reluarea a citit offsetul (6 MB) și a urcat doar restul, fără urcare nouă;
+  - publicarea fără răspuns: postarea a așteptat; rularea următoare a găsit-o publicată, cu o singură cerere de publicare;
+  - formatul refuzat (2207026): eșuată după o încercare, cu motivul în română, alertă pe email la adresa din Setări, o singură dată pe zi; copia ștearsă;
+  - plafonul atins: postarea a așteptat 30 de minute, fără încercare consumată și fără container;
+  - tokenul: reînnoit singur după 7 zile; apoi refuzat la reînnoire, cu contul „expirat”, coada oprită și alerta trimisă. Ecranul arată motivul, iar Setările arată „Token expirat” și formularul;
+  - nicio cerere neașteptată către Instagram sau stocare.

@@ -146,3 +146,13 @@ export async function download(fileId: string): Promise<Result<Buffer>> {
     return { ok: false, message: driveMessage(error) };
   }
 }
+
+/** Descărcarea pentru coadă: spune și dacă fișierul nu mai e pe Drive (404), ca postarea să nu se reîncerce degeaba. */
+export async function downloadClip(fileId: string): Promise<{ ok: true; data: Buffer } | { ok: false; message: string; missing: boolean }> {
+  try {
+    return { ok: true, data: await downloadFile(fileId) };
+  } catch (error) {
+    const missing = error instanceof DriveError && error.status === 404;
+    return { ok: false, message: missing ? "Clipul nu mai e pe Drive (șters sau mutat după aprobare)." : driveMessage(error), missing };
+  }
+}

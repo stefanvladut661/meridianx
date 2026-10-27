@@ -24,6 +24,11 @@ export interface StepContext {
   deadline: number;
   settings: Setari;
   admin: Db;
+  /**
+   * Scrie în rând în mijlocul unui pas (ex. momentul cererii de publicare,
+   * înainte de cerere). `null` = rândul nu mai e al rulării: pasul se oprește.
+   */
+  save: (post: PostRow, patch: Patch) => Promise<PostRow | null>;
 }
 
 export type StepOutcome =
@@ -38,7 +43,7 @@ export type StepOutcome =
   /** A eșuat pasul. `permanent`: nu are rost să reîncerce (ex. clipul refuzat de platformă). */
   | { kind: "error"; message: string; code: string; permanent: boolean; patch?: Patch }
   /** Nu se poate lucra acum din cauza contului (neconectat, token expirat); nu se numără ca încercare. */
-  | { kind: "blocked"; message: string; code: string; ms: number; stopQueue: boolean };
+  | { kind: "blocked"; message: string; code: string; ms: number; stopQueue: boolean; patch?: Patch };
 
 export interface MaintainOutcome {
   /** Tokenul nu se mai poate reînnoi: coada se oprește, cu motivul ăsta. */
