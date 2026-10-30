@@ -129,12 +129,12 @@ export function LeadDetail({
   return (
     <Card as="section" aria-labelledby={headingId} aria-busy={nav?.pending || undefined} className={cn("overflow-hidden p-0 transition-opacity", nav?.pending && "opacity-70")}>
       <div className="flex items-start gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-5">
-        <NavLink href={listHref} className="mt-0.5 rounded-md p-1 text-muted-foreground hover:bg-white/[0.06] hover:text-foreground lg:hidden" aria-label="Înapoi la listă">
+        <NavLink href={listHref} className="mt-0.5 rounded-md p-1 text-muted-foreground hover:bg-white/[0.06] hover:text-foreground xl:hidden" aria-label="Înapoi la listă">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         </NavLink>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 id={headingId} ref={headingRef} tabIndex={-1} className="truncate text-[17px] font-semibold outline-none">
+            <h2 id={headingId} ref={headingRef} tabIndex={-1} style={{ outline: "none" }} className="truncate text-[17px] font-semibold">
               {lead.name}
             </h2>
             <Pill tone={STATUS_TONE[lead.status]} dot>
@@ -152,7 +152,7 @@ export function LeadDetail({
           <button type="button" onClick={() => setDeleteOpen(true)} className={cn(iconButton, "hover:bg-rose/10 hover:text-rose")} aria-label="Șterge definitiv lead-ul">
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
-          <NavLink href={listHref} className={cn(iconButton, "hidden lg:inline-flex")} aria-label="Închide fișa (Esc)" title="Închide (Esc)">
+          <NavLink href={listHref} className={cn(iconButton, "hidden xl:inline-flex")} aria-label="Închide fișa (Esc)" title="Închide (Esc)">
             <X className="h-4 w-4" aria-hidden="true" />
           </NavLink>
         </div>

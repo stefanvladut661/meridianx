@@ -25,7 +25,7 @@ export function leadsHref(filterSearch: string, { page, lead }: { page?: number;
 export function leadCount(n: number): string {
   if (n === 1) return "1 lead";
   const rest = n % 100;
-  const de = rest === 0 || rest >= 20 ? " de" : "";
+  const de = n > 0 && (rest === 0 || rest >= 20) ? " de" : "";
   return `${new Intl.NumberFormat("ro-RO").format(n)}${de} lead-uri`;
 }
 

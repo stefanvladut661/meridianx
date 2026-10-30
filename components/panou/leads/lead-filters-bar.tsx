@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Search, SlidersHorizontal, X } from "lucide-react";
 import { LEAD_STATUSES } from "@/lib/validations/lead";
+import { cn } from "@/lib/utils";
 import { Btn, btnClass } from "../ui/primitives";
 import { SoftSelect } from "../ui/select";
 import { useToast } from "../ui/toast";
@@ -18,6 +19,7 @@ const CLEARED: LeadFilterValues = { q: "", division: "", status: "", from: "", t
  * nu după răspunsul bazei.
  */
 export function LeadFiltersBar({
+  compact,
   filters,
   hasFilters,
   filtered,
@@ -26,6 +28,8 @@ export function LeadFiltersBar({
   pending,
   onChange,
 }: {
+  /** Fișa e deschisă alături, coloana listei e îngustă: controalele rămân una sub alta. */
+  compact: boolean;
   filters: LeadFilterValues;
   hasFilters: boolean;
   /** Câte lead-uri are filtrul curent. */
@@ -98,7 +102,7 @@ export function LeadFiltersBar({
         flushQuery();
       }}
     >
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+      <div className={cn("flex flex-col gap-2", !compact && "lg:flex-row lg:items-center")}>
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <input
@@ -113,12 +117,12 @@ export function LeadFiltersBar({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:items-center">
+        <div className={cn("grid grid-cols-2 gap-2", !compact && "sm:grid-cols-4 lg:flex lg:items-center")}>
           <SoftSelect
             ariaLabel="Divizie"
             value={local.division || "toate"}
             onChange={(value) => apply({ division: value === "toate" ? "" : value })}
-            className="lg:w-[116px]"
+            className={cn(!compact && "lg:w-[116px]")}
             options={[
               { value: "toate", label: "Toate diviziile" },
               { value: "video", label: "Video" },
@@ -129,27 +133,27 @@ export function LeadFiltersBar({
             ariaLabel="Status"
             value={local.status || "toate"}
             onChange={(value) => apply({ status: value === "toate" ? "" : value })}
-            className="lg:w-[132px]"
+            className={cn(!compact && "lg:w-[132px]")}
             options={[{ value: "toate", label: "Toate statusurile" }, ...LEAD_STATUSES.map((status) => ({ value: status, label: statusLabel(status) }))]}
           />
-          <label className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 text-[11px] text-muted-foreground lg:w-[148px]">
+          <label className={cn("flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 text-[11px] text-muted-foreground", !compact && "lg:w-[148px]")}>
             <span className="shrink-0">de la</span>
             <input
               type="date"
               value={local.from}
               onChange={(event) => apply({ from: event.target.value })}
               aria-label="De la data"
-              className="h-7 w-full bg-transparent text-[11.5px] text-foreground outline-none"
+              className="h-7 w-full min-w-0 bg-transparent text-[11.5px] text-foreground outline-none"
             />
           </label>
-          <label className="flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 text-[11px] text-muted-foreground lg:w-[148px]">
+          <label className={cn("flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 text-[11px] text-muted-foreground", !compact && "lg:w-[148px]")}>
             <span className="shrink-0">până</span>
             <input
               type="date"
               value={local.to}
               onChange={(event) => apply({ to: event.target.value })}
               aria-label="Până la data"
-              className="h-7 w-full bg-transparent text-[11.5px] text-foreground outline-none"
+              className="h-7 w-full min-w-0 bg-transparent text-[11.5px] text-foreground outline-none"
             />
           </label>
         </div>

@@ -198,7 +198,7 @@ export function LeadsWorkspace({ now, items, total, page, perPage, listFailed, s
   } else {
     listBody = (
       <>
-        <LeadsTable rows={items} activeId={activeId} hrefFor={hrefFor} onOpen={openLead} freshIds={freshIds} now={now} />
+        <LeadsTable rows={items} activeId={activeId} hrefFor={hrefFor} onOpen={openLead} freshIds={freshIds} now={now} compact={open} />
         <LeadsPagination page={page} perPage={perPage} total={total} totalAll={stats?.total ?? null} pageCount={pageCount} hrefFor={pageHref} />
       </>
     );
@@ -246,9 +246,9 @@ export function LeadsWorkspace({ now, items, total, page, perPage, listFailed, s
           </>
         ) : null}
 
-        <div className={cn("grid gap-4", open && "lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1fr)_460px]")}>
-          <div className={cn("space-y-3", open && "hidden lg:block")}>
-            <LeadFiltersBar filters={filters} hasFilters={hasFilters} filtered={total} totalAll={stats?.total ?? null} exportHref={exportHref} pending={navPending} onChange={patchFilters} />
+        <div className={cn("grid grid-cols-[minmax(0,1fr)] gap-4", open && "xl:grid-cols-[minmax(0,1fr)_460px]")}>
+          <div className={cn("space-y-3", open && "hidden xl:block")}>
+            <LeadFiltersBar compact={open} filters={filters} hasFilters={hasFilters} filtered={total} totalAll={stats?.total ?? null} exportHref={exportHref} pending={navPending} onChange={patchFilters} />
 
             <Card className={cn("overflow-hidden p-0 transition-opacity", navPending && "opacity-60")} aria-busy={navPending || undefined}>
               {listBody}
