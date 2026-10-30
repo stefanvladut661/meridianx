@@ -32,7 +32,7 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
     return (
       <>
         <PageHead title="Export" text="Doar criptat, cu o parolă separată de parola master. Fișierul nu conține istoric și nu conține coșul." />
-        <Card className="overflow-hidden p-0">
+        <Card padded={false} className="overflow-hidden">
           {error ? <ErrorState title="Seiful nu s-a încărcat" text={error} onRetry={() => void reload()} /> : <LoadingRows rows={3} cols={3} />}
         </Card>
       </>

@@ -61,7 +61,7 @@ export function EntryPanel({
   const title = ok ? ok.payload.title : "Intrare ilizibilă";
 
   return (
-    <Card className="overflow-hidden p-0" aria-labelledby={`panel-${entry.id}`}>
+    <Card padded={false} className="overflow-hidden" aria-labelledby={`panel-${entry.id}`}>
       <div className="border-b border-white/[0.06] px-4 py-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

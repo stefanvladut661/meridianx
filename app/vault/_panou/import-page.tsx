@@ -35,7 +35,7 @@ export function ImportPage() {
     return (
       <>
         <PageHead title="Import" text="Trei pași. Secretele se criptează în browser înainte să fie salvate." />
-        <Card className="overflow-hidden p-0">
+        <Card padded={false} className="overflow-hidden">
           {error ? <ErrorState title="Seiful nu s-a încărcat" text={error} onRetry={() => void reload()} /> : <LoadingRows rows={4} cols={3} />}
         </Card>
       </>

@@ -55,7 +55,7 @@ export function EntryList({
       {groups.map((group) => {
         const name = group.client?.name ?? unreadableClientName(group.clientId);
         return (
-          <Card key={group.clientId} className="overflow-hidden p-0" as="section" aria-label={`Intrările clientului ${name}`}>
+          <Card key={group.clientId} padded={false} className="overflow-hidden" as="section" aria-label={`Intrările clientului ${name}`}>
             {renamingId === group.clientId && group.client ? (
               <RenameForm name={group.client.name} onRename={(next) => onRenameClient(group.clientId, next)} onDone={() => setRenamingId(null)} />
             ) : (

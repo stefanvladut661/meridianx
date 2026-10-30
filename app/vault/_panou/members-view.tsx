@@ -147,7 +147,7 @@ export function MembersView({
         ) : null}
       </div>
 
-      <Card className="overflow-hidden p-0">
+      <Card padded={false} className="overflow-hidden">
         {members === null ? (
           error ? (
             <ErrorState title="Membrii nu s-au încărcat" text={error} onRetry={() => void reload()} />

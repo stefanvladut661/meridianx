@@ -50,7 +50,7 @@ function Session({ children }: { children: ReactNode }) {
 function SetupNotice() {
   return (
     <div className="mx-auto max-w-xl">
-      <Card className="p-0">
+      <Card padded={false}>
         <EmptyState
           icon={ShieldAlert}
           title="Vault-ul nu e configurat"

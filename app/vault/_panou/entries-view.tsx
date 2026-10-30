@@ -272,11 +272,11 @@ export function EntriesView({
         <TrashView api={api} snapshot={snapshot} emailOf={emailOf} onRestored={reload} />
       ) : !snapshot ? (
         error ? (
-          <Card className="p-0">
+          <Card padded={false}>
             <ErrorState title="Intrările nu s-au încărcat" text={error} onRetry={() => void reload()} />
           </Card>
         ) : (
-          <Card className="overflow-hidden p-0">
+          <Card padded={false} className="overflow-hidden">
             <LoadingRows rows={5} cols={3} />
             <p className="sr-only" role="status">
               Se descarcă și se decriptează intrările
@@ -344,7 +344,7 @@ export function EntriesView({
             </div>
 
             {shown === 0 ? (
-              <Card className="p-0">
+              <Card padded={false}>
                 {entries.length === 0 ? (
                   <EmptyState
                     icon={KeyRound}
@@ -424,7 +424,7 @@ export function EntriesView({
           ) : null}
 
           {selectedId && !selected ? (
-            <Card className="p-0">
+            <Card padded={false}>
               <EmptyState
                 icon={KeyRound}
                 title="Intrarea nu există"
@@ -505,7 +505,7 @@ function TrashView({
   }
 
   return (
-    <Card className="overflow-hidden p-0">
+    <Card padded={false} className="overflow-hidden">
       <div className="border-b border-white/[0.06] px-4 py-3">
         <SectionTitle title="Coș" hint="ștergerea e temporară; nimic nu se pierde definitiv" />
       </div>
