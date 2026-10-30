@@ -22,8 +22,9 @@
  */
 
 import { SITE_URL } from "@/lib/site-url";
+import { chunkPlan, chunkRange, contentRange } from "./tiktok-chunks";
 
-const API = () => (process.env.POSTARI_TIKTOK_API_URL ?? "https://open.tiktokapis.com").replace(/\/$/, "");
+const API =() => (process.env.POSTARI_TIKTOK_API_URL ?? "https://open.tiktokapis.com").replace(/\/$/, "");
 const AUTH = () => (process.env.POSTARI_TIKTOK_AUTH_URL ?? "https://www.tiktok.com").replace(/\/$/, "");
 export const TIKTOK_SCOPES = ["user.info.basic", "video.upload"];
 
@@ -135,22 +136,8 @@ export async function userInfo(token: string): Promise<{ openId: string; display
   return { openId: String(user.open_id ?? ""), displayName: typeof user.display_name === "string" ? user.display_name : null };
 }
 
-/**
- * Bucățile, după ghidul de transfer: „at least 5 MB but no greater than 64 MB,
- * except for the final chunk, which can be greater than chunk_size (up to 128 MB)”;
- * sub 5 MB clipul pleacă întreg; numărul de bucăți = mărimea / bucata, rotunjit în jos.
- */
-export function chunkPlan(size: number): { chunkSize: number; total: number } {
-  const CHUNK = 10 * 1024 * 1024;
-  if (size <= CHUNK) return { chunkSize: size, total: 1 };
-  return { chunkSize: CHUNK, total: Math.floor(size / CHUNK) };
-}
-
-export function chunkRange(index: number, plan: { chunkSize: number; total: number }, size: number): { start: number; end: number } {
-  const start = index * plan.chunkSize;
-  const end = index === plan.total - 1 ? size - 1 : start + plan.chunkSize - 1;
-  return { start, end };
-}
+// Regulile bucăților stau în ./tiktok-chunks (fișier pur, cu test); handlerul le importă tot de aici.
+export { chunkPlan, chunkRange };
 
 export async function initInbox(token: string, size: number): Promise<{ publishId: string; uploadUrl: string; chunkSize: number; total: number }> {
   const plan = chunkPlan(size);
@@ -162,7 +149,7 @@ export async function initInbox(token: string, size: number): Promise<{ publishI
 /** O bucată, în ordine. `true` = TikTok are tot clipul (201). */
 export async function uploadChunk(uploadUrl: string, bytes: Buffer, range: { start: number; end: number }): Promise<boolean> {
   const chunk = bytes.subarray(range.start, range.end + 1);
-  const response = await send(uploadUrl, { method: "PUT", headers: { "Content-Type": "video/mp4", "Content-Length": String(chunk.length), "Content-Range": `bytes ${range.start}-${range.end}/${bytes.length}` }, body: new Uint8Array(chunk) }, 60_000);
+  const response = await send(uploadUrl, { method: "PUT", headers: { "Content-Type": "video/mp4", "Content-Length": String(chunk.length), "Content-Range": contentRange(range, bytes.length) }, body: new Uint8Array(chunk) }, 60_000);
   if (response.status === 201) return true;
   if (response.status === 206) return false;
   const code = response.status === 403 ? "upload_url_expired" : response.status === 416 ? "range_mismatch" : response.status === 404 ? "upload_not_found" : response.status >= 500 ? "internal_error" : "upload_rejected";
