@@ -65,6 +65,12 @@ export default async function AdminDashLayout({
             >
               Reclame
             </Link>
+            <Link
+              href="/admin/postari"
+              className="text-[13px] text-dim underline-offset-4 hover:text-bone hover:underline"
+            >
+              Postări
+            </Link>
             <span className="hidden font-md-mono text-[11px] tracking-wide text-dim md:inline">
               {user.email}
             </span>
