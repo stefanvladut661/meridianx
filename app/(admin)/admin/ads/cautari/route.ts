@@ -9,10 +9,11 @@ import { clientsForRequest } from "@/lib/ads/model/read";
 /**
  * GET /admin/ads/cautari — intrarea „Căutări” din meniu (doar Google).
  *
- * Uneltele Google (termenii, negativele și auditul, conversiile, planul de
- * căutare) lucrează într-un spațiu de lucru. Intrarea trece singură pe spațiul
- * Google al clientului ales sus și deschide contul lui Google, ca să nu ajungi
- * pe un spațiu Meta cu „treci în Google”. Nu scrie nimic în afară de cookie.
+ * Uneltele Google (campaniile de căutare, termenii, contul, conversiile)
+ * lucrează într-un spațiu de lucru. Intrarea trece singură pe spațiul Google al
+ * clientului ales sus și deschide prima filă (Campanii de căutare), cu contul
+ * lui Google în adresă, ca filele Termeni / Cont / Conversii să se deschidă pe
+ * el. Nu scrie nimic în afară de cookie.
  */
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   const [saved, clients] = await Promise.all([selectionFromCookie(), clientsForRequest()]);
   const client = clients.ok ? (clients.data.find((item) => item.id === saved.clientId) ?? clients.data[0] ?? null) : null;
-  const target = new URL("/admin/ads/termeni", request.url);
+  const target = new URL("/admin/ads/cautare", request.url);
 
   if (client) {
     const account = client.accounts.find((item) => item.platform === "google");

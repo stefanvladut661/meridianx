@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Building2 } from "lucide-react";
 import { clientsForRequest } from "@/lib/ads/model/read";
 import { readSelection } from "@/lib/ads/model/selection.server";
 import { CHANNEL_LABEL, PERIOD_LABEL } from "@/lib/ads/model/selection";
 import { CALLS_MIGRATION_MISSING, campaignChoices, readCalls } from "@/lib/ads/model/calls";
 import { todayInBucharest } from "@/lib/ads/metrics";
-import { CallsScreen, type CallCampaign } from "@/components/ads/calls-screen";
+import { ApeluriScreen, type CallCampaign } from "@/components/panou/ads/apeluri-screen";
+import { btnClass, Card } from "@/components/panou/ui/primitives";
+import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { addCallAction, deleteCallAction } from "./actions";
 
 export const metadata: Metadata = {
@@ -26,33 +29,32 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
   const selection = await readSelection(params);
   const clients = await clientsForRequest();
 
-  const header = (
-    <div>
-      <h1 className="text-[1.5rem] font-semibold tracking-tight text-bone">Apeluri</h1>
-      <p className="mt-0.5 max-w-2xl text-[13.5px] text-dim">
-        Apelurile venite de pe reclame, notate de mână. Platformele știu doar că cineva a apăsat „Sună”; ce a ieșit din apel știi tu.
-      </p>
-    </div>
-  );
-
   if (!clients.ok || clients.data.length === 0) {
     return (
-      <main className="px-4 pb-16 pt-6 sm:px-6">
-        {header}
-        <div role={clients.ok ? undefined : "alert"} className="mt-6 max-w-2xl rounded-xl border border-hair bg-[var(--ap-side)] px-5 py-4 text-[14px] text-bone/85">
-          {clients.ok ? (
-            <>
-              <p className="text-[15px] font-semibold text-bone">Niciun client încă.</p>
-              <p className="mt-1">Un apel se notează la un client. Adaugă-l întâi, cu conturile lui.</p>
-              <Link href="/admin/ads/clienti" className="btn btn-light mt-4 !min-h-10 !px-4 !py-2 !text-[14px]">
-                Adaugă primul client
-              </Link>
-            </>
-          ) : (
-            <p className="text-[var(--ap-error)]">{clients.message}</p>
-          )}
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Apeluri</h1>
+          <p className="mt-2 max-w-2xl text-[12.5px] text-muted-foreground">
+            Apelurile venite de pe reclame, notate de mână. Platformele știu doar că cineva a apăsat „Sună”; ce a ieșit din apel știi tu.
+          </p>
         </div>
-      </main>
+        <Card className="p-0">
+          {clients.ok ? (
+            <EmptyState
+              icon={Building2}
+              title="Niciun client încă"
+              text="Un apel se notează la un client. Adaugă-l întâi, cu conturile lui."
+              action={
+                <Link href="/admin/ads/clienti" className={btnClass({ variant: "primary", size: "sm" })}>
+                  Adaugă primul client
+                </Link>
+              }
+            />
+          ) : (
+            <ErrorState title="Clienții nu se pot citi" text={clients.message} />
+          )}
+        </Card>
+      </div>
     );
   }
 
@@ -70,14 +72,9 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
     : [];
 
   return (
-    <main className="px-4 pb-16 pt-6 sm:px-6">
-      {header}
-      {!calls.ok && !missing ? (
-        <p role="alert" className="mt-4 max-w-2xl text-[14px] text-[var(--ap-error)]">
-          Apelurile nu se pot citi. {calls.message}
-        </p>
-      ) : null}
-      <CallsScreen
+    <div className="space-y-4">
+      {!calls.ok && !missing ? <ErrorState title="Apelurile nu se pot citi" text={calls.message} className="rounded-[22px] border border-rose/20" /> : null}
+      <ApeluriScreen
         key={client.id}
         clients={clients.data.map((item) => ({ id: item.id, name: item.name }))}
         campaigns={choices}
@@ -87,6 +84,6 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
         missing={missing}
         actions={{ add: addCallAction, remove: deleteCallAction }}
       />
-    </main>
+    </div>
   );
 }
