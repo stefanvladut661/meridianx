@@ -3,7 +3,7 @@ import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { PanouShell } from "@/components/panou/layout/shell";
 import { signOut } from "../login/actions";
 import { SessionKeeper } from "../_components/session-keeper";
-import { SetupNotice } from "../_components/setup-notice";
+import { LeadsSetupScreen } from "@/components/panou/leads/setup-card";
 // Tema panoului (dark, lavandă), din portalul de reclame.
 import "../ads/portal.css";
 
@@ -24,11 +24,12 @@ import "../ads/portal.css";
  *
  * Cadrul e cel comun al panoului (redesign): meniul de module în stânga,
  * în loc de bara de sus cu linkuri pe care o avea panoul de lead-uri.
+ * Lead-urile nu au selectoare în bara de sus: filtrele sunt în ecran, în URL.
  */
 export default async function AdminDashLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  if (!isAuthConfigured()) return <SetupNotice />;
+  if (!isAuthConfigured()) return <LeadsSetupScreen />;
 
   const user = await getAdminUser();
   if (!user) redirect("/admin/login");

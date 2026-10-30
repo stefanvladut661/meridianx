@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { leadListQuerySchema } from "@/lib/validations/lead";
-import { getLead, getLeadStats, listLeads } from "@/lib/supabase/leads";
+import { DIVISIONS } from "@/lib/division";
+import { LEAD_STATUSES, leadListQuerySchema } from "@/lib/validations/lead";
+import { getLead, getLeadFacts, getLeadStats, listLeads } from "@/lib/supabase/leads";
 import { isWriteConfigured } from "@/lib/supabase/clients";
-import { StatsStrip } from "../_components/stats-strip";
-import { Filters } from "../_components/filters";
-import { LeadWorkspace } from "../_components/lead-workspace";
-import { SetupNotice } from "../_components/setup-notice";
-import { LiveRefresh } from "../_components/live-refresh";
+import type { LeadFacts } from "@/lib/supabase/types";
+import { DeletedNotice } from "@/components/panou/leads/deleted-notice";
+import { LeadsSetupCard } from "@/components/panou/leads/setup-card";
+import { LeadsWorkspace } from "@/components/panou/leads/leads-workspace";
+import type { LeadDetailData } from "@/components/panou/leads/types";
+import { FILTER_KEYS, leadsHref, type LeadDetailNeighbors, type LeadFilterValues, type LeadSourcesSummary } from "@/components/panou/leads/urls";
 
 export const metadata: Metadata = {
   title: "Lead-uri — MERIDIAN Admin",
@@ -18,18 +19,21 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /**
- * /admin — dashboard-ul de lead-uri (FAZA 6).
+ * /admin — lead-urile, în designul din redesign (listă + fișă).
  *
- * Toată starea (filtre, pagină, lead deschis) stă în URL. Consecințele
- * sunt cele care contează într-o unealtă de lucru zilnic: se poate da
- * refresh fără să pierzi filtrul, se poate trimite un link către un lead
- * pe chat, butonul Înapoi face ce te aștepți, iar exportul CSV scoate
- * exact ce vezi pe ecran.
+ * Toată starea (filtre, pagină, lead deschis) stă în URL: refresh-ul nu pierde filtrul, un link
+ * către un lead se poate trimite pe chat (și așa îl trimit emailurile de notificare:
+ * `/admin?lead=<id>`), Înapoi face ce te aștepți, iar exportul CSV scoate exact ce vezi.
+ * Pagina doar citește și pregătește datele; ecranul însuși e `LeadsWorkspace`.
  */
+
+const PER_PAGE = 25;
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-/** Șirurile goale trebuie scoase: `z.enum().optional()` respinge `""`. */
+/** Șirurile goale trebuie scoase; o valoare e cea dintâi, fără spații. */
 function cleanParams(params: SearchParams): Record<string, string> {
   const cleaned: Record<string, string> = {};
   for (const [key, value] of Object.entries(params)) {
@@ -41,181 +45,133 @@ function cleanParams(params: SearchParams): Record<string, string> {
   return cleaned;
 }
 
+/** Doar filtrele valide: ce nu se poate aplica nu apare nici în controale, ca ecranul să nu mintă. */
+function readFilters(cleaned: Record<string, string>): LeadFilterValues {
+  return {
+    q: (cleaned.q ?? "").slice(0, 120),
+    division: DIVISIONS.find((division) => division === cleaned.division) ?? "",
+    status: LEAD_STATUSES.find((status) => status === cleaned.status) ?? "",
+    from: DATE_ONLY.test(cleaned.from ?? "") ? cleaned.from : "",
+    to: DATE_ONLY.test(cleaned.to ?? "") ? cleaned.to : "",
+  };
+}
+
 /** `<input type="date">` dă `2026-08-14`; schema cere ISO datetime. */
-function toIsoRange(cleaned: Record<string, string>) {
-  const query: Record<string, string> = { ...cleaned };
-  if (query.from && /^\d{4}-\d{2}-\d{2}$/.test(query.from)) {
-    query.from = `${query.from}T00:00:00.000Z`;
-  }
-  if (query.to && /^\d{4}-\d{2}-\d{2}$/.test(query.to)) {
-    query.to = `${query.to}T23:59:59.999Z`;
-  }
-  return query;
+function isoRange(filters: LeadFilterValues): { from?: string; to?: string } {
+  return {
+    from: filters.from ? `${filters.from}T00:00:00.000Z` : undefined,
+    to: filters.to ? `${filters.to}T23:59:59.999Z` : undefined,
+  };
 }
 
-/** URL-ul listei cu filtrele curente, opțional cu un lead deschis. */
-function buildHref(cleaned: Record<string, string>, leadId?: string): string {
-  const search = new URLSearchParams();
-  for (const key of ["q", "division", "status", "from", "to", "page"] as const) {
-    if (cleaned[key]) search.set(key, cleaned[key]);
-  }
-  if (leadId) search.set("lead", leadId);
-  const query = search.toString();
-  return query ? `/admin?${query}` : "/admin";
+function summarizeSources(facts: LeadFacts): LeadSourcesSummary {
+  const rest = facts.groups.slice(5);
+  return {
+    total: facts.ids.length,
+    top: facts.groups.slice(0, 5),
+    othersGroups: rest.length,
+    othersCount: rest.reduce((sum, group) => sum + group.count, 0),
+    truncated: facts.truncated,
+  };
 }
 
-export default async function AdminDashboardPage({
-  searchParams,
-}: Readonly<{ searchParams: Promise<SearchParams> }>) {
+/** Poziția lead-ului în lista filtrată (nu doar în pagina curentă) și vecinii lui. */
+function neighborsOf(leadId: string, facts: LeadFacts | null, total: number, filterSearch: string): LeadDetailNeighbors {
+  const ids = facts?.ids ?? [];
+  const index = ids.indexOf(leadId);
+  if (index < 0) return { position: null, total, prevHref: null, nextHref: null };
+  // „Anterior” și „Următorul” duc și pagina listei la locul lor, ca rândul deschis să rămână vizibil.
+  const hrefAt = (target: number) => leadsHref(filterSearch, { page: Math.floor(target / PER_PAGE) + 1, lead: ids[target] });
+  return {
+    position: index + 1,
+    total,
+    prevHref: index > 0 ? hrefAt(index - 1) : null,
+    nextHref: index < ids.length - 1 ? hrefAt(index + 1) : null,
+  };
+}
+
+export default async function AdminDashboardPage({ searchParams }: Readonly<{ searchParams: Promise<SearchParams> }>) {
   const raw = await searchParams;
   const cleaned = cleanParams(raw);
-  // `sters` e semnul lăsat de acțiunea de ștergere; nu e filtru și nu
-  // trebuie să supraviețuiască următoarei navigări (`buildHref` nu îl copiază).
-  const { lead: openLeadId, sters: justDeleted, ...filterParams } = cleaned;
+  // `sters` e semnul lăsat de acțiunea de ștergere; nu e filtru și nu trebuie să supraviețuiască următoarei navigări.
+  const justDeleted = cleaned.sters !== undefined;
+  const openLeadRaw = cleaned.lead ?? null;
 
   if (!isWriteConfigured()) {
-    return <SetupNotice />;
+    return <LeadsSetupCard />;
   }
 
-  const parsed = leadListQuerySchema.safeParse(toIsoRange(filterParams));
-  const query = parsed.success
-    ? parsed.data
-    : leadListQuerySchema.parse({ page: 1, perPage: 25 });
+  const filters = readFilters(cleaned);
+  const pageNumber = Number.parseInt(cleaned.page ?? "1", 10);
+  const page = Number.isFinite(pageNumber) && pageNumber >= 1 ? pageNumber : 1;
+  const range = isoRange(filters);
 
-  const [listResult, statsResult] = await Promise.all([
+  const filterQuery = {
+    q: filters.q || undefined,
+    division: filters.division || undefined,
+    status: filters.status || undefined,
+    ...range,
+  };
+  const parsed = leadListQuerySchema.safeParse({ ...filterQuery, page, perPage: PER_PAGE });
+  const query = parsed.success ? parsed.data : leadListQuerySchema.parse({ page: 1, perPage: PER_PAGE });
+  const { division, status, q, from, to } = query;
+
+  const filterParams = new URLSearchParams();
+  for (const key of FILTER_KEYS) {
+    if (filters[key]) filterParams.set(key, filters[key]);
+  }
+  const filterSearch = filterParams.toString();
+  const hasFilters = FILTER_KEYS.some((key) => Boolean(filters[key]));
+
+  // Exportul primește intervalul deja normalizat, ca să filtreze la fel.
+  const exportParams = new URLSearchParams();
+  if (filters.q) exportParams.set("q", filters.q);
+  if (filters.division) exportParams.set("division", filters.division);
+  if (filters.status) exportParams.set("status", filters.status);
+  if (range.from) exportParams.set("from", range.from);
+  if (range.to) exportParams.set("to", range.to);
+
+  const exportQuery = exportParams.toString();
+  const exportHref = exportQuery ? `/api/leads/export?${exportQuery}` : "/api/leads/export";
+
+  const openLeadId = openLeadRaw && UUID.test(openLeadRaw) ? openLeadRaw : null;
+
+  const [listResult, statsResult, factsResult, detailResult] = await Promise.all([
     listLeads(query),
     getLeadStats(),
+    getLeadFacts({ division, status, q, from, to }),
+    openLeadId ? getLead(openLeadId) : Promise.resolve(null),
   ]);
 
-  const detail = openLeadId ? await getLead(openLeadId) : null;
+  const facts = factsResult.ok ? factsResult.data : null;
+  const total = listResult.ok ? listResult.data.total : 0;
 
-  if (!listResult.ok) {
-    return (
-      <main className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8">
-        <p className="eyebrow">Eroare de conexiune</p>
-        <h1 className="display mt-3 text-[2rem] text-bone">
-          Nu putem citi lead-urile
-        </h1>
-        <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-dim">
-          Conexiunea la Supabase a eșuat. Verifică variabilele de mediu și
-          starea proiectului în consola Supabase, apoi reîncarcă pagina.
-        </p>
-      </main>
-    );
+  let detail: LeadDetailData | null = null;
+  if (openLeadRaw) {
+    if (!openLeadId) detail = { state: "missing" };
+    else if (detailResult?.ok) detail = { state: "ok", lead: detailResult.data.lead, events: detailResult.data.events, neighbors: neighborsOf(openLeadId, facts, total, filterSearch) };
+    else detail = { state: detailResult?.reason === "not_found" ? "missing" : "error" };
   }
-
-  const { items, total, page, perPage } = listResult.data;
-  const totalPages = Math.max(1, Math.ceil(total / perPage));
-  const hasFilters = Object.keys(filterParams).some((key) => key !== "page");
-
-  const exportSearch = new URLSearchParams();
-  for (const key of ["q", "division", "status", "from", "to"] as const) {
-    if (filterParams[key]) exportSearch.set(key, filterParams[key]);
-  }
-  // Exportul primește intervalul deja normalizat, ca să filtreze la fel.
-  const isoRange = toIsoRange(filterParams);
-  if (isoRange.from) exportSearch.set("from", isoRange.from);
-  if (isoRange.to) exportSearch.set("to", isoRange.to);
-
-  const pageLink =
-    "btn btn-ghost !min-h-9 !px-4 !py-2 !text-[12.5px]";
 
   return (
-    <main className="relative mx-auto max-w-[1400px] px-5 pb-24 pt-8 sm:px-8 sm:pt-10">
-      <LiveRefresh />
-
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
-        <div>
-          <p className="eyebrow">Panou</p>
-          <h1 className="display mt-2 text-[2.5rem] text-bone sm:text-[3rem]">
-            Lead-uri
-          </h1>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Punctul pulsează cât timp lista se reîmprospătează singură
-              (LiveRefresh, la 20 s) — e o citire, nu un ornament. */}
-          <span className="pill !py-2 !text-[13px] text-bone/80">
-            <span className="rec-dot" aria-hidden />
-            Live · la 20 s
-          </span>
-          <p className="font-md-mono text-[12.5px] tabular-nums tracking-[0.12em] text-dim">
-            {total === 0
-              ? "niciun rezultat"
-              : `${(page - 1) * perPage + 1}–${Math.min(page * perPage, total)} din ${total}`}
-          </p>
-        </div>
-      </div>
-
-      {justDeleted ? (
-        <p
-          role="status"
-          className="glass mt-5 rounded-[var(--md-r)] px-4 py-3 text-[14.5px] text-bone/85"
-        >
-          Lead șters definitiv.
-        </p>
-      ) : null}
-
-      {statsResult.ok ? (
-        <div className="mt-8">
-          <StatsStrip stats={statsResult.data} />
-        </div>
-      ) : null}
-
-      <Filters
-        values={filterParams}
-        exportHref={`/api/leads/export?${exportSearch.toString()}`}
+    <>
+      {justDeleted ? <DeletedNotice /> : null}
+      <LeadsWorkspace
+        now={Date.now()}
+        items={listResult.ok ? listResult.data.items : []}
+        total={total}
+        page={listResult.ok ? listResult.data.page : page}
+        perPage={PER_PAGE}
+        listFailed={!listResult.ok}
+        stats={statsResult.ok ? statsResult.data : null}
+        sources={facts ? summarizeSources(facts) : null}
+        filters={filters}
         hasFilters={hasFilters}
+        filterSearch={filterSearch}
+        exportHref={exportHref}
+        openLeadId={openLeadId ?? openLeadRaw}
+        detail={detail}
       />
-
-      <LeadWorkspace
-        leads={items}
-        selectedId={openLeadId ?? null}
-        detail={detail?.ok ? detail.data : null}
-        listHref={buildHref(filterParams)}
-        emptyState={
-          hasFilters
-            ? {
-                title: "Niciun lead nu se potrivește filtrului",
-                body: "Lărgește intervalul de timp sau șterge filtrele. Dacă abia ai schimbat statusul cuiva, s-ar putea să fi ieșit din selecție.",
-              }
-            : {
-                title: "Încă nu a venit niciun lead",
-                body: "Când cineva completează un formular pe site, apare aici în secunda următoare și primești și un email. Până atunci, verifică dacă formularele trimit corect: deschide /video și trimite o cerere de test din formularul de jos.",
-              }
-        }
-      />
-
-      {totalPages > 1 ? (
-        <nav
-          aria-label="Paginare"
-          className="mt-6 flex items-center justify-between gap-4"
-        >
-          {page > 1 ? (
-            <Link
-              href={buildHref({ ...filterParams, page: String(page - 1) })}
-              className={pageLink}
-            >
-              ← Anterioară
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="font-md-mono text-[11px] tabular-nums tracking-[0.16em] text-dim">
-            {page} / {totalPages}
-          </span>
-          {page < totalPages ? (
-            <Link
-              href={buildHref({ ...filterParams, page: String(page + 1) })}
-              className={pageLink}
-            >
-              Următoarea →
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      ) : null}
-    </main>
+    </>
   );
 }
