@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { IconFilm } from "@/components/postari/icons";
 import { cn } from "@/lib/utils";
 import { IconAds, IconClose, IconLeads, IconLogout, IconMore } from "./icons";
 import { visibleFirmaNav } from "./nav";
@@ -82,6 +83,14 @@ export function FirmaMobileNav({ signOut }: { signOut: () => Promise<void> }) {
                 <IconAds />
               </span>
               Reclame
+            </Link>
+          </li>
+          <li>
+            <Link href="/admin/postari" className={rowClass}>
+              <span className="text-dim">
+                <IconFilm />
+              </span>
+              Postări
             </Link>
           </li>
           <li>

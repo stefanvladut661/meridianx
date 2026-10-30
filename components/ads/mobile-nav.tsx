@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { IconFilm } from "@/components/postari/icons";
 import { IconClients, IconClose, IconLeads, IconLogout, IconMore } from "./icons";
 import { visibleNav } from "./nav-items";
 
@@ -86,6 +87,14 @@ export function MobileNav({ googleTools, signOut }: { googleTools: boolean; sign
                 <IconClients />
               </span>
               Clienți
+            </Link>
+          </li>
+          <li>
+            <Link href="/admin/postari" className="flex min-h-12 items-center gap-3 rounded-lg px-3 text-[15px] text-bone hover:bg-[var(--ap-hover)]">
+              <span className="text-dim">
+                <IconFilm />
+              </span>
+              Postări
             </Link>
           </li>
           <li>

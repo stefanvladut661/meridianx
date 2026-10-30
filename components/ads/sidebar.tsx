@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IconFilm } from "@/components/postari/icons";
 import { Mark } from "@/components/site/mark";
 import { cn } from "@/lib/utils";
 import { IconClients, IconLeads, IconLogout } from "./icons";
@@ -59,6 +60,12 @@ export function Sidebar({
             <IconClients />
           </span>
           Clienți
+        </Link>
+        <Link href="/admin/postari" className={linkClass(false)}>
+          <span className="text-dim">
+            <IconFilm />
+          </span>
+          Postări
         </Link>
         <Link href="/admin" className={linkClass(false)}>
           <span className="text-dim">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IconFilm } from "@/components/postari/icons";
 import { Mark } from "@/components/site/mark";
 import { cn } from "@/lib/utils";
 import { IconAds, IconLeads, IconLogout } from "./icons";
@@ -51,6 +52,12 @@ export function FirmaSidebar({ email, signOut }: { email: string | null; signOut
             <IconAds />
           </span>
           Reclame
+        </Link>
+        <Link href="/admin/postari" className={linkClass(false)}>
+          <span className="text-dim">
+            <IconFilm />
+          </span>
+          Postări
         </Link>
         <Link href="/admin" className={linkClass(false)}>
           <span className="text-dim">
