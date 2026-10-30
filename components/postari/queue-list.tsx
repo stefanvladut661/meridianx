@@ -246,7 +246,7 @@ export function QueueList({ posts, fus, remove, retry, history, title }: { posts
           <h2 id="coada-atentie" className="text-[15px] font-semibold text-[var(--ap-error)]">
             De văzut ({attention.length})
           </h2>
-          <ul className="mt-2 divide-y divide-hair rounded-xl border border-[var(--ap-error)]/30 bg-white">{attention.map(row)}</ul>
+          <ul className="mt-2 divide-y divide-hair rounded-xl border border-[var(--ap-error)]/30 bg-char">{attention.map(row)}</ul>
         </section>
       ) : null}
 
@@ -270,7 +270,7 @@ export function QueueList({ posts, fus, remove, retry, history, title }: { posts
                 {tt ? `${tt} TikTok` : ""}
               </span>
             </h2>
-            <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-white">{items.map(row)}</ul>
+            <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-char">{items.map(row)}</ul>
           </section>
         );
       })}

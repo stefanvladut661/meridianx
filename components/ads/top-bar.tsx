@@ -79,7 +79,7 @@ export function TopBar({
   };
 
   return (
-    <div className="sticky top-0 z-30 border-b border-hair bg-white/95 backdrop-blur">
+    <div className="sticky top-0 z-30 border-b border-hair bg-char/95 backdrop-blur">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
         {clients.length > 0 ? (
           <label className="flex min-w-0 items-center gap-2">
@@ -88,7 +88,7 @@ export function TopBar({
               value={client?.id ?? ""}
               disabled={pending}
               onChange={(event) => choose({ clientId: event.currentTarget.value })}
-              className="h-9 max-w-[14rem] min-w-0 truncate rounded-lg border border-hair-strong bg-white px-2.5 text-[14px] font-semibold text-bone"
+              className="h-9 max-w-[14rem] min-w-0 truncate rounded-lg border border-hair-strong bg-char px-2.5 text-[14px] font-semibold text-bone"
             >
               {(["clienti", "agentie"] as const).map((owner) => {
                 const group = clients.filter((item) => item.owner === owner);
@@ -117,7 +117,7 @@ export function TopBar({
             value={selection.period}
             disabled={pending}
             onChange={(event) => choose({ period: parsePeriod(event.currentTarget.value) ?? selection.period })}
-            className="h-9 rounded-lg border border-hair-strong bg-white px-2.5 text-[14px] text-bone"
+            className="h-9 rounded-lg border border-hair-strong bg-char px-2.5 text-[14px] text-bone"
           >
             {PERIODS.map((period) => (
               <option key={period} value={period}>
@@ -128,7 +128,7 @@ export function TopBar({
         </label>
 
         <div role="group" aria-label="Canalul" className="-mx-1 flex max-w-full overflow-x-auto px-1 [scrollbar-width:none]">
-          <div className="flex rounded-lg border border-hair-strong bg-white p-0.5">
+          <div className="flex rounded-lg border border-hair-strong bg-char p-0.5">
             {CHANNELS.map((channel) => {
               const active = selection.channel === channel;
               const missing = channel !== "toate" && client !== null && !client.platforms.includes(channel);

@@ -130,7 +130,7 @@ function UploadPanel({ clients, defaultClientId, actions }: { clients: Array<{ i
   const info = phase.step === "chosen" ? phase.info : null;
 
   return (
-    <section aria-labelledby={`${id}-titlu`} className="rounded-xl border border-hair bg-white p-4 sm:p-5">
+    <section aria-labelledby={`${id}-titlu`} className="rounded-xl border border-hair bg-char p-4 sm:p-5">
       <h2 id={`${id}-titlu`} className="text-[16px] font-semibold text-bone">
         Urcă un video
       </h2>
@@ -144,7 +144,7 @@ function UploadPanel({ clients, defaultClientId, actions }: { clients: Array<{ i
           accept="video/mp4,video/quicktime"
           disabled={phase.step === "uploading"}
           onChange={(event) => void choose(event.currentTarget.files?.[0])}
-          className="mt-1 block w-full text-[14px] text-bone file:mr-3 file:rounded-lg file:border file:border-hair-strong file:bg-white file:px-3 file:py-2 file:text-[13.5px] file:font-medium file:text-bone hover:file:bg-[var(--ap-hover)]"
+          className="mt-1 block w-full text-[14px] text-bone file:mr-3 file:rounded-lg file:border file:border-hair-strong file:bg-char file:px-3 file:py-2 file:text-[13.5px] file:font-medium file:text-bone hover:file:bg-[var(--ap-hover)]"
         />
       </label>
 
@@ -232,7 +232,7 @@ function MaterialCard({ material, clientName, actions }: { material: MaterialRow
     });
 
   return (
-    <li className="flex flex-col overflow-hidden rounded-xl border border-hair bg-white">
+    <li className="flex flex-col overflow-hidden rounded-xl border border-hair bg-char">
       <div className="relative aspect-video min-h-0 overflow-hidden bg-[#0f1115]">
         {material.previewUrl ? (
           // Previzualizare fără sunet, fără pornire singură: primul cadru, cu controale.

@@ -15,7 +15,7 @@ export function ClipPreview({ fileId, name, compact = false }: { fileId: string;
   if (!open) {
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-hair-strong bg-white px-3 text-[13px] font-medium text-bone hover:bg-[var(--ap-hover)]">
+        <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-hair-strong bg-char px-3 text-[13px] font-medium text-bone hover:bg-[var(--ap-hover)]">
           <IconPlay size={15} />
           Vezi clipul
         </button>

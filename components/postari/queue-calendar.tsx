@@ -60,7 +60,7 @@ export function QueueCalendar({ month, posts, fus, today, selected }: { month: s
   };
 
   return (
-    <section aria-labelledby="calendar" className="rounded-xl border border-hair bg-white p-3 sm:p-4">
+    <section aria-labelledby="calendar" className="rounded-xl border border-hair bg-char p-3 sm:p-4">
       <div className="flex items-center justify-between gap-2">
         <h2 id="calendar" className="text-[15px] font-semibold capitalize text-bone">
           {LUNI[m - 1]} {year}
@@ -110,7 +110,7 @@ export function QueueCalendar({ month, posts, fus, today, selected }: { month: s
                         !inMonth && "opacity-45"
                       )}
                     >
-                      <span className={cn("text-[13px] tabular-nums leading-none", isToday ? "rounded-full bg-[var(--md-a1)] px-1.5 py-0.5 font-semibold text-white" : "text-bone")}>{Number(day.slice(8))}</span>
+                      <span className={cn("text-[13px] tabular-nums leading-none", isToday ? "rounded-full bg-[var(--md-a1)] px-1.5 py-0.5 font-semibold text-[var(--md-on-a1)]" : "text-bone")}>{Number(day.slice(8))}</span>
                       {total > 0 ? (
                         <span aria-hidden className="flex flex-wrap items-center justify-center gap-0.5">
                           {count?.instagram ? <span className="rounded bg-[var(--ap-accent-soft)] px-1 text-[10.5px] font-semibold leading-4 text-[var(--ap-accent-ink)]">{count.instagram}</span> : null}

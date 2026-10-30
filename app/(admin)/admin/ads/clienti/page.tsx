@@ -60,7 +60,7 @@ export default async function ClientsPage() {
         />
       ) : (
         <div role="alert" className="mt-8 max-w-2xl rounded-panel-lg border border-[#d93025]/35 bg-[#d93025]/[0.05] px-5 py-4">
-          <p className="text-[15px] font-semibold text-[#c62828]">Clienții nu se pot citi.</p>
+          <p className="text-[15px] font-semibold text-[var(--ap-error)]">Clienții nu se pot citi.</p>
           <p className="mt-1.5 text-[14px] leading-relaxed text-bone/80">{clients.message}</p>
         </div>
       )}

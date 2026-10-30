@@ -505,7 +505,7 @@ export function BatchEditor({
                               <span
                                 className={cn(
                                   "rounded-full border px-2 py-0.5 font-md-mono text-[11px]",
-                                  workspace.owner === "clienti" ? "border-[#f0b429]/50 text-[#8a5a00]" : "border-hair-strong text-bone/80"
+                                  workspace.owner === "clienti" ? "border-[#f0b429]/50 text-[var(--ap-warn)]" : "border-hair-strong text-bone/80"
                                 )}
                               >
                                 {workspace.name}

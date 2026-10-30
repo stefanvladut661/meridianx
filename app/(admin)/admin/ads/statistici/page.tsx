@@ -132,7 +132,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           <div className="mt-3 overflow-x-auto rounded-xl border border-hair">
             <table className="w-full min-w-[36rem] text-[13.5px]">
               <thead>
-                <tr className="bg-[#fbfbfd] text-left text-[12.5px] text-dim">
+                <tr className="bg-char text-left text-[12.5px] text-dim">
                   <th scope="col" className="px-4 py-2.5 font-semibold">Canal</th>
                   <th scope="col" className="px-4 py-2.5 text-right font-semibold">Cheltuit</th>
                   <th scope="col" className="px-4 py-2.5 text-right font-semibold">Rezultate</th>
@@ -174,7 +174,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           Pe zile{current.length > 1 ? <span className="font-normal text-dim"> · doar campaniile în {mainCurrency}</span> : null}
         </h2>
         {!days.ok ? <p className="mt-2 text-[13.5px] text-[var(--ap-error)]">{days.message}</p> : null}
-        <div className="mt-4 grid gap-6 rounded-xl border border-hair bg-white p-4 lg:grid-cols-2">
+        <div className="mt-4 grid gap-6 rounded-xl border border-hair bg-char p-4 lg:grid-cols-2">
           <DayChart title="Cheltuit pe zi" days={series.map((day) => ({ date: day.date, value: day.spend }))} unit={{ type: "money", currency: mainCurrency }} />
           {measuredAny ? (
             <DayChart title="Rezultate pe zi" days={series.map((day) => ({ date: day.date, value: day.results }))} unit={{ type: "count" }} />
@@ -194,7 +194,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <div className="mt-3 overflow-x-auto rounded-xl border border-hair">
           <table className="w-full min-w-[44rem] text-[13.5px]">
             <thead>
-              <tr className="bg-[#fbfbfd] text-left text-[12.5px] text-dim">
+              <tr className="bg-char text-left text-[12.5px] text-dim">
                 <th scope="col" className="px-4 py-2.5 font-semibold">Campanie</th>
                 <th scope="col" className="px-4 py-2.5 text-right font-semibold">Cheltuit</th>
                 <th scope="col" className="px-4 py-2.5 text-right font-semibold">față de înainte</th>

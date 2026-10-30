@@ -3,10 +3,9 @@ import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { clientsForRequest } from "@/lib/ads/model/read";
 import { selectionFromCookie } from "@/lib/ads/model/selection.server";
+import { PanouShell } from "@/components/panou/shell";
 import { WorkspaceRail } from "@/components/ads/workspace-rail";
 import { HydrateWhenParsed } from "@/components/ads/hydrate-when-parsed";
-import { Sidebar } from "@/components/ads/sidebar";
-import { MobileNav } from "@/components/ads/mobile-nav";
 import { TopBar, type TopBarClient } from "@/components/ads/top-bar";
 import { LegacyStrip } from "@/components/ads/legacy-strip";
 import { signOut } from "../login/actions";
@@ -24,9 +23,9 @@ import "./portal.css";
  * → `getAdminUser()` (sesiune Supabase deschisă cu Google + lista
  * `ADMIN_EMAILS`) → altfel /admin/login.
  *
- * Cadrul, ca în Meta Ads Manager: meniul îngust în stânga, bara de sus cu
- * clientul, perioada și canalul, apoi ecranul. Tema albă vine din `portal.css`
- * (variabilele sistemului de design, doar sub `.ads-portal`).
+ * Cadrul e cel comun al panoului: meniul de module în stânga, bara de sus cu
+ * clientul, perioada și canalul, apoi ecranul. Tema (dark, lavandă) vine din
+ * `portal.css` (variabilele sistemului de design, doar sub `.ads-portal`).
  */
 export default async function AdsLayout({
   children,
@@ -57,25 +56,20 @@ export default async function AdsLayout({
   return (
     // Hidratarea așteaptă sfârșitul citirii paginii — vezi hydrate-when-parsed.tsx.
     <HydrateWhenParsed>
-      <div className="ads-portal relative min-h-dvh">
-        <SessionKeeper />
-        <a href="#continut" className="skip-link">
-          Sari la conținut
-        </a>
-
-        <div className="lg:grid lg:min-h-dvh lg:grid-cols-[228px_minmax(0,1fr)]">
-          <Sidebar email={user.email} googleTools={googleTools} signOut={signOut} />
-          <div className="flex min-h-dvh min-w-0 flex-col">
+      <SessionKeeper />
+      <PanouShell
+        email={user.email}
+        googleTools={googleTools}
+        signOut={signOut}
+        topBar={
+          <>
             <TopBar clients={barClients} saved={saved} remember={rememberSelectionAction} sync={syncClientAction} />
             <LegacyStrip rail={<WorkspaceRail workspaces={workspaces} currentId={currentId} action={chooseWorkspace} />} />
-            <div id="continut" className="relative flex-1 pb-20 lg:pb-0">
-              {children}
-            </div>
-          </div>
-        </div>
-
-        <MobileNav googleTools={googleTools} signOut={signOut} />
-      </div>
+          </>
+        }
+      >
+        {children}
+      </PanouShell>
     </HydrateWhenParsed>
   );
 }

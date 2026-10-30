@@ -87,7 +87,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         {[...byDay.entries()].map(([day, list]) => (
           <section key={day} aria-label={day}>
             <h2 className="text-[13px] font-semibold first-letter:uppercase text-dim">{day}</h2>
-            <ol className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-white">
+            <ol className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-char">
               {list.map((event) => (
                 <li key={event.id} className="flex gap-3 px-4 py-3">
                   <span aria-hidden className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", TONE[event.tone])} />

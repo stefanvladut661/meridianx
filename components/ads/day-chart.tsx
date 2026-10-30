@@ -14,13 +14,13 @@ import { formatAmount, formatCount, formatDay } from "@/lib/ads/metrics";
  * Hover pe coloană și, de la tastatură, săgețile stânga/dreapta dau aceeași
  * fișă. Tabelul cu cifrele pe zile, de sub grafice, e drumul fără grafic.
  *
- * Culoarea seriei: albastrul portalului (#2f5bff), pe alb: contrast 5,2:1,
- * peste pragul de 3:1 al elementelor grafice; la hover, nuanța mai închisă.
- * (Până la v2: #3987e5 pe panoul întunecat.)
+ * Culoarea seriei: lavanda panoului (#c6b5ff), pe fundal închis: contrast peste 10:1,
+ * peste pragul de 3:1 al elementelor grafice; la hover, nuanța mai deschisă.
+ * (Pe tema albă din v2: #2f5bff.)
  */
 
-const SERIES = "#2f5bff";
-const SERIES_ACTIVE = "#1f45d8";
+const SERIES = "#c6b5ff";
+const SERIES_ACTIVE = "#e4dbff";
 const HEIGHT = 150;
 const AXIS = 22;
 const LEFT = 56;
@@ -158,7 +158,7 @@ export function DayChart({
           <svg width={width} height={HEIGHT + TOP + AXIS} aria-hidden className="block overflow-visible">
             {ticks.map((tick) => (
               <g key={tick}>
-                <line x1={LEFT} x2={width - 8} y1={y(tick)} y2={y(tick)} stroke="rgb(18 23 27 / 0.08)" strokeWidth={1} />
+                <line x1={LEFT} x2={width - 8} y1={y(tick)} y2={y(tick)} stroke="rgb(255 255 255 / 0.08)" strokeWidth={1} />
                 <text
                   x={LEFT - 8}
                   y={y(tick)}
@@ -199,7 +199,7 @@ export function DayChart({
                 x2={xOf(active) + barWidth / 2}
                 y1={TOP}
                 y2={TOP + HEIGHT}
-                stroke="rgb(18 23 27 / 0.25)"
+                stroke="rgb(255 255 255 / 0.3)"
                 strokeWidth={1}
               />
             ) : null}

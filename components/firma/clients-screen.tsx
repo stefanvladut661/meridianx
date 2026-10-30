@@ -61,7 +61,7 @@ export function ClientsScreen({
           Adaugă primul client cu „Client nou”. {oblio ? "Datele firmei le poți lua din Oblio, după CUI." : "Când legi Oblio, datele firmei vin de acolo, după CUI."}
         </Empty>
       ) : (
-        <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-white">
+        <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">
             <thead>
               <tr className="border-b border-hair">
@@ -82,7 +82,7 @@ export function ClientsScreen({
                   <tr
                     key={client.id}
                     onClick={() => setOpen({ kind: "client", id: client.id })}
-                    className={cn("cursor-pointer bg-white hover:bg-[var(--ap-hover)]", selected && "bg-[var(--ap-accent-soft)]")}
+                    className={cn("cursor-pointer bg-char hover:bg-[var(--ap-hover)]", selected && "bg-[var(--ap-accent-soft)]")}
                   >
                     <td className={cn(tdClass, "ads-sticky-col min-w-[14rem]")}>
                       <button type="button" onClick={() => setOpen({ kind: "client", id: client.id })} className="text-left font-semibold text-bone hover:text-[var(--md-a1)] hover:underline">

@@ -181,7 +181,7 @@ function stepOf(path: string): number {
 type MaterialState = { phase: "waiting" | "sending" | "processing" | "ready" | "failed"; message?: string; videoId?: string };
 
 function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("rounded-xl border border-hair bg-white p-4 sm:p-5", className)}>{children}</div>;
+  return <div className={cn("rounded-xl border border-hair bg-char p-4 sm:p-5", className)}>{children}</div>;
 }
 
 export function CreateWizard({
@@ -496,7 +496,7 @@ export function CreateWizard({
                     aria-hidden
                     className={cn(
                       "grid h-5 w-5 place-items-center rounded-full text-[11px] tabular-nums",
-                      current ? "bg-[var(--md-a1)] text-white" : errorsHere ? "bg-[var(--ap-error)] text-white" : index < reached ? "bg-[var(--ap-ok)] text-white" : "border border-hair-strong text-dim"
+                      current ? "bg-[var(--md-a1)] text-[var(--md-on-a1)]" : errorsHere ? "bg-[var(--ap-error)] text-[var(--md-on-a1)]" : index < reached ? "bg-[var(--ap-ok)] text-[var(--md-on-a1)]" : "border border-hair-strong text-dim"
                     )}
                   >
                     {index + 1}
@@ -655,7 +655,7 @@ export function CreateWizard({
                                 <span className="relative block aspect-video min-h-0 shrink-0 overflow-hidden bg-[#0f1115]">
                                   {material.previewUrl ? <video src={`${material.previewUrl}#t=0.1`} preload="metadata" muted playsInline className="absolute inset-0 h-full w-full object-contain" aria-hidden /> : null}
                                   {selected ? (
-                                    <span className="absolute left-2 top-2 grid h-6 min-w-6 place-items-center rounded-full bg-[var(--md-a1)] px-1.5 text-[12px] font-semibold text-white">{order + 1}</span>
+                                    <span className="absolute left-2 top-2 grid h-6 min-w-6 place-items-center rounded-full bg-[var(--md-a1)] px-1.5 text-[12px] font-semibold text-[var(--md-on-a1)]">{order + 1}</span>
                                   ) : null}
                                 </span>
                                 <span className="flex items-start gap-2 p-3">
@@ -686,7 +686,7 @@ export function CreateWizard({
                       <PlatformFields platform={platform} />
                     </div>
                   </Card>
-                  <details className="rounded-xl border border-hair bg-white p-4 sm:p-5">
+                  <details className="rounded-xl border border-hair bg-char p-4 sm:p-5">
                     <summary className="cursor-pointer text-[13px] font-medium text-bone">Îmbunătățiri automate · toate oprite</summary>
                     <p className="mt-2 text-[12.5px] text-dim">Un testimonial filmat nu se lasă rescris de platformă. Le pornești doar știind ce fac.</p>
                     <div className="mt-3">
@@ -770,7 +770,7 @@ export function CreateWizard({
                     <CreateResult result={result} platform={platform} pending={creating} onCreateAnyway={() => runCreate(true)} continueJob={actions.continueJob} onResult={setResult} />
                   ) : null}
 
-                  <details className="rounded-xl border border-hair bg-white p-4 sm:p-5">
+                  <details className="rounded-xl border border-hair bg-char p-4 sm:p-5">
                     <summary className="cursor-pointer text-[13px] font-medium text-bone">Planul, în JSON</summary>
                     <p className="mt-2 text-[12.5px] text-dim">Același format ca la „Importă JSON”. Îl poți duce acolo ca să-l corectezi de mână sau să-l dai mai departe.</p>
                     <pre className="mt-3 max-h-80 overflow-auto rounded-lg border border-hair bg-[var(--ap-side)] p-3 font-md-mono text-[12px] leading-relaxed text-bone/85">{JSON.stringify(plan, null, 2)}</pre>
@@ -784,7 +784,7 @@ export function CreateWizard({
           </PlanFormProvider>
 
           {/* Bara de jos: înapoi, mai departe, sau verificarea și crearea. */}
-          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-hair bg-white px-4 py-3.5 sm:flex-row sm:items-center">
+          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-hair bg-char px-4 py-3.5 sm:flex-row sm:items-center">
             <div className="flex shrink-0 flex-wrap gap-2">
               {step > 0 ? (
                 <button type="button" onClick={() => goTo(step - 1)} disabled={checking || creating} className="btn btn-ghost !min-h-10 !px-4 !text-[14px]">

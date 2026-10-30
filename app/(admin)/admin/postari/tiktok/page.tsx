@@ -35,7 +35,7 @@ export default async function TiktokPage() {
     <main className="mx-auto max-w-2xl px-4 pb-16 pt-6 sm:px-6">
       <PageHead title="De publicat pe TikTok" subtitle="Clipurile de aici sunt deja în ciornele din aplicația TikTok. TikTok nu primește descrierea prin API, așa că o copiezi de aici." />
 
-      <ol className="mt-4 grid gap-1.5 rounded-2xl border border-hair bg-white px-4 py-3 text-[14.5px] text-bone">
+      <ol className="mt-4 grid gap-1.5 rounded-2xl border border-hair bg-char px-4 py-3 text-[14.5px] text-bone">
         <li><span className="font-semibold">1.</span> „Copiază descrierea” la clipul de mai jos.</li>
         <li><span className="font-semibold">2.</span> Deschide notificarea TikTok (sau ciornele din profil).</li>
         <li><span className="font-semibold">3.</span> Lipește descrierea și apasă „Postează”.</li>
@@ -91,7 +91,7 @@ export default async function TiktokPage() {
           <h2 id="urmeaza" className="text-[15px] font-semibold text-bone">
             Urmează
           </h2>
-          <ul className="mt-2 divide-y divide-hair rounded-2xl border border-hair bg-white">
+          <ul className="mt-2 divide-y divide-hair rounded-2xl border border-hair bg-char">
             {upcoming.map((post) => (
               <li key={post.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-4 py-2.5">
                 <span className="break-all font-[family-name:var(--font-jbmono),ui-monospace,monospace] text-[13px] text-bone">{post.fisier}</span>
@@ -103,7 +103,7 @@ export default async function TiktokPage() {
       ) : null}
 
       {done.length > 0 ? (
-        <details className="mt-6 rounded-2xl border border-hair bg-white px-4 py-3">
+        <details className="mt-6 rounded-2xl border border-hair bg-char px-4 py-3">
           <summary className="cursor-pointer text-[14px] font-semibold text-bone">Publicate în ultimele 7 zile ({done.length})</summary>
           <ul className="mt-2 grid gap-1.5">
             {done.map((post) => (

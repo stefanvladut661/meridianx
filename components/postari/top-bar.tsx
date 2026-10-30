@@ -14,7 +14,7 @@ export function PostariTopBar({ queue }: { queue: { running: boolean; reason: st
   const item = navItemFor(pathname);
 
   return (
-    <div className="sticky top-0 z-30 border-b border-hair bg-white/95 backdrop-blur">
+    <div className="sticky top-0 z-30 border-b border-hair bg-char/95 backdrop-blur">
       <div className="flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
         <p className="text-[14px] font-semibold text-bone">{item?.label ?? "Postări"}</p>
         {queue ? (

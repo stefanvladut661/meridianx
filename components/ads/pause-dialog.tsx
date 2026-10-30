@@ -53,7 +53,7 @@ export function PauseDialog({
         event.preventDefault();
         if (!pending) close();
       }}
-      className="w-[min(92vw,34rem)] rounded-xl border border-hair bg-white p-0 text-bone shadow-2xl backdrop:bg-black/30"
+      className="w-[min(92vw,34rem)] rounded-xl border border-hair bg-char p-0 text-bone shadow-2xl backdrop:bg-black/30"
     >
       <div className="px-5 py-4">
         <h2 id="pauza-titlu" className="text-[17px] font-semibold">
@@ -114,7 +114,7 @@ export function PauseDialog({
         )}
       </div>
 
-      <div className="flex justify-end gap-2 border-t border-hair bg-[#fbfbfd] px-5 py-3">
+      <div className="flex justify-end gap-2 border-t border-hair bg-char px-5 py-3">
         {result ? (
           <button type="button" onClick={close} autoFocus className="btn btn-light !min-h-10 !px-4 !py-2 !text-[13.5px]">
             Închide

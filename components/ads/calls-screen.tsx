@@ -140,12 +140,12 @@ function CallForm({
   const chip = (selected: boolean, invalid: boolean) =>
     cn(
       "flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border px-3 text-[14px] font-medium transition-colors duration-150 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--md-a1)]",
-      selected ? "border-[var(--md-a1)] bg-[var(--ap-accent-soft)] text-[var(--ap-accent-ink)]" : "border-hair-strong bg-white text-bone/85 hover:bg-[var(--ap-hover)]",
+      selected ? "border-[var(--md-a1)] bg-[var(--ap-accent-soft)] text-[var(--ap-accent-ink)]" : "border-hair-strong bg-char text-bone/85 hover:bg-[var(--ap-hover)]",
       invalid && !selected && "border-[#d93025]/60"
     );
 
   return (
-    <form ref={form} onSubmit={submit} noValidate aria-labelledby={`${id}-titlu`} className="rounded-xl border border-hair bg-white p-4 sm:p-5">
+    <form ref={form} onSubmit={submit} noValidate aria-labelledby={`${id}-titlu`} className="rounded-xl border border-hair bg-char p-4 sm:p-5">
       <h2 id={`${id}-titlu`} className="text-[16px] font-semibold text-bone">
         Notează un apel
       </h2>
@@ -430,7 +430,7 @@ export function CallsScreen({
               <h3 className="text-[13px] font-semibold text-dim first-letter:uppercase">
                 {formatDay(day, true)} · {resultUnit(list.length, "call")}
               </h3>
-              <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-white">
+              <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-char">
                 {list.map((call) => (
                   <CallItem key={call.id} call={call} remove={actions.remove} />
                 ))}

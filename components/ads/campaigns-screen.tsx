@@ -341,7 +341,7 @@ export function CampaignsScreen({
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
             placeholder={`Caută în ${LEVEL_TAB[level].toLowerCase()}`}
-            className="h-9 w-full rounded-lg border border-hair-strong bg-white pl-8 pr-3 text-[14px] text-bone placeholder:text-dim"
+            className="h-9 w-full rounded-lg border border-hair-strong bg-char pl-8 pr-3 text-[14px] text-bone placeholder:text-dim"
           />
         </label>
         {level !== "campaign" && (campaigns.size > 0 || groups.size > 0) ? (
@@ -404,8 +404,8 @@ export function CampaignsScreen({
                 {LEVEL_TAB[level]} — {rows.length} rânduri. Clic pe nume deschide detaliile în dreapta.
               </caption>
               <thead>
-                <tr className="bg-[#fbfbfd]">
-                  <th scope="col" className="ads-sticky-col w-[1%] border-b border-hair bg-[#fbfbfd] py-2 pl-3 pr-1">
+                <tr className="bg-char">
+                  <th scope="col" className="ads-sticky-col w-[1%] border-b border-hair bg-char py-2 pl-3 pr-1">
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -442,7 +442,7 @@ export function CampaignsScreen({
                         if ((event.target as HTMLElement).closest("input, button, a")) return;
                         openRow(entity, event.currentTarget.querySelector("button[data-open]"));
                       }}
-                      className={cn("group cursor-pointer bg-white hover:bg-[var(--ap-hover)]", isOpen && "bg-[var(--ap-accent-soft)] hover:bg-[var(--ap-accent-soft)]", checked && !isOpen && "bg-[#f7f9ff]")}
+                      className={cn("group cursor-pointer bg-char hover:bg-[var(--ap-hover)]", isOpen && "bg-[var(--ap-accent-soft)] hover:bg-[var(--ap-accent-soft)]", checked && !isOpen && "bg-[#f7f9ff]")}
                     >
                       <td className="ads-sticky-col border-b border-hair py-2 pl-3 pr-1 align-top">
                         <input type="checkbox" checked={checked} onChange={() => toggle(entity.id)} aria-label={`Bifează ${entity.name}`} className="mt-0.5 h-4 w-4" />
@@ -493,8 +493,8 @@ export function CampaignsScreen({
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-[#fbfbfd] text-[13px]">
-                  <td className="ads-sticky-col bg-[#fbfbfd] py-2 pl-3 pr-1" />
+                <tr className="bg-char text-[13px]">
+                  <td className="ads-sticky-col bg-char py-2 pl-3 pr-1" />
                   <th scope="row" className="px-3 py-2 text-left font-semibold text-bone">
                     Total · {rows.length} {rows.length === 1 ? "rând" : "rânduri"}
                   </th>
@@ -530,7 +530,7 @@ export function CampaignsScreen({
               const f = figures.get(entity.id)!;
               const parent = parentNote(entity);
               return (
-                <li key={entity.id} className="rounded-xl border border-hair bg-white px-3.5 py-3">
+                <li key={entity.id} className="rounded-xl border border-hair bg-char px-3.5 py-3">
                   <div className="flex items-start gap-2">
                     <ChannelIcon platform={entity.platform} className="mt-1 shrink-0" />
                     <div className="min-w-0 flex-1">

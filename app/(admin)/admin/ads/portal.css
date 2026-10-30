@@ -1,68 +1,83 @@
 /* ============================================================
-   Portalul de reclame v2 — tema albă
+   Panoul de administrare — tema dark cu lavandă (redesign)
    ------------------------------------------------------------
-   Promptul v2: fundal alb, linii gri subțiri, o singură culoare de
-   accent — albastrul site-ului (#2f5bff, din [data-scope="video"]).
+   Din 2026-10-30 tema portalului (reclame, postări, firmă, lead-uri) e cea din
+   redesign: fundal aproape negru, suprafețe în trepte, un singur accent —
+   lavanda #C6B5FF —, Instrument Sans pentru text, Instrument Serif pentru
+   titluri. Numele clasei a rămas `.ads-portal` (e în toate layout-urile);
+   `.panou` e același lucru, pentru codul nou.
 
-   Componentele portalului folosesc utilitarele sistemului de design
-   (bg-ink, bg-char, text-bone, text-dim, border-hair…), care citesc
-   variabilele --md-*. Aici variabilele primesc valori deschise DOAR sub
-   portal: ecranele vechi (Plan nou, Lot, Termeni, Conversii) devin albe
-   odată cu cele noi, fără să le rescriu, iar globals.css rămâne neatins.
-   Panoul de lead-uri și site-ul nu se schimbă: regulile cer `.ads-portal`.
+   Componentele folosesc utilitarele sistemului de design (bg-ink, bg-char,
+   text-bone, text-dim, border-hair…), care citesc variabilele --md-*. Aici
+   variabilele primesc valori DOAR sub panou: site-ul public nu se schimbă, iar
+   globals.css rămâne neatins.
+
+   Treptele: --md-bg (pagina) < --md-bg-2 / --ap-surface (cardul, câmpul) <
+   --md-glass (suprafața peste card) < --md-glass-2 (hover, selecție).
    ============================================================ */
 
 [data-scope="gate"]:has(.ads-portal),
-.ads-portal {
-  --md-bg: #ffffff;
-  --md-bg-2: #ffffff;
-  --md-fg: #15181f;
-  --md-muted: #5f6675;
-  --md-line: #e6e8ed;
-  --md-line-strong: #d2d6de;
-  --md-glass: #f5f6f8;
-  --md-glass-2: #eceef2;
-  --md-glass-a: #ffffff;
-  --md-glass-b: #ffffff;
+[data-scope="gate"]:has(.panou),
+.ads-portal,
+.panou {
+  --md-bg: #0c0c0e;
+  --md-bg-2: #141316;
+  --md-fg: #f1f0ee;
+  --md-muted: #9b99a3;
+  --md-line: #232227;
+  --md-line-strong: #36353c;
+  --md-glass: #1b1a1e;
+  --md-glass-2: #242328;
+  --md-glass-a: #17161a;
+  --md-glass-b: #131216;
   --md-edge: transparent;
-  --md-grid-line: rgb(18 23 27 / 0.05);
-  --md-scroll: rgb(18 23 27 / 0.2);
-  --md-a1: #2f5bff;
-  --md-a2: #5b7cff;
-  --md-a3: #dbe3ff;
-  --md-on-a1: #ffffff;
+  --md-grid-line: rgb(255 255 255 / 0.04);
+  --md-scroll: rgb(255 255 255 / 0.16);
+  --md-a1: #c6b5ff;
+  --md-a2: #a99af0;
+  --md-a3: #2a2442;
+  --md-on-a1: #181325;
 
-  /* Doar ale portalului */
-  --ap-side: #f7f8fa;
-  --ap-hover: #f3f5f9;
-  --ap-accent-soft: #eef2ff;
-  --ap-accent-ink: #1f45d8;
-  --ap-ok: #0f7b52;
-  --ap-ok-soft: #e7f6ef;
-  --ap-warn: #8a5a00;
-  --ap-warn-soft: #fff6df;
-  --ap-error: #c62828;
-  --ap-error-soft: #fdecec;
-  --ap-neutral-soft: #f0f1f4;
-  color-scheme: light;
+  /* Doar ale panoului */
+  --ap-side: #09090c;
+  --ap-surface: #141316;
+  --ap-hover: rgb(255 255 255 / 0.05);
+  --ap-accent-soft: rgb(198 181 255 / 0.12);
+  --ap-accent-ink: #dcd2ff;
+  --ap-ok: #8fe3b0;
+  --ap-ok-soft: rgb(143 227 176 / 0.12);
+  --ap-warn: #ffc27a;
+  --ap-warn-soft: rgb(255 194 122 / 0.12);
+  --ap-error: #ff8fa8;
+  --ap-error-soft: rgb(255 143 168 / 0.12);
+  --ap-neutral-soft: rgb(255 255 255 / 0.06);
+
+  /* Fonturile din redesign: se încarcă în layout-ul adminului (app/fonts.ts). */
+  --md-font-body: var(--font-instrument-sans), "Helvetica Neue", system-ui, sans-serif;
+  --md-font-display: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  color-scheme: dark;
 }
 
-html:has(.ads-portal) {
-  color-scheme: light;
+html:has(.ads-portal),
+html:has(.panou) {
+  color-scheme: dark;
 }
 
-body.md-body:has(.ads-portal) {
-  background: #ffffff;
-  color: #15181f;
-}
-
-.ads-portal {
+body.md-body:has(.ads-portal),
+body.md-body:has(.panou) {
   background: var(--md-bg);
   color: var(--md-fg);
 }
 
+.ads-portal,
+.panou {
+  background: var(--md-bg);
+  color: var(--md-fg);
+  font-family: var(--md-font-body);
+}
+
 /* Butoanele: dreptunghiuri cu colțuri mici, ca într-o unealtă, nu pastile
-   de pagină de prezentare. „btn-light” e acțiunea principală: albastră. */
+   de pagină de prezentare. „btn-light” e acțiunea principală: lavanda, cu text închis. */
 .ads-portal .btn {
   border-radius: 8px;
   font-weight: 600;
@@ -73,7 +88,7 @@ body.md-body:has(.ads-portal) {
 }
 .ads-portal .btn-light {
   background: var(--md-a1);
-  color: #ffffff;
+  color: var(--md-on-a1);
 }
 .ads-portal .btn-light:hover {
   background: var(--ap-accent-ink);
@@ -85,21 +100,21 @@ body.md-body:has(.ads-portal) {
   cursor: not-allowed;
 }
 .ads-portal .btn-ghost {
-  background: #ffffff;
+  background: var(--ap-surface);
   border: 1px solid var(--md-line-strong);
   color: var(--md-fg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 .ads-portal .btn-ghost:hover {
-  background: var(--ap-hover);
-  border-color: #c3c8d2;
+  background: var(--md-glass);
+  border-color: #4a4952;
 }
 
-/* Suprafețele „glass” ale ecranelor vechi: plăci albe cu muchie. */
+/* Suprafețele „glass” ale ecranelor vechi: plăci de card cu muchie. */
 .ads-portal .glass,
 .ads-portal .glass-2 {
-  background: #ffffff;
+  background: var(--ap-surface);
   border-color: var(--md-line);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -115,11 +130,11 @@ body.md-body:has(.ads-portal) {
   letter-spacing: 0.16em;
 }
 
-/* Câmpurile native (select, date, checkbox) în tema deschisă. */
+/* Câmpurile native (select, date, checkbox) în tema închisă. */
 .ads-portal select,
 .ads-portal input,
 .ads-portal textarea {
-  color-scheme: light;
+  color-scheme: dark;
 }
 .ads-portal input[type="checkbox"],
 .ads-portal input[type="radio"] {
@@ -132,7 +147,7 @@ body.md-body:has(.ads-portal) {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #fbfbfd;
+  background: var(--md-bg-2);
 }
 .ads-table .ads-sticky-col {
   position: sticky;

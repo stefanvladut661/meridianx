@@ -149,12 +149,12 @@ export function PlanEditor({ example, verify, approve }: { example: string; veri
                 setText(await file.text());
               }}
             />
-            <button type="button" onClick={() => fileInput.current?.click()} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-hair-strong bg-white px-3 text-[13px] font-medium text-bone hover:bg-[var(--ap-hover)]">
+            <button type="button" onClick={() => fileInput.current?.click()} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-hair-strong bg-char px-3 text-[13px] font-medium text-bone hover:bg-[var(--ap-hover)]">
               <IconUpload size={15} />
               Încarcă .json
             </button>
             {text.trim() === "" ? (
-              <button type="button" onClick={() => setText(example)} className="min-h-9 rounded-lg border border-hair-strong bg-white px-3 text-[13px] font-medium text-bone hover:bg-[var(--ap-hover)]">
+              <button type="button" onClick={() => setText(example)} className="min-h-9 rounded-lg border border-hair-strong bg-char px-3 text-[13px] font-medium text-bone hover:bg-[var(--ap-hover)]">
                 Pune un exemplu
               </button>
             ) : (
@@ -218,7 +218,7 @@ export function PlanEditor({ example, verify, approve }: { example: string; veri
             <div className="mt-2 grid gap-2">
               <Notice tone="error">{result.value.message}</Notice>
               {result.value.schema.length > 0 ? (
-                <ul className="grid gap-1 rounded-xl border border-hair bg-white px-4 py-3">
+                <ul className="grid gap-1 rounded-xl border border-hair bg-char px-4 py-3">
                   {result.value.schema.map((issue, index) => (
                     <li key={`${issue.path}-${index}`} className="text-[13.5px] text-[var(--ap-error)]">
                       <span className="font-semibold">{issue.path}:</span> {issue.message}

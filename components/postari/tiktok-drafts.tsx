@@ -40,7 +40,7 @@ function DraftCard({ post, fus, busy, onPublished }: { post: PostView; fus: stri
   }
 
   return (
-    <li className="rounded-2xl border border-hair bg-white p-4 sm:p-5">
+    <li className="rounded-2xl border border-hair bg-char p-4 sm:p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <p className="break-all font-[family-name:var(--font-jbmono),ui-monospace,monospace] text-[13px] text-bone">{post.fisier}</p>
         <p className="text-[13px] text-dim">{post.trimisaLa ? `în ciorne ${agoLabel(post.trimisaLa)}` : `programată ${momentLabel(post.programataLa, fus)}`}</p>
@@ -60,7 +60,7 @@ function DraftCard({ post, fus, busy, onPublished }: { post: PostView; fus: stri
             {copied === "copiat" ? "Copiat" : copied === "selectat" ? "Selectat: apasă lung → Copiază" : "Copiază descrierea"}
           </button>
         ) : null}
-        <button type="button" disabled={busy} onClick={() => onPublished(post)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-hair-strong bg-white px-4 text-[16px] font-semibold text-bone hover:bg-[var(--ap-hover)] disabled:opacity-50" aria-label={`Marchează publicat ${post.fisier}`}>
+        <button type="button" disabled={busy} onClick={() => onPublished(post)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-hair-strong bg-char px-4 text-[16px] font-semibold text-bone hover:bg-[var(--ap-hover)] disabled:opacity-50" aria-label={`Marchează publicat ${post.fisier}`}>
           {busy ? "Se marchează…" : "Publicat"}
         </button>
       </div>

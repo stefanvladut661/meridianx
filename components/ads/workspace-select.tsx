@@ -31,7 +31,7 @@ export function WorkspaceSelect({
         className={cn(
           FIELD,
           "h-10 min-w-0 flex-1 font-semibold",
-          current.owner === "clienti" && "!border-[#f0b429]/60 text-[#8a5a00]"
+          current.owner === "clienti" && "!border-[#f0b429]/60 text-[var(--ap-warn)]"
         )}
       >
         {PLATFORMS.map((platform) => (

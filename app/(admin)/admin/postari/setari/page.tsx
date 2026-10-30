@@ -60,7 +60,7 @@ export default async function SetariPage({ searchParams }: { searchParams: Promi
         <h2 id="drive-stare" className="text-[15px] font-semibold text-bone">
           Drive
         </h2>
-        <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-white">
+        <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-char">
           <li className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[14px]">
             <span className="font-medium text-bone">Legătura (aceeași ca la adminul firmei)</span>
             {mode ? <Tag tone="ok">{mode.kind === "oauth" ? "Legat, ca tine (OAuth)" : "Legat, cont de serviciu"}</Tag> : <span className="max-w-md text-[13px] text-dim">{DRIVE_MISSING}</span>}
@@ -109,7 +109,7 @@ export default async function SetariPage({ searchParams }: { searchParams: Promi
           Programarea și alertele
         </h2>
         <p className="mt-0.5 text-[13.5px] text-dim">Ce e legat în Vercel și în Supabase, fără să arate cheile. Pașii sunt în README, la „Programarea”.</p>
-        <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-white">
+        <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-char">
           {status.map((item) => (
             <li key={item.label} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[14px]">
               <span className="font-medium text-bone">{item.label}</span>

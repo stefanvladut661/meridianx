@@ -142,7 +142,7 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
                     triggerKind === kind ? "border-bone/50 bg-glass text-bone" : "border-hair text-bone/80"
                   )}
                 >
-                  <input type="radio" name="declansator" checked={triggerKind === kind} onChange={() => setTriggerKind(kind)} className="h-4 w-4 accent-[#2f5bff]" />
+                  <input type="radio" name="declansator" checked={triggerKind === kind} onChange={() => setTriggerKind(kind)} className="h-4 w-4 accent-[var(--md-a1)]" />
                   {FORM_TRIGGER_LABEL[kind]}
                 </label>
               ))}
@@ -210,7 +210,7 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
         ) : null}
 
         <label className="flex items-start gap-3 text-[14px] leading-snug text-bone/85">
-          <input type="checkbox" checked={hasGoogleTag} onChange={(change) => setHasGoogleTag(change.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#2f5bff]" />
+          <input type="checkbox" checked={hasGoogleTag} onChange={(change) => setHasGoogleTag(change.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--md-a1)]" />
           <span>
             Site-ul are deja tag-ul Google cu {input.conversionId ? `AW-${input.conversionId}` : "id-ul contului"}
             <span className="block text-[12.5px] text-dim">În cod (gtag.js) sau într-o etichetă GTM. Dacă nu ești sigur, lasă nebifat: importul îl adaugă.</span>

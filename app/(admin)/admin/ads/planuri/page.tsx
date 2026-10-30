@@ -77,7 +77,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
       <ul className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {ENTRIES.map((entry) => (
           <li key={entry.href}>
-            <Link href={entry.href} className="block h-full rounded-xl border border-hair bg-white px-4 py-3.5 hover:border-[var(--md-a1)] hover:bg-[var(--ap-hover)]">
+            <Link href={entry.href} className="block h-full rounded-xl border border-hair bg-char px-4 py-3.5 hover:border-[var(--md-a1)] hover:bg-[var(--ap-hover)]">
               <span className="text-[14.5px] font-semibold text-bone">{entry.title}</span>
               <span className="mt-1 block text-[13px] leading-relaxed text-dim">{entry.body}</span>
             </Link>
@@ -116,7 +116,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
         ) : null}
 
         {groups.length > 0 ? (
-          <ol className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-white">
+          <ol className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-char">
             {groups.map((group) => {
               const first = group[0];
               const workspace = findWorkspace(first.workspace);

@@ -291,7 +291,7 @@ function OblioLookup({
                   setResults(null);
                   setMessage(null);
                 }}
-                className="w-full rounded-md bg-white px-3 py-2 text-left text-[13.5px] hover:bg-[var(--ap-accent-soft)]"
+                className="w-full rounded-md bg-char px-3 py-2 text-left text-[13.5px] hover:bg-[var(--ap-accent-soft)]"
               >
                 <span className="font-semibold text-bone">{found.name}</span>
                 <span className="block text-[12.5px] text-dim">

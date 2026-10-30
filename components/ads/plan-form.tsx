@@ -443,7 +443,7 @@ function CheckboxGrid({
                 type="checkbox"
                 checked={on}
                 onChange={(event) => onToggle(value, event.target.checked)}
-                className="h-4 w-4 accent-[#2f5bff]"
+                className="h-4 w-4 accent-[var(--md-a1)]"
               />
               {label}
             </label>

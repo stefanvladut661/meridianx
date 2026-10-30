@@ -132,7 +132,7 @@ export function InvoicesScreen({
       {invoices.length === 0 ? (
         <Empty className="mt-5">Nicio factură în {monthLabel(month)}. Apasă „Pregătește ciornele”, ca adminul să le facă din contractele active, sau fă una manuală.</Empty>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-white">
+        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">
             <thead>
               <tr className="border-b border-hair">
@@ -151,7 +151,7 @@ export function InvoicesScreen({
                 const selected = open?.kind === "invoice" && open.id === invoice.id;
                 const due = invoice.scadenta ?? addDays(invoice.dataPlanificata, invoice.zileScadenta);
                 return (
-                  <tr key={invoice.id} onClick={() => setOpen({ kind: "invoice", id: invoice.id })} className={cn("cursor-pointer bg-white hover:bg-[var(--ap-hover)]", selected && "bg-[var(--ap-accent-soft)]")}>
+                  <tr key={invoice.id} onClick={() => setOpen({ kind: "invoice", id: invoice.id })} className={cn("cursor-pointer bg-char hover:bg-[var(--ap-hover)]", selected && "bg-[var(--ap-accent-soft)]")}>
                     <td className={cn(tdClass, "ads-sticky-col min-w-[12rem]")}>
                       <button type="button" onClick={() => setOpen({ kind: "invoice", id: invoice.id })} className="text-left font-semibold text-bone hover:text-[var(--md-a1)] hover:underline">
                         {invoice.clientNume}
@@ -207,7 +207,7 @@ export function InvoicesScreen({
 
 function Stat({ label, value, tone }: { label: string; value: string; tone: "warn" | "error" | "muted" }) {
   return (
-    <li className="rounded-xl border border-hair bg-white px-4 py-3">
+    <li className="rounded-xl border border-hair bg-char px-4 py-3">
       <p className="text-[12.5px] font-medium text-dim">{label}</p>
       <p className={cn("mt-1 text-[1.375rem] font-semibold tabular-nums", tone === "warn" ? "text-[var(--ap-warn)]" : tone === "error" ? "text-[var(--ap-error)]" : "text-bone")}>{value}</p>
     </li>

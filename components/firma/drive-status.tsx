@@ -33,7 +33,7 @@ export function DriveStatusCard({
       <h2 id="drive-stare" className="text-[15px] font-semibold text-bone">
         Drive
       </h2>
-      <div className="mt-2 rounded-xl border border-hair bg-white px-4 py-3 text-[14px]">
+      <div className="mt-2 rounded-xl border border-hair bg-char px-4 py-3 text-[14px]">
         <p className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-bone">Legătura:</span>
           {mode === "oauth" ? "OAuth, ca tine (fișierele sunt ale tale)" : mode === "service" ? "cont de serviciu" : "nelegat"}

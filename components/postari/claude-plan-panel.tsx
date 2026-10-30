@@ -128,7 +128,7 @@ export function ClaudePlanPanel({
   }
 
   return (
-    <section aria-labelledby="claude-plan" className="mt-4 max-w-3xl rounded-xl border border-hair bg-white px-4 py-4 sm:px-5">
+    <section aria-labelledby="claude-plan" className="mt-4 max-w-3xl rounded-xl border border-hair bg-char px-4 py-4 sm:px-5">
       <h3 id="claude-plan" className="text-[15px] font-semibold text-bone">
         Scrie planul cu Claude
       </h3>

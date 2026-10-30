@@ -227,7 +227,7 @@ export function AccountCampaigns({
                       return next;
                     })
                   }
-                  className="h-4 w-4 accent-[#2f5bff]"
+                  className="h-4 w-4 accent-[var(--md-a1)]"
                 />
               </th>
               <th scope="col" className="px-3 py-3 font-normal">Campania</th>
@@ -254,7 +254,7 @@ export function AccountCampaigns({
                         aria-label={`Bifează „${item.name}” pentru pauză`}
                         checked={selected.has(item.id)}
                         onChange={() => toggle(item.id)}
-                        className="h-4 w-4 accent-[#2f5bff]"
+                        className="h-4 w-4 accent-[var(--md-a1)]"
                       />
                     ) : null}
                   </td>

@@ -42,7 +42,7 @@ export default async function SetariPage() {
         <h2 id="legaturi" className="text-[15px] font-semibold text-bone">
           Legăturile
         </h2>
-        <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-white">
+        <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-char">
           {links.map((link) => (
             <li key={link.name} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[14px]">
               <span className="font-medium text-bone">{link.name}</span>

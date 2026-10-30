@@ -75,7 +75,7 @@ export function AccountsScreen({ accounts, today, actions }: { accounts: ContFir
       {accounts.length === 0 ? (
         <Empty className="mt-4">Niciun cont încă. „Adaugă lista de bază” pune conturile obișnuite (bancă, Oblio, Google, Meta, TikTok, Vercel, Supabase, GitHub, domeniu); apoi le completezi.</Empty>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-white">
+        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">
             <thead>
               <tr className="border-b border-hair">
@@ -92,7 +92,7 @@ export function AccountsScreen({ accounts, today, actions }: { accounts: ContFir
                 const next = nextRenewal(account, today);
                 const alert = renewsWithin(account, today);
                 return (
-                  <tr key={account.id} onClick={() => setOpen(account.id)} className={cn("cursor-pointer bg-white hover:bg-[var(--ap-hover)]", open === account.id && "bg-[var(--ap-accent-soft)]")}>
+                  <tr key={account.id} onClick={() => setOpen(account.id)} className={cn("cursor-pointer bg-char hover:bg-[var(--ap-hover)]", open === account.id && "bg-[var(--ap-accent-soft)]")}>
                     <td className={cn(tdClass, "ads-sticky-col min-w-[12rem]")}>
                       <button type="button" onClick={() => setOpen(account.id)} className="text-left font-semibold text-bone hover:text-[var(--md-a1)] hover:underline">
                         {account.nume}

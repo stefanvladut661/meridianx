@@ -53,7 +53,7 @@ export function AccountantScreen({ check, accountant, email, actions }: { check:
 
   return (
     <div className="mt-5 grid max-w-4xl gap-6">
-      <section aria-labelledby="verificare" className="rounded-xl border border-hair bg-white p-4">
+      <section aria-labelledby="verificare" className="rounded-xl border border-hair bg-char p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="verificare" className="text-[15px] font-semibold text-bone">
             {monthLabel(month)}: {complete ? "luna e completă" : `lipsesc ${blocking.length === 1 ? "un lucru" : `${blocking.length} lucruri`}`}
@@ -122,7 +122,7 @@ export function AccountantScreen({ check, accountant, email, actions }: { check:
         </div>
       </section>
 
-      <section aria-labelledby="zip" className="rounded-xl border border-hair bg-white p-4">
+      <section aria-labelledby="zip" className="rounded-xl border border-hair bg-char p-4">
         <h2 id="zip" className="text-[15px] font-semibold text-bone">
           Zip-ul lunii
         </h2>
@@ -193,7 +193,7 @@ function EmailToAccountant({
   const [pending, start] = useTransition();
   const large = (pachet.zipMarime ?? 0) > 10 * 1024 * 1024;
   return (
-    <section aria-labelledby="email-contabil" className="rounded-xl border border-hair bg-white p-4">
+    <section aria-labelledby="email-contabil" className="rounded-xl border border-hair bg-char p-4">
       <h2 id="email-contabil" className="text-[15px] font-semibold text-bone">
         Emailul către contabil — pleacă doar la „Trimite”
       </h2>

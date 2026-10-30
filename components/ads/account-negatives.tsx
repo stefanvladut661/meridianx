@@ -128,7 +128,7 @@ export function AccountNegatives({
                   checked={mode === item}
                   disabled={item !== "campaigns" && lists.length === 0}
                   onChange={() => setMode(item)}
-                  className="h-4 w-4 accent-[#2f5bff]"
+                  className="h-4 w-4 accent-[var(--md-a1)]"
                 />
                 {NEGATIVES_MODE_LABEL[item]}
               </label>
@@ -185,7 +185,7 @@ export function AccountNegatives({
                 return (
                   <li key={item.id}>
                     <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-[13.5px] hover:bg-glass">
-                      <input type="checkbox" checked={chosen.has(item.id)} onChange={() => toggle(item.id)} className="h-4 w-4 shrink-0 accent-[#2f5bff]" />
+                      <input type="checkbox" checked={chosen.has(item.id)} onChange={() => toggle(item.id)} className="h-4 w-4 shrink-0 accent-[var(--md-a1)]" />
                       <span className="min-w-0 flex-1 truncate text-bone/90">{item.name}</span>
                       <span className="shrink-0 font-md-mono text-[11px] text-dim">
                         {linked ? "legată · " : ""}

@@ -90,7 +90,7 @@ export function AccountsPanel({
           {keyProblem}
         </Notice>
       ) : null}
-      <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-white">
+      <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-char">
         <AccountCard title="Instagram" account={instagram}>
           {instagram ? (
             <>

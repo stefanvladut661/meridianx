@@ -25,7 +25,7 @@ export function UnfinishedJobs({ jobs, continueJob }: { jobs: UnfinishedJob[]; c
   const [done, setDone] = useState<Record<string, CreateResponse>>({});
 
   return (
-    <ol className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-white">
+    <ol className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-char">
       {jobs.map(({ view, planName, createdAt, createdByEmail }) => {
         const live = open[view.id];
         const result = done[view.id];

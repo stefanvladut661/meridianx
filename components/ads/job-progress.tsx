@@ -69,7 +69,7 @@ export function JobProgress({
   const platform = PLATFORM_LABEL[job.platform];
 
   return (
-    <div tabIndex={-1} role="status" className={cn("rounded-xl border border-hair bg-white px-5 py-5", className)}>
+    <div tabIndex={-1} role="status" className={cn("rounded-xl border border-hair bg-char px-5 py-5", className)}>
       <p className="text-[15.5px] font-semibold text-bone">
         {job.status === "waiting" ? `${platform} a cerut o pauză. Crearea se reia singură.` : "Se creează pe pauză, pas cu pas…"}
       </p>

@@ -23,7 +23,7 @@ function PlatformTags({ post }: { post: PreviewPost }) {
 function PostCard({ post, fus }: { post: PreviewPost; fus: string }) {
   const errors = post.issues.filter((issue) => issue.nivel === "eroare").length;
   return (
-    <li className={cn("rounded-xl border bg-white px-4 py-3", errors > 0 ? "border-[var(--ap-error)]/40" : "border-hair")}>
+    <li className={cn("rounded-xl border bg-char px-4 py-3", errors > 0 ? "border-[var(--ap-error)]/40" : "border-hair")}>
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
           <p className="text-[14.5px] font-semibold text-bone">
@@ -67,7 +67,7 @@ export function PlanPreview({ plan, action }: { plan: VerifiedPlan; action: Reac
 
   return (
     <div className="mt-3 grid gap-4">
-      <div className="rounded-xl border border-hair bg-white px-4 py-3">
+      <div className="rounded-xl border border-hair bg-char px-4 py-3">
         <p className="text-[14px] text-bone">
           {plan.nume ? <span className="font-semibold">„{plan.nume}”: </span> : null}
           {summary.posts} {summary.posts === 1 ? "postare" : "postări"} · {summary.instagram} pe Instagram · {summary.tiktok} pe TikTok
@@ -112,7 +112,7 @@ export function PlanPreview({ plan, action }: { plan: VerifiedPlan; action: Reac
         </section>
       ))}
 
-      {summary.posts > 3 ? <div className="rounded-xl border border-hair bg-white px-4 py-3">{action}</div> : null}
+      {summary.posts > 3 ? <div className="rounded-xl border border-hair bg-char px-4 py-3">{action}</div> : null}
     </div>
   );
 }

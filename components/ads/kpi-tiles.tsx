@@ -26,7 +26,7 @@ function DeltaText({ delta }: { delta: Delta }) {
 
 function Tile({ label, children, foot }: { label: string; children: React.ReactNode; foot?: React.ReactNode }) {
   return (
-    <div className="min-w-0 rounded-xl border border-hair bg-white px-4 py-3.5">
+    <div className="min-w-0 rounded-xl border border-hair bg-char px-4 py-3.5">
       <dt className="text-[13px] font-medium text-dim">{label}</dt>
       <dd className="mt-1 min-w-0">{children}</dd>
       {foot ? <dd className="mt-1.5 text-[12.5px] leading-snug text-dim">{foot}</dd> : null}

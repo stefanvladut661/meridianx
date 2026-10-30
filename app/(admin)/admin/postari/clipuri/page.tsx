@@ -114,7 +114,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
               <ul className="mt-2 flex flex-wrap gap-2">
                 {data.subfolders.map((sub) => (
                   <li key={sub.id}>
-                    <Link href={childHref(sub.name)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-hair-strong bg-white px-3 text-[14px] text-bone hover:bg-[var(--ap-hover)]">
+                    <Link href={childHref(sub.name)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-hair-strong bg-char px-3 text-[14px] text-bone hover:bg-[var(--ap-hover)]">
                       <span className="text-dim">
                         <IconFolder />
                       </span>
@@ -150,7 +150,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
                     ))}
                   </ul>
                 ) : null}
-                <div className="mt-2 overflow-x-auto rounded-xl border border-hair bg-white">
+                <div className="mt-2 overflow-x-auto rounded-xl border border-hair bg-char">
                   <table className="ads-table min-w-full border-collapse">
                     <thead>
                       <tr className="border-b border-hair">

@@ -45,7 +45,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     if (found.reason === "not_found") notFound();
     return (
       <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
-        <p role="alert" className="text-[15px] text-[#c62828]">
+        <p role="alert" className="text-[15px] text-[var(--ap-error)]">
           {STORE_FAILURE_MESSAGE[found.reason]}
         </p>
       </main>
@@ -124,7 +124,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       </div>
 
       {!days.ok ? (
-        <p role="alert" className="mt-8 text-[14px] text-[#c62828]">
+        <p role="alert" className="mt-8 text-[14px] text-[var(--ap-error)]">
           {days.message}
         </p>
       ) : rows.length === 0 ? (

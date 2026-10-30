@@ -151,9 +151,9 @@ export function EntityPanel({
       aria-modal="false"
       aria-labelledby="panou-titlu"
       onKeyDown={onKeyDown}
-      className="ads-panel-enter fixed inset-0 z-50 flex flex-col overflow-y-auto bg-white shadow-2xl sm:inset-y-0 sm:left-auto sm:right-0 sm:w-[460px] sm:border-l sm:border-hair"
+      className="ads-panel-enter fixed inset-0 z-50 flex flex-col overflow-y-auto bg-char shadow-2xl sm:inset-y-0 sm:left-auto sm:right-0 sm:w-[460px] sm:border-l sm:border-hair"
     >
-      <div className="sticky top-0 z-10 border-b border-hair bg-white px-5 py-3.5">
+      <div className="sticky top-0 z-10 border-b border-hair bg-char px-5 py-3.5">
         <div className="flex items-start gap-3">
           <ChannelIcon platform={entity.platform} size={20} className="mt-1 shrink-0" />
           <div className="min-w-0 flex-1">
@@ -246,7 +246,7 @@ export function EntityPanel({
                         else router.refresh();
                       });
                     }}
-                    className="h-10 w-full rounded-lg border border-hair-strong bg-white px-2.5 text-[14px] text-bone"
+                    className="h-10 w-full rounded-lg border border-hair-strong bg-char px-2.5 text-[14px] text-bone"
                   >
                     <option value="">Implicit{!entity.resultChosen && chosen ? ` — ${chosen.label}` : !entity.resultChosen ? " — nemăsurat" : ""}</option>
                     {catalog.map((entry) => (
