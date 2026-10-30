@@ -79,7 +79,7 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
     <>
       <PageHead title="Export" text="Doar criptat, cu o parolă separată de parola master. Fișierul nu conține istoric și nu conține coșul." />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card>
           <SectionTitle title="Parola de export" hint="alta decât parola master" action={<Pill tone="mint">XChaCha20-Poly1305</Pill>} />
           <form onSubmit={onSubmit} noValidate>

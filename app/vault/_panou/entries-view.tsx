@@ -284,7 +284,7 @@ export function EntriesView({
           </Card>
         )
       ) : (
-        <div className={cn("grid gap-4", selectedId && "lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start")}>
+        <div className={cn("grid grid-cols-1 gap-4", selectedId && "lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start")}>
           <div className={cn("space-y-3", selectedId && "hidden lg:block")}>
             <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3">
               <div className="relative">

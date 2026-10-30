@@ -164,7 +164,7 @@ export function AccountView({
     <>
       <PageHead title="Contul meu" text="Parola master și inelul de chei. Aici se schimbă și se rotește." />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <SectionTitle title="Schimbă parola master" hint="parola veche nu se păstrează" />
           <form onSubmit={changePassword} noValidate className="mt-3 space-y-3">
