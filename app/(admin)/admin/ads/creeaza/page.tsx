@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { clientsForRequest } from "@/lib/ads/model/read";
 import { readSelection } from "@/lib/ads/model/selection.server";
 import { listMaterials } from "@/lib/ads/materials";
 import { listWorkspaces } from "@/lib/ads/workspaces.server";
 import { PIXEL_ID as SITE_META_PIXEL_ID } from "@/lib/meta-pixel";
 import { TIKTOK_PIXEL_ID as SITE_TIKTOK_PIXEL_CODE } from "@/lib/tiktok-pixel";
-import { CreateWizard } from "@/components/ads/create-wizard";
+import { CreateWizard } from "@/components/panou/ads/create-wizard";
+import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
+import { Card, btnClass } from "@/components/panou/ui/primitives";
+import { EmptyState } from "@/components/panou/ui/states";
 import { checkPlan, chooseWorkspace, createPausedCampaign, materialUploadStatus, sendMaterialToAccount } from "../actions";
 import { continueJobAction } from "../v2-actions";
 
 export const metadata: Metadata = {
-  title: "Creează — MERIDIAN Reclame",
+  title: "Creează ghidat — MERIDIAN Reclame",
   robots: { index: false, follow: false },
 };
 
@@ -32,10 +36,13 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
   const header = (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-[1.5rem] font-semibold tracking-tight text-bone">Creează o campanie</h1>
-        <p className="mt-0.5 max-w-2xl text-[13.5px] text-dim">Pas cu pas, pe pauză. Portalul nu pornește nimic: campania o pornești tu, din platformă.</p>
+        <Link href="/admin/ads/planuri" className="text-[11.5px] text-muted-foreground hover:text-foreground">
+          ← Planuri
+        </Link>
+        <h1 className={`mt-2 ${PAGE_TITLE}`}>Creează ghidat</h1>
+        <p className={PAGE_LEAD}>Același plan, în pași scurți, cu reclama vizibilă în timp ce o compui. Portalul nu pornește nimic: campania o pornești tu, din platformă.</p>
       </div>
-      <Link href="/admin/ads/nou" className="btn btn-ghost !min-h-10 !px-4 !text-[14px]">
+      <Link href="/admin/ads/nou" className={btnClass({ variant: "outline", size: "sm" })}>
         Importă JSON
       </Link>
     </div>
@@ -43,34 +50,37 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
 
   if (!clients.ok || clients.data.length === 0) {
     return (
-      <main className="px-4 pb-16 pt-6 sm:px-6">
+      <div className="space-y-4">
         {header}
-        <div className="mt-6 max-w-2xl rounded-xl border border-hair bg-[var(--ap-side)] px-5 py-4 text-[14px] text-bone/85">
+        <Card className="p-0">
           {clients.ok ? (
-            <>
-              <p className="text-[15px] font-semibold text-bone">Niciun client încă.</p>
-              <p className="mt-1">O campanie se creează în contul unui client. Adaugă-l întâi, cu conturile lui.</p>
-              <Link href="/admin/ads/clienti" className="btn btn-light mt-4 !min-h-10 !px-4 !text-[14px]">
-                Adaugă primul client
-              </Link>
-            </>
+            <EmptyState
+              icon={Users}
+              title="Niciun client încă"
+              text="O campanie se creează în contul unui client. Adaugă-l întâi, cu conturile lui."
+              action={
+                <Link href="/admin/ads/clienti" className={btnClass({ variant: "primary", size: "sm" })}>
+                  Adaugă primul client
+                </Link>
+              }
+            />
           ) : (
-            <p role="alert" className="text-[var(--ap-error)]">
+            <p role="alert" className="px-6 py-10 text-center text-[13px] text-rose">
               {clients.message}
             </p>
           )}
-        </div>
-      </main>
+        </Card>
+      </div>
     );
   }
 
   const client = clients.data.find((item) => item.id === selection.clientId) ?? clients.data[0];
 
   return (
-    <main className="px-4 pb-16 pt-6 sm:px-6">
+    <div className="space-y-4">
       {header}
       {!materials.ok ? (
-        <p role="alert" className="mt-4 max-w-2xl text-[14px] text-[var(--ap-error)]">
+        <p role="alert" className="rounded-xl border border-rose/25 bg-rose/[0.07] px-3.5 py-3 text-[12.5px] leading-relaxed text-[#FFC2CE]">
           Materialele nu se pot citi: {materials.message}
         </p>
       ) : null}
@@ -90,6 +100,6 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
           materialStatus: materialUploadStatus,
         }}
       />
-    </main>
+    </div>
   );
 }

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
-import { BatchEditor } from "@/components/ads/batch-editor";
-import { checkBatchPlan, createBatchPlan } from "../actions";
+import { BatchEditor } from "@/components/panou/ads/batch-editor";
+import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
+import { checkBatchPlan, chooseWorkspace, createBatchPlan } from "../actions";
 import { continueJobAction } from "../v2-actions";
 
 export const metadata: Metadata = {
@@ -23,21 +25,23 @@ export default async function BatchPage() {
   const currentId = await currentWorkspaceId();
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pb-10 pt-8 sm:px-8 sm:pt-10">
-      <p className="eyebrow">Reclame</p>
-      <h1 className="display mt-2 text-[2.25rem] text-bone sm:text-[2.75rem]">Lot de planuri</h1>
-      <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-bone/70">
-        Lipește toate planurile scrise în conversație. Portalul le verifică pe rând, pe conturile reale, și le
-        creează — oprite — fiecare în spațiul scris în el.
-      </p>
-
-      <div className="mt-8">
-        <BatchEditor
-          workspaces={workspaces}
-          currentWorkspaceId={currentId}
-          actions={{ checkBatchPlan, createBatchPlan, continueJob: continueJobAction }}
-        />
+    <div className="space-y-4">
+      <div>
+        <Link href="/admin/ads/planuri" className="text-[11.5px] text-muted-foreground hover:text-foreground">
+          ← Planuri
+        </Link>
+        <h1 className={`mt-2 ${PAGE_TITLE}`}>Lot de planuri</h1>
+        <p className={PAGE_LEAD}>
+          Până la 50 de planuri, platforme amestecate, un singur proprietar. Se verifică plan cu plan, pe conturile reale, apoi se creează oprit — fiecare în
+          spațiul scris în el.
+        </p>
       </div>
-    </main>
+
+      <BatchEditor
+        workspaces={workspaces}
+        currentWorkspaceId={currentId}
+        actions={{ checkBatchPlan, createBatchPlan, continueJob: continueJobAction, chooseWorkspace }}
+      />
+    </div>
   );
 }

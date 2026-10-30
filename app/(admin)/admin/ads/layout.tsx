@@ -4,16 +4,17 @@ import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server"
 import { clientsForRequest } from "@/lib/ads/model/read";
 import { selectionFromCookie } from "@/lib/ads/model/selection.server";
 import { PanouShell } from "@/components/panou/layout/shell";
+import { HydrateWhenParsed } from "@/components/panou/ads/hydrate-when-parsed";
+import { OnlyOnSearchTools } from "@/components/panou/ads/only-on-search-tools";
+import { AdsSelectors, type AdsSelectorClient } from "@/components/panou/ads/selectors";
+// Doar uneltele Google încă nerefăcute în noul design mai au nevoie de banda veche cu spațiul de lucru.
 import { WorkspaceRail } from "@/components/ads/workspace-rail";
-import { HydrateWhenParsed } from "@/components/ads/hydrate-when-parsed";
-import { TopBar, type TopBarClient } from "@/components/ads/top-bar";
 import { LegacyStrip } from "@/components/ads/legacy-strip";
 import { signOut } from "../login/actions";
 import { SessionKeeper } from "../_components/session-keeper";
 import { SetupNotice } from "../_components/setup-notice";
 import { chooseWorkspace } from "./actions";
 import { rememberSelectionAction } from "./v2-actions";
-import { syncClientAction } from "./clienti/actions";
 import "./portal.css";
 
 /**
@@ -23,9 +24,9 @@ import "./portal.css";
  * → `getAdminUser()` (sesiune Supabase deschisă cu Google + lista
  * `ADMIN_EMAILS`) → altfel /admin/login.
  *
- * Cadrul e cel comun al panoului: meniul de module în stânga, bara de sus cu
- * clientul, perioada și canalul, apoi ecranul. Tema (dark, lavandă) vine din
- * `portal.css` (variabilele sistemului de design, doar sub `.ads-portal`).
+ * Cadrul e cel comun al panoului (`PanouShell`): meniul de module în stânga și
+ * bara de sus, în care stau selectoarele modulului — clientul, canalul și
+ * perioada (`AdsSelectors`). Tot ce e dedesubt se schimbă după ele.
  */
 export default async function AdsLayout({
   children,
@@ -39,14 +40,12 @@ export default async function AdsLayout({
   const currentId = await currentWorkspaceId();
   const [clients, saved] = await Promise.all([clientsForRequest(), selectionFromCookie()]);
 
-  const barClients: TopBarClient[] = clients.ok
+  const selectorClients: AdsSelectorClient[] = clients.ok
     ? clients.data.map((client) => ({
         id: client.id,
         name: client.name,
         owner: client.owner,
         platforms: [...new Set(client.accounts.map((account) => account.platform))],
-        lastSyncedAt: client.accounts.map((account) => account.lastSyncedAt).filter((value): value is string => Boolean(value)).sort().at(-1) ?? null,
-        failedAccounts: client.accounts.filter((account) => account.syncEnabled && account.lastSyncStatus === "failed").length,
       }))
     : [];
 
@@ -57,11 +56,13 @@ export default async function AdsLayout({
       <PanouShell
         email={user.email}
         signOut={signOut}
+        selectors={<AdsSelectors clients={selectorClients} saved={saved} remember={rememberSelectionAction} />}
         banner={
-          <>
-            <TopBar clients={barClients} saved={saved} remember={rememberSelectionAction} sync={syncClientAction} />
-            <LegacyStrip rail={<WorkspaceRail workspaces={workspaces} currentId={currentId} action={chooseWorkspace} />} />
-          </>
+          <OnlyOnSearchTools>
+            <div className="mb-4 overflow-hidden rounded-[22px] border border-white/[0.07]">
+              <LegacyStrip rail={<WorkspaceRail workspaces={workspaces} currentId={currentId} action={chooseWorkspace} />} />
+            </div>
+          </OnlyOnSearchTools>
         }
       >
         {children}

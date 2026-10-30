@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { claudeBrief } from "@/lib/ads/claude-brief";
 import { knownAccounts } from "@/lib/ads/store";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
-import { ClaudeHelper } from "@/components/ads/claude-helper";
-import { readClaudeContext } from "../actions";
+import { ClaudeHelper } from "@/components/panou/ads/claude-helper";
+import { chooseWorkspace, readClaudeContext } from "../actions";
 
 export const metadata: Metadata = {
   title: "Pentru Claude — MERIDIAN Reclame",
@@ -28,23 +28,15 @@ export default async function ClaudePage() {
   );
 
   return (
-    <main className="mx-auto max-w-[1100px] px-4 pb-14 pt-8 sm:px-8 sm:pt-10">
-      <p className="eyebrow">Reclame</p>
-      <h1 className="display mt-2 text-[2.25rem] text-bone sm:text-[2.75rem]">Pentru Claude</h1>
-      <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-bone/70">
-        Planurile se scriu într-o conversație cu Claude. De aici îi dai tot ce îi trebuie ca să scrie planuri pe care portalul
-        le primește din prima: formatul (și cel al campaniilor de căutare Google), regulile fiecărei platforme și id-urile reale din
-        conturi — pe Google, și campaniile care există deja, conversiile și listele de negative.
-      </p>
-      <div className="mt-10">
-        <ClaudeHelper
-          brief={claudeBrief()}
-          workspaces={workspaces}
-          currentWorkspaceId={currentId}
-          knownTikTok={knownTikTok}
-          readContext={readClaudeContext}
-        />
-      </div>
-    </main>
+    <div className="space-y-4">
+      <ClaudeHelper
+        brief={claudeBrief()}
+        workspaces={workspaces}
+        currentWorkspaceId={currentId}
+        knownTikTok={knownTikTok}
+        readContext={readClaudeContext}
+        chooseWorkspace={chooseWorkspace}
+      />
+    </div>
   );
 }
