@@ -277,12 +277,9 @@ export function SettingsScreen({
     return (
       <li key={platform} className="rounded-xl border border-white/[0.07] px-3 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-[12.5px]">
-              {label} {account?.nume ? <span className="text-muted-foreground">· {account.nume}</span> : null}
-            </p>
-            <p className={cn("text-[10.5px]", connected ? "text-mint" : "text-rose")}>{line}</p>
-          </div>
+          <p className="min-w-[7rem] flex-1 text-[12.5px]">
+            {label} {account?.nume ? <span className="text-muted-foreground">· {account.nume}</span> : null}
+          </p>
           <Pill tone={connected ? "mint" : "rose"} dot>
             {stateText}
           </Pill>
@@ -307,8 +304,9 @@ export function SettingsScreen({
             </Btn>
           ) : null}
         </div>
+        <p className={cn("mt-1 text-[10.5px]", connected ? "text-mint" : "text-rose")}>{line}</p>
         {account ? (
-          <p className="mt-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-[10.5px] leading-relaxed text-muted-foreground">
             Conectat {dateTimeRo(account.conectatLa)} de {account.conectatDe}.
             {account.reinnoitLa ? ` Ultima reînnoire ${dateTimeRo(account.reinnoitLa)}.` : ""}
             {account.eroare && account.stare === "activ" ? <span className="text-[#FFC2CE]"> {account.eroare}</span> : null}
@@ -418,7 +416,7 @@ export function SettingsScreen({
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <label className="block">
               <span className={labelClass}>Slot nou</span>
-              <TextInput type="time" className="mt-1 w-[110px]" value={newSlot} onChange={(event) => setNewSlot(event.target.value)} />
+              <TextInput type="time" className="mt-1 w-[132px]" value={newSlot} onChange={(event) => setNewSlot(event.target.value)} />
             </label>
             <Btn size="sm" variant="outline" icon={Plus} onClick={addSlot}>
               Adaugă

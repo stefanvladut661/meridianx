@@ -64,7 +64,7 @@ function PostRow({
     <li className={cn("flex flex-wrap items-start gap-3 px-4 py-3.5", post.stare === "scoasa" && "opacity-60")}>
       <ClipTile platform={post.platforma} durationMs={post.durataMs} />
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-44">
         <div className="flex flex-wrap items-center gap-2">
           <PlatformPill platforma={post.platforma} />
           <StatePill stare={post.stare} />
@@ -116,7 +116,7 @@ function PostRow({
         {post.stare === "scoasa" && post.scoasaLa ? <p className="mt-1 text-[10.5px] text-muted-foreground">Scoasă {momentLabel(post.scoasaLa, fus)}.</p> : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5 max-sm:w-full max-sm:pl-[68px]">
         {post.link ? (
           <a href={post.link} target="_blank" rel="noreferrer" className={btnClass({ variant: "outline", size: "xs" })}>
             Vezi postarea <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />

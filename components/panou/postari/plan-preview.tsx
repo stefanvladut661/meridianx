@@ -51,8 +51,10 @@ function PostCard({ post, fus }: { post: PreviewPost; fus: string }) {
           </div>
           <p className="mt-0.5 break-all font-mono text-[11.5px]">{post.fisier}</p>
           <p className="text-[10.5px] text-muted-foreground">{post.clip?.summary ?? (post.fileId ? "necitit încă" : "nu e în folder")}</p>
+          <div className="mt-2">
+            <PlatformPills post={post} />
+          </div>
         </div>
-        <PlatformPills post={post} />
       </div>
 
       {post.caption ? (

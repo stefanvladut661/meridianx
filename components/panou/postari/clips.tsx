@@ -190,7 +190,7 @@ export function ClipsLot({
             return (
               <li key={row.key} className="flex flex-wrap items-start gap-3 px-4 py-3">
                 <ClipTile platform={igOk ? "instagram" : ttOk ? "tiktok" : null} durationMs={durationMs} />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-44">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="break-all font-mono text-[12px]">{row.name}</p>
                     <span className={cn("text-[10.5px]", clip?.probed ? "text-muted-foreground" : "text-muted-foreground/70")}>
@@ -222,7 +222,7 @@ export function ClipsLot({
                   ) : null}
                 </div>
                 {clip ? (
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5 max-sm:w-full max-sm:pl-[68px]">
                     <Verdict label="Instagram" issues={clip.instagram} probed={clip.probed} blocked={blocked} />
                     <Verdict label="TikTok" issues={clip.tiktok} probed={clip.probed} blocked={blocked} />
                   </div>
