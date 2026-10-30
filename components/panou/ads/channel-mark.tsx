@@ -1,6 +1,15 @@
-import { Facebook, Music2, Search } from "lucide-react";
+import { Music2, Search } from "lucide-react";
 import { PLATFORM_LABEL, type Platform } from "@/lib/ads/constants";
 import { cn } from "@/lib/utils";
+
+/** „f”-ul Facebook (lucide-react din proiect nu mai are iconițele de brand), în același stil de contur ca restul. */
+function Facebook({ className, "aria-hidden": ariaHidden }: { className?: string; "aria-hidden"?: "true" | boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaHidden}>
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
 
 /**
  * Canalul, ca în prototip (`ChannelMark`): pătrat cu iconiță colorată și numele.
