@@ -77,18 +77,17 @@ Contul de vault e SEPARAT de contul de admin (activarea înlocuiește parola Sup
 | `lib/vault/totp.ts` | TOTP (RFC 6238) pe WebCrypto HMAC; base32 RFC 4648; `otpauth://`. PUR, verificat pe vectorii din RFC. |
 | `lib/vault/keyring.ts` | Rotația cheii (`rotateDek`, mutează `keys`), starea inelului, acordarea cheilor lipsă. |
 | `lib/vault/export.ts` | Exportul criptat (parolă de export, salt aleator per fișier) și decriptarea lui la import. |
-| `app/vault/layout.tsx`, `page.tsx` | Root layout separat; pagina decide doar dacă există Supabase. |
-| `_components/vault-provider.tsx` | Mașina de stări, secretele în ref-uri, auto-blocare. |
-| `_components/vault-app.tsx` | Providerul + ecranul fazei curente. |
-| `_components/unlock-screen.tsx`, `onboarding-screen.tsx`, `recovery-code.tsx`, `key-ring.tsx` | Deblocare / activare / chei / codul de recuperare afișat o dată / **recuperarea cu codul** (faza 7) / semnătura (inelul de meridian). |
-| `_components/vault-shell.tsx` | Antetul (vederi Intrări / Membri, contorul de auto-blocare), `useVaultData`. |
-| `_components/entries-workspace.tsx` | Căutare + listă + panoul din dreapta (fișă / editor / import / coș), gardă la modificări nesalvate, dialog cu focus captiv pe telefon. |
-| `_components/entry-list.tsx`, `entry-panel.tsx`, `entry-field.tsx`, `entry-history.tsx`, `totp-code.tsx` | Lista grupată pe client; fișa; un câmp (mască, Arată, Copiază); istoricul cu diff și restaurare; codul 2FA viu. |
-| `_components/entry-editor.tsx`, `password-generator.tsx` | Adăugare / editare / duplicare; generatorul inline. |
-| `_components/import-panel.tsx`, `export-panel.tsx`, `trash-panel.tsx` | Import (CSV / Bitwarden JSON / export MERIDIAN) în trei pași; exportul criptat; coșul. |
-| `_components/members-panel.tsx` | Membri (aprobă / elimină) + codul de recuperare. |
-| `_components/account-panel.tsx`, `key-panel.tsx` | Contul tău: schimbarea parolei master (faza 7). Cheia de date: starea inelului, rotația, re-criptarea, acordarea cheilor (faza 10). |
-| `_components/clipboard.ts`, `use-vault-data.ts`, `ui.tsx` | Clipboard cu expirare; datele deblocate; vocabularul vizual local. |
+| `app/vault/layout.tsx` | Root layout separat (`<html>`, `noindex`, CSP propriu). Montează O SINGURĂ dată providerul seifului și poarta (`_panou/root.tsx`), ca starea deblocată să supraviețuiască navigării între subrute. |
+| `app/vault/page.tsx`, `import/`, `export/`, `membri/`, `cont/`, `activare/`, `recuperare/` | Rutele: pagini subțiri care randează ecranul din `_panou/`. Intrarea deschisă și tab-ul Coș stau în adresă (`?intrare=<id>`, `?tab=cos`), căutarea NU (numele clienților nu ajung în URL). |
+| `app/vault/fonts.ts` | Fonturile panoului (Instrument Sans/Serif), copiate aici: Vault-ul nu importă din `app/(admin)/`. |
+| `_components/vault-provider.tsx` | Mașina de stări, secretele în ref-uri, auto-blocare. Neschimbat de redesign. |
+| `_components/clipboard.ts`, `use-vault-data.ts` | Clipboard cu expirare; datele deblocate. |
+| `_panou/root.tsx`, `gate.tsx` | Cadrul panoului (`PanouFrame`, nu `PanouShell`: acesta din urmă ar trage clientul de admin în graful Vault) și poarta, care decide după FAZA mașinii de stări, nu după rută; fâșia „N intrări · M clienți · decriptate local în X ms”, contorul de auto-blocare. |
+| `_panou/unlock.tsx`, `onboarding.tsx`, `recovery-code.tsx` | Deblocare / activare (3 pași) / recuperare cu cod / codul afișat o dată. |
+| `_panou/data.tsx` | Providerul datelor decriptate: se încarcă o singură dată pentru toate ecranele și se demontează la blocare. |
+| `_panou/entries-view.tsx`, `entry-list.tsx`, `entry-panel.tsx`, `field.tsx`, `entry-editor.tsx`, `entry-history.tsx` | Lista grupată pe client, căutarea (fără diacritice, `#etichetă`), fișa, câmpul (mască fixă, „Arată” 30 s, „Copiază” cu golire la 45 s, TOTP), editorul și istoricul cu diferențe și restaurare. |
+| `_panou/import-view.tsx`, `export-view.tsx`, `members-view.tsx`, `account-view.tsx` | Import (CSV / Bitwarden / export MERIDIAN), export criptat, membri și codul de recuperare, contul: parola master, inelul de chei, rotația. |
+| `_panou/errors.ts`, `format.ts`, `ui.tsx`, `pages.tsx` | Mesajele erorilor de bază, formatări, vocabularul vizual local, paginile subțiri. |
 
 ---
 
