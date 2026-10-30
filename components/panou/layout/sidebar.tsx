@@ -5,18 +5,8 @@ import { usePathname } from "next/navigation";
 import { ChevronRight, LogOut, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar } from "../ui/states";
+import { PanouMark } from "./mark";
 import { activeModule, firmaModule, isItemActive, modules, type PanouModuleId } from "./nav";
-
-/** Marca din prototip: un „M” stilizat, în lavandă. */
-export function PanouMark() {
-  return (
-    <span className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-lav/25 bg-lav/10">
-      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-        <path d="M5 18V7l7 7 7-7v11" fill="none" stroke="#C6B5FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
-}
 
 /**
  * Meniul din stânga (de la 1024 px): modulele, apoi subpaginile celui activ, jos
