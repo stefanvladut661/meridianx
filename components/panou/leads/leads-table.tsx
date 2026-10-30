@@ -76,10 +76,10 @@ export function LeadsTable({
               <th scope="col" className="px-3 py-2.5 font-medium">
                 Data
               </th>
-              <th scope="col" className={cn("px-3 py-2.5 font-medium", compact && "hidden")}>
+              <th scope="col" className={cn("px-3 py-2.5 font-medium max-lg:hidden", compact && "hidden")}>
                 Tip proiect
               </th>
-              <th scope="col" className={cn("px-3 py-2.5 font-medium", compact && "hidden")}>
+              <th scope="col" className={cn("px-3 py-2.5 font-medium max-xl:hidden", compact && "hidden")}>
                 Sursă
               </th>
               <th scope="col" className="py-2.5 pl-3 pr-4 text-right font-medium">
@@ -118,8 +118,9 @@ export function LeadsTable({
                           {fresh ? <Pill tone="lav">nou</Pill> : null}
                         </span>
                         <span className="block truncate text-[11.5px] text-muted-foreground">{lead.company ?? "fără firmă"}</span>
-                        {compact && lead.isFunded ? (
-                          <span className="mt-0.5 inline-flex items-center gap-1 text-[10.5px] text-apricot">
+                        {lead.isFunded ? (
+                          // Coloana „Tip proiect” poartă marcajul; unde ea nu încape, marcajul trece sub nume.
+                          <span className={cn("mt-0.5 inline-flex items-center gap-1 text-[10.5px] text-apricot", !compact && "lg:hidden")}>
                             <Banknote className="h-3 w-3" aria-hidden="true" /> cere fonduri
                           </span>
                         ) : null}
@@ -138,7 +139,7 @@ export function LeadsTable({
                     <span className="block">{dateRo(lead.createdAt)}</span>
                     <span className="block text-[10.5px] text-muted-foreground">{timeRo(lead.createdAt)}</span>
                   </td>
-                  <td className={cn("max-w-[190px] px-3 py-3 text-[12.5px] text-foreground/80", compact && "hidden")}>
+                  <td className={cn("max-w-[190px] px-3 py-3 text-[12.5px] text-foreground/80 max-lg:hidden", compact && "hidden")}>
                     <span className="block truncate">{lead.projectType ?? <span className="text-muted-foreground">—</span>}</span>
                     {lead.isFunded ? (
                       <span className="mt-1 inline-flex items-center gap-1 text-[10.5px] text-apricot">
@@ -146,7 +147,7 @@ export function LeadsTable({
                       </span>
                     ) : null}
                   </td>
-                  <td className={cn("px-3 py-3 text-[12px] text-muted-foreground", compact && "hidden")}>
+                  <td className={cn("px-3 py-3 text-[12px] text-muted-foreground max-xl:hidden", compact && "hidden")}>
                     <span className="block">{lead.source}</span>
                     {lead.utm.source ? <span className="block text-[10.5px] text-muted-foreground/70">via {lead.utm.source}</span> : null}
                   </td>
