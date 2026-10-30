@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminUser } from "@/lib/supabase/clients";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
@@ -12,9 +11,10 @@ import { buildProposals } from "@/lib/ads/google/terms/proposals";
 import { DEFAULT_COST_THRESHOLD } from "@/lib/ads/google/terms/defaults";
 import { STORE_FAILURE_MESSAGE, portalCampaignIds } from "@/lib/ads/store";
 import { readRules, readTerms } from "@/lib/ads/terms-store";
-import { AccountChooser, formatCustomerId } from "@/components/ads/account-chooser";
-import { TermsView } from "@/components/ads/terms-view";
-import { cn } from "@/lib/utils";
+import { CautariHeader, ContHeadline, ContPicker } from "@/components/panou/ads/cautari-shell";
+import { CautariTermeni } from "@/components/panou/ads/cautari-termeni";
+import { CautariTermeniFiltre } from "@/components/panou/ads/cautari-termeni-filtre";
+import { InlineNote } from "@/components/panou/ui/actions";
 import { addTermNegatives, previewTermNegatives, saveTermRules, syncTermsNow } from "../actions";
 
 export const metadata: Metadata = {
@@ -25,19 +25,12 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-function Notice({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mt-8 max-w-2xl rounded-panel-lg border border-[#f0b429]/30 bg-[#f0b429]/[0.04] px-5 py-4 text-[14.5px] leading-relaxed text-bone/85">
-      {children}
-    </div>
-  );
-}
-
 /**
  * /admin/ads/termeni — ce au căutat oamenii înainte să vadă anunțurile, pe
  * ultimele 7 sau 30 de zile, din sincronizarea zilnică (nu direct din Google).
- * Sus, propunerile de negative după regulile contului; omul bifează,
- * previzualizează (conflicte + `validateOnly`) și abia apoi adaugă.
+ * Sus, propunerile de negative după regulile contului; omul bifează (sau
+ * marchează un termen din tabel), previzualizează (conflicte + `validateOnly`)
+ * și abia apoi adaugă.
  */
 export default async function TermsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const user = await getAdminUser();
@@ -52,27 +45,18 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
   const days = params.perioada === "30" ? 30 : 7;
   const campaignFilter = typeof params.campanie === "string" && /^\d+$/.test(params.campanie) ? params.campanie : null;
 
-  const header = (
-    <>
-      <p className="eyebrow">Reclame · Google</p>
-      <h1 className="display mt-2 text-[2.25rem] text-bone sm:text-[2.75rem]">Termeni de căutare</h1>
-      <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-bone/70">
-        Ce au scris oamenii în Google înainte să vadă anunțurile. Portalul propune negative după regulile contului —
-        cuvinte de exclus, cost fără conversii, căutări care țin de altă campanie — și nu adaugă nimic fără bifa ta.
-      </p>
-    </>
-  );
+  const header = <CautariHeader active="termeni" cont={accountParam || null} workspaces={workspaces} currentWorkspaceId={currentId} />;
 
   if (!workspace || workspace.platform !== "google" || !summary.tokenConfigured) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
+      <div className="space-y-4">
         {header}
-        <Notice>
+        <InlineNote className="max-w-2xl">
           {workspace?.platform === "google"
             ? `Spațiul ${summary.name} nu are cheie: setează ${summary.tokenEnv} în Vercel.`
-            : `Lucrezi în ${summary.name}. Termenii de căutare sunt doar pe Google: treci în Meridian · Google sau Clienți · Google.`}
-        </Notice>
-      </main>
+            : `Lucrezi în ${summary.name}. Termenii de căutare sunt doar pe Google: treci în Meridian · Google sau Clienți · Google din selectorul „Spațiu” de mai sus.`}
+        </InlineNote>
+      </div>
     );
   }
 
@@ -82,25 +66,25 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
   } catch {
     /* alegerea merge și scriind id-ul */
   }
-  const chooser = <AccountChooser action="/admin/ads/termeni" value={accountParam} accounts={accounts} hidden={{ perioada: String(days) }} />;
+  const picker = <ContPicker action="/admin/ads/termeni" value={accountParam} accounts={accounts} hidden={{ perioada: String(days) }} />;
 
   if (!accountParam) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
+      <div className="space-y-4">
         {header}
-        {chooser}
-      </main>
+        {picker}
+      </div>
     );
   }
 
   const account = await findGoogleAccount(workspace, accountParam).catch(() => null);
   if (!account || account.manager) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
+      <div className="space-y-4">
         {header}
-        {chooser}
-        <Notice>{account?.manager ? `${account.info.name} e un cont manager; alege contul clientului.` : `Cheia spațiului nu vede contul ${accountParam}.`}</Notice>
-      </main>
+        {picker}
+        <InlineNote className="max-w-2xl">{account?.manager ? `${account.info.name} e un cont manager; alege contul clientului.` : `Cheia spațiului nu vede contul ${accountParam}.`}</InlineNote>
+      </div>
     );
   }
 
@@ -130,85 +114,45 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
     positives: Object.fromEntries([...positives.entries()].map(([id, list]) => [id, list.map((item) => ({ text: item.text, match: item.match }))])),
     campaignNames: Object.fromEntries(campaigns.map((item) => [item.id, item.name])),
   });
-  const base = `/admin/ads/termeni?cont=${info.id}`;
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
+    <div className="space-y-4">
       {header}
-      {chooser}
+      {picker}
 
-      <section aria-labelledby="termeni-cont" className="mt-8">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-          <h2 id="termeni-cont" className="font-md-display text-[1.625rem] font-semibold leading-tight text-bone">
-            {info.name}
-          </h2>
-          <p className="font-md-mono text-[12px] text-dim">
-            {formatCustomerId(info.id)} · {info.currency} ·{" "}
-            <Link href={`/admin/ads/cont?cont=${info.id}`} className="underline underline-offset-4 hover:text-bone">
-              Contul
-            </Link>
-          </p>
-        </div>
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="eyebrow !text-[11px]">Perioada</span>
-          {[7, 30].map((value) => (
-            <Link
-              key={value}
-              href={`${base}&perioada=${value}${campaignFilter ? `&campanie=${campaignFilter}` : ""}`}
-              aria-current={days === value ? "page" : undefined}
-              className={cn("rounded-full border px-3 py-1.5 text-[13px]", days === value ? "border-bone/60 bg-glass text-bone" : "border-hair text-dim hover:text-bone")}
-            >
-              ultimele {value} zile
-            </Link>
-          ))}
-          <span className="mx-2 hidden h-4 w-px bg-hair-strong sm:block" aria-hidden />
-          <span className="eyebrow !text-[11px]">Campania</span>
-          <Link
-            href={`${base}&perioada=${days}`}
-            aria-current={!campaignFilter ? "page" : undefined}
-            className={cn("rounded-full border px-3 py-1.5 text-[13px]", !campaignFilter ? "border-bone/60 bg-glass text-bone" : "border-hair text-dim hover:text-bone")}
-          >
-            toate
-          </Link>
-          {campaigns.map((item) => (
-            <Link
-              key={item.id}
-              href={`${base}&perioada=${days}&campanie=${item.id}`}
-              aria-current={campaignFilter === item.id ? "page" : undefined}
-              className={cn(
-                "max-w-[16rem] truncate rounded-full border px-3 py-1.5 text-[13px]",
-                campaignFilter === item.id ? "border-bone/60 bg-glass text-bone" : "border-hair text-dim hover:text-bone"
-              )}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {googleError ? <Notice>{googleError}</Notice> : null}
-      {!terms.ok ? <Notice>{STORE_FAILURE_MESSAGE[terms.reason]}</Notice> : null}
-
-      <div className="mt-8">
-        <TermsView
-          workspace={workspace.id}
-          account={info}
-          period={{ from, to, days }}
-          terms={termRows}
-          proposals={proposals}
-          lists={lists}
-          rules={{
-            excludeWords,
-            costThreshold,
-            syncEnabled: rules.ok ? (rules.data?.syncEnabled ?? true) : true,
-            lastSyncedAt: rules.ok ? (rules.data?.lastSyncedAt ?? null) : null,
-            lastSyncError: rules.ok ? (rules.data?.lastSyncError ?? null) : null,
-            updatedByEmail: rules.ok ? (rules.data?.updatedByEmail ?? null) : null,
-            exists: rules.ok && rules.data !== null,
-          }}
-          actions={{ sync: syncTermsNow, saveRules: saveTermRules, preview: previewTermNegatives, add: addTermNegatives }}
+      <ContHeadline
+        info={info}
+        hint="Ce au scris oamenii în Google înainte să vadă anunțurile. Portalul propune negative după regulile contului și nu adaugă nimic fără bifa ta."
+      >
+        <CautariTermeniFiltre
+          base={`/admin/ads/termeni?cont=${info.id}`}
+          days={days}
+          campaignId={campaignFilter}
+          campaigns={campaigns.map((item) => ({ id: item.id, name: item.name }))}
         />
-      </div>
-    </main>
+      </ContHeadline>
+
+      {googleError ? <InlineNote className="max-w-2xl">{googleError}</InlineNote> : null}
+      {!terms.ok ? <InlineNote className="max-w-2xl">{STORE_FAILURE_MESSAGE[terms.reason]}</InlineNote> : null}
+
+      <CautariTermeni
+        workspace={workspace.id}
+        account={info}
+        period={{ from, to, days }}
+        terms={termRows}
+        proposals={proposals}
+        lists={lists}
+        rules={{
+          excludeWords,
+          costThreshold,
+          syncEnabled: rules.ok ? (rules.data?.syncEnabled ?? true) : true,
+          lastSyncedAt: rules.ok ? (rules.data?.lastSyncedAt ?? null) : null,
+          lastSyncError: rules.ok ? (rules.data?.lastSyncError ?? null) : null,
+          updatedByEmail: rules.ok ? (rules.data?.updatedByEmail ?? null) : null,
+          exists: rules.ok && rules.data !== null,
+        }}
+        actions={{ sync: syncTermsNow, saveRules: saveTermRules, preview: previewTermNegatives, add: addTermNegatives }}
+      />
+    </div>
   );
 }
