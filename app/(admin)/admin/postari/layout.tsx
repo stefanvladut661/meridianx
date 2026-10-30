@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { readSettings } from "@/lib/postari/setari";
-import { PanouShell } from "@/components/panou/shell";
+import { PanouShell } from "@/components/panou/layout/shell";
 import { PostariTopBar } from "@/components/postari/top-bar";
 import { signOut } from "../login/actions";
 import { SessionKeeper } from "../_components/session-keeper";
@@ -26,7 +26,7 @@ export default async function PostariLayout({ children }: Readonly<{ children: R
   return (
     <>
       <SessionKeeper />
-      <PanouShell email={user.email} signOut={signOut} topBar={<PostariTopBar queue={queue} />}>
+      <PanouShell email={user.email} signOut={signOut} banner={<PostariTopBar queue={queue} />}>
         {children}
       </PanouShell>
     </>

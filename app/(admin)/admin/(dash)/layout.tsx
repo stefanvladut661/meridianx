@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
-import { PanouShell } from "@/components/panou/shell";
+import { PanouShell } from "@/components/panou/layout/shell";
 import { signOut } from "../login/actions";
 import { SessionKeeper } from "../_components/session-keeper";
 import { SetupNotice } from "../_components/setup-notice";

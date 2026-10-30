@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { listClients } from "@/lib/firma/clienti";
-import { PanouShell } from "@/components/panou/shell";
+import { PanouShell } from "@/components/panou/layout/shell";
 import { FirmaTopBar } from "@/components/firma/top-bar";
 import { signOut } from "../login/actions";
 import { SessionKeeper } from "../_components/session-keeper";
@@ -30,7 +30,7 @@ export default async function FirmaLayout({ children }: Readonly<{ children: Rea
       <PanouShell
         email={user.email}
         signOut={signOut}
-        topBar={
+        banner={
           <Suspense fallback={<div className="h-[53px] border-b border-hair" />}>
             <FirmaTopBar clients={barClients} />
           </Suspense>

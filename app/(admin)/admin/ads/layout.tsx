@@ -3,7 +3,7 @@ import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { clientsForRequest } from "@/lib/ads/model/read";
 import { selectionFromCookie } from "@/lib/ads/model/selection.server";
-import { PanouShell } from "@/components/panou/shell";
+import { PanouShell } from "@/components/panou/layout/shell";
 import { WorkspaceRail } from "@/components/ads/workspace-rail";
 import { HydrateWhenParsed } from "@/components/ads/hydrate-when-parsed";
 import { TopBar, type TopBarClient } from "@/components/ads/top-bar";
@@ -49,9 +49,6 @@ export default async function AdsLayout({
         failedAccounts: client.accounts.filter((account) => account.syncEnabled && account.lastSyncStatus === "failed").length,
       }))
     : [];
-  const current = barClients.find((client) => client.id === saved.clientId) ?? barClients[0] ?? null;
-  // „Căutări” e doar pe Google: apare când clientul are un cont Google și canalul îl include.
-  const googleTools = (saved.channel === "toate" || saved.channel === "google") && (current ? current.platforms.includes("google") : true);
 
   return (
     // Hidratarea așteaptă sfârșitul citirii paginii — vezi hydrate-when-parsed.tsx.
@@ -59,9 +56,8 @@ export default async function AdsLayout({
       <SessionKeeper />
       <PanouShell
         email={user.email}
-        googleTools={googleTools}
         signOut={signOut}
-        topBar={
+        banner={
           <>
             <TopBar clients={barClients} saved={saved} remember={rememberSelectionAction} sync={syncClientAction} />
             <LegacyStrip rail={<WorkspaceRail workspaces={workspaces} currentId={currentId} action={chooseWorkspace} />} />
