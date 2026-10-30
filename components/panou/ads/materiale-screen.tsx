@@ -237,7 +237,7 @@ function MaterialRowItem({
           {thumb}
         </span>
       )}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-[12rem]">
         <p className="truncate text-[13px]">{material.name}</p>
         <p className="text-[11px] text-muted-foreground">
           {facts.length ? `${facts.join(" · ")} · ` : ""}
@@ -258,7 +258,7 @@ function MaterialRowItem({
           )}
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-auto sm:justify-end">
         {unfinished ? (
           <div className="flex items-center gap-1.5">
             <Pill tone="apricot" dot>

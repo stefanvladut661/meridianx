@@ -165,7 +165,7 @@ function NoteForm({
       <p className="text-[12px] text-muted-foreground">Cineva a sunat de pe o reclamă. Zece secunde, și din telefon.</p>
 
       <div className="mt-4 space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid items-end gap-3 sm:grid-cols-2">
           <label className="block">
             <span className={LABEL}>Ziua</span>
             <TextInput
@@ -401,8 +401,8 @@ export function ApeluriScreen({
 
       {total.total > 0 ? (
         <Card>
-          <div className="grid grid-cols-3 gap-3">
-            <Stat label="Apeluri" value={total.total} hint={`${scope.client} · ${scope.period.toLowerCase()}${scope.channel ? ` · ${scope.channel}` : ""}`} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Stat className="col-span-2 sm:col-span-1" label="Apeluri" value={total.total} hint={`${scope.client} · ${scope.period.toLowerCase()}${scope.channel ? ` · ${scope.channel}` : ""}`} />
             <Stat label="Programate" value={total.byResult.programat} tone="dim" />
             <Stat label="Semnate" value={total.byResult.semnat} tone="dim" />
           </div>
