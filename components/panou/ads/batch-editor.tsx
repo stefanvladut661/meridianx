@@ -454,7 +454,7 @@ export function BatchEditor({
         </p>
 
         {items.length === 0 ? (
-          <Card className="p-0">
+          <Card padded={false}>
             <EmptyState
               icon={Layers}
               title="Un lot = mai multe campanii odată."
@@ -542,7 +542,7 @@ export function BatchEditor({
               </p>
             </Card>
 
-            <Card className="overflow-hidden p-0">
+            <Card padded={false} className="overflow-hidden">
               <ol className="divide-y divide-white/[0.05]">
                 {rows.map((row) => {
                   const status = rowStatus(row);

@@ -65,7 +65,7 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
     return (
       <div className="space-y-4">
         {header()}
-        <Card className="p-0">
+        <Card padded={false}>
           <ErrorState title="Clienții nu se pot citi" text={clients.message} hint="Nu s-a schimbat nimic în conturi — doar citirea a eșuat." />
         </Card>
       </div>
@@ -76,7 +76,7 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
     return (
       <div className="space-y-4">
         {header()}
-        <Card className="p-0">
+        <Card padded={false}>
           <EmptyState
             icon={Megaphone}
             title="Niciun client încă"
@@ -123,7 +123,7 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
     return (
       <div className="space-y-4">
         {header(subtitle, actions)}
-        <Card className="p-0">
+        <Card padded={false}>
           <ErrorState title="Cifrele nu se pot citi" text={view.message} hint="Nu s-a schimbat nimic în conturi — doar citirea a eșuat." />
         </Card>
       </div>
@@ -135,7 +135,7 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
     return (
       <div className="space-y-4">
         {header(subtitle, actions)}
-        <Card className="p-0">
+        <Card padded={false}>
           <EmptyState
             icon={Megaphone}
             title={selection.channel === "toate" ? `${client.name} n-are încă niciun cont legat` : `${client.name} n-are cont ${PLATFORM_LABEL[selection.channel]}`}
@@ -197,7 +197,7 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
         </InlineNote>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
         <KpiTiles
           current={current}
           previous={before}

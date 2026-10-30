@@ -52,7 +52,7 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
     return (
       <div className="space-y-4">
         {header}
-        <Card className="p-0">
+        <Card padded={false}>
           {clients.ok ? (
             <EmptyState
               icon={Users}

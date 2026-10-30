@@ -523,7 +523,7 @@ export function CreateWizard({
 
   if (accounts.length === 0) {
     return (
-      <Card className="p-0">
+      <Card padded={false}>
         <EmptyState
           icon={Link2}
           title={`${client.name} n-are încă niciun cont de reclame legat.`}

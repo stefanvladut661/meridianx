@@ -309,7 +309,7 @@ export function CampaignsScreen({
 
   return (
     <section aria-label="Campanii, grupuri și reclame" className="space-y-3">
-      <Card className="overflow-hidden p-0">
+      <Card padded={false} className="overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-3">
           <div className="flex flex-wrap items-center gap-3">
             <SegmentedControl<Level>
@@ -507,7 +507,7 @@ export function CampaignsScreen({
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-white/[0.02] text-[12.5px]">
+                  <tr className="bg-[#0f0f13] text-[12.5px]">
                     <td className="sticky left-0 z-[1] bg-[#0f0f13] py-3 pl-4 pr-1" />
                     <th scope="row" className="sticky left-9 z-[1] bg-[#0f0f13] px-3 py-3 text-left text-[12px] font-medium">
                       Total · {rows.length} {rows.length === 1 ? "rând" : "rânduri"}

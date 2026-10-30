@@ -191,13 +191,13 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
         </div>
 
         {!plans.ok ? (
-          <Card className="p-0">
+          <Card padded={false}>
             <ErrorState title="Planurile nu se pot citi" text={STORE_FAILURE_MESSAGE[plans.reason]} />
           </Card>
         ) : null}
 
         {plans.ok && groups.length === 0 ? (
-          <Card className="p-0">
+          <Card padded={false}>
             <EmptyState
               icon={FileJson}
               title="Niciun plan încă"

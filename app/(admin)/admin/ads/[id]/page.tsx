@@ -59,7 +59,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     if (found.reason === "not_found") {
       return (
         <div className="space-y-4">
-          <Card className="p-0">
+          <Card padded={false}>
             <EmptyState
               icon={PlayCircle}
               title="Campania nu există"
@@ -76,7 +76,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     }
     return (
       <div className="space-y-4">
-        <Card className="p-0">
+        <Card padded={false}>
           <ErrorState title="Campania nu s-a încărcat" text={STORE_FAILURE_MESSAGE[found.reason]} hint="Nu s-a schimbat nimic în conturi — doar citirea a eșuat." />
         </Card>
       </div>
@@ -170,11 +170,11 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       ) : null}
 
       {!days.ok ? (
-        <Card className="p-0">
+        <Card padded={false}>
           <ErrorState title="Cifrele nu s-au citit" text={days.message} hint="Nu s-a schimbat nimic în conturi — doar citirea a eșuat." />
         </Card>
       ) : rows.length === 0 ? (
-        <Card className="p-0">
+        <Card padded={false}>
           <EmptyState
             icon={PlayCircle}
             title="Nicio cifră încă"
@@ -187,7 +187,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <SectionTitle title="Ultimele 7 zile" hint="față de cele 7 de dinainte" />
               <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -271,7 +271,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
             </Card>
           </div>
 
-          <Card className="overflow-hidden p-0">
+          <Card padded={false} className="overflow-hidden">
             <div className="border-b border-white/[0.06] px-4 py-3">
               <h2 className="text-[13.5px] font-medium">Zi cu zi</h2>
               <p className="mt-0.5 text-[11.5px] text-muted-foreground">toate zilele de la creare, cu totalul</p>
@@ -291,7 +291,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       ) : null}
 
       {summary ? (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <Card>
             <SectionTitle title="Reclamele" hint="exact textele fiecăreia, cum au fost trimise" />
             <AdsPreview summary={summary} rotating={plan.creative.variants === "platform_rotates"} className="mt-4" />

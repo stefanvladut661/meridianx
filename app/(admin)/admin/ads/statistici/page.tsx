@@ -71,14 +71,14 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
   if (!clients.ok) {
     return shell(
-      <Card className="p-0">
+      <Card padded={false}>
         <ErrorState title="Statisticile nu s-au încărcat" text={clients.message} hint="Cifrele de mai jos ar fi incomplete, așa că nu le afișăm." />
       </Card>
     );
   }
   if (clients.data.length === 0) {
     return shell(
-      <Card className="p-0">
+      <Card padded={false}>
         <EmptyState
           icon={BarChart3}
           title="Statisticile apar după primul client"
@@ -107,7 +107,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const view = await readClientView({ client, channel: selection.channel, range: selection.range });
   if (!view.ok) {
     return shell(
-      <Card className="p-0">
+      <Card padded={false}>
         <ErrorState title="Statisticile nu s-au încărcat" text={view.message} hint="Cifrele de mai jos ar fi incomplete, așa că nu le afișăm." />
       </Card>,
       { subtitle, right: sync }
@@ -122,7 +122,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
   if (rows.every((row) => row.figures.spend === 0 && row.figures.impressions === 0)) {
     return shell(
-      <Card className="p-0">
+      <Card padded={false}>
         <EmptyState
           icon={BarChart3}
           title="Nicio cifră pe filtrele astea"
@@ -181,7 +181,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       />
 
       {channels.length > 1 ? (
-        <Card className="overflow-hidden p-0">
+        <Card padded={false} className="overflow-hidden">
           <div className="border-b border-white/[0.06] px-4 py-3">
             <h2 className="text-[13.5px] font-medium">Pe canale</h2>
           </div>
@@ -225,7 +225,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         </Card>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <SectionTitle
             title="Cheltuiala pe zi"
@@ -255,7 +255,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
       <DayExplorer days={series} currency={mainCurrency} resultLabel={measuredAny ? "Rezultate" : null} caption={`Cifrele pe zile, ${PERIOD_LABEL[selection.period].toLowerCase()}`} />
 
-      <Card className="overflow-hidden p-0">
+      <Card padded={false} className="overflow-hidden">
         <div className="border-b border-white/[0.06] px-4 py-3">
           <h2 className="text-[13.5px] font-medium">Pe campanii</h2>
           <p className="mt-0.5 text-[11.5px] text-muted-foreground">față de perioada dinainte</p>

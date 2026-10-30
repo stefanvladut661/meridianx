@@ -573,7 +573,7 @@ export function PlanEditor({
 
           {!draft || !summary || !validation ? (
             <>
-              <Card className="p-0">
+              <Card padded={false}>
                 <EmptyState
                   icon={FileJson}
                   title="Aici apare planul citit"

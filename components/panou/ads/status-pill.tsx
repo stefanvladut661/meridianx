@@ -23,7 +23,7 @@ const TONE: Record<NormalizedStatus, PillTone> = {
 export function StatusPill({ status, detail, className }: { status: NormalizedStatus; detail?: string | null; className?: string }) {
   return (
     <span title={detail ?? undefined} className="inline-flex">
-      <Pill tone={TONE[status]} dot className={className}>
+      <Pill tone={TONE[status]} dot className={`whitespace-nowrap ${className ?? ""}`}>
         {STATUS_LABEL[status]}
       </Pill>
     </span>
