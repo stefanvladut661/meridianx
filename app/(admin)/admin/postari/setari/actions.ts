@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { actorEmail, SESSION_EXPIRED } from "@/lib/postari/db";
-import { checkRoot } from "@/lib/postari/drive";
+import { checkRoot, listFolder, resolveFolder } from "@/lib/postari/drive";
 import { logEvent } from "@/lib/postari/istoric";
 import { readSettings, updateSettings } from "@/lib/postari/setari";
 import { isTime, isTimeZone } from "@/lib/postari/timp";
@@ -73,4 +73,26 @@ export async function saveSettingsAction(raw: unknown): Promise<SettingsResult> 
   if (!result.ok) return { ok: false, message: result.message };
   revalidatePath("/admin/postari", "layout");
   return { ok: true, message: folderName && driveFolder !== current.data.driveFolderId ? `Salvat. Folderul principal e „${folderName}”.` : "Salvat." };
+}
+
+/**
+ * „Testează conexiunea”: folderul salvat în setări răspunde cu contul legat?
+ * Doar citire, fără scrieri și fără istoric; spune și câte loturi și clipuri
+ * are la rădăcină.
+ */
+export async function checkDriveAction(): Promise<SettingsResult> {
+  const actor = await actorEmail();
+  if (!actor) return { ok: false, message: SESSION_EXPIRED };
+  const current = await readSettings();
+  if (!current.ok) return { ok: false, message: current.message };
+  if (!current.data.driveFolderId) return { ok: false, message: "Folderul principal nu e ales. Lipește adresa lui, salvează setările și testează din nou." };
+  const check = await checkRoot(current.data.driveFolderId);
+  if (!check.ok) return { ok: false, message: check.message };
+  const root = await resolveFolder("");
+  const listing = root.ok ? await listFolder(root.data) : null;
+  if (listing?.ok) {
+    const lots = listing.data.subfolders.length;
+    return { ok: true, message: `Folderul „${check.data.name}” răspunde. ${lots} ${lots === 1 ? "lot" : "loturi"} și ${listing.data.clips.length} ${listing.data.clips.length === 1 ? "clip" : "clipuri"} la rădăcină.` };
+  }
+  return { ok: true, message: `Folderul „${check.data.name}” răspunde.` };
 }

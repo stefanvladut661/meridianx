@@ -137,6 +137,7 @@ function toView(row: Record<string, unknown>, planNames: Map<string, string | nu
     hashtaguri: post.hashtaguri,
     caption: post.caption,
     optiuni: post.optiuni as PostView["optiuni"],
+    durataMs: post.durataMs,
     programataLa: post.programataLa,
     sursaOra: post.sursaOra,
     stare: post.stare,
