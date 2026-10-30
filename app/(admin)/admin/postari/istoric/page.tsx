@@ -1,20 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CheckCircle2, History as HistoryIcon, MinusCircle, XCircle } from "lucide-react";
 import { readHistory } from "@/lib/postari/istoric";
 import { isZona, ZONA_LABEL, ZONE } from "@/lib/postari/istoric-shared";
-import { momentLabel } from "@/lib/postari/timp";
 import { cn } from "@/lib/utils";
-import { Empty, Notice, PageHead, Tag, tdClass, thClass } from "@/components/postari/ui";
+import { InlineNote } from "@/components/panou/ui/actions";
+import { dateTimeRo } from "@/components/panou/ui/format";
+import { Card, Pill, type PillTone } from "@/components/panou/ui/primitives";
+import { EmptyState, ErrorState } from "@/components/panou/ui/states";
+import { ScreenHead } from "@/components/panou/postari/shared";
 
 export const metadata: Metadata = { title: "Istoric — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-const REZULTAT = { ok: { tone: "ok", label: "Reușit" }, eroare: { tone: "error", label: "Eroare" }, sarit: { tone: "muted", label: "Sărit" } } as const;
+const RESULT: Record<"ok" | "eroare" | "sarit", { tone: PillTone; label: string; box: string }> = {
+  ok: { tone: "mint", label: "Reușit", box: "border-mint/25 bg-mint/10 text-mint" },
+  eroare: { tone: "rose", label: "Eroare", box: "border-rose/25 bg-rose/10 text-rose" },
+  sarit: { tone: "neutral", label: "Sărit", box: "border-white/[0.1] bg-white/[0.04] text-muted-foreground" },
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const chip = (active: boolean) =>
-  cn("rounded-lg border px-3 py-1.5 text-[13.5px]", active ? "border-[var(--md-a1)] bg-[var(--ap-accent-soft)] text-[var(--ap-accent-ink)]" : "border-hair-strong text-bone/80 hover:bg-[var(--ap-hover)]");
+  cn("whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors", active ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground");
 
-/** /admin/postari/istoric — fiecare acțiune a modulului: cine, ce, când, rezultatul. */
+/** /admin/postari/istoric — fiecare acțiune a modulului: cine, ce, când, rezultatul. Ultimele 300. */
 export default async function IstoricPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const zona = typeof params.zona === "string" && isZona(params.zona) ? params.zona : null;
@@ -22,61 +32,74 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
   const history = await readHistory({ zona, tinta, limit: 300 });
 
   return (
-    <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead title="Istoric" subtitle="Tot ce a făcut modulul — de tine sau de coadă — cu rezultatul fiecărei acțiuni. Ultimele 300." />
-      <nav aria-label="Zona" className="mt-5 flex flex-wrap gap-1.5">
-        <Link href="/admin/postari/istoric" aria-current={zona === null && !tinta ? "page" : undefined} className={chip(zona === null && !tinta)}>
-          Toate
-        </Link>
-        {ZONE.map((item) => (
-          <Link key={item} href={`/admin/postari/istoric?zona=${item}`} aria-current={zona === item ? "page" : undefined} className={chip(zona === item)}>
-            {ZONA_LABEL[item]}
+    <div className="space-y-4">
+      <ScreenHead title="Istoric" text="Fiecare aprobare, rulare și eșec, cu ora României. Aici se vede cine a făcut ce. Ultimele 300." />
+
+      <nav aria-label="Zona" className="pu-no-scrollbar max-w-full overflow-x-auto">
+        <div className="inline-flex items-center gap-1 rounded-full border border-white/[0.07] bg-white/[0.03] p-1">
+          <Link href="/admin/postari/istoric" aria-current={zona === null && !tinta ? "page" : undefined} className={chip(zona === null && !tinta)}>
+            Toate
           </Link>
-        ))}
+          {ZONE.map((item) => (
+            <Link key={item} href={`/admin/postari/istoric?zona=${item}`} aria-current={zona === item && !tinta ? "page" : undefined} className={chip(zona === item && !tinta)}>
+              {ZONA_LABEL[item]}
+            </Link>
+          ))}
+        </div>
       </nav>
+
       {tinta ? (
-        <p className="mt-3 text-[13.5px] text-dim">
-          Doar pentru o postare. <Link href="/admin/postari/istoric" className="font-medium text-[var(--md-a1)] underline underline-offset-2">Arată tot</Link>
-        </p>
+        <InlineNote tone="neutral">
+          Doar pentru o postare.{" "}
+          <Link href="/admin/postari/istoric" className="font-medium text-foreground underline underline-offset-2">
+            Arată tot
+          </Link>
+        </InlineNote>
       ) : null}
 
-      {!history.ok ? (
-        <Notice tone="error" className="mt-5">
-          {history.message}
-        </Notice>
-      ) : history.data.length === 0 ? (
-        <Empty className="mt-5">Nicio acțiune încă{zona ? ` în ${ZONA_LABEL[zona]}` : ""}. Ce faci în modul și ce face coada apar aici, cu rezultatul.</Empty>
-      ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
-          <table className="ads-table min-w-full border-collapse">
-            <thead>
-              <tr className="border-b border-hair">
-                <th className={thClass}>Când</th>
-                <th className={thClass}>Cine</th>
-                <th className={thClass}>Zona</th>
-                <th className={thClass}>Ce</th>
-                <th className={thClass}>Rezultat</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-hair">
-              {history.data.map((row) => (
-                <tr key={row.id}>
-                  <td className={cn(tdClass, "whitespace-nowrap text-[13px] text-dim")}>{momentLabel(row.createdAt)}</td>
-                  <td className={cn(tdClass, "text-[13px]")}>{row.actor}</td>
-                  <td className={cn(tdClass, "text-[13px]")}>{ZONA_LABEL[row.zona]}</td>
-                  <td className={cn(tdClass, "min-w-[16rem]")}>
-                    <p className="font-medium">{row.actiune}</p>
-                    {row.mesaj ? <p className="mt-0.5 text-[13px] text-dim">{row.mesaj}</p> : null}
-                  </td>
-                  <td className={tdClass}>
-                    <Tag tone={REZULTAT[row.rezultat].tone}>{REZULTAT[row.rezultat].label}</Tag>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </main>
+      <Card className="overflow-hidden p-0">
+        {!history.ok ? (
+          <ErrorState title="Nu am putut citi istoricul" text={history.message} />
+        ) : history.data.length === 0 ? (
+          <EmptyState
+            icon={HistoryIcon}
+            title="Nicio rulare încă"
+            text={`Nicio acțiune încă${zona ? ` în ${ZONA_LABEL[zona]}` : ""}. După primul plan aprobat, fiecare rulare apare aici cu rezultatul ei.`}
+          />
+        ) : (
+          <ul className="divide-y divide-white/[0.05]">
+            {history.data.map((row) => {
+              const result = RESULT[row.rezultat];
+              const Icon = row.rezultat === "ok" ? CheckCircle2 : row.rezultat === "eroare" ? XCircle : MinusCircle;
+              return (
+                <li key={row.id} className="flex flex-wrap items-start gap-3 px-4 py-3">
+                  <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border", result.box)}>
+                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[12.5px]">
+                      <span className="font-medium">{row.actiune}</span>
+                      {row.mesaj ? <span className="text-foreground/75"> — {row.mesaj}</span> : null}
+                    </p>
+                    <p className="text-[10.5px] text-muted-foreground">
+                      {ZONA_LABEL[row.zona]} · {row.actor} · {dateTimeRo(row.createdAt)}
+                      {row.tinta && UUID.test(row.tinta) ? (
+                        <>
+                          {" · "}
+                          <Link href={`/admin/postari/istoric?tinta=${row.tinta}`} className="underline underline-offset-2 hover:text-foreground">
+                            doar această postare
+                          </Link>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                  <Pill tone={result.tone}>{result.label}</Pill>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+    </div>
   );
 }
