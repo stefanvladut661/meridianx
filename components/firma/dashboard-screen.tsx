@@ -14,7 +14,7 @@ function sums(value: SumaPeMoneda | null): string {
 
 function Tile({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "error" | "ok" }) {
   return (
-    <li className="rounded-xl border border-hair bg-white px-4 py-3">
+    <li className="rounded-xl border border-hair bg-char px-4 py-3">
       <p className="text-[12.5px] font-medium text-dim">{label}</p>
       <p className={cn("mt-1 text-[1.375rem] font-semibold tabular-nums", tone === "error" && value !== "—" ? "text-[var(--ap-error)]" : "text-bone")}>{value}</p>
       {hint ? <p className="mt-0.5 text-[12px] text-dim">{hint}</p> : null}
@@ -41,7 +41,7 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
         {data.alerte.length === 0 ? (
           <Empty className="mt-3">Nimic nu cere atenție: nicio factură întârziată, niciun contract la final, pachetul contabilului trimis, nicio reînnoire în 7 zile, nicio ciornă de aprobat.</Empty>
         ) : (
-          <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-white">
+          <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-char">
             {data.alerte.map((alert, index) => (
               <li key={index} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[14px]">
                 <Tag tone={alert.tone}>{alert.tone === "error" ? "acum" : "de făcut"}</Tag>
@@ -68,7 +68,7 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
         </h2>
         <p className="mt-0.5 text-[13px] text-dim">Din portalul de reclame, ce au cheltuit platformele pentru fiecare client legat. Îi plătește clientul direct; nu se facturează.</p>
         {data.reclame && data.reclame.length > 0 ? (
-          <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-white">
+          <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-char">
             <table className="ads-table min-w-full border-collapse">
               <thead>
                 <tr className="border-b border-hair">

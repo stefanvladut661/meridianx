@@ -18,9 +18,9 @@ export const FIELD =
 
 export const FIELD_INVALID = "!border-[#d93025]/70 bg-[#d93025]/[0.06]";
 
-export const ERROR_TEXT = "text-[#c62828]";
-export const WARNING_TEXT = "text-[#8a5a00]";
-export const OK_TEXT = "text-[#0f7b52]";
+export const ERROR_TEXT = "text-[var(--ap-error)]";
+export const WARNING_TEXT = "text-[var(--ap-warn)]";
+export const OK_TEXT = "text-[var(--ap-ok)]";
 
 export const ERROR_DOT = "bg-[#d93025]";
 export const WARNING_DOT = "bg-[#f0b429]";

@@ -43,7 +43,7 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
       ) : history.data.length === 0 ? (
         <Empty className="mt-5">Nicio acțiune încă{zona ? ` în ${ZONA_LABEL[zona]}` : ""}. Ce faci în modul apare aici, cu rezultatul.</Empty>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-white">
+        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">
             <thead>
               <tr className="border-b border-hair">

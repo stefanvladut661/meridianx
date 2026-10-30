@@ -123,7 +123,7 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
         {data.lines.length === 0 ? (
           <Empty className="mt-3">Niciun rând din {monthLabel(month)}. Urcă exportul CSV din BT Go mai sus.</Empty>
         ) : (
-          <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-white">
+          <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-char">
             <table className="ads-table min-w-full border-collapse">
               <thead>
                 <tr className="border-b border-hair">
@@ -166,7 +166,7 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
           <h2 id="importuri" className="text-[15px] font-semibold text-bone">
             Importurile
           </h2>
-          <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-white">
+          <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-char">
             {data.imports.map((item) => (
               <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-[13.5px]">
                 <span>
@@ -211,7 +211,7 @@ function ConfirmRow({
   const others = options.filter((option) => !line.candidati.some((candidate) => candidate.id === option.id));
   const incoming = line.directie === "in";
   return (
-    <li className="rounded-xl border border-hair bg-white p-3 text-[13.5px]">
+    <li className="rounded-xl border border-hair bg-char p-3 text-[13.5px]">
       <p>
         <span className={cn("font-semibold tabular-nums", incoming ? "text-[var(--ap-ok)]" : "text-bone")}>
           {incoming ? "+" : "−"}
@@ -425,7 +425,7 @@ function ImportCard({ actions, onImported }: { actions: BankActions; onImported:
               </div>
             </>
           )}
-          <div className="overflow-x-auto rounded-lg border border-hair bg-white">
+          <div className="overflow-x-auto rounded-lg border border-hair bg-char">
             <table className="min-w-full border-collapse text-[12.5px]">
               <tbody>
                 {preview.rows.slice(0, Math.min(preview.rows.length, headerRow + 6)).map((row, index) => (

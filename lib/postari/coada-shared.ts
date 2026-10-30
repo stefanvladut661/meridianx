@@ -1,5 +1,4 @@
 import type { Platforma } from "./limite";
-import type { Tone } from "@/components/postari/ui";
 
 /**
  * Stările unei postări din coadă și ce înseamnă pentru om. Fișier izomorf —
@@ -10,6 +9,9 @@ import type { Tone } from "@/components/postari/ui";
  *               → eșuată (cu motivul; „Reîncearcă”)
  *   planificată / eșuată → scoasă din coadă
  */
+
+/** Tonul unei stări (culoarea etichetei din ecrane). */
+export type Tone = "ok" | "warn" | "error" | "accent" | "neutral" | "muted";
 
 export const STARI = ["planificata", "in_lucru", "publicata", "in_ciorne", "esuata", "scoasa"] as const;
 export type Stare = (typeof STARI)[number];
@@ -63,6 +65,8 @@ export interface PostView {
   hashtaguri: string[];
   caption: string;
   optiuni: { tip?: "reel" | "trial_reel"; absolvire?: "manual" | "automat" | null; in_feed?: boolean; coperta_ms?: number | null };
+  /** Durata clipului, dacă a fost citită din fișier (la verificarea planului). */
+  durataMs: number | null;
   programataLa: string;
   sursaOra: "fixa" | "slot";
   stare: Stare;

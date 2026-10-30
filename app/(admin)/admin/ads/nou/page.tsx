@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
-import { PlanEditor } from "@/components/ads/plan-editor";
+import { PlanEditor } from "@/components/panou/ads/plan-editor";
+import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
 import {
   checkPlan,
   checkVideoUploadStatus,
@@ -37,30 +39,31 @@ export default async function NewPlanPage() {
   const currentId = await currentWorkspaceId();
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 pb-10 pt-8 sm:px-8 sm:pt-10">
-      <p className="eyebrow">Reclame</p>
-      <h1 className="display mt-2 text-[2.25rem] text-bone sm:text-[2.75rem]">Plan nou</h1>
-      <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-bone/70">
-        Lipește planul de campanie scris în altă conversație. Portalul îl verifică, ți-l spune în română
-        și îl creează — oprit — în spațiul de lucru de sus.
-      </p>
-
-      <div className="mt-8">
-        <PlanEditor
-          workspaces={workspaces}
-          currentWorkspaceId={currentId}
-          actions={{
-            chooseWorkspace,
-            checkPlan,
-            createPaused: createPausedCampaign,
-            continueJob: continueJobAction,
-            listLibrary: listLibraryVideos,
-            prepareUpload: prepareVideoUpload,
-            sendUpload: sendStagedVideo,
-            uploadStatus: checkVideoUploadStatus,
-          }}
-        />
+    <div className="space-y-4">
+      <div>
+        <Link href="/admin/ads/planuri" className="text-[11.5px] text-muted-foreground hover:text-foreground">
+          ← Planuri
+        </Link>
+        <h1 className={`mt-2 ${PAGE_TITLE}`}>Plan nou</h1>
+        <p className={PAGE_LEAD}>
+          Lipește JSON-ul scris cu asistentul. Îl citim în română, îl verificăm pe conturile reale și abia apoi îl creăm — oprit.
+        </p>
       </div>
-    </main>
+
+      <PlanEditor
+        workspaces={workspaces}
+        currentWorkspaceId={currentId}
+        actions={{
+          chooseWorkspace,
+          checkPlan,
+          createPaused: createPausedCampaign,
+          continueJob: continueJobAction,
+          listLibrary: listLibraryVideos,
+          prepareUpload: prepareVideoUpload,
+          sendUpload: sendStagedVideo,
+          uploadStatus: checkVideoUploadStatus,
+        }}
+      />
+    </div>
   );
 }

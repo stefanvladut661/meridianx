@@ -8,13 +8,16 @@ import { serviceAccountEmail } from "@/lib/ads/google/api";
 import { describeGoogleError } from "@/lib/ads/google/errors";
 import { findGoogleAccount, listGoogleAccounts } from "@/lib/ads/google/lookup";
 import { accountHeader, readAccountCampaigns, readAudit, readNegativeLists } from "@/lib/ads/google/account/read";
+import { accountMoney } from "@/lib/ads/google/account/labels";
 import { listChanges } from "@/lib/ads/changes";
 import { portalCampaignIds } from "@/lib/ads/store";
-import { AccountCampaigns } from "@/components/ads/account-campaigns";
-import { AccountNegatives } from "@/components/ads/account-negatives";
-import { AccountAudit } from "@/components/ads/account-audit";
-import { AccountJournal } from "@/components/ads/account-journal";
-import { AccountChooser, formatCustomerId } from "@/components/ads/account-chooser";
+import { CautariContAudit } from "@/components/panou/ads/cautari-cont-audit";
+import { CautariContCampanii } from "@/components/panou/ads/cautari-cont-campanii";
+import { CautariContJurnal } from "@/components/panou/ads/cautari-cont-jurnal";
+import { CautariContNegative } from "@/components/panou/ads/cautari-cont-negative";
+import { CautariHeader, ContHeadline, ContPicker, formatCustomerId } from "@/components/panou/ads/cautari-shell";
+import { InlineNote } from "@/components/panou/ui/actions";
+import { Stat } from "@/components/panou/ui/primitives";
 import { cn } from "@/lib/utils";
 import { addAccountNegatives, pauseAccountCampaigns, previewAccountNegatives } from "../actions";
 
@@ -33,19 +36,13 @@ const VIEWS = [
 ] as const;
 type View = (typeof VIEWS)[number]["id"];
 
-function Notice({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mt-8 max-w-2xl rounded-panel-lg border border-[#f0b429]/30 bg-[#f0b429]/[0.04] px-5 py-4 text-[14.5px] leading-relaxed text-bone/85">
-      {children}
-    </div>
-  );
-}
-
 /**
  * /admin/ads/cont — întreținerea unui cont Google existent: campaniile lui în
  * toate stările (cu pauza), negativele pe campanii existente (și legarea
  * listelor comune), auditul (cine a schimbat ce, cine are acces, facturarea,
  * conversiile). Citirile sunt GAQL; scrierile trec prin gărzile din faza 9.
+ * Pe un cont existent portalul face doar pauză, negative și acțiuni de
+ * conversie: niciun buton nu pornește, nu șterge și nu schimbă bugete.
  */
 export default async function AccountPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const user = await getAdminUser();
@@ -58,34 +55,28 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const workspace = findWorkspace(currentId);
   const accountParam = typeof params.cont === "string" ? params.cont.replace(/[\s-]/g, "") : "";
   const view: View = VIEWS.some((item) => item.id === params.vedere) ? (params.vedere as View) : "campanii";
+  const campaignParam = typeof params.campanie === "string" && /^\d+$/.test(params.campanie) ? params.campanie : null;
 
-  const header = (
-    <>
-      <p className="eyebrow">Reclame · Google</p>
-      <h1 className="display mt-2 text-[2.25rem] text-bone sm:text-[2.75rem]">Contul</h1>
-      <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-bone/70">
-        Un cont Google Ads existent, cum e azi: toate campaniile, cu ce au cheltuit; pauza; negativele pe campaniile
-        care rulează; cine a schimbat ce și cine are acces. Portalul nu pornește nimic și nu modifică bugete.
-      </p>
-    </>
-  );
+  const header = <CautariHeader active="cont" cont={accountParam || null} workspaces={workspaces} currentWorkspaceId={currentId} />;
 
   if (!workspace || workspace.platform !== "google") {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
+      <div className="space-y-4">
         {header}
-        <Notice>Lucrezi în {summary.name}. Contul se întreține doar în spațiile Google: treci în Meridian · Google sau Clienți · Google din selectorul de sus.</Notice>
-      </main>
+        <InlineNote className="max-w-2xl">
+          Lucrezi în {summary.name}. Contul se întreține doar în spațiile Google: treci în Meridian · Google sau Clienți · Google din selectorul „Spațiu” de mai sus.
+        </InlineNote>
+      </div>
     );
   }
   if (!summary.tokenConfigured) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
+      <div className="space-y-4">
         {header}
-        <Notice>
+        <InlineNote className="max-w-2xl">
           Spațiul {summary.name} nu are cheie: setează {summary.tokenEnv} în Vercel și fă redeploy. Pașii: lib/ads/README.md → „Google — contul de serviciu”.
-        </Notice>
-      </main>
+        </InlineNote>
+      </div>
     );
   }
 
@@ -98,21 +89,21 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     accountsError = describeGoogleError(error, "lista de conturi", workspace.tokenEnv);
   }
 
-  const chooser = <AccountChooser action="/admin/ads/cont" value={accountParam} accounts={accounts} hidden={{ vedere: view }} />;
+  const picker = <ContPicker action="/admin/ads/cont" value={accountParam} accounts={accounts} hidden={{ vedere: view }} />;
 
   if (!accountParam) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
+      <div className="space-y-4">
         {header}
-        {chooser}
-        {accountsError ? <Notice>{accountsError}</Notice> : null}
+        {picker}
+        {accountsError ? <InlineNote className="max-w-2xl">{accountsError}</InlineNote> : null}
         {accounts.length > 0 ? (
-          <ul className="mt-6 grid gap-px overflow-hidden rounded-panel-lg border border-hair bg-hair sm:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {accounts.map((item) => (
-              <li key={item.id} className="bg-char">
-                <Link href={`/admin/ads/cont?cont=${item.id}`} className="block px-5 py-4 hover:bg-glass">
-                  <span className="block text-[15px] font-semibold text-bone">{item.name}</span>
-                  <span className="mt-1 block font-md-mono text-[12px] text-dim">
+              <li key={item.id}>
+                <Link href={`/admin/ads/cont?cont=${item.id}`} className="block h-full rounded-[22px] border border-white/[0.07] bg-card p-4 transition-colors hover:border-white/[0.16] hover:bg-white/[0.03]">
+                  <span className="block text-[13.5px] font-medium">{item.name}</span>
+                  <span className="mt-1 block font-mono text-[11px] text-muted-foreground">
                     {formatCustomerId(item.id)} · {item.currency} · {item.state}
                   </span>
                 </Link>
@@ -120,27 +111,26 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             ))}
           </ul>
         ) : !accountsError ? (
-          <Notice>
-            Cheia nu vede încă niciun cont. Adaugă contul de serviciu {serviceAccountEmail(workspace) ?? ""} ca utilizator în contul clientului sau
-            în MCC-ul agenției (README → „Faza 11”), apoi revino aici.
-          </Notice>
+          <InlineNote className="max-w-2xl">
+            Cheia nu vede încă niciun cont. Adaugă contul de serviciu {serviceAccountEmail(workspace) ?? ""} ca utilizator în contul clientului sau în MCC-ul agenției (README → „Faza 11”), apoi revino aici.
+          </InlineNote>
         ) : null}
-      </main>
+      </div>
     );
   }
 
   const account = await findGoogleAccount(workspace, accountParam).catch(() => null);
   if (!account || account.manager) {
     return (
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
+      <div className="space-y-4">
         {header}
-        {chooser}
-        <Notice>
+        {picker}
+        <InlineNote className="max-w-2xl">
           {account?.manager
             ? `${account.info.name} e un cont manager (MCC). Alege contul clientului de sub el.`
             : `Cheia spațiului nu vede contul ${accountParam}. Adaugă contul de serviciu ${serviceAccountEmail(workspace) ?? ""} în contul clientului sau în MCC-ul de deasupra lui (Admin → Acces și securitate).`}
-        </Notice>
-      </main>
+        </InlineNote>
+      </div>
     );
   }
 
@@ -160,78 +150,63 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     listChanges(account.info.id, 20),
   ]);
 
-  return (
-    <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-8 sm:px-8 sm:pt-10">
-      {header}
-      {chooser}
+  const searchCampaigns = campaigns.filter((item) => item.type === "SEARCH" && item.status !== "REMOVED");
+  const active = campaigns.filter((item) => item.status === "ENABLED");
+  const dailyBudget = active.reduce((sum, item) => sum + (item.budget ?? 0), 0);
 
-      <section aria-labelledby="cont-titlu" className="mt-8">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-          <h2 id="cont-titlu" className="font-md-display text-[1.625rem] font-semibold leading-tight text-bone">
-            {info.name}
-          </h2>
-          <p className="font-md-mono text-[12px] text-dim">
-            {formatCustomerId(info.id)} · {info.currency} · {info.state} ·{" "}
-            {info.manager ? `văzut prin managerul ${formatCustomerId(info.manager)}` : "văzut direct"}
-          </p>
+  return (
+    <div className="space-y-4">
+      {header}
+      {picker}
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+        <div className="min-w-0 space-y-4">
+          <ContHeadline
+            info={info}
+            hint={`Audit · cont existent, doar citire + pauză · ${info.state} · ${info.manager ? `văzut prin managerul ${formatCustomerId(info.manager)}` : "văzut direct"}`}
+          >
+            <div className="grid grid-cols-3 gap-3">
+              <Stat label="Campanii" value={campaigns.length} />
+              {audit ? <Stat label="Probleme" value={audit.signals.length} tone="dim" /> : <Stat label="Active" value={active.length} tone="dim" />}
+              <Stat label="Buget / zi" value={accountMoney(dailyBudget, info.currency)} tone="dim" hint={active.length > 0 ? "doar campaniile active" : undefined} />
+            </div>
+          </ContHeadline>
+
+          <nav aria-label="Vederile contului" className="pu-no-scrollbar inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-white/[0.07] bg-white/[0.03] p-1">
+            {VIEWS.map((item) => (
+              <Link
+                key={item.id}
+                href={`/admin/ads/cont?cont=${info.id}&vedere=${item.id}`}
+                aria-current={view === item.id ? "page" : undefined}
+                className={cn(
+                  "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors",
+                  view === item.id ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          {campaignsError ? <InlineNote className="max-w-2xl">{campaignsError}</InlineNote> : null}
+
+          {view === "campanii" ? <CautariContCampanii workspace={workspace.id} account={info} campaigns={campaigns} pause={pauseAccountCampaigns} /> : null}
+          {view === "negative" ? (
+            <CautariContNegative
+              workspace={workspace.id}
+              account={info}
+              campaigns={searchCampaigns}
+              lists={lists}
+              initialCampaign={campaignParam}
+              preview={previewAccountNegatives}
+              add={addAccountNegatives}
+            />
+          ) : null}
+          {view === "audit" && audit ? <CautariContAudit audit={audit} currency={info.currency} campaigns={campaigns} /> : null}
         </div>
 
-        <nav aria-label="Vederile contului" className="mt-5 flex gap-1 overflow-x-auto border-b border-hair [scrollbar-width:none]">
-          {VIEWS.map((item) => (
-            <Link
-              key={item.id}
-              href={`/admin/ads/cont?cont=${info.id}&vedere=${item.id}`}
-              aria-current={view === item.id ? "page" : undefined}
-              className={cn(
-                "-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-[14px] font-medium transition-colors duration-150",
-                view === item.id ? "border-bone text-bone" : "border-transparent text-dim hover:text-bone"
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
-          {[
-            { href: `/admin/ads/termeni?cont=${info.id}`, label: "Termeni" },
-            { href: `/admin/ads/conversii?cont=${info.id}`, label: "Conversii" },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="-mb-px shrink-0 whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-[14px] font-medium text-dim hover:text-bone"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </section>
-
-      {campaignsError ? <Notice>{campaignsError}</Notice> : null}
-
-      <div className="mt-8">
-        {view === "campanii" ? (
-          <AccountCampaigns
-            workspace={workspace.id}
-            account={info}
-            campaigns={campaigns}
-            pause={pauseAccountCampaigns}
-          />
-        ) : null}
-        {view === "negative" ? (
-          <AccountNegatives
-            workspace={workspace.id}
-            account={info}
-            campaigns={campaigns.filter((item) => item.type === "SEARCH" && item.status !== "REMOVED")}
-            lists={lists}
-            preview={previewAccountNegatives}
-            add={addAccountNegatives}
-          />
-        ) : null}
-        {view === "audit" && audit ? <AccountAudit audit={audit} currency={info.currency} campaigns={campaigns} /> : null}
+        <CautariContJurnal journal={journal} />
       </div>
-
-      <div className="mt-14">
-        <AccountJournal journal={journal} />
-      </div>
-    </main>
+    </div>
   );
 }

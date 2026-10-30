@@ -146,7 +146,7 @@ export function ExpensesScreen({
         {uploads.length > 0 ? (
           <ul className="mt-3 grid gap-1.5" aria-live="polite">
             {uploads.map((item) => (
-              <li key={item.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-white px-3 py-2 text-[13.5px]">
+              <li key={item.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-char px-3 py-2 text-[13.5px]">
                 <span className="min-w-0 flex-1 truncate font-medium text-bone">{item.name}</span>
                 <Tag tone={item.stage === "gata" ? "ok" : item.stage === "eroare" ? "error" : "accent"}>
                   {STAGE_LABEL[item.stage]}
@@ -175,7 +175,7 @@ export function ExpensesScreen({
           {byCategory
             .filter((item) => item.sum > 0)
             .map((item) => (
-              <li key={item.key} className="rounded-lg border border-hair bg-white px-3 py-1.5 text-[13px]">
+              <li key={item.key} className="rounded-lg border border-hair bg-char px-3 py-1.5 text-[13px]">
                 {CATEGORIE_LABEL[item.key as keyof typeof CATEGORIE_LABEL]}: <span className="font-semibold tabular-nums">{money(item.sum, "RON")}</span>
               </li>
             ))}
@@ -185,7 +185,7 @@ export function ExpensesScreen({
       {expenses.length === 0 ? (
         <Empty className="mt-4">Nicio cheltuială în {monthLabel(month)}. Fă o poză primului bon cu „Urcă un bon sau o factură”.</Empty>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-white">
+        <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">
             <thead>
               <tr className="border-b border-hair">
@@ -201,7 +201,7 @@ export function ExpensesScreen({
               {expenses.map((expense) => {
                 const state = dataState(expense);
                 return (
-                  <tr key={expense.id} onClick={() => setOpen(expense.id)} className={cn("cursor-pointer bg-white hover:bg-[var(--ap-hover)]", open === expense.id && "bg-[var(--ap-accent-soft)]")}>
+                  <tr key={expense.id} onClick={() => setOpen(expense.id)} className={cn("cursor-pointer bg-char hover:bg-[var(--ap-hover)]", open === expense.id && "bg-[var(--ap-accent-soft)]")}>
                     <td className={cn(tdClass, "ads-sticky-col min-w-[12rem]")}>
                       <button type="button" onClick={() => setOpen(expense.id)} className="text-left font-semibold text-bone hover:text-[var(--md-a1)] hover:underline">
                         {expense.furnizor ?? <span className="text-dim">necitit — {expense.fisierNume}</span>}

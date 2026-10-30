@@ -12,7 +12,9 @@ import {
   type Lead,
   type LeadEvent,
   type LeadEventRow,
+  type LeadFacts,
   type LeadRow,
+  type LeadSourceGroup,
   type LeadStats,
 } from "./types";
 
@@ -369,6 +371,10 @@ export async function getLeadStats(): Promise<DataResult<LeadStats>> {
   let software = 0;
   let funded = 0;
   let qualified = 0;
+  const byStatus = Object.fromEntries(LEAD_STATUSES.map((status) => [status, 0])) as Record<
+    LeadStatus,
+    number
+  >;
 
   for (const row of rows) {
     const age = now - new Date(row.created_at).getTime();
@@ -380,6 +386,7 @@ export async function getLeadStats(): Promise<DataResult<LeadStats>> {
 
     if (row.is_funded) funded += 1;
     if (row.status !== "new" && row.status !== "lost") qualified += 1;
+    if (row.status in byStatus) byStatus[row.status] += 1;
   }
 
   return {
@@ -393,6 +400,66 @@ export async function getLeadStats(): Promise<DataResult<LeadStats>> {
       funded,
       qualified,
       qualificationRate: rows.length > 0 ? qualified / rows.length : null,
+      byStatus,
+    },
+  };
+}
+
+/** Plafonul rândurilor citite pentru poziția în filtru și pentru „Surse”. */
+const FACTS_CAP = 5000;
+
+/**
+ * Din toate lead-urile filtrului, doar ce nu se vede în pagina curentă:
+ * id-urile în ordinea listei și grupele de sursă UTM. O singură interogare
+ * pe trei coloane mici, ca „Anterior / Următorul” să treacă de granița unei
+ * pagini și „Surse” să numere filtrul întreg, nu doar cele 25 de rânduri.
+ */
+export async function getLeadFacts(
+  query: Omit<LeadListQuery, "page" | "perPage">
+): Promise<DataResult<LeadFacts>> {
+  const supabase = await readClient();
+  if (!supabase) return fail("unconfigured");
+
+  let request = supabase
+    .from("leads")
+    .select("id, utm_source, utm_campaign")
+    .order("created_at", { ascending: false })
+    .limit(FACTS_CAP);
+
+  if (query.division) request = request.eq("division", query.division);
+  if (query.status) request = request.eq("status", query.status);
+  if (query.from) request = request.gte("created_at", query.from);
+  if (query.to) request = request.lte("created_at", query.to);
+  if (query.q) {
+    const term = query.q.replace(/[,()]/g, " ").trim();
+    if (term) {
+      request = request.or(
+        `name.ilike.%${term}%,email.ilike.%${term}%,company.ilike.%${term}%`
+      );
+    }
+  }
+
+  const { data, error } = await request;
+  if (error) return fail("error", error.message);
+
+  const rows = asRows<Pick<LeadRow, "id" | "utm_source" | "utm_campaign">>(data);
+  const groups = new Map<string, LeadSourceGroup>();
+  for (const row of rows) {
+    // Litere mici: „Google” și „google” sunt aceeași sursă.
+    const source = row.utm_source?.trim().toLowerCase() || null;
+    const campaign = row.utm_campaign?.trim().toLowerCase() || null;
+    const key = `${source ?? ""}\u0000${campaign ?? ""}`;
+    const group = groups.get(key);
+    if (group) group.count += 1;
+    else groups.set(key, { source, campaign, count: 1 });
+  }
+
+  return {
+    ok: true,
+    data: {
+      ids: rows.map((row) => row.id),
+      groups: [...groups.values()].sort((a, b) => b.count - a.count),
+      truncated: rows.length >= FACTS_CAP,
     },
   };
 }

@@ -1,0 +1,209 @@
+/* ============================================================
+   Panoul de administrare — sistemul de design din redesign (Base44)
+   ------------------------------------------------------------
+   Prototipul folosește nume de utilitare de tip shadcn (bg-card,
+   text-muted-foreground, border-border…) și patru accente (lav, mint,
+   sky, rose, apricot). Ca interfața să se poată copia fidel, numele
+   sunt recreate aici, iar valorile lor trăiesc DOAR sub `.panou-ui`:
+   site-ul public nu primește nicio culoare sau rază nouă.
+
+   - `@theme inline` leagă numele de utilitare de variabilele --pu-*;
+   - `.panou-ui` dă valorile (aceleași ca în prototip) și suprascrie, doar
+     în interiorul lui, variabilele vechi pe care prototipul le folosește
+     cu alt sens: --muted, --accent (culori), --radius-* (raze), --font-*;
+   - clasele proprii ale prototipului (num, glass, display…) au prefixul
+     `pu-`, ca să nu se calce cu .glass / .display din globals.css.
+   Importat din globals.css (Tailwind v4 cere @theme în graful lui).
+   ============================================================ */
+
+@theme inline {
+  --color-background: hsl(var(--pu-background));
+  --color-foreground: hsl(var(--pu-foreground));
+  --color-card: hsl(var(--pu-card));
+  --color-card-foreground: hsl(var(--pu-card-foreground));
+  --color-popover: hsl(var(--pu-popover));
+  --color-popover-foreground: hsl(var(--pu-popover-foreground));
+  --color-primary: hsl(var(--pu-primary));
+  --color-primary-foreground: hsl(var(--pu-primary-foreground));
+  --color-secondary: hsl(var(--pu-secondary));
+  --color-secondary-foreground: hsl(var(--pu-secondary-foreground));
+  --color-muted-foreground: hsl(var(--pu-muted-foreground));
+  --color-accent-foreground: hsl(var(--pu-accent-foreground));
+  --color-destructive: hsl(var(--pu-destructive));
+  --color-destructive-foreground: hsl(var(--pu-destructive-foreground));
+  --color-border: hsl(var(--pu-border));
+  --color-input: hsl(var(--pu-input));
+  --color-ring: hsl(var(--pu-ring));
+
+  --color-lav: #c6b5ff;
+  --color-apricot: #ffb27a;
+  --color-mint: #8fe3b0;
+  --color-sky: #8fd3ff;
+  --color-rose: #ff8fa8;
+
+  --animate-dotpulse: pu-dotpulse 1.6s ease-in-out infinite;
+  --animate-rise: pu-rise 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-sweep: pu-sweep 1.4s linear infinite;
+
+  @keyframes pu-dotpulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.35;
+      transform: scale(0.86);
+    }
+  }
+  @keyframes pu-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes pu-sweep {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+.panou-ui {
+  --pu-background: 250 8% 5%;
+  --pu-foreground: 40 8% 94%;
+  --pu-card: 250 6% 8%;
+  --pu-card-foreground: 40 8% 94%;
+  --pu-popover: 250 7% 9%;
+  --pu-popover-foreground: 40 8% 94%;
+  --pu-primary: 258 100% 86%;
+  --pu-primary-foreground: 256 32% 11%;
+  --pu-secondary: 250 5% 13%;
+  --pu-secondary-foreground: 40 8% 94%;
+  --pu-muted-foreground: 250 5% 62%;
+  --pu-accent-foreground: 40 8% 94%;
+  --pu-destructive: 352 76% 62%;
+  --pu-destructive-foreground: 0 0% 100%;
+  --pu-border: 250 5% 17%;
+  --pu-input: 250 5% 18%;
+  --pu-ring: 258 100% 86%;
+
+  /* Variabilele vechi, cu sensul din prototip, doar aici. */
+  --muted: hsl(250 5% 13%);
+  --accent: hsl(250 5% 16%);
+  --radius-sm: calc(1.25rem - 4px);
+  --radius-md: calc(1.25rem - 2px);
+  --radius-lg: 1.25rem;
+  --radius-xl: 0.75rem;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-body: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jbmono), ui-monospace, SFMono-Regular, monospace;
+
+  color-scheme: dark;
+  background-color: hsl(var(--pu-background));
+  color: hsl(var(--pu-foreground));
+  font-family: var(--font-body);
+  font-feature-settings: "ss01" on, "cv01" on;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+@layer base {
+  .panou-ui *,
+  .panou-ui *::before,
+  .panou-ui *::after {
+    border-color: hsl(var(--pu-border));
+  }
+
+  .panou-ui h1,
+  .panou-ui h2,
+  .panou-ui h3,
+  .panou-ui h4 {
+    font-family: var(--font-body);
+    letter-spacing: -0.018em;
+  }
+
+  .panou-ui ::selection {
+    background: rgba(198, 181, 255, 0.28);
+  }
+
+  .panou-ui :focus-visible {
+    outline: 2px solid hsl(var(--pu-ring));
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  .panou-ui * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  }
+  .panou-ui *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .panou-ui *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+@utility pu-num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}
+
+@utility pu-glass {
+  background: rgba(12, 12, 16, 0.72);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+@utility pu-no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility pu-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+@utility pu-gridlines {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+@utility pu-aurora {
+  background: radial-gradient(60% 80% at 12% 0%, rgba(198, 181, 255, 0.13), transparent 60%),
+    radial-gradient(50% 60% at 92% 8%, rgba(255, 178, 122, 0.09), transparent 65%),
+    radial-gradient(80% 60% at 60% 100%, rgba(143, 227, 176, 0.06), transparent 70%);
+}
+
+@utility pu-sealed {
+  background: radial-gradient(70% 90% at 50% 0%, rgba(143, 227, 176, 0.09), transparent 65%),
+    radial-gradient(60% 70% at 100% 100%, rgba(198, 181, 255, 0.07), transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panou-ui *,
+  .panou-ui *::before,
+  .panou-ui *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

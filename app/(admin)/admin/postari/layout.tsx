@@ -1,20 +1,23 @@
 import { redirect } from "next/navigation";
 import { getAdminUser, isAuthConfigured } from "@/lib/supabase/clients";
 import { readSettings } from "@/lib/postari/setari";
-import { PostariSidebar } from "@/components/postari/sidebar";
-import { PostariMobileNav } from "@/components/postari/mobile-nav";
-import { PostariTopBar } from "@/components/postari/top-bar";
+import { PanouShell } from "@/components/panou/layout/shell";
+import { dateTimeRo } from "@/components/panou/ui/format";
+import { PostariSelectors } from "@/components/panou/postari/module-selectors";
+import { QueueBanner } from "@/components/panou/postari/queue-actions";
 import { signOut } from "../login/actions";
 import { SessionKeeper } from "../_components/session-keeper";
 import { SetupNotice } from "../_components/setup-notice";
-// Tema albă a portalului de reclame, folosită așa cum e (clasa `.ads-portal`), ca la firmă.
+import { setQueueAction } from "./actions";
+// Tema veche a portalului: rădăcina cadrului mai poartă `ads-portal` pentru ecranele nerefăcute.
 import "../ads/portal.css";
 
 /**
  * Garda și cadrul modulului de postări. Aceeași autentificare ca restul
  * adminului: `isAuthConfigured()` → `getAdminUser()` (Google + lista de
- * admini) → altfel /admin/login. Același cadru ca adminul firmei: meniu în
- * stânga, bara de sus (cu starea cozii), apoi ecranul.
+ * admini) → altfel /admin/login. Cadrul e cel comun al panoului: meniu în
+ * stânga, bara de sus cu filtrul de platformă, iar coada oprită se vede de pe
+ * orice ecran, într-un banner cu „Pornește coada”.
  */
 export default async function PostariLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   if (!isAuthConfigured()) return <SetupNotice />;
@@ -22,24 +25,23 @@ export default async function PostariLayout({ children }: Readonly<{ children: R
   if (!user) redirect("/admin/login");
 
   const settings = await readSettings();
-  const queue = settings.ok ? { running: settings.data.coadaPornita, reason: settings.data.coadaMotiv } : null;
+  const stopped = settings.ok && !settings.data.coadaPornita ? settings.data : null;
 
   return (
-    <div className="ads-portal relative min-h-dvh">
+    <>
       <SessionKeeper />
-      <a href="#continut" className="skip-link">
-        Sari la conținut
-      </a>
-      <div className="lg:grid lg:min-h-dvh lg:grid-cols-[228px_minmax(0,1fr)]">
-        <PostariSidebar email={user.email} signOut={signOut} />
-        <div className="flex min-h-dvh min-w-0 flex-col">
-          <PostariTopBar queue={queue} />
-          <div id="continut" className="relative flex-1 pb-20 lg:pb-0">
-            {children}
-          </div>
-        </div>
-      </div>
-      <PostariMobileNav signOut={signOut} />
-    </div>
+      <PanouShell
+        email={user.email}
+        signOut={signOut}
+        selectors={<PostariSelectors />}
+        banner={
+          stopped ? (
+            <QueueBanner reason={stopped.coadaMotiv} by={stopped.coadaSchimbataDe} at={stopped.coadaSchimbataLa ? dateTimeRo(stopped.coadaSchimbataLa) : null} setQueue={setQueueAction} />
+          ) : null
+        }
+      >
+        {children}
+      </PanouShell>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fontVariables } from "@/app/fonts";
+import { adminFontVariables } from "./fonts";
 import "@/app/globals.css";
 
 /**
@@ -22,7 +22,7 @@ export default function AdminRootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ro">
-      <body className={`${fontVariables} md-body min-h-dvh antialiased`}>
+      <body className={`${adminFontVariables} md-body min-h-dvh antialiased`}>
         <div data-scope="gate" className="md-root min-h-dvh">
           {children}
         </div>

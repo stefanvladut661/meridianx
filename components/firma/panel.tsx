@@ -68,7 +68,7 @@ export function SidePanel({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="ads-panel-enter absolute inset-y-0 right-0 flex w-full flex-col border-l border-hair bg-white shadow-[0_0_40px_rgb(18_23_27/0.12)] sm:w-[560px]"
+        className="ads-panel-enter absolute inset-y-0 right-0 flex w-full flex-col border-l border-hair bg-char shadow-[0_0_40px_rgb(18_23_27/0.12)] sm:w-[560px]"
       >
         <div className="flex items-start gap-3 border-b border-hair px-5 py-4">
           <div className="min-w-0 flex-1">

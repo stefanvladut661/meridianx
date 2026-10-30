@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./panou-theme.css";
 
 /* ============================================================
    SISTEMUL VECHI — [data-world], --v-*, --s-*

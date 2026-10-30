@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
  */
 
 export const inputClass =
-  "h-10 w-full rounded-lg border border-hair-strong bg-white px-3 text-[14px] text-bone placeholder:text-dim/70 focus-visible:border-[var(--md-a1)] aria-[invalid=true]:border-[var(--ap-error)]";
+  "h-10 w-full rounded-lg border border-hair-strong bg-char px-3 text-[14px] text-bone placeholder:text-dim/70 focus-visible:border-[var(--md-a1)] aria-[invalid=true]:border-[var(--ap-error)]";
 export const textareaClass =
-  "w-full rounded-lg border border-hair-strong bg-white px-3 py-2 text-[14px] leading-relaxed text-bone placeholder:text-dim/70 focus-visible:border-[var(--md-a1)] aria-[invalid=true]:border-[var(--ap-error)]";
+  "w-full rounded-lg border border-hair-strong bg-char px-3 py-2 text-[14px] leading-relaxed text-bone placeholder:text-dim/70 focus-visible:border-[var(--md-a1)] aria-[invalid=true]:border-[var(--ap-error)]";
 export const labelClass = "block text-[13px] font-medium text-bone";
 export const thClass = "whitespace-nowrap px-3 py-2 text-left text-[12px] font-semibold uppercase tracking-[0.06em] text-dim";
 export const tdClass = "px-3 py-2.5 align-top text-[14px] text-bone";

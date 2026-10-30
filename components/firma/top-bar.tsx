@@ -39,7 +39,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
   };
 
   return (
-    <div className="sticky top-0 z-30 border-b border-hair bg-white/95 backdrop-blur">
+    <div className="sticky top-0 z-30 border-b border-hair bg-char/95 backdrop-blur">
       <div className="flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
         <p className="text-[14px] font-semibold text-bone">{item?.label ?? "Firmă"}</p>
         {item?.month ? (
@@ -48,7 +48,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
               type="button"
               disabled={pending}
               onClick={() => go({ luna: addMonths(month, -1) })}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-hair-strong bg-white text-dim hover:bg-[var(--ap-hover)]"
+              className="grid h-9 w-9 place-items-center rounded-lg border border-hair-strong bg-char text-dim hover:bg-[var(--ap-hover)]"
             >
               <IconChevronLeft />
               <span className="sr-only">Luna dinainte</span>
@@ -59,7 +59,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
                 value={month}
                 disabled={pending}
                 onChange={(event) => go({ luna: event.currentTarget.value })}
-                className="h-9 rounded-lg border border-hair-strong bg-white px-2.5 text-[14px] font-semibold text-bone"
+                className="h-9 rounded-lg border border-hair-strong bg-char px-2.5 text-[14px] font-semibold text-bone"
               >
                 {months.sort().reverse().map((value) => (
                   <option key={value} value={value}>
@@ -72,7 +72,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
               type="button"
               disabled={pending}
               onClick={() => go({ luna: addMonths(month, 1) })}
-              className="grid h-9 w-9 place-items-center rounded-lg border border-hair-strong bg-white text-dim hover:bg-[var(--ap-hover)]"
+              className="grid h-9 w-9 place-items-center rounded-lg border border-hair-strong bg-char text-dim hover:bg-[var(--ap-hover)]"
             >
               <IconChevronRight />
               <span className="sr-only">Luna următoare</span>
@@ -86,7 +86,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
               value={clientId}
               disabled={pending}
               onChange={(event) => go({ client: event.currentTarget.value })}
-              className="h-9 max-w-[14rem] min-w-0 truncate rounded-lg border border-hair-strong bg-white px-2.5 text-[14px] text-bone"
+              className="h-9 max-w-[14rem] min-w-0 truncate rounded-lg border border-hair-strong bg-char px-2.5 text-[14px] text-bone"
             >
               <option value="">Toți clienții</option>
               {clients.map((client) => (
