@@ -104,6 +104,30 @@ export interface LeadStats {
   qualified: number;
   /** `qualified / total`, 0–1. Null când nu există încă lead-uri. */
   qualificationRate: number | null;
+  /** Câte lead-uri are fiecare status — pentru bara de distribuție din panou. */
+  byStatus: Record<LeadStatus, number>;
+}
+
+/** Un grup din „Surse”: lead-uri cu aceeași pereche utm_source / utm_campaign. */
+export interface LeadSourceGroup {
+  /** `null` = fără UTM (intrare directă sau formular fără parametri). */
+  source: string | null;
+  campaign: string | null;
+  count: number;
+}
+
+/**
+ * Ce are nevoie panoul de la TOATE lead-urile unui filtru, nu doar de la pagina
+ * curentă: id-urile în ordinea listei (poziția și „Anterior / Următorul” trec
+ * de granița paginii) și grupele de sursă.
+ */
+export interface LeadFacts {
+  /** Cele mai noi primele, ca în listă. */
+  ids: string[];
+  /** Cele mai multe lead-uri primele. */
+  groups: LeadSourceGroup[];
+  /** `true` când filtrul are mai multe rânduri decât plafonul citit. */
+  truncated: boolean;
 }
 
 export function toLead(row: LeadRow): Lead {
