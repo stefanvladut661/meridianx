@@ -1,0 +1,106 @@
+// Proba API-ului pentru roboți, pe un server LOCAL legat de o bază de TEST.
+// Nu rula pe producție: scenariul rezervă, termină și trimite emailuri de probă.
+//
+//   node scripts/prospectare-verifica-api.mjs http://localhost:3210
+//
+// Baza de test trebuie pregătită ca în supabase/tests/prospectare (roboții
+// api-robot-1, api-robot-2, api-robot-oprit cu tokenurile de test de mai jos și
+// firmele 7001 api-lucru.ro, 7002 api-telefon.ro cu canal telefon, 7003 api-gata.ro).
+
+const BASE = (process.argv[2] ?? "").replace(/\/$/, "");
+if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(BASE)) {
+  console.error("Dă adresa serverului LOCAL, ex. http://localhost:3210 (proba nu rulează pe alt host).");
+  process.exit(1);
+}
+
+// Tokenuri de test, doar pentru baza locală.
+const T1 = "mrx_robot_test_api_unu_0000000001";
+const T2 = "mrx_robot_test_api_doi_0000000002";
+const TOPRIT = "mrx_robot_test_api_oprit_00000003";
+
+let picate = 0;
+async function call(path, body, token, method = "POST") {
+  const headers = { "content-type": "application/json" };
+  if (token) headers.authorization = `Bearer ${token}`;
+  const res = await fetch(`${BASE}/api/prospectare/robot/${path}`, { method, headers, body: method === "POST" ? JSON.stringify(body ?? {}) : undefined });
+  let json = null;
+  try {
+    json = await res.json();
+  } catch {}
+  return { status: res.status, json };
+}
+function check(name, cond, info) {
+  if (cond) console.log(`ok   ${name}`);
+  else {
+    picate++;
+    console.log(`PICAT ${name}${info ? ` — ${JSON.stringify(info).slice(0, 300)}` : ""}`);
+  }
+}
+
+let r = await call("rezerva", {}, null);
+check("fără token → 401", r.status === 401, r);
+r = await call("rezerva", {}, "mrx_robot_token_gresit_000000000000");
+check("token greșit → 401", r.status === 401, r);
+r = await call("rezerva", {}, TOPRIT);
+check("robot dezactivat → 401", r.status === 401 && /dezactivat/.test(r.json?.eroare?.mesaj ?? ""), r);
+r = await call("rezerva", {}, T1, "GET");
+check("GET → 405", r.status === 405, r);
+
+r = await call("firme", { firme: [{ domeniu: "https://www.api-nou.ro/", nume: "API Nou", nisa: "construcții", oras: "Cluj", scor: 77, telefon: "0745 700 010" }] }, T1);
+check("firme: adaugă (200, adaugate 1)", r.status === 200 && r.json?.rezultat?.adaugate === 1, r);
+r = await call("firme", { firme: [{ domeniu: "api-nou.ro", nume: "API Nou", nisa: "construcții", oras: "Cluj", scor: 77, telefon: "0745 700 010" }] }, T1);
+check("firme: a doua oară nimic schimbat (idempotent)", r.status === 200 && r.json?.rezultat?.neschimbate === 1, r);
+r = await call("firme", { firme: [{ nume: "fără domeniu" }] }, T1);
+check("firme: fără domeniu → 422", r.status === 422, r);
+r = await call("firme", "nu e json{", T1);
+check("firme: corp invalid → 422", r.status === 422, r);
+
+r = await call("rezerva", { tip_lucru: "construire" }, T1);
+const firma = r.json?.firma;
+check("rezerva: 200 cu firma de scor maxim (#7001)", r.status === 200 && firma?.nr === 7001, r);
+r = await call("rezerva", {}, T1);
+check("rezerva din nou: aceeași firmă, reluată", r.status === 200 && r.json?.firma?.nr === 7001 && r.json?.firma?.rezervare?.reluata === true, r);
+r = await call("heartbeat", { firma_id: firma?.id }, T2);
+check("heartbeat de la alt robot → 409", r.status === 409, r);
+r = await call("heartbeat", { firma_id: firma?.id }, T1);
+check("heartbeat de la robotul ei → 200 cu expira_la", r.status === 200 && Boolean(r.json?.expira_la), r);
+r = await call("heartbeat", { firma_id: "nu-e-uuid" }, T1);
+check("heartbeat cu id invalid → 422", r.status === 422, r);
+r = await call("termina", { firma_id: firma?.id, link_demo: "http://nesigur.ro" }, T1);
+check("termina cu link http → 422", r.status === 422, r);
+r = await call("termina", { firma_id: firma?.id, link_demo: "https://demo.test/api-lucru/", captura_url: "https://drive.google.com/file/d/test/view" }, T2);
+check("termina de la alt robot → 409", r.status === 409, r);
+r = await call("termina", { firma_id: firma?.id, link_demo: "https://demo.test/api-lucru/", captura_url: "https://drive.google.com/file/d/test/view" }, T1);
+check("termina → 200, site gata", r.status === 200 && r.json?.firma?.etapa === "site_gata", r);
+
+r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-telefon.ro", casuta: "stefan@casuta-test.ro" }, T1);
+check("email_de_trimis pentru firmă cu canal telefon → 409 (al doilea canal)", r.status === 409 && r.json?.eroare?.cod === "conflict", r);
+r = await call("eveniment", { tip: "email_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", message_id: "<test-0@local>" }, T1);
+check("email_trimis fără cerere înainte → 409", r.status === 409, r);
+r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", limita_azi: 40 }, T1);
+check("email_de_trimis pentru firmă fără canal → 200, trimite", r.status === 200 && r.json?.trimite === true && r.json?.firma?.email === "office@api-gata.ro", r);
+r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro" }, T2);
+check("email_de_trimis din nou (canal deja email) → 200", r.status === 200, r);
+r = await call("eveniment", { tip: "email_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", message_id: "<test-1@local>", subiect: "Site demo" }, T1);
+check("email_trimis → 200, etapa email_trimis", r.status === 200 && r.json?.nou === true && r.json?.etapa === "email_trimis", r);
+r = await call("eveniment", { tip: "email_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", message_id: "<test-1@local>" }, T1);
+check("același message_id → 200, nou: false (nu se numără de două ori)", r.status === 200 && r.json?.nou === false, r);
+r = await call("eveniment", { tip: "raspuns", nr: 7003, casuta: "stefan@casuta-test.ro", raspuns: "nu", extras: "Nu ne mai scrieți." }, T1);
+check("răspuns NU → Nu contacta", r.status === 200 && r.json?.etapa === "nu_contacta", r);
+r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro" }, T1);
+check("după NU: email_de_trimis → 409", r.status === 409, r);
+r = await call("eveniment", { tip: "trimis_necunoscut", domeniu: "api-gata.ro", casuta: "x@y.ro" }, T1);
+check("tip necunoscut → 422", r.status === 422, r);
+r = await call("eveniment", { tip: "email_de_trimis", casuta: "stefan@casuta-test.ro" }, T1);
+check("fără domeniu și fără nr → 422", r.status === 422, r);
+
+// Limita de cereri: robotul 2 face cereri până trece de limita pe minut din Setări.
+let limit = null;
+for (let i = 0; i < 200 && !limit; i++) {
+  const x = await call("rezerva", { tip_lucru: "refacere" }, T2);
+  if (x.status === 429) limit = { i, x };
+}
+check("peste limita de cereri pe minut → 429 cu Retry-After", Boolean(limit) && limit.x.json?.eroare?.cod === "prea_multe", limit ?? "fără 429 în 200 de cereri");
+
+console.log(picate ? `\n${picate} PICATE` : "\nToate probele API au trecut.");
+process.exit(picate ? 1 : 0);
