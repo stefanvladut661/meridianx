@@ -1,13 +1,13 @@
-import { Building2, CalendarDays, Inbox, Megaphone, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Building2, CalendarDays, Crosshair, Inbox, Megaphone, ShieldCheck, type LucideIcon } from "lucide-react";
 import { FIRMA_NAV } from "@/components/firma/nav";
 
 /**
  * Navigarea panoului, ca în redesign (config/nav.js), cu rutele reale. Modulele
- * din meniul principal sunt patru; Firma are loc separat, jos (modul existent,
- * încă nerefăcut în noul design).
+ * din meniul principal sunt cinci (Prospectare al doilea, ca în prototip); Firma are
+ * loc separat, jos (modul existent, încă nerefăcut în noul design).
  */
 
-export type PanouModuleId = "leaduri" | "reclame" | "postari" | "vault" | "firma";
+export type PanouModuleId = "prospectare" | "leaduri" | "reclame" | "postari" | "vault" | "firma";
 
 export interface PanouNavItem {
   label: string;
@@ -29,6 +29,21 @@ export const modules: PanouModule[] = [
     icon: Inbox,
     to: "/admin",
     items: [{ label: "Lista lead-urilor", to: "/admin" }],
+  },
+  {
+    id: "prospectare",
+    label: "Prospectare",
+    icon: Crosshair,
+    to: "/admin/prospectare",
+    items: [
+      { label: "Prezentare", to: "/admin/prospectare" },
+      { label: "Firme", to: "/admin/prospectare/firme" },
+      { label: "Apeluri azi", to: "/admin/prospectare/apeluri" },
+      { label: "WhatsApp azi", to: "/admin/prospectare/whatsapp" },
+      { label: "Email", to: "/admin/prospectare/email" },
+      { label: "Roboți", to: "/admin/prospectare/roboti" },
+      { label: "Setări", to: "/admin/prospectare/setari" },
+    ],
   },
   {
     id: "reclame",
@@ -87,6 +102,13 @@ export const firmaModule: PanouModule = {
 
 /** Titlul și subtitlul ecranului, cu cea mai lungă potrivire de prefix (ca în prototip). */
 const TITLES: [string, string, string][] = [
+  ["/admin/prospectare/firme", "Firme", "Tabel complet, cu etape, canal și site demo"],
+  ["/admin/prospectare/apeluri", "Apeluri azi", "Lista de telefon a zilei, pe utilizator"],
+  ["/admin/prospectare/whatsapp", "WhatsApp azi", "Mesaje pregătite, trimise manual din telefon"],
+  ["/admin/prospectare/email", "Email", "Căsuțe, plafoane și răspunsuri"],
+  ["/admin/prospectare/roboti", "Roboți", "Dispozitivele care construiesc site-urile demo"],
+  ["/admin/prospectare/setari", "Setări prospectare", "Limite și șabloane de mesaj"],
+  ["/admin/prospectare", "Prospectare", "Firme cercetate, site-uri demo, un singur canal"],
   ["/admin/ads/nou", "Plan nou", "Lipește planul, verifică-l, creează pe pauză"],
   ["/admin/ads/lot", "Lot de planuri", "Până la 50 de planuri, un singur proprietar"],
   ["/admin/ads/creeaza", "Creează ghidat", "Plan pas cu pas, cu previzualizare"],
@@ -122,10 +144,11 @@ const TITLES: [string, string, string][] = [
 
 const underPath = (pathname: string, path: string): boolean => pathname === path || pathname.startsWith(`${path}/`);
 
-/** Modulul căruia îi aparține calea. `/admin` e al lead-urilor doar când nu e o cale a altui modul. */
+/** Modulul căruia îi aparține calea: potrivirea cea mai lungă, deci `/admin` e al lead-urilor doar când nu e o cale a altui modul. */
 export function activeModule(pathname: string): PanouModule {
   if (underPath(pathname, firmaModule.to)) return firmaModule;
-  return [...modules].reverse().find((module) => underPath(pathname, module.to)) ?? modules[0];
+  const hits = modules.filter((module) => underPath(pathname, module.to)).sort((a, b) => b.to.length - a.to.length);
+  return hits[0] ?? modules.find((module) => module.id === "leaduri") ?? modules[0];
 }
 
 export function getScreenMeta(pathname: string): { module: PanouModule; title: string; subtitle: string } {

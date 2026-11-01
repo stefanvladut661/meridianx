@@ -21,7 +21,7 @@ export function PanouMobileNav({ email, signOut }: { email: string | null; signO
   return (
     <>
       <nav aria-label="Navigare principală" className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#0B0B0F]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
-        <ul className="grid grid-cols-5">
+        <ul className="grid grid-cols-6">
           {modules.map((module) => {
             const isActive = module.to === "/admin" ? pathname === "/admin" : underPath(pathname, module.to);
             return (

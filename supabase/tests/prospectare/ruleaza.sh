@@ -12,16 +12,16 @@ if ! docker ps --format '{{.Names}}' | grep -qx pgprospectare; then
   for i in $(seq 1 30); do docker exec pgprospectare pg_isready -U postgres >/dev/null 2>&1 && break; sleep 1; done
 fi
 q(){ docker exec -i pgprospectare psql -U postgres -d test -X -q -tA -v ON_ERROR_STOP=1 "$@"; }
-docker exec pgprospectare psql -U postgres -X -q -c 'drop database if exists test' -c 'create database test' >/dev/null || exit 1
+docker exec pgprospectare psql -U postgres -X -q -c 'drop database if exists test with (force)' -c 'create database test' >/dev/null || exit 1
 q < "$T/00-supabase-roluri.sql" >/dev/null || exit 1
 q < "$T/01-admini-test.sql" >/dev/null || exit 1
 for runda in 1 2; do
-  for f in "$M"/00000000000028_*.sql "$M"/00000000000029_*.sql "$M"/00000000000030_*.sql; do
+  for f in "$M"/00000000000028_*.sql "$M"/00000000000029_*.sql "$M"/00000000000030_*.sql "$M"/00000000000031_*.sql; do
     out=$(q < "$f" 2>&1) || { echo "MIGRARE PICATĂ ($runda): $f"; echo "$out" | tail -5; exit 1; }
     echo "$out" | grep -q '|f$' && { echo "VERIFICARE FALSĂ în $f:"; echo "$out" | grep '|f$'; exit 1; }
   done
 done
-echo "Migrările 28–30: rulate de două ori, toate verificările true."
+echo "Migrările 28–31: rulate de două ori, toate verificările true."
 rez=$(q -1 < "$T/reguli.sql" 2>&1 | grep -E '^(ok|ERROR)')
 echo "$rez" | sed 's/→ \([0-9A-Z]*\): .*/→ \1/'
 ok=$(echo "$rez" | grep -c '^ok'); bad=$(echo "$rez" | grep -c '^ERROR')
