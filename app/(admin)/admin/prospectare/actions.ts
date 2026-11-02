@@ -99,7 +99,7 @@ const rezultatSchema = z.object({
   sunaInapoiLa: z.string().datetime({ offset: true }).optional(),
 });
 
-export async function seteazaRezultat(input: unknown): Promise<ActionResult<{ revenit: boolean; incercari: number; limita: number }>> {
+export async function seteazaRezultat(input: unknown): Promise<ActionResult<{ revenit: boolean; scoasa: boolean; incercari: number; limita: number }>> {
   const who = await cine();
   if (!who) return { ok: false, message: SESSION_EXPIRED };
   const parsed = rezultatSchema.safeParse(input);
@@ -119,7 +119,7 @@ export async function seteazaRezultat(input: unknown): Promise<ActionResult<{ re
     : r.scoasa
       ? "Număr greșit: firma e marcată „Nu contacta” și iese din listă."
       : "Rezultat salvat.";
-  return { ok: true, message, data: { revenit: r.revenit, incercari: r.incercari, limita: r.limita } };
+  return { ok: true, message, data: { revenit: r.revenit, scoasa: Boolean(r.scoasa), incercari: r.incercari, limita: r.limita } };
 }
 
 const notaListaSchema = z.object({ listaId: z.coerce.number().int().positive(), nota: z.string().trim().max(2000) });

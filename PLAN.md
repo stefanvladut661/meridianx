@@ -1162,3 +1162,18 @@ la `/admin/auth/callback`: schimbă codul pe sesiune și verifică
 - **Neverificat fără Supabase real:** forma exactă a erorilor trimise de
   Supabase la întoarcere (`error_code=signup_disabled`) și claim-ul `amr`
   pe sesiunile reale de Google (documentat ca `oauth`).
+
+## PROSPECTARE — modul de admin + API pentru roboți, `feat/prospectare` (2026-11-02)
+
+Firmele cercetate de roboții din `auto-web-rebuilder`, site-urile demo și contactul pe **un singur canal** (email, WhatsApp sau telefon), impus în bază. Detalii, pași manuali și decizii: `lib/prospectare/README.md`; API-ul roboților: `docs/prospectare-api.md`.
+
+- **Baza:** migrările 28–31 (`prospectare_*`, 8 tabele, RLS doar `is_lead_admin()`, funcții doar pentru cheia de service). Teste: `bash supabase/tests/prospectare/ruleaza.sh` (Postgres local în Docker; 78 de reguli + concurență).
+- **Admin:** `/admin/prospectare` (Prezentare, Firme, Apeluri azi, WhatsApp azi, Email, Roboți, Setări), din exportul Base44, pe tema închisă a adminului. Meniul are acum cinci module (`components/panou/layout/nav.ts`): Prospectare după Lead-uri; bara de jos pe telefon are șase locuri.
+- **API:** `/api/prospectare/robot/{firme,rezerva,heartbeat,termina,eveniment}`, token de dispozitiv (doar hash în bază), limită de cereri pe minut.
+- **Import:** `scripts/prospectare-import.mjs --env <fișier din afara repo-ului> [--proba]`.
+- **Nemerged în `main`**: omul testează întâi. Migrările nu sunt aplicate pe producție.
+
+### Observații între faze
+- `npm run lint` pică doar din cauza copiilor vechi `.claude/worktrees/agent-*` (redesignul adminului, neurmărite de git): 1.421 de erori, toate acolo. Fără ele (`npx eslint . --ignore-pattern ".claude/**"`): 0 erori, 8 avertismente vechi în `public/pixels`. De decis: ștergerea lor (atenție la junction-ul spre `node_modules`) sau `.claude/**` în ignorurile ESLint.
+- Kit `components/panou/ui`: toast-urile se văd sub orice `Modal` deschis (`<dialog>` stă în „top layer”); `CopyButton` nu anunță „Copiat” cititoarelor de ecran; `ProgressBar` nu are nume accesibil; butoanele din `Modal`/`ConfirmDialog` au 40 px, sub 44 pe telefon. Paginile Prospectare ocolesc local, dar o reparație în kit ar ajuta toate modulele.
+- `auto-web-rebuilder/scripts/whatsapp_zi.py` pune intenționat în lista zilei firmele care au primit deja email: contrazice regula unui singur canal; de schimbat când roboții trec pe API.
