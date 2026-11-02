@@ -60,7 +60,8 @@ const env = Object.fromEntries(
     .filter((l) => l && !l.startsWith("#") && l.includes("="))
     .map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim().replace(/^["']|["']$/g, "")])
 );
-const URL_DB = env.PROSPECTARE_SUPABASE_URL;
+// Adresa proiectului; dacă e copiată cu „/rest/v1/” la final, o scoatem (biblioteca o adaugă singură).
+const URL_DB = (env.PROSPECTARE_SUPABASE_URL ?? "").trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
 const KEY = env.PROSPECTARE_SUPABASE_SERVICE_ROLE_KEY;
 const lipsa = [!URL_DB && "PROSPECTARE_SUPABASE_URL", !KEY && "PROSPECTARE_SUPABASE_SERVICE_ROLE_KEY"].filter(Boolean);
 if (lipsa.length) stop(`în ${ENV} lipsesc: ${lipsa.join(", ")}.`);
