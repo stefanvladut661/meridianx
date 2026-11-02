@@ -9,7 +9,7 @@ import { dateTimeRo, num, relativeRo } from "@/components/panou/ui/format";
 import { ErrorState } from "@/components/panou/ui/states";
 import { ETAPE } from "@/lib/prospectare/labels";
 import type { FirmaRand } from "@/lib/prospectare/types";
-import { CanalBadge, StageBadge } from "./stage-badge";
+import { CanaleBadge, StageBadge } from "./stage-badge";
 import { linkWeb } from "./firme-format";
 
 /**
@@ -68,7 +68,7 @@ export function FirmeTabel({ firme, acum, selectatId }: { firme: FirmaRand[]; ac
               <th scope="col" className="py-2 pr-2 font-medium">Oraș</th>
               <th scope="col" className="py-2 pr-2 font-medium">Scor</th>
               <th scope="col" className="py-2 pr-2 font-medium">Etapă</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Canal</th>
+              <th scope="col" className="py-2 pr-2 font-medium">Canale</th>
               <th scope="col" className="py-2 pr-2 font-medium">Telefon</th>
               <th scope="col" className="py-2 pr-2 font-medium">Email</th>
               <th scope="col" className="py-2 pr-2 font-medium">Site demo</th>
@@ -120,10 +120,10 @@ export function FirmeTabel({ firme, acum, selectatId }: { firme: FirmaRand[]; ac
                     <StageBadge etapa={f.etapa} />
                   </td>
                   <td className="py-2.5 pr-2">
-                    <CanalBadge canal={f.canal} />
+                    <CanaleBadge firma={f} />
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-2 text-[11.5px]">
-                    {/* Text, nu link de apel: se sună doar din „Apeluri azi”, unde firma primește canalul. */}
+                    {/* Text, nu link de apel: se sună doar din „Apeluri azi”, unde firma intră pe telefon. */}
                     {f.telefon ?? <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="max-w-[170px] truncate py-2.5 pr-2 text-[11.5px] text-muted-foreground">{f.email ?? "—"}</td>
@@ -182,7 +182,7 @@ export function FirmeTabel({ firme, acum, selectatId }: { firme: FirmaRand[]; ac
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <StageBadge etapa={f.etapa} />
-                  <CanalBadge canal={f.canal} />
+                  <CanaleBadge firma={f} />
                 </div>
                 {contact.length ? (
                   <p className="mt-1.5 flex min-w-0 flex-wrap gap-x-2 text-[11px] text-muted-foreground">

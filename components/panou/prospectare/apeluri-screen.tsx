@@ -156,7 +156,7 @@ export function ApeluriScreen({
       <PageHead
         title="Apeluri azi"
         pill={nume}
-        subtitle="Lista de telefon a zilei. Fiecare firmă are un singur canal: la import primește Telefon și rămâne așa."
+        subtitle="Lista de telefon a zilei. Telefonul e separat: intră doar firme cu site gata, fără email și fără WhatsApp. La import primesc canalul Telefon și rămân așa."
         actions={toate.length ? <VcfButton firme={toate.map((r) => r.firma)} numeFisier={`apeluri-${cine}-${azi}.vcf`} /> : null}
       />
 
@@ -189,7 +189,6 @@ export function ApeluriScreen({
       </Card>
 
       <PanouRezerva
-        canal="telefon"
         rezerva={rezerva}
         eroareRezerva={eroareRezerva}
         deschis={importDeschis}
@@ -238,7 +237,7 @@ export function ApeluriScreen({
               <EmptyState
                 icon={Phone}
                 title="Nicio firmă de sunat azi"
-                text="Importă din rezervă firmele cu site gata. La import primesc canalul Telefon și rămân doar la tine."
+                text="Importă din rezervă firmele cu site gata care n-au primit email sau WhatsApp. La import primesc canalul Telefon și rămân doar la tine."
                 action={
                   <Btn size="sm" variant="primary" icon={CloudDownload} onClick={deschideImport} className={TAP_SM}>
                     Importă din rezervă

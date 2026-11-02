@@ -7,9 +7,10 @@ import { firmaRef, hasFirmaRef, methodNotAllowed, robotRoute } from "@/lib/prosp
  *
  * Ordinea pentru fiecare email:
  *   1. { "tip": "email_de_trimis", "domeniu", "casuta" } ÎNAINTE de trimitere.
- *      200 = trimite (firma are acum canalul email); 409 = are alt canal sau e
- *      „Nu contacta” / respinsă / client → emailul NU se trimite; 429 =
- *      căsuța și-a atins limita de azi → încearcă altă căsuță sau mâine.
+ *      200 = trimite (firma are acum data emailului); 409 = a primit deja
+ *      email, e pe telefon sau e „Nu contacta” / respinsă / client → emailul
+ *      NU se trimite; 429 = căsuța și-a atins limita de azi → încearcă altă
+ *      căsuță sau mâine. Fiecare firmă primește cel mult un email.
  *   2. { "tip": "email_trimis", "domeniu", "casuta", "message_id" } după
  *      trimitere. Același message_id a doua oară nu se numără din nou.
  * Apoi, când apar: { "tip": "bounce", … } și

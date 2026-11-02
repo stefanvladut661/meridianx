@@ -8,8 +8,11 @@ import { useToast } from "@/components/panou/ui/toast";
 import { UTILIZATORI } from "@/lib/prospectare/labels";
 import type { Utilizator } from "@/lib/prospectare/types";
 
-/** Comutatorul Ștefan / Vlăduț: fiecare vede lista lui. Se ține minte într-un cookie. */
-export function UserSwitch({ value, className }: { value: Utilizator; className?: string }) {
+/**
+ * Comutatorul Ștefan / Vlăduț, ținut minte într-un cookie. La apeluri alege
+ * lista cui se vede; pe WhatsApp (listă comună) alege doar cine trimite.
+ */
+export function UserSwitch({ value, className, ariaLabel = "Lista cui" }: { value: Utilizator; className?: string; ariaLabel?: string }) {
   const router = useRouter();
   const { notify } = useToast();
   const [pending, startTransition] = useTransition();
@@ -17,7 +20,7 @@ export function UserSwitch({ value, className }: { value: Utilizator; className?
   return (
     <div aria-busy={pending} className={className}>
       <SegmentedControl<Utilizator>
-        ariaLabel="Lista cui"
+        ariaLabel={ariaLabel}
         value={value}
         onChange={(next) => {
           if (next === value) return;

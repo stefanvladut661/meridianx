@@ -3,7 +3,7 @@ import { ArrowRightLeft, Bot, CircleSlash, Cpu, Lock, Mail, MailX, MessageCircle
 import { dateTimeRo, relativeRo } from "@/components/panou/ui/format";
 import type { ActivitateCuFirma } from "@/lib/prospectare/citire";
 import { CANALE, ETAPE, isCanal, isEtapa, REZULTATE } from "@/lib/prospectare/labels";
-import type { Rezultat } from "@/lib/prospectare/types";
+import type { Canal, Rezultat } from "@/lib/prospectare/types";
 import { linkFirma } from "./prezentare-comun";
 
 /**
@@ -40,6 +40,13 @@ const ora = (v: unknown): string | null => {
 
 const RASPUNS: Record<string, string> = { pozitiv: "pozitiv", nu: "„NU”", automat: "automat", altul: "de citit" };
 
+/** Datele canalelor cu care a venit firma din import (`email_la`, `whatsapp_la`, `telefon_la`). */
+const CANALE_LA: { cheie: string; canal: Canal }[] = [
+  { cheie: "email_la", canal: "email" },
+  { cheie: "whatsapp_la", canal: "whatsapp" },
+  { cheie: "telefon_la", canal: "telefon" },
+];
+
 /** Ce s-a întâmplat (rândul principal) și, dacă are, amănuntul (motiv, notă, extras). */
 export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">): { ce: string; amanunt: string | null } {
   const d = a.detalii ?? {};
@@ -47,8 +54,19 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
     case "etapa":
       return { ce: `Etapă: ${etapa(d.din)} → ${etapa(d.in)}`, amanunt: text(d.motiv) };
     case "canal": {
-      const nou = canal(d.in);
-      return nou ? { ce: `Canal setat: ${nou}`, amanunt: text(d.motiv) } : { ce: `Canal scos: ${canal(d.din) ?? "—"}`, amanunt: text(d.motiv) };
+      // Din migrarea 33: `{ in, la, cont?, motiv? }` când se folosește un canal, `{ din: "telefon", motiv }` când se golește telefonul.
+      // Rândurile vechi au `{ din?, in? }`, fără `la`: canalul era doar setat, nu folosit.
+      const nou = text(d.in);
+      const vechi = text(d.din);
+      const motiv = text(d.motiv);
+      if (nou === "telefon") return { ce: "Intrată pe telefon", amanunt: motiv };
+      if (nou) {
+        const cont = numar(d.cont);
+        if (!text(d.la)) return { ce: `Canal setat: ${canal(nou)}`, amanunt: motiv };
+        return { ce: `Canal folosit: ${canal(nou)}${nou === "whatsapp" && cont ? ` (contul ${cont})` : ""}`, amanunt: motiv };
+      }
+      if (!vechi || vechi === "telefon") return { ce: "Telefon golit", amanunt: motiv };
+      return { ce: `Canal scos: ${canal(vechi)}`, amanunt: motiv };
     }
     case "apel": {
       const rezultat = d.rezultat;
@@ -58,7 +76,7 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
       const contor = d.rezultat === "nu_raspunde" && incercari && limita ? ` (${incercari}/${limita})` : "";
       const inapoi = ora(d.suna_inapoi_la);
       const amanunt = [
-        d.revenit_in_rezerva === true ? "A ieșit din listă, și-a pierdut canalul Telefon și a revenit în rezervă." : null,
+        d.revenit_in_rezerva === true ? "A ieșit din listă, și-a pierdut telefonul și a revenit în rezerva de apeluri." : null,
         inapoi ? `Sună înapoi: ${inapoi}` : null,
         citat(text(d.nota)),
       ]
@@ -81,7 +99,7 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
     }
     case "whatsapp": {
       // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
-      if (d.continuare_apel === true) return { ce: "Continuare apel pe WhatsApp", amanunt: "După „Interesat”; canalul rămâne Telefon." };
+      if (d.continuare_apel === true) return { ce: "Continuare apel pe WhatsApp", amanunt: "După „Interesat”. Firma rămâne pe telefon; canalul WhatsApp nu se folosește." };
       const cont = numar(d.cont);
       return { ce: cont ? `WhatsApp trimis de pe contul ${cont}` : "WhatsApp trimis", amanunt: null };
     }
@@ -99,7 +117,17 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
       return { ce: text(d.text) ?? "Notă actualizată", amanunt: null };
     case "creata": {
       const start = d.etapa;
-      return { ce: "Firmă adăugată în prospectare", amanunt: isEtapa(start) ? `Etapa de start: ${ETAPE[start].label}` : null };
+      // Doar numele canalelor: datele lor sunt în fișa firmei, aici rândul rămâne scurt.
+      const folosite = CANALE_LA.filter((c) => text(d[c.cheie])).map((c) => CANALE[c.canal].label);
+      // Modelul vechi (până la migrarea 33) avea un singur câmp `canal`.
+      const vechi = canal(d.canal);
+      const amanunt = [
+        isEtapa(start) ? `Etapa de start: ${ETAPE[start].label}` : null,
+        folosite.length ? `Canale deja folosite: ${folosite.join(", ")}` : vechi ? `Canal: ${vechi}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      return { ce: "Firmă adăugată în prospectare", amanunt: amanunt || null };
     }
     default: {
       const tip = a.tip ? a.tip.charAt(0).toUpperCase() + a.tip.slice(1).replace(/_/g, " ") : "Activitate";
@@ -148,7 +176,8 @@ export function ActivitateFeed({
                 <time dateTime={a.la} title={dateTimeRo(a.la)}>
                   {relativeRo(a.la, acum)}
                 </time>
-                {a.canal ? (
+                {/* La un rând de tip „canal”, ce s-a întâmplat spune deja canalul. */}
+                {a.canal && a.tip !== "canal" ? (
                   <>
                     <span aria-hidden="true">·</span>
                     <span>{CANALE[a.canal]?.label ?? a.canal}</span>

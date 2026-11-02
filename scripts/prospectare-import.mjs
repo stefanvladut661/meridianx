@@ -7,9 +7,10 @@
 //   --trimise   outreach/trimise.json, copia vie de pe Drive (implicit: G:\My Drive\MeridianX Prospectare\outreach\trimise.json)
 //   --whatsapp  folderul listelor WhatsApp (asignari-AAAA-LL-ZZ.json; implicit: G:\My Drive\MeridianX Prospectare\whatsapp)
 //   --nu-contacta  nu-contacta.txt (implicit: lângă stare.json, dacă există)
-// Scrie prin funcțiile din migrările 28–30 (cheia de service), potrivind firmele pe domeniu.
+// Scrie prin funcțiile din migrările 28–33 (cheia de service), potrivind firmele pe domeniu.
 // Se poate rula oricând din nou: avansează doar etapele robotului, nu schimbă
-// etapele puse de om și nici un canal deja setat (acolo raportează conflict).
+// etapele puse de om și nici data unui canal deja pus (email_la, whatsapp_la).
+// O firmă poate avea email și WhatsApp; fiecare canal o singură dată.
 //
 // --env: fișier în AFARA repo-ului, cu
 //   PROSPECTARE_SUPABASE_URL=https://<proiect>.supabase.co
@@ -150,7 +151,7 @@ for (const x of prospecti) {
 const trimisePeNr = new Map();
 for (const r of trimise) if (!trimisePeNr.has(Number(r.nr))) trimisePeNr.set(Number(r.nr), r);
 
-const raport = { etape: {}, statusNecunoscut: {}, faraDomeniu: 0, nuContacta: 0, emailFaraDetalii: [], waCuEmail: [], waSingur: [], waFaraFirma: [] };
+const raport = { etape: {}, statusNecunoscut: {}, faraDomeniu: 0, nuContacta: 0, emailFaraDetalii: [], waCuEmail: [], waSingur: [], waFaraFirma: [], waFaraCont: [], emailDoarInTrimise: [] };
 const firme = [];
 const activitate = [];
 
@@ -175,24 +176,31 @@ for (const x of prospecti) {
     raport.nuContacta++;
   }
 
-  let canal;
-  let canalSetatLa;
-  if (status === "trimis" && etapa !== "nu_contacta") {
-    canal = "email";
-    const t = trimisePeNr.get(Number(x.nr));
-    canalSetatLa = (t && laBucuresti(t.data, t.ora)) || dinTimestampRobot(x.trimis_la) || undefined;
+  // Fiecare canal are data lui: emailul din trimise.json, WhatsApp-ul din listele zilnice / stare.json.
+  // Emailul a plecat dacă starea zice „trimis” SAU dacă e în trimise.json (copia vie, mai nouă decât starea).
+  let emailLa;
+  const t = trimisePeNr.get(Number(x.nr));
+  const inTrimise = Boolean(t) && String(t.status ?? "trimis") === "trimis";
+  if ((status === "trimis" || inTrimise) && etapa !== "nu_contacta") {
+    emailLa = (t && laBucuresti(t.data, t.ora)) || dinTimestampRobot(x.trimis_la) || undefined;
     if (!t) raport.emailFaraDetalii.push(x.nr);
+    if (status !== "trimis") {
+      raport.emailDoarInTrimise.push(`${x.nr} (${status})`);
+      if (["cercetat", "site_in_lucru", "site_gata"].includes(etapa)) etapa = "email_trimis";
+    }
   }
 
+  let whatsappLa;
+  let whatsappCont;
   const wa = waTrimise.get(Number(x.nr));
-  if (wa) {
-    if (canal === "email") raport.waCuEmail.push(x.nr);
-    else if (etapa !== "nu_contacta") {
-      raport.waSingur.push(x.nr);
-      canal = "whatsapp";
-      etapa = "whatsapp_trimis";
-      canalSetatLa = laBucuresti(wa.zi, wa.ora ? `${wa.ora}:00` : "12:00:00") ?? undefined;
-    }
+  if (wa && etapa !== "nu_contacta") {
+    (emailLa ? raport.waCuEmail : raport.waSingur).push(x.nr);
+    // Ultimul contact: WhatsApp-ul a plecat după email (lista din 1 nov).
+    etapa = "whatsapp_trimis";
+    whatsappLa = laBucuresti(wa.zi, wa.ora ? `${wa.ora}:00` : "12:00:00") ?? undefined;
+    const cont = Number(wa.cont);
+    whatsappCont = Number.isInteger(cont) && cont >= 1 && cont <= 9 ? cont : undefined;
+    if (whatsappLa && whatsappCont === undefined) raport.waFaraCont.push(x.nr);
   }
   raport.etape[etapa] = (raport.etape[etapa] ?? 0) + 1;
 
@@ -243,8 +251,9 @@ for (const x of prospecti) {
         link_demo: typeof x.link_demo === "string" && x.link_demo.startsWith("https://") ? x.link_demo.slice(0, 500) : undefined,
         de_refacut: status === "refacere",
         etapa,
-        canal,
-        canal_setat_la: canalSetatLa,
+        email_la: emailLa,
+        whatsapp_la: whatsappLa,
+        whatsapp_cont: whatsappLa ? whatsappCont : undefined,
         date_extra: extra,
       }).filter(([, v]) => v !== undefined)
     )
@@ -282,7 +291,7 @@ for (const [nr, wa] of waTrimise) {
         cont: wa.cont ?? undefined,
         zi: wa.zi,
         sursa: wa.sursa,
-        nota: cuEmail ? "Contact pe alt canal, dinainte de modul: firma primise deja email, canalul rămâne email." : "WhatsApp trimis înainte de modul.",
+        nota: cuEmail ? "WhatsApp trimis înainte de modul, după email." : "WhatsApp trimis înainte de modul.",
       }).filter(([, v]) => v !== undefined)
     ),
   });
@@ -309,8 +318,12 @@ console.log("Etape după mapare:", Object.entries(raport.etape).sort((a, b) => b
 if (Object.keys(raport.statusNecunoscut).length) console.log("Statusuri necunoscute (→ cercetat):", JSON.stringify(raport.statusNecunoscut));
 console.log(`Din nu-contacta.txt: ${raport.nuContacta}`);
 console.log(`Emailuri trimise (status trimis) fără rând în trimise.json: ${raport.emailFaraDetalii.length}${raport.emailFaraDetalii.length ? ` (#${raport.emailFaraDetalii.join(", #")})` : ""}`);
-console.log(`WhatsApp trimise: ${waTrimise.size} — ${raport.waSingur.length} intră ca whatsapp_trimis cu canal whatsapp; ${raport.waCuEmail.length} primiseră deja email (canalul rămâne email, WhatsApp-ul se scrie în activitate)${raport.waFaraFirma.length ? `; ${raport.waFaraFirma.length} fără firmă în stare` : ""}`);
-if (raport.waCuEmail.length) console.log(`  Două canale înainte de modul: #${raport.waCuEmail.join(", #")}`);
+if (raport.emailDoarInTrimise.length) console.log(`În trimise.json, dar starea nu zice încă „trimis” (intră cu email trimis): #${raport.emailDoarInTrimise.join(", #")}`);
+const cuEmailLa = firme.filter((f) => f.email_la).length;
+const cuWhatsappLa = firme.filter((f) => f.whatsapp_la).length;
+console.log(`Canale: email ${cuEmailLa} firme · WhatsApp ${cuWhatsappLa} firme (${raport.waCuEmail.length} după email, ${raport.waSingur.length} doar WhatsApp)${raport.waFaraFirma.length ? ` · ${raport.waFaraFirma.length} WhatsApp fără firmă în stare` : ""}`);
+if (raport.waCuEmail.length) console.log(`  Email + WhatsApp: #${raport.waCuEmail.join(", #")}`);
+if (raport.waFaraCont.length) console.log(`  WhatsApp fără cont cunoscut (1–9): #${raport.waFaraCont.join(", #")}`);
 console.log(`Activitate de importat: ${activitate.length} rânduri · statistici căsuțe: ${randuriCasute.length} zile × căsuță`);
 
 // ---------------------------------------------------------------------------
@@ -323,20 +336,21 @@ async function rpc(name, params) {
   const { data, error } = await db.rpc(name, params);
   if (error) {
     if (error.code === "PGRST202" || /schema cache|does not exist/i.test(error.message ?? "")) {
-      stop(`funcția ${name} lipsește în bază: rulează întâi migrările 28–32 în Supabase → SQL Editor.`);
+      stop(`funcția ${name} lipsește în bază: rulează întâi migrările 28–33 în Supabase → SQL Editor.`);
     }
     stop(`${name}: ${error.message} (${error.code ?? "fără cod"})`);
   }
   return data;
 }
 
-const total = { adaugate: 0, actualizate: 0, neschimbate: 0, etape_pastrate: 0, conflicte: [] };
+const total = { adaugate: 0, actualizate: 0, neschimbate: 0, etape_pastrate: 0, canale_noi: 0, conflicte: [] };
 for (let i = 0; i < firme.length; i += LOT) {
   const r = await rpc("prospectare_upsert_firme", { p_firme: firme.slice(i, i + LOT), p_sursa: "import", p_autor: "import", p_proba: PROBA });
   total.adaugate += r.adaugate;
   total.actualizate += r.actualizate;
   total.neschimbate += r.neschimbate;
   total.etape_pastrate += r.etape_pastrate;
+  total.canale_noi += r.canale_noi ?? 0;
   total.conflicte.push(...r.conflicte);
   process.stdout.write(`\rFirme: ${Math.min(i + LOT, firme.length)}/${firme.length}`);
 }
@@ -349,8 +363,9 @@ const act = PROBA
 const cas = await rpc("prospectare_import_casute", { p_randuri: randuriCasute, p_proba: PROBA });
 
 console.log(`\n${PROBA ? "AR FI" : "S-AU"}: adăugate ${total.adaugate} · actualizate ${total.actualizate} · neschimbate ${total.neschimbate} · etape păstrate (puse de om sau mai avansate) ${total.etape_pastrate}`);
+console.log(`Firme care ${PROBA ? "ar primi" : "au primit"} date de canal (email_la / whatsapp_la): ${total.canale_noi}`);
 console.log(`Conflicte: ${total.conflicte.length}`);
-for (const c of total.conflicte.slice(0, 40)) console.log(`  #${c.nr ?? "?"} ${c.domeniu ?? ""}: ${c.motiv}${c.canal_baza ? ` (în bază ${c.canal_baza}, în import ${c.canal_import})` : ""}`);
+for (const c of total.conflicte.slice(0, 40)) console.log(`  #${c.nr ?? "?"} ${c.domeniu ?? ""}: ${c.motiv}`);
 if (total.conflicte.length > 40) console.log(`  … încă ${total.conflicte.length - 40}`);
 if (!PROBA) console.log(`Activitate: ${act.noi} noi, ${act.existente} existente${act.fara_firma?.length ? `, ${act.fara_firma.length} fără firmă` : ""}`);
 console.log(`Căsuțe: ${cas.randuri} rânduri ${PROBA ? "(nescrise)" : "(valoarea mai mare se păstrează)"}`);

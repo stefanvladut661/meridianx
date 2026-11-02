@@ -1,12 +1,12 @@
 import { ArrowRightLeft, Bot, CircleSlash, Lock, Mail, MailX, MessageCircle, Phone, Reply, Search, StickyNote, type LucideIcon } from "lucide-react";
 import { dateTimeRo, relativeRo } from "@/components/panou/ui/format";
 import { CANALE, ETAPE, REZULTATE, isCanal, isEtapa } from "@/lib/prospectare/labels";
-import { REZULTATE_IDS, type Activitate, type Rezultat } from "@/lib/prospectare/types";
+import { REZULTATE_IDS, type Activitate, type Canal, type Rezultat } from "@/lib/prospectare/types";
 import { faraProtocol, linkWeb } from "./firme-format";
 
 /**
  * Cronologia unei firme (prototip: ActivityFeed.jsx). În bază, `detalii` e un
- * obiect scris de funcțiile din migrările 28–30; aici devine o propoziție în
+ * obiect scris de funcțiile din migrările 28–33; aici devine o propoziție în
  * română. Tipurile necunoscute (din import) se arată cu cheile lor, nu dispar.
  */
 
@@ -38,6 +38,27 @@ const canal = (v: unknown): string => (isCanal(v) ? CANALE[v].label : (text(v) ?
 const rezultat = (v: unknown): string =>
   typeof v === "string" && (REZULTATE_IDS as readonly string[]).includes(v) ? REZULTATE[v as Rezultat].label : (text(v) ?? "fără rezultat");
 const unite = (parti: (string | null | undefined | false)[]): string | null => parti.filter(Boolean).join(" · ") || null;
+const moment = (v: unknown): string | null => {
+  const t = text(v);
+  return t && !Number.isNaN(Date.parse(t)) ? dateTimeRo(t) : null;
+};
+
+/** Datele canalelor cu care a venit firma din import (`email_la`, `whatsapp_la`, `telefon_la`). */
+const CANALE_LA: { cheie: string; canal: Canal }[] = [
+  { cheie: "email_la", canal: "email" },
+  { cheie: "whatsapp_la", canal: "whatsapp" },
+  { cheie: "telefon_la", canal: "telefon" },
+];
+
+function canaleLaCreare(d: Record<string, unknown>): string | null {
+  const folosite = CANALE_LA.filter((c) => text(d[c.cheie])).map((c) => {
+    const la = moment(d[c.cheie]);
+    return la ? `${CANALE[c.canal].label} (${la})` : CANALE[c.canal].label;
+  });
+  if (folosite.length) return `canale deja folosite: ${folosite.join(", ")}`;
+  // Modelul vechi (până la migrarea 33): un singur câmp `canal`.
+  return text(d.canal) ? `canal ${canal(d.canal)}` : null;
+}
 
 const RASPUNSURI: Record<string, string> = { pozitiv: "pozitiv", nu: "„NU”", automat: "automat", altul: "alt răspuns" };
 
@@ -46,21 +67,31 @@ export function descrieActivitate(a: Activitate): Descriere {
 
   switch (a.tip) {
     case "creata":
-      return { titlu: "Firmă adăugată", detaliu: unite([text(d.etapa) && `etapa ${etapa(d.etapa)}`, text(d.canal) && `canal ${canal(d.canal)}`]) };
+      return { titlu: "Firmă adăugată", detaliu: unite([text(d.etapa) && `etapa ${etapa(d.etapa)}`, canaleLaCreare(d)]) };
     case "etapa":
       return { titlu: text(d.din) ? `Etapă: ${etapa(d.din)} → ${etapa(d.in)}` : `Etapă: ${etapa(d.in)}`, detaliu: text(d.motiv) };
-    case "canal":
-      return {
-        titlu: text(d.in) ? `Canal setat: ${canal(d.in)}` : `Canal golit${text(d.din) ? `: ${canal(d.din)}` : ""}`,
-        detaliu: text(d.motiv),
-      };
+    case "canal": {
+      // Din migrarea 33: `{ in, la, cont?, motiv? }` când se folosește un canal, `{ din: "telefon", motiv }` când se golește telefonul.
+      // Rândurile vechi au `{ din?, in? }`, fără `la`: canalul era doar setat, nu folosit.
+      const nou = text(d.in);
+      const vechi = text(d.din);
+      const motiv = text(d.motiv);
+      if (nou === "telefon") return { titlu: "Intrată pe telefon", detaliu: motiv };
+      if (nou) {
+        const cont = numar(d.cont);
+        if (!text(d.la)) return { titlu: `Canal setat: ${canal(nou)}`, detaliu: motiv };
+        return { titlu: `Canal folosit: ${canal(nou)}${nou === "whatsapp" && cont ? ` (contul ${cont})` : ""}`, detaliu: motiv };
+      }
+      if (!vechi || vechi === "telefon") return { titlu: "Telefon golit", detaliu: motiv };
+      return { titlu: `Canal golit: ${canal(vechi)}`, detaliu: motiv };
+    }
     case "apel": {
       const incercari = numar(d.incercari);
       const limita = numar(d.limita);
       const sunaLa = text(d.suna_inapoi_la);
       return {
         titlu: `Apel: ${rezultat(d.rezultat)}${incercari && limita ? ` (${incercari}/${limita})` : incercari ? ` (încercarea ${incercari})` : ""}`,
-        detaliu: unite([d.revenit_in_rezerva === true && "a ieșit din listă și a revenit în rezervă, fără canal", sunaLa && `sună înapoi ${dateTimeRo(sunaLa)}`]),
+        detaliu: unite([d.revenit_in_rezerva === true && "a ieșit din listă, și-a pierdut telefonul și a revenit în rezerva de apeluri", sunaLa && `sună înapoi ${dateTimeRo(sunaLa)}`]),
         citat: text(d.nota),
       };
     }
@@ -70,7 +101,7 @@ export function descrieActivitate(a: Activitate): Descriere {
       return { titlu: `Email întors (bounce)${text(d.casuta) ? ` la ${text(d.casuta)}` : ""}` };
     case "whatsapp":
       // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
-      if (d.continuare_apel === true) return { titlu: "Continuare apel pe WhatsApp", detaliu: "după „Interesat”; canalul rămâne Telefon" };
+      if (d.continuare_apel === true) return { titlu: "Continuare apel pe WhatsApp", detaliu: "după „Interesat”; firma rămâne pe telefon, canalul WhatsApp nu se folosește" };
       return { titlu: `WhatsApp trimis${numar(d.cont) ? ` de pe contul ${numar(d.cont)}` : ""}` };
     case "raspuns":
       return {
@@ -146,7 +177,8 @@ export function ActivitateFirma({ activitate, acum, gol = "Nicio activitate pent
                 <time dateTime={a.la} title={dateTimeRo(a.la)}>
                   {relativeRo(a.la, acum)}
                 </time>
-                {isCanal(a.canal) ? (
+                {/* La un rând de tip „canal”, titlul spune deja canalul. */}
+                {isCanal(a.canal) && a.tip !== "canal" ? (
                   <>
                     <span aria-hidden="true">·</span>
                     <span>{CANALE[a.canal].label}</span>

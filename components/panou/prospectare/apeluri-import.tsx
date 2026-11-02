@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, CloudDownload, Loader2, MessageCircle, Users } from "lucide-react";
+import { ChevronDown, CloudDownload, Loader2, Users } from "lucide-react";
 import { importaLista } from "@/app/(admin)/admin/prospectare/actions";
 import { InlineNote } from "@/components/panou/ui/actions";
 import { num } from "@/components/panou/ui/format";
@@ -13,11 +13,12 @@ import { cn } from "@/lib/utils";
 import { firmeText, TAP_SM } from "./apeluri-ui";
 
 /**
- * Importul din rezervă în lista zilei: ImportPanel (telefon) și GeneratePanel
- * (WhatsApp) din prototip, într-o singură piesă. Rezerva vine grupată de la
- * server (`citesteRezerva`), deci „X firme disponibile” se numără aici, fără să
- * aducem firmele. Importul îl face baza, atomic: firmele primesc canalul în
- * aceeași tranzacție în care intră în listă.
+ * Importul din rezervă în lista de apeluri a zilei (ImportPanel din prototip).
+ * Doar telefon: lista de WhatsApp e continuă, firmele intră singure în ea.
+ * Rezerva vine grupată de la server (`citesteRezerva`): firme cu site gata,
+ * fără email și fără WhatsApp. „X firme disponibile” se numără aici, fără să
+ * aducem firmele. Importul îl face baza, atomic: firmele primesc canalul
+ * Telefon în aceeași tranzacție în care intră în listă.
  */
 
 /** Un grup din rezervă (aceeași formă ca `GrupaRezerva` din lib/prospectare/citire). */
@@ -106,39 +107,9 @@ function Alegere({
   );
 }
 
-interface Texte {
-  titlu: string;
-  cantitate: string;
-  cantitati: number[];
-  buton: string;
-  seLucreaza: string;
-  jos: string;
-}
-
-const TEXTE: Record<"telefon" | "whatsapp", Texte> = {
-  telefon: {
-    titlu: "Importă pentru azi",
-    cantitate: "Câte firme",
-    cantitati: [10, 20, 30, 50, 100],
-    buton: "Importă în lista mea",
-    seLucreaza: "Se importă…",
-    jos: "Firmele importate primesc canalul Telefon și nu mai pot fi luate de email sau WhatsApp.",
-  },
-  whatsapp: {
-    titlu: "Generează lista",
-    cantitate: "Câte pe cont",
-    cantitati: [10, 20, 30, 50],
-    buton: "Generează",
-    seLucreaza: "Se generează…",
-    jos: "Firmele primesc canalul WhatsApp. Nu mai pot fi luate de email sau telefon.",
-  },
-};
+const CANTITATI = [10, 20, 30, 50, 100];
 
 export function PanouRezerva({
-  canal,
-  cont = null,
-  limita = null,
-  folosite = null,
   rezerva,
   eroareRezerva,
   deschis,
@@ -146,13 +117,6 @@ export function PanouRezerva({
   cerereFocus,
   onImportat,
 }: {
-  canal: "telefon" | "whatsapp";
-  /** Contul WhatsApp (doar pentru WhatsApp). */
-  cont?: number | null;
-  /** Limita pe zi a contului WhatsApp, din Setări (null: necunoscută). */
-  limita?: number | null;
-  /** Câte rânduri are azi contul, de la toți utilizatorii (null: necunoscut). */
-  folosite?: number | null;
   rezerva: GrupaRezervaUi[] | null;
   eroareRezerva: string | null;
   deschis: boolean;
@@ -161,15 +125,12 @@ export function PanouRezerva({
   cerereFocus: number;
   onImportat: () => void;
 }) {
-  const t = TEXTE[canal];
-  const whatsapp = canal === "whatsapp";
   const router = useRouter();
   const { notify } = useToast();
   const [pending, startTransition] = useTransition();
   const [cantitate, setCantitate] = useState<number>(20);
   const [liber, setLiber] = useState("");
-  // WhatsApp merge doar pe numere de mobil: baza impune asta, aici doar se vede.
-  const [filtre, setFiltre] = useState<Filtre>({ nisa: "", judet: "", oras: "", scorMin: "", doarMobil: whatsapp });
+  const [filtre, setFiltre] = useState<Filtre>({ nisa: "", judet: "", oras: "", scorMin: "", doarMobil: false });
   const primul = useRef<HTMLButtonElement>(null);
   const regiune = useId();
 
@@ -186,25 +147,17 @@ export function PanouRezerva({
 
   const cunoscuta = rezerva !== null;
   const valoare = liber ? Number(liber) || 0 : cantitate;
-  const ramase = whatsapp && limita !== null ? Math.max(0, limita - (folosite ?? 0)) : null;
-  const seAdauga = Math.min(valoare, cunoscuta ? disponibile : valoare, ramase ?? valoare);
-
-  let blocat: string | null = null;
-  if (whatsapp && !cont) blocat = "Alege contul WhatsApp.";
-  else if (whatsapp && limita === null) blocat = "Limitele conturilor nu s-au citit din Setări: reîncarcă pagina.";
-  else if (whatsapp && limita === 0) blocat = `Contul ${cont} are limita 0 în Setări: pune una în Setări → Limite.`;
-  else if (ramase === 0) blocat = `Contul ${cont} și-a atins limita de azi (${limita} mesaje). Alege alt cont sau mărește limita în Setări.`;
+  const seAdauga = Math.min(valoare, cunoscuta ? disponibile : valoare);
   const preaMulte = valoare > 500;
 
   const seteaza = (patch: Partial<Filtre>) => setFiltre((f) => ({ ...f, ...patch }));
 
   const importa = () => {
-    if (blocat || preaMulte || !valoare) return;
+    if (preaMulte || !valoare) return;
     startTransition(async () => {
       const result = await importaLista({
-        canal,
+        canal: "telefon",
         numar: valoare,
-        cont: whatsapp ? cont : null,
         filtre: {
           nisa: filtre.nisa,
           oras: filtre.oras,
@@ -219,13 +172,7 @@ export function PanouRezerva({
     });
   };
 
-  const subtitlu = !cunoscuta
-    ? "Rezerva nu s-a putut număra acum"
-    : whatsapp
-      ? `${firmeText(disponibile)} disponibile pe acest cont · limită ${limita ?? "—"}/zi, folosite ${folosite ?? "—"}`
-      : `${firmeText(disponibile)} în rezervă, gata de sunat`;
-
-  const Icon = whatsapp ? MessageCircle : CloudDownload;
+  const subtitlu = cunoscuta ? `${firmeText(disponibile)} în rezervă, gata de sunat` : "Rezerva nu s-a putut număra acum";
 
   return (
     <Card className="p-0">
@@ -238,8 +185,8 @@ export function PanouRezerva({
       >
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-[14px] font-semibold sm:text-[13px]">
-            <Icon className="h-4 w-4 shrink-0 text-lav" aria-hidden="true" />
-            {t.titlu}
+            <CloudDownload className="h-4 w-4 shrink-0 text-lav" aria-hidden="true" />
+            Importă pentru azi
           </p>
           <p className="mt-0.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">{subtitlu}</p>
         </div>
@@ -257,10 +204,10 @@ export function PanouRezerva({
 
             <div>
               <p id={`${regiune}-cate`} className="mb-1.5 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
-                {t.cantitate}
+                Câte firme
               </p>
               <div role="group" aria-labelledby={`${regiune}-cate`} className="flex flex-wrap items-center gap-1.5">
-                {t.cantitati.map((c, i) => (
+                {CANTITATI.map((c, i) => (
                   <button
                     key={c}
                     ref={i === 0 ? primul : undefined}
@@ -304,60 +251,55 @@ export function PanouRezerva({
             </div>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-0">
-              {whatsapp ? (
-                <label className="flex min-h-11 items-center gap-2 text-[13px] text-muted-foreground sm:min-h-0 sm:text-[12px]" title="WhatsApp merge doar pe numere de mobil">
-                  <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
-                  doar numere de mobil
-                </label>
-              ) : (
-                <>
-                  <label className="flex min-h-11 items-center gap-2 text-[13px] sm:min-h-0 sm:text-[12px]">
-                    <input
-                      type="checkbox"
-                      checked={filtre.doarMobil}
-                      onChange={(e) => seteaza({ doarMobil: e.target.checked })}
-                      className="h-5 w-5 accent-[#C6B5FF] sm:h-3.5 sm:w-3.5"
-                    />
-                    doar mobil
-                  </label>
-                  <label className="flex min-h-11 items-center gap-2 text-[13px] text-muted-foreground sm:min-h-0 sm:text-[12px]" title="Importul ia doar firme cu site gata">
-                    <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
-                    doar cu site gata
-                  </label>
-                </>
-              )}
+              <label className="flex min-h-11 items-center gap-2 text-[13px] sm:min-h-0 sm:text-[12px]">
+                <input
+                  type="checkbox"
+                  checked={filtre.doarMobil}
+                  onChange={(e) => seteaza({ doarMobil: e.target.checked })}
+                  className="h-5 w-5 accent-[#C6B5FF] sm:h-3.5 sm:w-3.5"
+                />
+                doar mobil
+              </label>
+              <label className="flex min-h-11 items-center gap-2 text-[13px] text-muted-foreground sm:min-h-0 sm:text-[12px]" title="Importul ia doar firme cu site gata">
+                <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
+                doar cu site gata
+              </label>
+              <label
+                className="flex min-h-11 items-center gap-2 text-[13px] text-muted-foreground sm:min-h-0 sm:text-[12px]"
+                title="Telefonul e separat: firmele care au primit email sau WhatsApp nu intră în lista de apeluri"
+              >
+                <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
+                fără email și fără WhatsApp
+              </label>
             </div>
-
-            {blocat ? <InlineNote tone="apricot">{blocat}</InlineNote> : null}
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
               <p className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]" aria-live="polite">
                 <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                {cunoscuta
-                  ? whatsapp
-                    ? `Se adaugă ${num(seAdauga)} din ${firmeText(disponibile)}`
-                    : `Se adaugă ${num(seAdauga)} din ${firmeText(disponibile)} disponibile`
-                  : `Se cer ${firmeText(seAdauga)}`}
+                {cunoscuta ? `Se adaugă ${num(seAdauga)} din ${firmeText(disponibile)} disponibile` : `Se cer ${firmeText(seAdauga)}`}
               </p>
               <Btn
                 size="sm"
                 variant="primary"
-                icon={pending ? undefined : Icon}
-                disabled={pending || Boolean(blocat) || preaMulte || !valoare || (cunoscuta && !disponibile)}
+                icon={pending ? undefined : CloudDownload}
+                disabled={pending || preaMulte || !valoare || (cunoscuta && !disponibile)}
                 onClick={importa}
                 className={cn(TAP_SM, "w-full sm:w-auto")}
               >
                 {pending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    {t.seLucreaza}
+                    Se importă…
                   </>
                 ) : (
-                  t.buton
+                  "Importă în lista mea"
                 )}
               </Btn>
             </div>
-            <p className="text-[12px] leading-relaxed text-muted-foreground sm:text-[11px]">{t.jos}</p>
+            <p className="text-[12px] leading-relaxed text-muted-foreground sm:text-[11px]">
+              Telefonul e separat: intră doar firme cu site gata care n-au primit nici email, nici WhatsApp. La import primesc canalul Telefon și nu mai primesc email
+              sau WhatsApp. Excepția: după „Interesat” poți continua pe WhatsApp, iar asta apare doar în activitate.
+            </p>
           </div>
         ) : null}
       </div>

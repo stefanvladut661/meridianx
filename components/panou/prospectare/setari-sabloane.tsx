@@ -32,7 +32,7 @@ const VARIABILE: { v: string; ce: string }[] = [
 const CUNOSCUTE = new Set(VARIABILE.map((x) => x.v));
 
 const SABLOANE: { cheie: Cheie; label: string; hint: string }[] = [
-  { cheie: "sablon_whatsapp_primul", label: "WhatsApp — primul mesaj", hint: "Se folosește în lista de WhatsApp, la prima atingere." },
+  { cheie: "sablon_whatsapp_primul", label: "WhatsApp — primul mesaj", hint: "Mesajul din lista de WhatsApp. Fiecare firmă îl primește o singură dată." },
   { cheie: "sablon_whatsapp_dupa_apel", label: "WhatsApp — după apel „Interesat”", hint: "Se deschide automat când marchezi o firmă interesată la telefon." },
   { cheie: "sablon_script_apel", label: "Script de apel", hint: "Se vede pliabil pe fiecare card din Apeluri azi." },
 ];

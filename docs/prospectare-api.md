@@ -1,6 +1,6 @@
 # API-ul Prospectare pentru roboți
 
-Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–30. Regulile (un singur canal, „Nu contacta”, o firmă la un singur robot) stau în bază, nu în robot.
+Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–33. Regulile (fiecare canal o singură dată, telefonul separat, „Nu contacta”, o firmă la un singur robot) stau în bază, nu în robot.
 
 Adresa: `https://www.meridianx.ro/api/prospectare/robot/<ruta>`. Toate rutele primesc **doar `POST` cu JSON**.
 
@@ -21,7 +21,7 @@ Mereu aceeași formă:
 
 ```json
 { "ok": true, "…": "…" }
-{ "ok": false, "eroare": { "cod": "conflict", "mesaj": "Firma #412 are deja canalul telefon: emailul nu se trimite." } }
+{ "ok": false, "eroare": { "cod": "conflict", "mesaj": "Firma #412 a primit deja email (30.10.2026 09:40): același canal nu se folosește de două ori." } }
 ```
 
 | Status | `cod` | Ce faci |
@@ -29,7 +29,7 @@ Mereu aceeași formă:
 | 200 | — | Continui. |
 | 401 | `neautorizat` | Token greșit sau robot dezactivat. Te oprești și anunți omul. |
 | 404 | `negasit` | Firma nu există (domeniu sau nr greșit). |
-| 409 | `conflict` | Alt canal, „Nu contacta” / respinsă / client, sau rezervarea nu mai e a ta. **Nu trimiți emailul, nu mai lucrezi la firmă.** |
+| 409 | `conflict` | Firma a primit deja email, e pe telefon (lista de apeluri), e „Nu contacta” / respinsă / client, sau rezervarea nu mai e a ta. **Nu trimiți emailul, nu mai lucrezi la firmă.** |
 | 422 | `date_invalide` | Corp greșit; mesajul spune câmpul. Nu repeta aceeași cerere. |
 | 429 | `prea_multe` | Peste limita de cereri, sau căsuța și-a atins limita zilei. Aștepți (sau altă căsuță). |
 | 503 | `neconfigurat` | Baza nu e configurată sau lipsesc migrările. Reîncerci mai târziu. |
@@ -37,7 +37,7 @@ Mereu aceeași formă:
 
 ## 1. `POST /firme`: firmele cercetate
 
-Adaugă sau actualizează firme, potrivite pe **domeniu** (normalizat: `https://www.Firma.ro/contact` → `firma.ro`). Datele existente se completează, nu se golesc. Robotul poate pune cel mult etapa `site_in_lucru` (firma aleasă pentru construit); canalul, linkul demo și etapele de contact nu se schimbă de aici. Cel mult 500 de firme pe cerere; `date_extra` cel mult 20.000 de caractere pe firmă.
+Adaugă sau actualizează firme, potrivite pe **domeniu** (normalizat: `https://www.Firma.ro/contact` → `firma.ro`). Datele existente se completează, nu se golesc. Robotul poate pune cel mult etapa `site_in_lucru` (firma aleasă pentru construit); canalele (email, WhatsApp, telefon), linkul demo și etapele de contact nu se schimbă de aici. Cel mult 500 de firme pe cerere; `date_extra` cel mult 20.000 de caractere pe firmă.
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/firme \
@@ -88,6 +88,8 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/heartbeat \
 
 După ce site-ul demo e publicat. Firma trece pe „Site gata”, primește linkul demo și linkul capturii (Drive, nu fișierul), iar rezervarea se închide. Doar robotul care are firma rezervată.
 
+Din acest moment firma e gata de contact: dacă are adresă de email, o ia robotul de email (`email_de_trimis`); dacă are mobil și n-are email, intră singură în lista de WhatsApp din admin (cele cu email intră acolo la o zi după email).
+
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/termina \
   -H "Authorization: Bearer $MERIDIAN_ROBOT_TOKEN" -H "Content-Type: application/json" \
@@ -100,7 +102,7 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/termina \
 
 ## 5. `POST /eveniment`: emailurile
 
-**Ordinea e obligatorie.** Robotul cere canalul email **înainte** să trimită. Altfel, între verificare și trimitere, firma poate intra într-o listă de WhatsApp sau de apeluri.
+**Ordinea e obligatorie.** Robotul cere canalul email **înainte** să trimită. Fiecare firmă primește **cel mult un email** (regula: o firmă poate fi contactată pe email și pe WhatsApp, dar niciodată de două ori pe același canal). Cererea pune data emailului; între verificare și trimitere firma nu mai poate intra în lista de apeluri. Firmele cu mobil intră în lista de WhatsApp la o zi după email.
 
 ### 5.1 Înainte de trimitere: `email_de_trimis`
 
@@ -110,10 +112,10 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/eveniment \
   -d '{"tip":"email_de_trimis","domeniu":"tamplariepvc-somes.ro","casuta":"stefan@meridianxweb.com","limita_azi":40}'
 ```
 
-- **200** `{ "ok": true, "trimite": true, "firma": { "email": "…", "link_demo": "…", "persoana_contact": "…" }, "casuta": { "trimise_azi": 12, "limita_azi": 40 } }`: trimiți. Firma are acum canalul email, pentru totdeauna.
-- **409**: firma are alt canal sau e „Nu contacta” / respinsă / client. **Nu trimiți.**
-- **429**: căsuța și-a atins limita de azi (sau e oprită din admin). Încerci altă căsuță sau mâine. Canalul firmei rămâne liber.
-- **422**: firma nu are email sau nu are site gata cu link.
+- **200** `{ "ok": true, "trimite": true, "firma": { "email": "…", "link_demo": "…", "persoana_contact": "…" }, "casuta": { "trimise_azi": 12, "limita_azi": 40 } }`: trimiți. Firma are acum data emailului: alt email nu mai primește.
+- **409**: firma a primit deja email, e pe telefon (lista de apeluri) sau e „Nu contacta” / respinsă / client. **Nu trimiți.**
+- **429**: căsuța și-a atins limita de azi (sau e oprită din admin). Încerci altă căsuță sau mâine. Firma rămâne fără email, poate primi mai târziu.
+- **422**: firma nu are adresă de email sau nu are site gata cu link (etapa `site_gata` sau `whatsapp_trimis`).
 
 `limita_azi` (opțional): limita căsuței pe ziua de azi, din încălzire. Dacă în admin e pusă o limită fixă pentru căsuță, aceea câștigă.
 
@@ -127,7 +129,7 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/eveniment \
 
 `{ "ok": true, "nou": true, "nr": 412, "etapa": "email_trimis" }`. Același `message_id` trimis a doua oară (o cerere repetată după o pană de rețea) întoarce `nou: false` și nu se mai numără.
 
-Dacă SMTP-ul a refuzat emailul după `email_de_trimis`, nu trimiți `email_trimis`. Canalul rămâne email (regula: o singură dată), iar firma rămâne în etapa ei; o poți reîncerca mai târziu, cu o nouă cerere `email_de_trimis`.
+Dacă SMTP-ul a refuzat emailul după `email_de_trimis`, nu trimiți `email_trimis`. Data emailului rămâne pusă (regula: o singură dată), deci firma nu mai primește email, nici la o cerere nouă (409). Dacă are mobil, intră în lista de WhatsApp după o zi.
 
 ### 5.3 Bounce și răspunsuri
 

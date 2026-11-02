@@ -3,9 +3,9 @@
 //
 //   node scripts/prospectare-verifica-api.mjs http://localhost:3210
 //
-// Baza de test trebuie pregătită ca în supabase/tests/prospectare (roboții
+// Baza de test se pregătește cu supabase/tests/prospectare/api-seed.sql (roboții
 // api-robot-1, api-robot-2, api-robot-oprit cu tokenurile de test de mai jos și
-// firmele 7001 api-lucru.ro, 7002 api-telefon.ro cu canal telefon, 7003 api-gata.ro).
+// firmele 7001 api-lucru.ro, 7002 api-telefon.ro pe telefon, 7003 api-gata.ro).
 
 const BASE = (process.argv[2] ?? "").replace(/\/$/, "");
 if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(BASE)) {
@@ -74,13 +74,13 @@ r = await call("termina", { firma_id: firma?.id, link_demo: "https://demo.test/a
 check("termina → 200, site gata", r.status === 200 && r.json?.firma?.etapa === "site_gata", r);
 
 r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-telefon.ro", casuta: "stefan@casuta-test.ro" }, T1);
-check("email_de_trimis pentru firmă cu canal telefon → 409 (al doilea canal)", r.status === 409 && r.json?.eroare?.cod === "conflict", r);
+check("email_de_trimis pentru o firmă de pe telefon → 409 (telefonul e separat)", r.status === 409 && r.json?.eroare?.cod === "conflict", r);
 r = await call("eveniment", { tip: "email_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", message_id: "<test-0@local>" }, T1);
 check("email_trimis fără cerere înainte → 409", r.status === 409, r);
 r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", limita_azi: 40 }, T1);
-check("email_de_trimis pentru firmă fără canal → 200, trimite", r.status === 200 && r.json?.trimite === true && r.json?.firma?.email === "office@api-gata.ro", r);
+check("email_de_trimis pentru o firmă fără email → 200, trimite", r.status === 200 && r.json?.trimite === true && r.json?.firma?.email === "office@api-gata.ro", r);
 r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro" }, T2);
-check("email_de_trimis din nou (canal deja email) → 200", r.status === 200, r);
+check("email_de_trimis din nou pentru aceeași firmă → 409 (același canal nu de două ori)", r.status === 409 && /deja email/.test(r.json?.eroare?.mesaj ?? ""), r);
 r = await call("eveniment", { tip: "email_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", message_id: "<test-1@local>", subiect: "Site demo" }, T1);
 check("email_trimis → 200, etapa email_trimis", r.status === 200 && r.json?.nou === true && r.json?.etapa === "email_trimis", r);
 r = await call("eveniment", { tip: "email_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", message_id: "<test-1@local>" }, T1);

@@ -12,7 +12,7 @@ import { COOKIE_UTILIZATOR, isUtilizator, UTILIZATORI } from "@/lib/prospectare/
 export const metadata: Metadata = { title: "Setări — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-/** /admin/prospectare/setari — limitele roboților și ale listelor, plafoanele căsuțelor, șabloanele de mesaj. */
+/** /admin/prospectare/setari — limitele roboților, pragul pe cont WhatsApp (avertisment), plafoanele căsuțelor, șabloanele de mesaj. */
 export default async function SetariPage() {
   const { azi } = aziBucuresti();
   const [setari, casute, jar] = await Promise.all([citesteSetari(), citesteCasute(azi), cookies()]);
@@ -29,7 +29,7 @@ export default async function SetariPage() {
 
   return (
     <div className="space-y-4">
-      <PageHead title="Setări prospectare" pill={pill} subtitle="Limitele care opresc roboții și textele pe care le folosesc oamenii la apel și pe WhatsApp." />
+      <PageHead title="Setări prospectare" pill={pill} subtitle="Limitele care opresc roboții, pragul de avertisment pe WhatsApp și textele pe care le folosesc oamenii la apel și pe WhatsApp." />
 
       {!setari.ok ? (
         <Card>

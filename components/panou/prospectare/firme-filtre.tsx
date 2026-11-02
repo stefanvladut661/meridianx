@@ -38,12 +38,13 @@ const SCORURI: Alegeri = [
   { value: "50", label: "50 sau mai mult" },
 ];
 
+/** O firmă poate avea mai multe canale: „au primit email” le include și pe cele care au primit și WhatsApp. */
 const CANALE_OPTIUNI: Alegeri = [
-  { value: "", label: "orice canal" },
-  { value: "email", label: "Email" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "telefon", label: "Telefon" },
-  { value: "fara", label: "fără canal" },
+  { value: "", label: "toate" },
+  { value: "email", label: "au primit email" },
+  { value: "whatsapp", label: "au primit WhatsApp" },
+  { value: "telefon", label: "pe telefon" },
+  { value: "fara", label: "necontactate" },
 ];
 
 const ORDINI: Alegeri = [
@@ -231,7 +232,7 @@ export function FirmeFiltre({
             valori.etapa
           )}
         />
-        <SoftSelect label="Canal" value={valori.canal} onChange={(v) => aplica({ canal: v })} options={cuCurenta(CANALE_OPTIUNI, valori.canal)} />
+        <SoftSelect label="Canale" value={valori.canal} onChange={(v) => aplica({ canal: v })} options={cuCurenta(CANALE_OPTIUNI, valori.canal)} />
         <SoftSelect label="Lot" value={valori.lot} onChange={(v) => aplica({ lot: v })} options={cuCurenta([{ value: "", label: "toate loturile" }, ...lista(optiuni?.loturi)], valori.lot)} />
       </div>
 

@@ -5,8 +5,8 @@ import { createAdminClient } from "@/lib/supabase/clients";
  * server, după ce pagina sau ruta a verificat cine cere (adminul cu
  * `getAdminUser()`, robotul cu tokenul lui). RLS-ul tabelelor
  * `prospectare_*` lasă cititul prin REST doar adminilor, iar scrierile trec
- * prin funcțiile din migrările 28–30, care impun regulile (un singur canal,
- * „Nu contacta”, activitatea doar completată).
+ * prin funcțiile din migrările 28–33, care impun regulile (fiecare canal o
+ * singură dată, telefonul separat, „Nu contacta”, activitatea doar completată).
  */
 
 export type Db = NonNullable<ReturnType<typeof createAdminClient>>;
@@ -29,7 +29,7 @@ const CODES: Record<string, number> = {
   PR403: 403,
   PR404: 404,
   PR409: 409,
-  // „Nu contacta”, respins, client: cererea e refuzată, ca la alt canal.
+  // „Nu contacta”, respins, client: cererea e refuzată, ca la un canal deja folosit.
   PR410: 409,
   PR422: 422,
   PR429: 429,

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Bot, Building2, CalendarDays, ExternalLink, ImageIcon, Loader2, Lock, Mail, MapPin, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
+import { Ban, Bot, Building2, CalendarDays, Check, ExternalLink, ImageIcon, Loader2, Lock, Mail, MapPin, MessageCircle, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
 import { salveazaNota, schimbaEtapa } from "@/app/(admin)/admin/prospectare/actions";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog, CopyButton } from "@/components/panou/ui/actions";
@@ -11,11 +11,11 @@ import { Btn, btnClass, Pill } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState, Field, inputClass } from "@/components/panou/ui/states";
 import { dateRo, dateTimeRo, num, relativeRo, untilRo } from "@/components/panou/ui/format";
 import { useToast } from "@/components/panou/ui/toast";
-import { REZULTATE, UTILIZATORI } from "@/lib/prospectare/labels";
+import { CANALE, REZULTATE, UTILIZATORI } from "@/lib/prospectare/labels";
 import { numarAfisat, numarScurt } from "@/lib/prospectare/contact";
-import { REZULTATE_IDS, type Firma, type Rezultat } from "@/lib/prospectare/types";
+import { REZULTATE_IDS, type Canal, type Firma, type Rezultat } from "@/lib/prospectare/types";
 import type { FisaFirma } from "@/lib/prospectare/citire";
-import { CanalBadge, StageBadge } from "./stage-badge";
+import { CanaleBadge, StageBadge } from "./stage-badge";
 import { ActivitateFirma } from "./firme-activitate";
 import { faraProtocol, linkWeb } from "./firme-format";
 
@@ -134,10 +134,80 @@ function Contact({
 
 const rezultatLista = (v: string | null) => (v && (REZULTATE_IDS as readonly string[]).includes(v) ? REZULTATE[v as Rezultat] : null);
 
-/** „Setat 2 nov. 2026, 14:20 de Ștefan. ” — fără propoziție dacă baza nu știe nici când, nici cine. */
-function canalSetat(firma: Firma): string {
-  if (!firma.canal_setat_la && !firma.canal_setat_de) return "";
-  return `Setat${firma.canal_setat_la ? ` ${dateTimeRo(firma.canal_setat_la)}` : ""}${firma.canal_setat_de ? ` de ${firma.canal_setat_de}` : ""}. `;
+const ICON_CANAL: Record<Canal, LucideIcon> = { email: Mail, whatsapp: MessageCircle, telefon: Phone };
+
+/** Un rând din „Canale”: folosit (bifă, cu data) sau liber, cu motivul pentru care nu se poate folosi. */
+function RandCanal({ canal, la, inainte, dupa, liber, motiv }: { canal: Canal; la: string | null; inainte: string; dupa?: string; liber: string; motiv: string | null }) {
+  const Icon = ICON_CANAL[canal];
+  return (
+    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-3">
+      <dt className="flex items-center gap-1.5 text-muted-foreground">
+        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        {CANALE[canal].label}
+      </dt>
+      <dd className="min-w-0">
+        {la ? (
+          <span>
+            <Check className="mr-1 inline h-3 w-3 -translate-y-px text-mint" aria-hidden="true" />
+            {inainte} <time dateTime={la}>{dateTimeRo(la)}</time>
+            {dupa ?? ""}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">
+            {liber}
+            {motiv ? ` · ${motiv}` : ""}
+          </span>
+        )}
+      </dd>
+    </div>
+  );
+}
+
+/**
+ * Cele trei canale ale firmei. Regula e în bază: fiecare canal o singură
+ * dată, email și WhatsApp pot merge amândouă, telefonul rămâne separat,
+ * iar „Nu contacta” le blochează pe toate.
+ */
+function Canale({ firma }: { firma: Firma }) {
+  const blocata = firma.etapa === "nu_contacta";
+  const peTelefon = Boolean(firma.telefon_la);
+  const primite = [firma.email_la ? "email" : null, firma.whatsapp_la ? "WhatsApp" : null].filter(Boolean).join(" și ");
+  return (
+    <div className="space-y-2.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px] leading-relaxed">
+      <h3 className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+        <Lock className="h-3 w-3" aria-hidden="true" />
+        Canale
+      </h3>
+      <dl className="space-y-1.5">
+        <RandCanal
+          canal="email"
+          la={firma.email_la}
+          inainte="trimis"
+          liber="netrimis"
+          motiv={blocata ? "blocat" : !firma.email ? "fără adresă" : peTelefon ? "e pe telefon" : null}
+        />
+        <RandCanal
+          canal="whatsapp"
+          la={firma.whatsapp_la}
+          inainte="trimis"
+          dupa={firma.whatsapp_cont ? `, contul ${firma.whatsapp_cont}` : undefined}
+          liber="netrimis"
+          motiv={blocata ? "blocat" : !firma.telefon ? "fără telefon" : !firma.este_mobil ? "număr fix: fără WhatsApp" : peTelefon ? "e pe telefon" : null}
+        />
+        <RandCanal
+          canal="telefon"
+          la={firma.telefon_la}
+          inainte="în lista de apeluri din"
+          liber="nu"
+          motiv={blocata ? "blocat" : !firma.telefon ? "fără număr" : primite ? `a primit ${primite}` : null}
+        />
+      </dl>
+      <p className="text-muted-foreground">
+        {blocata ? <span className="text-[#FFB0C0]">„Nu contacta”: firma nu mai primește nimic, pe niciun canal. </span> : null}
+        Fiecare canal se folosește o singură dată. Email și WhatsApp pot merge amândouă; telefonul rămâne separat, doar pentru firme fără email și fără WhatsApp. „Nu contacta” le blochează pe toate.
+      </p>
+    </div>
+  );
 }
 
 const textExtra = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
@@ -200,7 +270,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
             <h2 className="break-words text-[19px] font-semibold leading-tight">{firma.nume}</h2>
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               <StageBadge etapa={firma.etapa} />
-              <CanalBadge canal={firma.canal} />
+              <CanaleBadge firma={firma} />
               {firma.de_refacut ? <Pill tone="apricot">de refăcut</Pill> : null}
             </div>
           </div>
@@ -209,14 +279,14 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
       </div>
 
       <div className="space-y-5 px-5 py-5">
-        {/* Fără tel: și mailto: aici: apelurile pleacă doar din „Apeluri azi”, unde firma primește canalul. */}
+        {/* Fără tel: și mailto: aici: apelurile pleacă doar din „Apeluri azi”, unde firma intră pe telefon. */}
         {firma.telefon || firma.email ? (
           <div className="space-y-2">
             {firma.telefon ? (
               <Contact icon={Phone} eticheta="Telefon" detaliu={firma.este_mobil ? "mobil" : "fix"} valoare={numarAfisat(firma.telefon)} copie={numarScurt(firma.telefon)} labelCopie="Copiază numărul" />
             ) : null}
             {firma.email ? <Contact icon={Mail} eticheta="Email" valoare={firma.email} copie={firma.email} labelCopie="Copiază emailul" /> : null}
-            <p className="text-[11px] leading-relaxed text-muted-foreground">Suni din „Apeluri azi”, unde firma primește canalul Telefon. Emailul îl trimite robotul.</p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">Suni doar din „Apeluri azi”. Emailul îl trimite robotul, iar WhatsApp-ul pleacă din lista de WhatsApp.</p>
           </div>
         ) : (
           <p className="text-[12.5px] text-muted-foreground">Fișa nu are telefon sau email. Robotul le adaugă când le găsește pe site-ul vechi sau pe hartă.</p>
@@ -282,20 +352,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
           </p>
         </div>
 
-        <div className="space-y-1.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px] leading-relaxed">
-          <p className="flex flex-wrap items-center gap-2">
-            <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-            <span className="text-muted-foreground">Canal</span>
-            <CanalBadge canal={firma.canal} />
-          </p>
-          <p className="text-muted-foreground">
-            {firma.canal
-              ? `${canalSetat(firma)}Canalul se alege o singură dată și nu se schimbă din admin${firma.canal === "telefon" ? "; Telefon se golește singur doar după prea multe apeluri fără răspuns" : ""}.`
-              : blocata
-                ? "„Nu contacta”: firma nu mai primește niciun canal."
-                : "Fără canal încă. Îl primește o singură dată: când intră într-o listă de apeluri sau WhatsApp ori când robotul îi trimite primul email."}
-          </p>
-        </div>
+        <Canale firma={firma} />
 
         {rezervare || statusRobot || firma.de_refacut ? (
           <div className="flex gap-2.5 rounded-xl border border-lav/20 bg-lav/[0.06] px-3.5 py-3 text-[12px] leading-relaxed text-[#D8CCFF]">
@@ -349,7 +406,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
 
         {liste.length ? (
           <div>
-            <h3 className="mb-2.5 text-[13px] font-semibold">În listele zilei</h3>
+            <h3 className="mb-2.5 text-[13px] font-semibold">În listele de apeluri</h3>
             <ul className="divide-y divide-white/[0.05] rounded-xl border border-border text-[12px]">
               {liste.map((l) => {
                 const rez = rezultatLista(l.rezultat);
@@ -358,8 +415,6 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
                     <span className="pu-num text-muted-foreground">{dateRo(l.data)}</span>
                     <span aria-hidden="true" className="text-muted-foreground">·</span>
                     <span>{UTILIZATORI[l.utilizator] ?? l.utilizator}</span>
-                    <span aria-hidden="true" className="text-muted-foreground">·</span>
-                    <span>{l.canal === "telefon" ? "Telefon" : "WhatsApp"}</span>
                     <span className="ml-auto flex items-center gap-2">
                       {l.incercari ? <span className="pu-num text-muted-foreground">{l.incercari === 1 ? "1 încercare" : `${l.incercari} încercări`}</span> : null}
                       {rez ? (
@@ -404,7 +459,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
         onOpenChange={setConfirmare}
         title="Marchezi firma „Nu contacta”?"
         description={[firma.nume, firma.oras].filter(Boolean).join(" · ")}
-        consequence="Firma dispare din toate listele de apeluri și WhatsApp, iar canalul rămâne blocat. Etapa nu se mai poate schimba după asta. O regăsești în tabel, cu filtrul „Nu contacta”."
+        consequence="Firma dispare din toate listele de apeluri și WhatsApp și nu mai primește nimic, pe niciun canal. Etapa nu se mai poate schimba după asta. O regăsești în tabel, cu filtrul „Nu contacta”."
         confirmLabel="Nu contacta"
         onConfirm={nuContacta}
       />

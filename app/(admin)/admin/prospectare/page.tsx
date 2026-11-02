@@ -22,6 +22,30 @@ const IESITE: Etapa[] = ["nu_contacta", "respins"];
 
 const linkMic = "rounded-sm text-[11.5px] text-muted-foreground hover:text-foreground";
 
+/** Câte firme au primit fiecare canal. Email și WhatsApp se pot aduna pe aceeași firmă; telefonul e separat. */
+function Canale({ canale }: { canale: Rezumat["canale"] }) {
+  const randuri: { cheie: string; label: string; n: number; punct?: string }[] = [
+    { cheie: "email", label: "Email", n: canale.email, punct: "bg-mint" },
+    { cheie: "whatsapp", label: "WhatsApp", n: canale.whatsapp, punct: "bg-lav" },
+    { cheie: "telefon", label: "Telefon", n: canale.telefon, punct: "bg-sky" },
+    { cheie: "email_si_whatsapp", label: "email + WhatsApp", n: canale.email_si_whatsapp },
+    { cheie: "fara", label: "necontactate", n: canale.fara },
+  ];
+  return (
+    <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+      {randuri.map((c) => (
+        <div key={c.cheie} className="flex items-baseline gap-1.5">
+          <dt className="flex items-center gap-1.5 text-[12.5px] text-foreground/80">
+            {c.punct ? <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.punct}`} aria-hidden="true" /> : null}
+            {c.label}
+          </dt>
+          <dd className="pu-num text-[12.5px] font-medium">{num(c.n)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function Palnie({ rezumat }: { rezumat: Rezumat }) {
   const total = Math.max(rezumat.total, 1);
   const rand = (etapa: Etapa) => {
@@ -48,8 +72,11 @@ function Palnie({ rezumat }: { rezumat: Rezumat }) {
       <ul className="mt-4 space-y-3">{ETAPE_ORDINE.filter((e) => !IESITE.includes(e)).map(rand)}</ul>
       <p className={`${EYEBROW} mt-4 border-t border-border pt-3`}>Ieșite din prospectare</p>
       <ul className="mt-3 space-y-3">{ETAPE_ORDINE.filter((e) => IESITE.includes(e)).map(rand)}</ul>
+      <p className={`${EYEBROW} mt-4 border-t border-border pt-3`}>Canale folosite</p>
+      <Canale canale={rezumat.canale} />
       <p className="mt-4 border-t border-border pt-3 text-[11.5px] text-muted-foreground">
-        Roboții construiesc, oamenii contactează. O firmă are un singur canal, ales o singură dată.
+        Roboții construiesc, oamenii contactează. O firmă poate primi email și WhatsApp, dar fiecare canal o singură dată. Telefonul e separat: în Apeluri azi intră
+        doar firme fără email și fără WhatsApp.
         {rezumat.de_refacut > 0 ? ` ${cate(rezumat.de_refacut, "site e marcat", "site-uri sunt marcate")} de refăcut.` : null}
       </p>
     </Card>
@@ -111,8 +138,8 @@ export default async function PrezentarePage() {
   const head = (
     <PageHead
       title="Prospectare"
-      pill="un singur canal"
-      subtitle="Firmele cercetate de roboți, site-urile demo gata de arătat și contactul pe un singur canal: email, WhatsApp sau telefon."
+      pill="fiecare canal o dată"
+      subtitle="Firmele cercetate de roboți, site-urile demo gata de arătat și contactul: email și WhatsApp, fiecare o singură dată; telefonul, separat."
       actions={
         <Link href="/admin/prospectare/firme" className={btnClass({ variant: "primary", size: "sm" })}>
           Deschide Firme
@@ -162,6 +189,12 @@ export default async function PrezentarePage() {
   }
 
   const clienti = r.etape.client ?? 0;
+  // „contul 1: 12 · contul 2: 8”: limita pe cont e doar avertisment, aici doar se vede câte au plecat.
+  const peConturi = Object.entries(r.azi.whatsapp_pe_cont ?? {})
+    .filter(([, n]) => Number(n) > 0)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([cont, n]) => `contul ${cont}: ${num(Number(n))}`)
+    .join(" · ");
 
   return (
     <div className="space-y-4">
@@ -184,7 +217,7 @@ export default async function PrezentarePage() {
               <span className="pu-num text-[22px] font-medium leading-none">{num(r.azi.apeluri_facute)}</span>
               <span className="sr-only">apeluri</span>
             </span>
-            <span className="flex items-baseline gap-1" title={`${num(r.azi.whatsapp_trimise)} mesaje trimise, din ${num(r.azi.whatsapp)} în listele de azi`}>
+            <span className="flex items-baseline gap-1" title={`${num(r.azi.whatsapp_trimise)} mesaje WhatsApp trimise azi${peConturi ? ` (${peConturi})` : ""}`}>
               <MessageCircle className="h-3.5 w-3.5 text-lav" aria-hidden="true" />
               <span className="pu-num text-[22px] font-medium leading-none">{num(r.azi.whatsapp_trimise)}</span>
               <span className="sr-only">mesaje WhatsApp</span>
@@ -198,14 +231,20 @@ export default async function PrezentarePage() {
           <p className="mt-1.5 text-[11.5px] text-muted-foreground" aria-hidden="true">
             telefon · WhatsApp · email
           </p>
+          {peConturi ? <p className="mt-1 text-[11.5px] text-muted-foreground">WhatsApp pe conturi: {peConturi}</p> : null}
         </Card>
 
         <Card className="p-4">
-          <p className={EYEBROW}>Site-uri gata, necontactate</p>
+          <p className={EYEBROW}>Gata de contactat</p>
           <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.rezerva_telefon)}</p>
-          <p className="mt-1.5 text-[11.5px] text-muted-foreground">
-            fără canal setat, disponibile la import · {num(r.rezerva_whatsapp)} cu mobil
-          </p>
+          <p className="mt-1.5 text-[11.5px] text-muted-foreground">în rezerva de apeluri: site gata, fără email și fără WhatsApp</p>
+          <Link href="/admin/prospectare/whatsapp" className={`${linkMic} mt-1.5 flex items-start gap-1.5`}>
+            <MessageCircle className="mt-0.5 h-3 w-3 shrink-0 text-lav" aria-hidden="true" />
+            <span>
+              <span className="pu-num font-medium text-foreground/85">{num(r.whatsapp_lista)}</span> în lista de WhatsApp ·{" "}
+              <span className="pu-num font-medium text-foreground/85">{num(r.whatsapp_dupa_email)}</span> intră după email (24 h) →
+            </span>
+          </Link>
         </Card>
 
         <Card className="p-4">

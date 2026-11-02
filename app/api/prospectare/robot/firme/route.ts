@@ -5,8 +5,8 @@ import { firmaCercetata, methodNotAllowed, robotRoute } from "@/lib/prospectare/
 /**
  * POST /api/prospectare/robot/firme — firmele cercetate de robot, adăugate
  * sau actualizate, potrivite pe domeniu. Robotul trimite date de cercetare și,
- * cel mult, etapa „site_in_lucru” (aleasă pentru construit); canalul, linkul
- * demo și etapele de contact nu se schimbă de aici.
+ * cel mult, etapa „site_in_lucru” (aleasă pentru construit); canalele (email,
+ * WhatsApp, telefon), linkul demo și etapele de contact nu se schimbă de aici.
  * Corp: { "firme": [ { "domeniu": "firma.ro", "nume": "…", … } ] } (1–500).
  */
 

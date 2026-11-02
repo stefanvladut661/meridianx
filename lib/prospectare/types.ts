@@ -42,9 +42,13 @@ export interface Firma {
   email: string | null;
   persoana_contact: string | null;
   etapa: Etapa;
-  canal: Canal | null;
-  canal_setat_la: string | null;
-  canal_setat_de: string | null;
+  /** Când a primit emailul (o singură dată). */
+  email_la: string | null;
+  /** Când a primit mesajul pe WhatsApp (o singură dată) și de pe ce cont. */
+  whatsapp_la: string | null;
+  whatsapp_cont: number | null;
+  /** Când a intrat în lista de apeluri; se golește doar după ultima încercare fără răspuns. */
+  telefon_la: string | null;
   link_demo: string | null;
   captura_url: string | null;
   lot: string | null;
@@ -73,8 +77,7 @@ export interface ListaRand {
   id: number;
   data: string;
   utilizator: Utilizator;
-  canal: "telefon" | "whatsapp";
-  cont_whatsapp: number | null;
+  canal: "telefon";
   firma_id: string;
   rezultat: Rezultat | null;
   incercari: number;
@@ -136,7 +139,7 @@ export interface Setari {
 /** Un răspuns la email, din activitate (`tip = 'raspuns'`). */
 export interface RaspunsEmail {
   id: number;
-  firma: Pick<FirmaRand, "id" | "nr" | "nume" | "domeniu" | "etapa" | "canal" | "persoana_contact" | "oras">;
+  firma: Pick<FirmaRand, "id" | "nr" | "nume" | "domeniu" | "etapa" | "persoana_contact" | "oras">;
   tip: "pozitiv" | "nu" | "automat" | "altul";
   extras: string | null;
   casuta: string | null;

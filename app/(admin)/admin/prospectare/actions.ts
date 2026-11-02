@@ -12,7 +12,7 @@ import type { Utilizator } from "@/lib/prospectare/types";
 /**
  * Acțiunile paginilor Prospectare. Fiecare verifică întâi sesiunea de admin
  * (Google + ADMIN_EMAILS), validează intrarea, apoi cheamă funcțiile din bază,
- * care impun regulile (un singur canal, „Nu contacta”, activitatea).
+ * care impun regulile (fiecare canal o singură dată, telefonul separat, „Nu contacta”, activitatea).
  * Autorul din activitate e omul ales în comutatorul Ștefan / Vlăduț.
  */
 
@@ -59,9 +59,9 @@ const filtreSchema = z.object({
 });
 
 const importSchema = z.object({
-  canal: z.enum(["telefon", "whatsapp"]),
+  // Doar lista de apeluri se importă; WhatsApp-ul are lista lui, continuă.
+  canal: z.literal("telefon", "Doar lista de apeluri se importă: WhatsApp-ul are lista lui, continuă."),
   numar: z.coerce.number().int("Câte firme: un număr întreg.").min(1, "Alege cel puțin o firmă.").max(500, "Cel mult 500 de firme odată."),
-  cont: z.coerce.number().int().min(1).max(9).nullable().optional(),
   filtre: filtreSchema,
 });
 
@@ -70,26 +70,21 @@ export async function importaLista(input: unknown): Promise<ActionResult<{ adaug
   if (!who) return { ok: false, message: SESSION_EXPIRED };
   const parsed = importSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
-  const { canal, numar, cont, filtre } = parsed.data;
-  if (canal === "whatsapp" && !cont) return { ok: false, message: "Alege contul WhatsApp." };
+  const { canal, numar, filtre } = parsed.data;
 
-  const result = await rpc<{ adaugate: number; motiv?: string; limita?: number; folosite?: number }>("prospectare_importa_lista_zi", {
+  const result = await rpc<{ adaugate: number }>("prospectare_importa_lista_zi", {
     p_utilizator: who.utilizator,
     p_canal: canal,
     p_numar: numar,
     p_filtre: { nisa: filtre.nisa, oras: filtre.oras, judet: filtre.judet, scor_min: filtre.scorMin === "" ? "" : String(filtre.scorMin), doar_mobil: filtre.doarMobil },
-    p_cont_whatsapp: canal === "whatsapp" ? cont : null,
+    p_cont_whatsapp: null,
     p_autor: who.nume,
   });
   if (!result.ok) return { ok: false, message: result.message };
   gata();
   const n = result.data.adaugate ?? 0;
-  if (result.data.motiv === "limita_contului") {
-    return { ok: false, message: `Contul ${cont} și-a atins limita de azi (${result.data.limita} mesaje). Alege alt cont sau mărește limita în Setări.` };
-  }
-  if (n === 0) return { ok: false, message: "Nicio firmă nu se potrivește filtrelor: toate cele cu site gata au deja un canal." };
-  const unde = canal === "telefon" ? "lista ta de apeluri" : `lista de WhatsApp, contul ${cont}`;
-  return { ok: true, message: `${n} ${n === 1 ? "firmă adăugată" : "firme adăugate"} în ${unde}. Au primit canalul ${canal === "telefon" ? "Telefon" : "WhatsApp"}.`, data: { adaugate: n } };
+  if (n === 0) return { ok: false, message: "Nicio firmă nu se potrivește filtrelor: toate cele cu site gata au primit deja email, WhatsApp sau telefon." };
+  return { ok: true, message: `${n} ${n === 1 ? "firmă adăugată" : "firme adăugate"} în lista ta de apeluri. Au primit canalul Telefon.`, data: { adaugate: n } };
 }
 
 const rezultatSchema = z.object({
@@ -137,20 +132,50 @@ export async function salveazaNotaLista(input: unknown): Promise<ActionResult> {
   return { ok: true, message: "Notă salvată." };
 }
 
-export async function marcheazaWhatsapp(listaId: unknown): Promise<ActionResult> {
-  const who = await cine();
-  if (!who) return { ok: false, message: SESSION_EXPIRED };
-  const id = z.coerce.number().int().positive().safeParse(listaId);
-  if (!id.success) return { ok: false, message: "Rândul din listă nu e valid." };
-  const result = await rpc<{ deja: boolean }>("prospectare_marcheaza_whatsapp", { p_lista: id.data, p_autor: who.nume });
-  if (!result.ok) return { ok: false, message: result.message };
-  gata();
-  return { ok: true, message: result.data.deja ? "Era deja marcat ca trimis." : "Marcat ca trimis." };
+const whatsappSchema = z.object({
+  firmaId: z.uuid("Firma nu e validă."),
+  cont: z.coerce.number().int("Alege contul WhatsApp.").min(1, "Alege contul WhatsApp.").max(9, "Alege contul WhatsApp."),
+});
+
+export interface WhatsappTrimis {
+  nr: number;
+  cont: number;
+  trimiseAzi: number;
+  limita: number;
+  /** Contul a trecut de limita zilei: mesajul a plecat, e doar avertisment. */
+  pesteLimita: boolean;
 }
 
 /**
- * WhatsApp după un apel „Interesat”: excepția acceptată de la regula unui
- * singur canal. Firma rămâne pe Telefon; în activitate apare „Continuare apel
+ * WhatsApp către o firmă din lista continuă: se cere ÎNAINTE de deschiderea
+ * conversației (ca emailul). Baza pune data și contul o singură dată; a doua
+ * cerere, de la oricine, e refuzată, deci firma nu primește două mesaje.
+ */
+export async function trimiteWhatsapp(input: unknown): Promise<ActionResult<WhatsappTrimis>> {
+  const who = await cine();
+  if (!who) return { ok: false, message: SESSION_EXPIRED };
+  const parsed = whatsappSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const result = await rpc<{ nr: number; cont: number; trimise_azi: number; limita: number; peste_limita: boolean }>("prospectare_whatsapp_trimis", {
+    p_firma: parsed.data.firmaId,
+    p_cont: parsed.data.cont,
+    p_autor: who.nume,
+  });
+  if (!result.ok) return { ok: false, message: result.message };
+  gata();
+  const r = result.data;
+  return {
+    ok: true,
+    message: r.peste_limita
+      ? `WhatsApp notat pe contul ${r.cont}. Atenție: contul are ${r.trimise_azi} mesaje azi, peste limita de ${r.limita}.`
+      : `WhatsApp notat pe contul ${r.cont} (${r.trimise_azi}/${r.limita} azi). Firma nu mai primește altul.`,
+    data: { nr: r.nr, cont: r.cont, trimiseAzi: r.trimise_azi, limita: r.limita, pesteLimita: r.peste_limita },
+  };
+}
+
+/**
+ * WhatsApp după un apel „Interesat”: excepția acceptată de la separarea
+ * telefonului. Firma rămâne pe Telefon; în activitate apare „Continuare apel
  * pe WhatsApp”, o singură dată pe apel. Baza refuză orice alt rezultat.
  */
 export async function continuaPeWhatsapp(listaId: unknown): Promise<ActionResult<{ deja: boolean }>> {

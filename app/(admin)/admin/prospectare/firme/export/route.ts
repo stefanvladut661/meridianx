@@ -3,14 +3,18 @@ import { getAdminUser } from "@/lib/supabase/clients";
 import { citesteFirmeExport } from "@/lib/prospectare/citire";
 import { filtreDinAdresa } from "@/lib/prospectare/filtre";
 import { continutCsv } from "@/lib/prospectare/contact";
-import { CANALE, ETAPE } from "@/lib/prospectare/labels";
+import { ETAPE } from "@/lib/prospectare/labels";
 
 /**
  * GET /admin/prospectare/firme/export — firmele din filtrele curente, ca CSV
- * pentru Excel (BOM UTF-8, separator „;”). Doar pentru admin.
+ * pentru Excel (BOM UTF-8, separator „;”). Doar pentru admin. Fiecare canal
+ * are coloana lui (o firmă poate avea email și WhatsApp); gol = nefolosit.
  */
 
 export const dynamic = "force-dynamic";
+
+/** Data și ora în România, ca text pentru Excel; gol când lipsește. */
+const oraRo = (v: string | null): string => (v ? new Date(v).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest" }) : "");
 
 export async function GET(request: NextRequest) {
   if (!(await getAdminUser())) return NextResponse.json({ error: "Sesiunea a expirat. Intră din nou în admin." }, { status: 401 });
@@ -18,7 +22,7 @@ export async function GET(request: NextRequest) {
   const result = await citesteFirmeExport(filtre);
   if (!result.ok) return NextResponse.json({ error: result.message }, { status: 503 });
 
-  const antet = ["Nr", "Nume", "Domeniu", "Nișă", "Oraș", "Județ", "Scor", "Etapă", "Canal", "Canal setat la", "Telefon", "Email", "Persoană de contact", "Site demo", "Site vechi", "Lot", "De refăcut", "Notă", "Actualizat"];
+  const antet = ["Nr", "Nume", "Domeniu", "Nișă", "Oraș", "Județ", "Scor", "Etapă", "Email trimis la", "WhatsApp trimis la", "Cont WhatsApp", "În apeluri din", "Telefon", "Email", "Persoană de contact", "Site demo", "Site vechi", "Lot", "De refăcut", "Notă", "Actualizat"];
   const randuri = result.data.map((f) => [
     f.nr,
     f.nume,
@@ -28,8 +32,10 @@ export async function GET(request: NextRequest) {
     f.judet,
     f.scor,
     ETAPE[f.etapa]?.label ?? f.etapa,
-    f.canal ? CANALE[f.canal].label : "",
-    f.canal_setat_la ? new Date(f.canal_setat_la).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest" }) : "",
+    oraRo(f.email_la),
+    oraRo(f.whatsapp_la),
+    f.whatsapp_la ? f.whatsapp_cont : null,
+    oraRo(f.telefon_la),
     f.telefon,
     f.email,
     f.persoana_contact,
@@ -38,7 +44,7 @@ export async function GET(request: NextRequest) {
     f.lot,
     f.de_refacut ? "da" : "",
     f.nota,
-    new Date(f.actualizat_la).toLocaleString("ro-RO", { timeZone: "Europe/Bucharest" }),
+    oraRo(f.actualizat_la),
   ]);
   const zi = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Bucharest" }).format(new Date());
   return new NextResponse(continutCsv(antet, randuri), {

@@ -13,10 +13,10 @@ import { cn } from "@/lib/utils";
 import { EroareCitire } from "./prezentare-eroare";
 
 /**
- * „Limite” din Setări, ca în prototip: mesaje WhatsApp pe cont (conturile 1–9
- * se adaugă și se scot), încercările la „Nu răspunde” și plafonul fiecărei
- * căsuțe; plus ce are baza și prototipul nu: ora rezervării, cererile pe
- * minut și oprirea unei căsuțe. Un singur buton salvează tot ce s-a schimbat.
+ * „Limite” din Setări, ca în prototip: pragul de mesaje WhatsApp pe cont, pe
+ * zi (doar avertisment; conturile 1–9 se adaugă și se scot), încercările la
+ * „Nu răspunde” și plafonul fiecărei căsuțe; plus ce are baza și prototipul
+ * nu: ora rezervării, cererile pe minut și oprirea unei căsuțe. Un singur buton salvează tot ce s-a schimbat.
  */
 
 type Limite = Pick<Setari, "incercari_max" | "whatsapp_pe_cont" | "rezervare_ore" | "cereri_pe_minut">;
@@ -222,7 +222,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
             <fieldset className="min-w-0">
               <legend className="flex items-center gap-1.5 text-[12.5px] font-medium">
                 <MessageCircle className="h-3.5 w-3.5 text-lav" aria-hidden="true" />
-                Mesaje WhatsApp pe cont, pe zi
+                Mesaje WhatsApp pe zi, pe cont (avertisment)
               </legend>
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {conturi.map((c) => {
@@ -274,7 +274,9 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
                     Adaugă cont
                   </Btn>
                 ) : null}
-                <span className="text-[11px] text-muted-foreground">0 = contul nu primește firme. Un cont scos nu mai poate primi liste.</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Doar avertisment: peste prag, mesajul pleacă oricum. Un cont scos nu mai poate trimite.
+                </span>
               </div>
               <Eroare id="wa-e" text={erori.wa} />
             </fieldset>

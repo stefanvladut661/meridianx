@@ -21,9 +21,9 @@ import type {
  */
 
 export const COLOANE_FIRMA =
-  "id, nr, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, canal, canal_setat_la, canal_setat_de, link_demo, captura_url, lot, slug, de_refacut, nota, creat_la, actualizat_la";
+  "id, nr, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, link_demo, captura_url, lot, slug, de_refacut, nota, creat_la, actualizat_la";
 
-const MIN_FIRMA = "id, nr, nume, domeniu, etapa, canal, persoana_contact, oras";
+const MIN_FIRMA = "id, nr, nume, domeniu, etapa, persoana_contact, oras";
 
 /** Supabase dă cel mult 1000 de rânduri pe cerere: citim pe pagini. */
 async function toate<T>(fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { code?: string; message?: string } | null }>, max = 20000): Promise<Result<T[]>> {
@@ -44,18 +44,24 @@ async function toate<T>(fetchPage: (from: number, to: number) => PromiseLike<{ d
 export interface Rezumat {
   total: number;
   etape: Partial<Record<Etapa, number>>;
-  canale: Partial<Record<Canal | "fara", number>>;
+  /** Câte firme au primit fiecare canal (o firmă poate avea email și WhatsApp). */
+  canale: { email: number; whatsapp: number; telefon: number; email_si_whatsapp: number; fara: number };
   de_refacut: number;
+  /** Firme pe care le poți pune în lista de apeluri: site gata, fără email, WhatsApp sau telefon. */
   rezerva_telefon: number;
-  rezerva_whatsapp: number;
+  /** Câte firme sunt acum în lista de WhatsApp (continuă). */
+  whatsapp_lista: number;
+  /** Au primit emailul în ultimele 24 de ore și au mobil: intră în lista de WhatsApp după o zi. */
+  whatsapp_dupa_email: number;
   in_lucru: number;
   roboti_activi: number;
   roboti: number;
   azi: {
     apeluri: number;
     apeluri_facute: number;
-    whatsapp: number;
     whatsapp_trimise: number;
+    /** Trimise azi pe fiecare cont (cheia = numărul contului). */
+    whatsapp_pe_cont: Record<string, number>;
     emailuri: number;
     raspunsuri: number;
     bounce: number;
@@ -112,6 +118,7 @@ export interface FiltreFirme {
 interface Filtrabil {
   eq(column: string, value: unknown): Filtrabil;
   is(column: string, value: null): Filtrabil;
+  not(column: string, operator: string, value: null): Filtrabil;
   gte(column: string, value: number): Filtrabil;
   or(filters: string): Filtrabil;
 }
@@ -119,8 +126,9 @@ interface Filtrabil {
 function aplicaFiltre<Q>(query: Q, f: FiltreFirme): Q {
   let q = query as unknown as Filtrabil;
   if (f.etapa) q = q.eq("etapa", f.etapa);
-  if (f.canal === "fara") q = q.is("canal", null);
-  else if (f.canal) q = q.eq("canal", f.canal);
+  // Canalul folosit: o firmă poate avea email și WhatsApp, deci filtrul e „a primit X”.
+  if (f.canal === "fara") q = q.is("email_la", null).is("whatsapp_la", null).is("telefon_la", null);
+  else if (f.canal) q = q.not(`${f.canal}_la`, "is", null);
   if (f.nisa) q = q.eq("nisa", f.nisa);
   if (f.oras) q = q.eq("oras", f.oras);
   if (f.lot) q = q.eq("lot", f.lot);
@@ -166,7 +174,7 @@ export async function citesteFirmeExport(f: FiltreFirme): Promise<Result<FirmaRa
 export interface FisaFirma {
   firma: Firma;
   activitate: Activitate[];
-  liste: { id: number; data: string; utilizator: Utilizator; canal: "telefon" | "whatsapp"; rezultat: string | null; incercari: number }[];
+  liste: { id: number; data: string; utilizator: Utilizator; canal: "telefon"; rezultat: string | null; incercari: number }[];
   rezervare: { dispozitiv: string; tip_lucru: string; expira_la: string } | null;
 }
 
@@ -207,12 +215,12 @@ export async function reporteazaListe(): Promise<void> {
   if (error) failure(error);
 }
 
-export async function citesteListaZi(utilizator: Utilizator, canal: "telefon" | "whatsapp", data: string): Promise<Result<ListaCuFirma[]>> {
+export async function citesteListaZi(utilizator: Utilizator, canal: "telefon", data: string): Promise<Result<ListaCuFirma[]>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   const { data: rows, error } = await client
     .from("prospectare_liste_zi")
-    .select(`id, data, utilizator, canal, cont_whatsapp, firma_id, rezultat, incercari, suna_inapoi_la, nota, firma:prospectare_firme(${COLOANE_FIRMA})`)
+    .select(`id, data, utilizator, canal, firma_id, rezultat, incercari, suna_inapoi_la, nota, firma:prospectare_firme(${COLOANE_FIRMA})`)
     .eq("utilizator", utilizator)
     .eq("canal", canal)
     .eq("data", data)
@@ -235,25 +243,60 @@ export interface GrupaRezerva {
   n: number;
 }
 
-/** Rezerva pentru liste, grupată: pagina numără singură câte firme intră pe filtre. */
+/** Rezerva pentru lista de apeluri, grupată: pagina numără singură câte firme intră pe filtre. */
 export async function citesteRezerva(): Promise<Result<GrupaRezerva[]>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   return toate<GrupaRezerva>((from, to) => client.rpc("prospectare_rezerva_grupe").range(from, to) as unknown as PromiseLike<{ data: GrupaRezerva[] | null; error: { code?: string; message?: string } | null }>);
 }
 
-/** Câte rânduri de WhatsApp are azi fiecare cont (pentru limita pe cont). */
-export async function citesteFolosireConturi(data: string): Promise<Result<Record<string, number>>> {
+// ---------------------------------------------------------------------------
+// Lista de WhatsApp (continuă)
+// ---------------------------------------------------------------------------
+
+/** Miezul nopții de azi la București, ca moment ISO (ziua contorului „trimise azi”). */
+export function inceputAziBucuresti(acum = Date.now()): string {
+  const parti = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Bucharest", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(new Date(acum));
+  const v = (t: Intl.DateTimeFormatPartTypes) => Number(parti.find((p) => p.type === t)?.value ?? 0);
+  const peretele = Date.UTC(v("year"), v("month") - 1, v("day"), v("hour") % 24, v("minute"), v("second"));
+  const decalaj = peretele - Math.floor(acum / 1000) * 1000;
+  return new Date(Date.UTC(v("year"), v("month") - 1, v("day")) - decalaj).toISOString();
+}
+
+export interface ListaWhatsapp {
+  /** Firmele din listă, de la scorul cel mai mare (cel mult `limit`). */
+  firme: FirmaRand[];
+  /** Câte sunt în listă în total. */
+  total: number;
+  /** Au primit emailul în ultimele 24 de ore: intră în listă după o zi. */
+  dupaEmail: number;
+  /** Trimise azi, cele mai noi întâi. */
+  trimiseAzi: FirmaRand[];
+  /** Trimise azi pe fiecare cont (cheia = numărul contului). */
+  peCont: Record<string, number>;
+}
+
+/** Lista de WhatsApp: firmele intră singure (site gata + mobil; cu email, la o zi după email). */
+export async function citesteListaWhatsapp(limit = 200): Promise<Result<ListaWhatsapp>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
-  const { data: rows, error } = await client.from("prospectare_liste_zi").select("cont_whatsapp").eq("data", data).eq("canal", "whatsapp").limit(5000);
-  if (error) return failure(error);
-  const out: Record<string, number> = {};
-  for (const r of rows ?? []) {
-    const k = String((r as { cont_whatsapp: number | null }).cont_whatsapp ?? "");
-    if (k) out[k] = (out[k] ?? 0) + 1;
-  }
-  return { ok: true, data: out };
+  const [coada, rezumat, trimise] = await Promise.all([
+    client.rpc("prospectare_whatsapp_coada", { p_limit: limit, p_offset: 0 }).select(COLOANE_FIRMA),
+    client.rpc("prospectare_rezumat"),
+    client.from("prospectare_firme").select(COLOANE_FIRMA).gte("whatsapp_la", inceputAziBucuresti()).order("whatsapp_la", { ascending: false }).limit(500),
+  ]);
+  for (const r of [coada, rezumat, trimise]) if (r.error) return failure(r.error);
+  const rez = rezumat.data as Rezumat;
+  return {
+    ok: true,
+    data: {
+      firme: (coada.data ?? []) as unknown as FirmaRand[],
+      total: rez.whatsapp_lista ?? 0,
+      dupaEmail: rez.whatsapp_dupa_email ?? 0,
+      trimiseAzi: (trimise.data ?? []) as FirmaRand[],
+      peCont: rez.azi?.whatsapp_pe_cont ?? {},
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------

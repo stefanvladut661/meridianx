@@ -38,7 +38,7 @@ export default async function EmailPage() {
       <PageHead
         title="Email"
         pill="căsuțe separate"
-        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. O firmă contactată pe email nu mai intră în listele de telefon sau WhatsApp.`}
+        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. Fiecare firmă primește un singur email, iar cele din lista de apeluri nu primesc deloc. La 24 de ore după email, firmele cu mobil intră în lista de WhatsApp.`}
       />
 
       <Card>
@@ -105,7 +105,7 @@ export default async function EmailPage() {
             <EroareCitire title="Răspunsurile nu s-au putut citi" message={raspunsuri.message} />
           )}
           <p className="border-t border-border px-4 py-2.5 text-[10.5px] text-muted-foreground">
-            Răspunsurile le raportează roboții din căsuțe. Un „NU” mută firma singur la „Nu contacta”. Ultima actualizare: {dateTimeRo(acum)}.
+            Răspunsurile le raportează roboții din căsuțe. Un „NU” mută firma singur la „Nu contacta” și o oprește pe toate canalele. Ultima actualizare: {dateTimeRo(acum)}.
           </p>
         </Card>
       </div>

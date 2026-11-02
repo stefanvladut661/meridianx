@@ -11,8 +11,9 @@ import { bearerToken, hashToken } from "./tokens";
  * cazuri speciale:
  *   200 { ok: true, ... }
  *   4xx/5xx { ok: false, eroare: { cod, mesaj } }
- * Coduri: 401 token greșit sau robot dezactivat · 409 alt canal, „Nu
- * contacta”, rezervare care nu e a robotului · 422 date invalide · 429 peste
+ * Coduri: 401 token greșit sau robot dezactivat · 409 canal deja folosit
+ * (email trimis o dată), firmă pe telefon, „Nu contacta”, rezervare care nu
+ * e a robotului · 422 date invalide · 429 peste
  * limita de cereri pe minut sau căsuța la limită · 503 baza neconfigurată.
  */
 
