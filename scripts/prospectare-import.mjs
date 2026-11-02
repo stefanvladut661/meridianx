@@ -152,7 +152,7 @@ for (const x of prospecti) {
 const trimisePeNr = new Map();
 for (const r of trimise) if (!trimisePeNr.has(Number(r.nr))) trimisePeNr.set(Number(r.nr), r);
 
-const raport = { etape: {}, statusNecunoscut: {}, faraDomeniu: 0, nuContacta: 0, emailFaraDetalii: [], waCuEmail: [], waSingur: [], waFaraFirma: [], waFaraCont: [], emailDoarInTrimise: [] };
+const raport = { etape: {}, statusNecunoscut: {}, faraDomeniu: 0, nuContacta: 0, emailFaraDetalii: [], waCuEmail: [], waSingur: [], waFaraFirma: [], waFaraCont: [], emailDoarInTrimise: [], duplicate: [] };
 const firme = [];
 const activitate = [];
 
@@ -203,6 +203,16 @@ for (const x of prospecti) {
     whatsappCont = Number.isInteger(cont) && cont >= 1 && cont <= 9 ? cont : undefined;
     if (whatsappLa && whatsappCont === undefined) raport.waFaraCont.push(x.nr);
   }
+
+  // Duplicatele (`duplicat_de`: aceeași firmă, alt site sau alt domeniu) nu se contactează separat: în admin
+  // stau la „Nu contacta”, iar originalul rămâne în date_extra.duplicat_de (fișa arată linkul spre el).
+  // Canalele deja folosite (dacă ar exista) rămân scrise mai sus.
+  const duplicatDe = Number(x.duplicat_de);
+  const esteDuplicat = Number.isInteger(duplicatDe) && duplicatDe > 0 && duplicatDe !== Number(x.nr);
+  if (esteDuplicat) {
+    raport.duplicate.push(`#${x.nr} → #${duplicatDe}`);
+    etapa = "nu_contacta";
+  }
   raport.etape[etapa] = (raport.etape[etapa] ?? 0) + 1;
 
   const telefoane = Array.isArray(x.telefoane) ? x.telefoane.filter((t) => typeof t === "string") : [];
@@ -230,6 +240,7 @@ for (const x of prospecti) {
         ? Object.fromEntries(Object.entries({ cui: df.cui, denumire: df.denumire, adresa: df.adresa, caen: df.caen, an_infiintare: df.an_infiintare, stare: df.stare }).filter(([, v]) => v !== undefined && v !== null && v !== ""))
         : undefined,
       adaugat_de: x.adaugat_de,
+      duplicat_de: esteDuplicat ? duplicatDe : undefined,
       sursa: "import auto-web-rebuilder",
     }).filter(([, v]) => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0))
   );
@@ -325,6 +336,7 @@ const cuWhatsappLa = firme.filter((f) => f.whatsapp_la).length;
 console.log(`Canale: email ${cuEmailLa} firme · WhatsApp ${cuWhatsappLa} firme (${raport.waCuEmail.length} după email, ${raport.waSingur.length} doar WhatsApp)${raport.waFaraFirma.length ? ` · ${raport.waFaraFirma.length} WhatsApp fără firmă în stare` : ""}`);
 if (raport.waCuEmail.length) console.log(`  Email + WhatsApp: #${raport.waCuEmail.join(", #")}`);
 if (raport.waFaraCont.length) console.log(`  WhatsApp fără cont cunoscut (1–9): #${raport.waFaraCont.join(", #")}`);
+console.log(`Duplicate (duplicat_de) → „Nu contacta”: ${raport.duplicate.length}${raport.duplicate.length ? ` (${raport.duplicate.join(", ")})` : ""}`);
 console.log(`Activitate de importat: ${activitate.length} rânduri · statistici căsuțe: ${randuriCasute.length} zile × căsuță`);
 
 // ---------------------------------------------------------------------------

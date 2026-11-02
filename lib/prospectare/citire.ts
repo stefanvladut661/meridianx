@@ -185,6 +185,8 @@ export interface FisaFirma {
   activitate: Activitate[];
   liste: { id: number; data: string; utilizator: Utilizator; canal: "telefon"; rezultat: string | null; incercari: number }[];
   rezervare: { dispozitiv: string; tip_lucru: string; expira_la: string } | null;
+  /** Pentru un duplicat (`date_extra.duplicat_de`): firma originală, dacă e în bază. */
+  original: { nr: number; firma: Pick<Firma, "id" | "nr" | "nume" | "domeniu" | "etapa"> | null } | null;
 }
 
 export async function citesteFisa(id: string): Promise<Result<FisaFirma | null>> {
@@ -201,6 +203,13 @@ export async function citesteFisa(id: string): Promise<Result<FisaFirma | null>>
   if (!firma.data) return { ok: true, data: null };
   const rez = rezervare.data as { tip_lucru: string; expira_la: string; prospectare_dispozitive: { nume: string } | { nume: string }[] | null } | null;
   const disp = rez ? (Array.isArray(rez.prospectare_dispozitive) ? rez.prospectare_dispozitive[0] : rez.prospectare_dispozitive) : null;
+  // Duplicatul arată spre firma originală (aceeași firmă, alt site): fișa pune linkul spre ea.
+  const nrOriginal = Number((firma.data as Firma).date_extra?.duplicat_de);
+  let original: FisaFirma["original"] = null;
+  if (Number.isInteger(nrOriginal) && nrOriginal > 0) {
+    const o = await client.from("prospectare_firme").select("id, nr, nume, domeniu, etapa").eq("nr", nrOriginal).maybeSingle();
+    original = { nr: nrOriginal, firma: o.error ? null : ((o.data as Pick<Firma, "id" | "nr" | "nume" | "domeniu" | "etapa"> | null) ?? null) };
+  }
   return {
     ok: true,
     data: {
@@ -208,6 +217,7 @@ export async function citesteFisa(id: string): Promise<Result<FisaFirma | null>>
       activitate: (activitate.data ?? []) as Activitate[],
       liste: (liste.data ?? []) as FisaFirma["liste"],
       rezervare: rez ? { dispozitiv: disp?.nume ?? "robot", tip_lucru: rez.tip_lucru, expira_la: rez.expira_la } : null,
+      original,
     },
   };
 }
@@ -445,29 +455,40 @@ export async function citesteEmailuriTrimise(casuta?: string): Promise<Result<Em
   };
 }
 
-/** Site-urile construite: au trecut de „site gata” (inclusiv cele contactate) sau sunt de refăcut. */
+/**
+ * Site-urile construite: au trecut de „site gata” (inclusiv cele contactate), sunt de refăcut sau robotul
+ * le-a terminat (ex. un duplicat, care stă la „Nu contacta”). `oprite` = cele construite, dar la „Nu contacta” / respinse.
+ */
 export interface SiteuriConstruite {
   total: number;
   gata: number;
   contactate: number;
   de_refacut: number;
+  oprite: number;
 }
 
 const ETAPE_CU_SITE = "site_gata,email_trimis,whatsapp_trimis,sunat,interesat,client";
+/** Statusurile din auto-web-rebuilder (importate în date_extra.status_robot) la care site-ul există. */
+const STATUS_ROBOT_CU_SITE = "gata,de_verificat,aprobat,trimis,refacere";
+const ARE_SITE = `etapa.in.(${ETAPE_CU_SITE}),de_refacut.is.true,link_demo.not.is.null,email_la.not.is.null,whatsapp_la.not.is.null,telefon_la.not.is.null,date_extra->>status_robot.in.(${STATUS_ROBOT_CU_SITE})`;
 
 export async function citesteSiteuriConstruite(): Promise<Result<SiteuriConstruite>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   const numara = () => client.from("prospectare_firme").select("id", { count: "exact", head: true });
-  const [total, gata, contactate, deRefacut] = await Promise.all([
-    // Un site construit lasă urme: etapa, „de refăcut”, linkul demo sau un canal folosit (contactul pleacă doar cu site gata).
-    numara().or(`etapa.in.(${ETAPE_CU_SITE}),de_refacut.is.true,link_demo.not.is.null,email_la.not.is.null,whatsapp_la.not.is.null,telefon_la.not.is.null`),
+  const [total, gata, contactate, deRefacut, oprite] = await Promise.all([
+    // Un site construit lasă urme: etapa, „de refăcut”, linkul demo, un canal folosit (contactul pleacă doar cu site gata) sau statusul robotului.
+    numara().or(ARE_SITE),
     numara().eq("etapa", "site_gata"),
     numara().or("email_la.not.is.null,whatsapp_la.not.is.null,telefon_la.not.is.null"),
     numara().eq("de_refacut", true).not("etapa", "in", `(${ETAPE_CU_SITE},nu_contacta,respins)`),
+    numara().in("etapa", ["nu_contacta", "respins"]).is("email_la", null).is("whatsapp_la", null).is("telefon_la", null).or(ARE_SITE),
   ]);
-  for (const r of [total, gata, contactate, deRefacut]) if (r.error) return failure(r.error);
-  return { ok: true, data: { total: total.count ?? 0, gata: gata.count ?? 0, contactate: contactate.count ?? 0, de_refacut: deRefacut.count ?? 0 } };
+  for (const r of [total, gata, contactate, deRefacut, oprite]) if (r.error) return failure(r.error);
+  return {
+    ok: true,
+    data: { total: total.count ?? 0, gata: gata.count ?? 0, contactate: contactate.count ?? 0, de_refacut: deRefacut.count ?? 0, oprite: oprite.count ?? 0 },
+  };
 }
 
 type FirmaMin = RaspunsEmail["firma"];

@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Ban, Bot, Building2, CalendarDays, Check, ExternalLink, ImageIcon, Loader2, Lock, LockOpen, Mail, MapPin, MessageCircle, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
+import { Ban, Bot, Building2, CalendarDays, Check, ExternalLink, Files, ImageIcon, Loader2, Lock, LockOpen, Mail, MapPin, MessageCircle, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
 import { permiteRecontactare, salveazaNota, schimbaEtapa } from "@/app/(admin)/admin/prospectare/actions";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
@@ -465,7 +466,7 @@ function DialogRecontactare({ firma, folosite, onGata, onRenunta }: { firma: Fir
 const textExtra = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
 
 function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInchide: () => void }) {
-  const { firma, activitate, liste, rezervare } = fisa;
+  const { firma, activitate, liste, rezervare, original } = fisa;
   const router = useRouter();
   const { notify } = useToast();
   const salvata = firma.nota ?? "";
@@ -525,6 +526,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
               <StageBadge etapa={firma.etapa} />
               <CanaleBadge firma={firma} />
               {firma.de_refacut ? <Pill tone="apricot">de refăcut</Pill> : null}
+              {original ? <Pill tone="neutral">duplicat al #{original.nr}</Pill> : null}
             </div>
           </div>
           <ButonInchide onClick={onInchide} />
@@ -532,6 +534,8 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
       </div>
 
       <div className="space-y-5 px-5 py-5">
+        {original ? <NotaDuplicat original={original} /> : null}
+
         {/* Fără tel: și mailto: aici: apelurile pleacă doar din „Apeluri azi”, unde firma intră pe telefon. */}
         {firma.telefon || firma.email ? (
           <div className="space-y-2">
@@ -744,6 +748,36 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
  * Drive și trimite linkul, deci aici e un buton spre ea, nu o imagine. Fără
  * captură, schițăm ecranul, ca în prototip.
  */
+/**
+ * Duplicatul (aceeași firmă cu alt site sau alt domeniu, marcat de robot cu `duplicat_de`): nu se contactează
+ * separat, deci stă la „Nu contacta”. Linkul deschide fișa firmei originale, pe care merge contactul.
+ */
+function NotaDuplicat({ original }: { original: NonNullable<FisaFirma["original"]> }) {
+  const o = original.firma;
+  return (
+    <InlineNote tone="neutral" className="flex items-start gap-2.5">
+      <Files className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" aria-hidden="true" />
+      <div className="min-w-0 space-y-1">
+        <p className="font-medium text-foreground">
+          Duplicat al{" "}
+          {o ? (
+            <Link href={`/admin/prospectare/firme?firma=${encodeURIComponent(o.id)}`} className="rounded-sm underline underline-offset-2 hover:text-foreground/80">
+              #{o.nr} {o.nume}
+            </Link>
+          ) : (
+            <>#{original.nr}</>
+          )}
+        </p>
+        <p>
+          {o
+            ? `Aceeași firmă, cu alt site (${o.domeniu}). Contactul merge doar prin firma originală, așa că fișa asta stă la „Nu contacta”.`
+            : `Firma originală (#${original.nr}) nu e încă în admin. Contactul merge doar prin ea, așa că fișa asta stă la „Nu contacta”.`}
+        </p>
+      </div>
+    </InlineNote>
+  );
+}
+
 function Captura({ firma, demo }: { firma: Firma; demo: string | null }) {
   const captura = linkWeb(firma.captura_url);
   return (

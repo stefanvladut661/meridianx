@@ -236,9 +236,19 @@ export default async function PrezentarePage() {
                 <span className="pu-num font-medium text-foreground/85">{num(construite.data.gata)}</span> gata, necontactate ·{" "}
                 <span className="pu-num font-medium text-foreground/85">{num(construite.data.contactate)}</span> trimise
               </p>
-              {construite.data.de_refacut > 0 ? (
+              {construite.data.de_refacut > 0 || construite.data.oprite > 0 ? (
                 <p className="mt-1 text-[11.5px] text-muted-foreground">
-                  <span className="pu-num font-medium text-foreground/85">{num(construite.data.de_refacut)}</span> de refăcut
+                  {construite.data.de_refacut > 0 ? (
+                    <>
+                      <span className="pu-num font-medium text-foreground/85">{num(construite.data.de_refacut)}</span> de refăcut
+                    </>
+                  ) : null}
+                  {construite.data.de_refacut > 0 && construite.data.oprite > 0 ? " · " : null}
+                  {construite.data.oprite > 0 ? (
+                    <span title="Site construit, dar firma e la „Nu contacta” (ex. duplicat) sau respinsă">
+                      <span className="pu-num font-medium text-foreground/85">{num(construite.data.oprite)}</span> oprite
+                    </span>
+                  ) : null}
                 </p>
               ) : null}
             </>
