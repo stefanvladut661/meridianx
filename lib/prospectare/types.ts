@@ -47,7 +47,7 @@ export interface Firma {
   /** Când a primit mesajul pe WhatsApp (o singură dată) și de pe ce cont. */
   whatsapp_la: string | null;
   whatsapp_cont: number | null;
-  /** Când a intrat în lista de apeluri; se golește doar după ultima încercare fără răspuns. */
+  /** Când a intrat în „Apeluri azi”; se golește la 00:00 dacă n-a fost sunată, la „Nu răspunde” și la „Număr greșit”. */
   telefon_la: string | null;
   /** Al doilea canal permis de un admin din fișă (cu motiv); se consumă când e folosit. */
   canal_permis: Canal | null;
@@ -64,6 +64,16 @@ export interface Firma {
   lot: string | null;
   slug: string | null;
   de_refacut: boolean;
+  /** Când s-a terminat site-ul demo (ordinea distribuției: cele mai vechi primele). */
+  site_gata_la: string | null;
+  /** Calculatorul (robotul) care a construit site-ul. */
+  construit_de: string | null;
+  /** Linkul demo e publicat și verificat: doar așa intră firma în distribuție. */
+  demo_verificat: boolean;
+  /** „Număr greșit” la apel: firma merge doar pe email. */
+  telefon_gresit: boolean;
+  /** De câte ori n-a răspuns la telefon (nu e contact; firma se întoarce în distribuție). */
+  apel_incercari: number;
   nota: string | null;
   date_extra: Record<string, unknown>;
   creat_la: string;
@@ -183,6 +193,10 @@ export interface Setari {
   rezervare_ore: number;
   /** Scorul minim pentru coada comună de construcție. */
   scor_minim_constructie: number;
+  /** Plafonul de încălzire: câte emailuri pe zi pe o căsuță fără limită proprie. */
+  email_plafon_casuta: number;
+  /** Câte apeluri pe zi, pe om, la programarea manuală. */
+  apeluri_pe_zi: number;
   cereri_pe_minut: number;
   sablon_whatsapp_primul: string;
   sablon_whatsapp_dupa_apel: string;
@@ -208,3 +222,101 @@ export interface EmailTrimis {
   casuta: string | null;
   la: string;
 }
+
+// ---------------------------------------------------------------------------
+// Distribuția pe canale (migrarea 35)
+// ---------------------------------------------------------------------------
+
+export type CanalProgramare = "email" | "whatsapp" | "telefon";
+export type StareProgramare = "programata" | "folosita" | "eliberata" | "anulata";
+
+/** O programare: firma pe un canal, într-o zi (automată la 00:00 sau manuală). */
+export interface Programare {
+  id: number;
+  firma_id: string;
+  canal: CanalProgramare;
+  zi: string;
+  sursa: "automat" | "manual";
+  casuta: string | null;
+  cont_whatsapp: number | null;
+  utilizator: Utilizator | null;
+  stare: StareProgramare;
+  zi_ceruta: string | null;
+  creat_la: string;
+  creat_de: string;
+  inchis_la: string | null;
+  motiv: string | null;
+}
+
+/** O firmă din rezervă, pentru dialogul „Programează”. */
+export interface FirmaProgramabila {
+  id: string;
+  nr: number;
+  nume: string;
+  domeniu: string;
+  oras: string | null;
+  nisa: string | null;
+  lot: string | null;
+  construit_de: string | null;
+  site_gata_la: string | null;
+  email: string | null;
+  telefon: string | null;
+  este_mobil: boolean;
+  link_demo: string | null;
+}
+
+export interface FiltreProgramare {
+  lot?: string;
+  construit_de?: string;
+  nisa?: string;
+  oras?: string;
+  gata_de?: string;
+  gata_pana?: string;
+  cauta?: string;
+}
+
+export interface OptiuniDistributie {
+  loturi: { v: string; n: number; ultima: string | null }[];
+  constructori: { v: string; n: number }[];
+  nise: { v: string; n: number }[];
+  orase: { v: string; n: number }[];
+  gata_de: string | null;
+  gata_pana: string | null;
+}
+
+/** Rezultatul unei programări manuale. */
+export interface RezultatProgramare {
+  programate: number;
+  pe_zile: Record<string, number>;
+  mutate: number;
+  ultima_zi: string | null;
+  refuzate: { nr: number; nume: string; motiv: string }[];
+  avertisment: string | null;
+}
+
+export interface CicluZi {
+  zi: string;
+  rulat_la: string;
+  eliberate: { email: number; whatsapp: number; telefon: number };
+  programate: { email: { manual: number; automat: number }; whatsapp: { manual: number; automat: number }; telefon: { manual: number } };
+  mutate: number;
+  anulate: number;
+  suna_inapoi: number;
+  rezerva: number;
+}
+
+export interface RezumatDistributie {
+  azi: string;
+  maine: string;
+  ciclu: CicluZi;
+  programate_azi: { email: number; whatsapp: number; telefon: number; email_ramase: number; whatsapp_ramase: number };
+  apeluri_azi: { total: number; sunate: number };
+  programate_maine: { email: number; whatsapp: number; telefon: number };
+  capacitate: { email: number; whatsapp: number; telefon: number; plafon_casuta: number };
+  rezerva: { total: number; email: number; whatsapp: number; telefon: number };
+  intoarse_la_00: { email: number; whatsapp: number; telefon: number };
+}
+
+/** O programare cu firma ei (paginile Email, WhatsApp, Apeluri). */
+export type ProgramareCuFirma = Programare & { firma: FirmaRand };
+

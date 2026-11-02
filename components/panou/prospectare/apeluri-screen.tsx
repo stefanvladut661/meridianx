@@ -91,14 +91,14 @@ export function ApeluriScreen({
       return;
     }
     const data = result.data;
-    if (data?.revenit) {
-      const text = `${firma.nume}: ${mic(result.message)}`;
-      setAnunt({ text, ton: "apricot" });
-      notify(text, "warn");
-    } else if (rezultat === "numar_gresit") {
-      const text = `${firma.nume}: număr greșit. Firma e marcată „Nu contacta” și a ieșit din listă.`;
+    if (rezultat === "numar_gresit") {
+      const text = `${firma.nume}: număr greșit. Firma se întoarce în distribuție, doar pentru email.`;
       setAnunt({ text, ton: "rose" });
       notify(text, "warn");
+    } else if (data?.revenit) {
+      const text = `${firma.nume}: ${mic(result.message)}`;
+      setAnunt({ text, ton: "apricot" });
+      notify(text);
     } else if (rezultat === "interesat") {
       const mesaj = umpleSablon(setari.dupaApel, firma, nume);
       if (!firma.telefon || !firma.este_mobil) {
@@ -122,11 +122,11 @@ export function ApeluriScreen({
         }
       }
     } else if (rezultat === "nu_raspunde") {
-      notify(`Încercarea ${data?.incercari ?? linie.incercari + 1}/${data?.limita ?? limita} notată pentru ${firma.nume}.`);
+      notify(`Încercarea ${data?.incercari ?? linie.incercari + 1} notată pentru ${firma.nume}: firma se întoarce în distribuție.`);
     } else if (rezultat === "suna_inapoi") {
       notify(extra.sunaInapoiLa ? `${firma.nume} e la „Sună înapoi”: ${momentRo(extra.sunaInapoiLa)}.` : "Adăugată la „Sună înapoi” cu data aleasă.");
     } else {
-      notify(`${firma.nume}: refuz notat. Firma trece la Respins.`);
+      notify(`${firma.nume}: nu vrea. Firma e „Nu contacta” și nu mai primește nimic.`);
     }
     router.refresh();
   };

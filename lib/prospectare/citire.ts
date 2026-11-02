@@ -2,18 +2,27 @@ import { db, failure, NO_DB, type Result } from "./db";
 import type {
   Activitate,
   Canal,
+  CanalProgramare,
   Casuta,
+  CicluZi,
   ContWhatsapp,
   Dispozitiv,
   EmailTrimis,
   Etapa,
   Firma,
+  FirmaProgramabila,
   FirmaRand,
+  FiltreProgramare,
   ListaCuFirma,
   Nisa,
   NisaStatus,
+  OptiuniDistributie,
+  Programare,
+  ProgramareCuFirma,
   RaspunsEmail,
+  RezumatDistributie,
   Setari,
+  StareProgramare,
   Utilizator,
   ZiCasute,
 } from "./types";
@@ -24,7 +33,7 @@ import type {
  */
 
 export const COLOANE_FIRMA =
-  "id, nr, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, canal_permis, canal_permis_motiv, canal_permis_la, canal_permis_de, evaluare, evaluare_motiv, evaluat_la, nisa_id, link_demo, captura_url, lot, slug, de_refacut, nota, creat_la, actualizat_la";
+  "id, nr, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, canal_permis, canal_permis_motiv, canal_permis_la, canal_permis_de, evaluare, evaluare_motiv, evaluat_la, nisa_id, link_demo, captura_url, lot, slug, de_refacut, site_gata_la, construit_de, demo_verificat, telefon_gresit, apel_incercari, nota, creat_la, actualizat_la";
 
 const MIN_FIRMA = "id, nr, nume, domeniu, etapa, persoana_contact, oras";
 
@@ -324,7 +333,7 @@ export async function citesteSetari(): Promise<Result<Setari>> {
   if (!client) return { ok: false, message: NO_DB };
   const { data, error } = await client
     .from("prospectare_setari")
-    .select("incercari_max, whatsapp_pe_cont, rezervare_ore, scor_minim_constructie, cereri_pe_minut, sablon_whatsapp_primul, sablon_whatsapp_dupa_apel, sablon_script_apel, actualizat_la, actualizat_de")
+    .select("incercari_max, whatsapp_pe_cont, rezervare_ore, scor_minim_constructie, email_plafon_casuta, apeluri_pe_zi, cereri_pe_minut, sablon_whatsapp_primul, sablon_whatsapp_dupa_apel, sablon_script_apel, actualizat_la, actualizat_de")
     .eq("id", 1)
     .maybeSingle();
   if (error) return failure(error);
@@ -646,3 +655,115 @@ export function aziBucuresti(now = new Date()): { azi: string; inceputAzi: strin
   const inceput = new Date(Date.UTC(Number(azi.slice(0, 4)), Number(azi.slice(5, 7)) - 1, Number(azi.slice(8, 10)), -decalaj));
   return { azi, inceputAzi: inceput.toISOString() };
 }
+
+// ---------------------------------------------------------------------------
+// Distribuția pe canale (migrarea 35)
+// ---------------------------------------------------------------------------
+
+/**
+ * Ciclul de azi (00:00): îl rulează cronul din Supabase; dacă n-a rulat, îl pornește prima
+ * citire de după 00:00. Paginile cu programări îl cer înainte să citească.
+ */
+export async function asiguraCiclu(): Promise<Result<CicluZi>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client.rpc("prospectare_asigura_ciclu");
+  if (error) return failure(error);
+  return { ok: true, data: data as CicluZi };
+}
+
+export async function citesteRezumatDistributie(): Promise<Result<RezumatDistributie>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client.rpc("prospectare_rezumat_distributie");
+  if (error) return failure(error);
+  return { ok: true, data: data as RezumatDistributie };
+}
+
+export async function citesteOptiuniDistributie(): Promise<Result<OptiuniDistributie>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client.rpc("prospectare_optiuni_distributie");
+  if (error) return failure(error);
+  return { ok: true, data: data as OptiuniDistributie };
+}
+
+/** Firmele din rezervă care pot merge pe canal, cu filtrele dialogului „Programează”, cele mai vechi primele. */
+export async function citesteProgramabile(canal: CanalProgramare, filtre: FiltreProgramare, limit = 200, offset = 0): Promise<Result<{ total: number; firme: FirmaProgramabila[] }>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const curate = Object.fromEntries(Object.entries(filtre).filter(([, v]) => typeof v === "string" && v.trim() !== ""));
+  const { data, error } = await client.rpc("prospectare_programabile", { p_canal: canal, p_filtre: curate, p_limit: limit, p_offset: offset });
+  if (error) return failure(error);
+  return { ok: true, data: data as { total: number; firme: FirmaProgramabila[] } };
+}
+
+/** Programările unui canal în zilele date (cu firma), în ordinea în care pleacă: manualele, apoi automatele. */
+export async function citesteProgramari(canal: CanalProgramare, zile: string[], stari: StareProgramare[] = ["programata", "folosita"]): Promise<Result<ProgramareCuFirma[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const r = await toate<ProgramareCuFirma>((from, to) =>
+    client
+      .from("prospectare_programari")
+      .select(`id, firma_id, canal, zi, sursa, casuta, cont_whatsapp, utilizator, stare, zi_ceruta, creat_la, creat_de, inchis_la, motiv, firma:prospectare_firme(${COLOANE_FIRMA})`)
+      .eq("canal", canal)
+      .in("zi", zile)
+      .in("stare", stari)
+      .order("zi", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to) as unknown as PromiseLike<{ data: ProgramareCuFirma[] | null; error: { code?: string; message?: string } | null }>
+  );
+  if (!r.ok) return r;
+  const out: ProgramareCuFirma[] = [];
+  for (const p of r.data) {
+    const firma = Array.isArray(p.firma) ? (p.firma as unknown as FirmaRand[])[0] : p.firma;
+    if (firma) out.push({ ...p, firma });
+  }
+  // Manualele pleacă primele în ziua lor.
+  out.sort((a, b) => a.zi.localeCompare(b.zi) || Number(b.sursa === "manual") - Number(a.sursa === "manual") || a.id - b.id);
+  return { ok: true, data: out };
+}
+
+/** Programările viitoare (de mâine încolo) ale unui canal: se pot anula până în ziua lor. */
+export async function citesteProgramariViitoare(canal: CanalProgramare, deLa: string): Promise<Result<ProgramareCuFirma[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client
+    .from("prospectare_programari")
+    .select(`id, firma_id, canal, zi, sursa, casuta, cont_whatsapp, utilizator, stare, zi_ceruta, creat_la, creat_de, inchis_la, motiv, firma:prospectare_firme(${COLOANE_FIRMA})`)
+    .eq("canal", canal)
+    .eq("stare", "programata")
+    .gte("zi", deLa)
+    .order("zi", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(1000);
+  if (error) return failure(error);
+  const out: ProgramareCuFirma[] = [];
+  for (const p of (data ?? []) as unknown as ProgramareCuFirma[]) {
+    const firma = Array.isArray(p.firma) ? (p.firma as unknown as FirmaRand[])[0] : p.firma;
+    if (firma) out.push({ ...p, firma });
+  }
+  return { ok: true, data: out };
+}
+
+/** Programările unei firme (fișa): cea activă și ultimele închise. */
+export async function citesteProgramariFirma(firmaId: string): Promise<Result<Programare[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client
+    .from("prospectare_programari")
+    .select("id, firma_id, canal, zi, sursa, casuta, cont_whatsapp, utilizator, stare, zi_ceruta, creat_la, creat_de, inchis_la, motiv")
+    .eq("firma_id", firmaId)
+    .order("creat_la", { ascending: false })
+    .limit(20);
+  if (error) return failure(error);
+  return { ok: true, data: (data ?? []) as Programare[] };
+}
+
+/** Ziua de mâine în ora României (AAAA-LL-ZZ). */
+export function maineBucuresti(azi: string): string {
+  const d = new Date(`${azi}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+

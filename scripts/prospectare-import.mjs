@@ -152,7 +152,7 @@ for (const x of prospecti) {
 const trimisePeNr = new Map();
 for (const r of trimise) if (!trimisePeNr.has(Number(r.nr))) trimisePeNr.set(Number(r.nr), r);
 
-const raport = { etape: {}, statusNecunoscut: {}, faraDomeniu: 0, nuContacta: 0, emailFaraDetalii: [], waCuEmail: [], waSingur: [], waFaraFirma: [], waFaraCont: [], emailDoarInTrimise: [], duplicate: [] };
+const raport = { etape: {}, statusNecunoscut: {}, faraDomeniu: 0, nuContacta: 0, emailFaraDetalii: [], waCuEmail: [], waSingur: [], waFaraFirma: [], waFaraCont: [], emailDoarInTrimise: [], duplicate: [], gataLa: {}, faraConstructor: 0 };
 const firme = [];
 const activitate = [];
 
@@ -215,6 +215,29 @@ for (const x of prospecti) {
   }
   raport.etape[etapa] = (raport.etape[etapa] ?? 0) + 1;
 
+  // Distribuția (migrarea 35): data site-ului gata (cele mai vechi primele), cine l-a construit, linkul verificat.
+  // Starea roboților n-are încă o dată „gata” exactă: gata_la dacă există, altfel revizia vizuală (imediat
+  // după construire), aprobarea, momentul în care robotul a luat firma, ziua adăugării.
+  const areSite = ["gata", "de_verificat", "aprobat", "trimis", "refacere"].includes(status);
+  let siteGataLa;
+  if (areSite) {
+    const surse = [
+      ["gata_la", dinTimestampRobot(x.gata_la)],
+      ["revizie_vizuala", dinTimestampRobot(x.revizie_vizuala?.data)],
+      ["aprobare", dinTimestampRobot(x.aprobare?.la)],
+      ["luat_la", dinTimestampRobot(x.luat_la)],
+      ["adaugat", laBucuresti(x.adaugat)],
+    ];
+    const gasit = surse.find(([, v]) => v);
+    if (gasit) {
+      siteGataLa = gasit[1];
+      raport.gataLa[gasit[0]] = (raport.gataLa[gasit[0]] ?? 0) + 1;
+    }
+  }
+  const construitDe = textScurt(x.construit_de, 200) ?? textScurt(x.adaugat_de, 200);
+  if (areSite && !construitDe) raport.faraConstructor++;
+  const ev = x.email_verificat && typeof x.email_verificat === "object" ? x.email_verificat : null;
+
   const telefoane = Array.isArray(x.telefoane) ? x.telefoane.filter((t) => typeof t === "string") : [];
   const telefon = textScurt(x.telefon, 40) ?? telefoane[0];
   const df = x.date_firma && typeof x.date_firma === "object" ? x.date_firma : {};
@@ -241,6 +264,8 @@ for (const x of prospecti) {
         : undefined,
       adaugat_de: x.adaugat_de,
       duplicat_de: esteDuplicat ? duplicatDe : undefined,
+      // „bun” doar dacă robotul a verificat chiar adresa de acum; altfel „nepotrivit” (nu pleacă email).
+      email_verificat: ev ? (String(ev.adresa ?? "").trim().toLowerCase() === (email ?? "") ? String(ev.stare ?? "") || undefined : "nepotrivit") : undefined,
       sursa: "import auto-web-rebuilder",
     }).filter(([, v]) => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0))
   );
@@ -262,6 +287,9 @@ for (const x of prospecti) {
         slug: textScurt(x.slug, 200),
         link_demo: typeof x.link_demo === "string" && x.link_demo.startsWith("https://") ? x.link_demo.slice(0, 500) : undefined,
         de_refacut: status === "refacere",
+        site_gata_la: siteGataLa,
+        construit_de: areSite ? construitDe : undefined,
+        demo_verificat: x.link_verificat === "da",
         etapa,
         email_la: emailLa,
         whatsapp_la: whatsappLa,
@@ -337,6 +365,8 @@ console.log(`Canale: email ${cuEmailLa} firme · WhatsApp ${cuWhatsappLa} firme 
 if (raport.waCuEmail.length) console.log(`  Email + WhatsApp: #${raport.waCuEmail.join(", #")}`);
 if (raport.waFaraCont.length) console.log(`  WhatsApp fără cont cunoscut (1–9): #${raport.waFaraCont.join(", #")}`);
 console.log(`Duplicate (duplicat_de) → „Nu contacta”: ${raport.duplicate.length}${raport.duplicate.length ? ` (${raport.duplicate.join(", ")})` : ""}`);
+console.log(`Data site-ului gata: ${Object.entries(raport.gataLa).map(([k, n]) => `${k} ${n}`).join(", ") || "—"}${raport.faraConstructor ? ` · ${raport.faraConstructor} site-uri fără calculator cunoscut` : ""}`);
+console.log(`Linkuri demo verificate (link_verificat = da): ${firme.filter((f) => f.demo_verificat).length}`);
 console.log(`Activitate de importat: ${activitate.length} rânduri · statistici căsuțe: ${randuriCasute.length} zile × căsuță`);
 
 // ---------------------------------------------------------------------------
