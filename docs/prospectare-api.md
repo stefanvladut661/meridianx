@@ -1,6 +1,10 @@
 # API-ul Prospectare pentru roboți
 
-Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–33. Regulile (fiecare canal o singură dată, telefonul separat, „Nu contacta”, o firmă la un singur robot) stau în bază, nu în robot.
+Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–34. Regulile (un singur canal pe firmă, „Nu contacta”, o nișă și o firmă la un singur robot) stau în bază, nu în robot.
+
+**Fluxul unui robot:** (1) rezervă o nișă (`/nisa`), (2) înainte să cercetezi un domeniu, întreabă dacă e deja evaluat (`/evaluare` → `verifica`), (3) notează fiecare firmă evaluată, și pe cele respinse (`/evaluare` → `noteaza`), (4) trimite progresul și, la final, termină nișa (`/nisa`), (5) ia din coada comună o firmă de construit (`/rezerva`), semn de viață (`/heartbeat`), publici și o marchezi imediat (`/termina`), (6) emailul doar după ce ceri canalul (`/eveniment`).
+
+**Regula canalelor:** o firmă e contactată pe **un singur canal** (email, WhatsApp sau apel); primul canal o blochează pentru celelalte. Al doilea canal îl dă doar un admin, din fișa firmei, cu motiv. Robotul de email primește 409 dacă firma are deja alt canal.
 
 Adresa: `https://www.meridianx.ro/api/prospectare/robot/<ruta>`. Toate rutele primesc **doar `POST` cu JSON**.
 
@@ -29,7 +33,7 @@ Mereu aceeași formă:
 | 200 | — | Continui. |
 | 401 | `neautorizat` | Token greșit sau robot dezactivat. Te oprești și anunți omul. |
 | 404 | `negasit` | Firma nu există (domeniu sau nr greșit). |
-| 409 | `conflict` | Firma a primit deja email, e pe telefon (lista de apeluri), e „Nu contacta” / respinsă / client, sau rezervarea nu mai e a ta. **Nu trimiți emailul, nu mai lucrezi la firmă.** |
+| 409 | `conflict` | Firma a primit deja email sau are alt canal (WhatsApp, telefon), e „Nu contacta” / respinsă / client, rezervarea nu mai e a ta, sau nișa e rezervată de alt robot / terminată. **Nu trimiți emailul, nu mai lucrezi la firmă sau la nișă.** |
 | 422 | `date_invalide` | Corp greșit; mesajul spune câmpul. Nu repeta aceeași cerere. |
 | 429 | `prea_multe` | Peste limita de cereri, sau căsuța și-a atins limita zilei. Aștepți (sau altă căsuță). |
 | 503 | `neconfigurat` | Baza nu e configurată sau lipsesc migrările. Reîncerci mai târziu. |
@@ -53,7 +57,9 @@ Câmpuri: `domeniu` (obligatoriu), `nr`, `nume`, `site_vechi`, `nisa`, `oras`, `
 
 ## 2. `POST /rezerva`: următoarea firmă de construit
 
-Firma e a ta 3 ore (Setări → „Rezervare”). Ordinea: întâi firma pe care o lucrai deja (după o repornire primești aceeași, cu `reluata: true`), apoi cele rămase de la un robot oprit, apoi refacerile, apoi scorul cel mai mare. Două cereri simultane nu primesc niciodată aceeași firmă.
+**Coada de construcție e comună:** orice robot poate lua orice firmă, nu doar cea pe care a cercetat-o. Intră în coadă firmele alese pentru construit (`site_in_lucru`) și orice firmă cercetată, neevaluată ca respinsă, cu scor ≥ 45 (Setări → „Scor minim pentru coada de construcție”), cu email sau mobil și fără site. Când o iei, trece în „Site în lucru”.
+
+Firma e a ta 3 ore (Setări → „Rezervare”). Ordinea: întâi firma pe care o lucrai deja (după o repornire primești aceeași, cu `reluata: true`), apoi cele rămase de la un robot oprit, apoi refacerile, apoi cele alese deja pentru construit, apoi scorul cel mai mare. Două cereri simultane nu primesc niciodată aceeași firmă.
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/rezerva \
@@ -100,11 +106,64 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/termina \
 { "ok": true, "firma": { "nr": 412, "etapa": "site_gata", "link_demo": "https://demo.meridianxstudio.com/tamplarie-somes/" } }
 ```
 
-## 5. `POST /eveniment`: emailurile
+## 5. `POST /nisa`: tabla comună de nișe
 
-**Ordinea e obligatorie.** Robotul cere canalul email **înainte** să trimită. Fiecare firmă primește **cel mult un email** (regula: o firmă poate fi contactată pe email și pe WhatsApp, dar niciodată de două ori pe același canal). Cererea pune data emailului; între verificare și trimitere firma nu mai poate intra în lista de apeluri. Firmele cu mobil intră în lista de WhatsApp la o zi după email.
+O nișă e o pereche „nișă · zonă” (ex. „instalatori · Muntenia”). Înainte să cauți firme, o rezervi: alt robot nu o mai poate lua cât timp dai semn de viață. Fără semn de viață 24 de ore, rezervarea expiră și o poate prelua alt robot.
 
-### 5.1 Înainte de trimitere: `email_de_trimis`
+```bash
+curl -s https://www.meridianx.ro/api/prospectare/robot/nisa \
+  -H "Authorization: Bearer $MERIDIAN_ROBOT_TOKEN" -H "Content-Type: application/json" \
+  -d '{"actiune":"rezerva","nisa":"instalatori","zona":"Muntenia"}'
+```
+
+```json
+{ "ok": true, "nisa": { "id": 12, "nisa": "instalatori", "zona": "Muntenia", "status": "rezervata", "rezervata_la": "2026-11-02T14:20:00+00:00", "gasite": 0, "eligibile": 0, "respinse": 0, "reluata": false, "preluata_de_la": null } }
+{ "ok": false, "eroare": { "cod": "conflict", "mesaj": "Nișa „instalatori · Muntenia” e rezervată de robot-2 din 02.11.2026 16:20." } }
+```
+
+- **200**: nișa e a ta. Dacă nu exista, s-a creat. `reluata: true` = era deja a ta; `preluata_de_la` = robotul de la care ai preluat-o după 24 h fără semn de viață.
+- **409**: rezervată de alt robot (cine și de când), sau terminată. Alegi altă nișă.
+
+Progresul (și semnul de viață, măcar o dată pe oră) și terminarea:
+
+```bash
+-d '{"actiune":"progres","nisa_id":12,"gasite":40,"eligibile":18,"respinse":22,"nota":"București gata, urmează Ilfov"}'
+-d '{"actiune":"termina","nisa_id":12,"gasite":61,"eligibile":25,"respinse":36}'
+```
+
+Cifrele nu scad niciodată (se păstrează cea mai mare). Ele cresc și singure când notezi firme cu `nisa_id` (secțiunea 6). **409** = nișa nu mai e a ta (a preluat-o alt robot) sau e deja terminată.
+
+## 6. `POST /evaluare`: firmele evaluate
+
+**Toate firmele evaluate se notează, și cele respinse**, cu scorul și motivul. Un domeniu deja evaluat (de oricine, oricând) nu se mai cercetează.
+
+```bash
+-d '{"actiune":"verifica","domenii":["tamplariepvc-somes.ro","https://www.instal-nou.ro/"]}'
+```
+
+```json
+{ "ok": true, "deja_evaluate": [{ "domeniu": "tamplariepvc-somes.ro", "nr": 412, "etapa": "site_gata", "evaluare": "eligibila", "scor": 82, "motiv": null, "evaluat_la": "2026-10-30T08:00:00+00:00" }], "noi": ["instal-nou.ro"] }
+```
+
+Cercetezi doar ce e în `noi`. Apoi notezi rezultatul (cel mult 500 de firme pe cerere):
+
+```bash
+-d '{"actiune":"noteaza","nisa_id":12,"firme":[
+  {"domeniu":"instal-nou.ro","nume":"Instal Nou","oras":"Ploiești","scor":64,"evaluare":"eligibila","email":"office@instal-nou.ro","telefon":"0744 000 000"},
+  {"domeniu":"instal-modern.ro","nume":"Instal Modern","scor":21,"evaluare":"respinsa","motiv":"site modern, bine întreținut"}]}'
+```
+
+```json
+{ "ok": true, "adaugate": 2, "eligibile": 1, "respinse": 1, "deja_evaluate": [], "invalide": [] }
+```
+
+Câmpuri: `domeniu`, `scor` (0–1000), `evaluare` (`eligibila` | `respinsa`) obligatorii; `motiv` obligatoriu la respinse; opțional `nume`, `site_vechi`, `nisa`, `oras`, `judet`, `telefon`, `email`, `persoana_contact`, `date_extra`. Un domeniu deja evaluat apare în `deja_evaluate` și **nu se suprascrie**. Firmele eligibile cu scor ≥ prag, cu email sau mobil, intră singure în coada comună de construcție (secțiunea 2).
+
+## 7. `POST /eveniment`: emailurile
+
+**Ordinea e obligatorie.** Robotul cere canalul email **înainte** să trimită. O firmă primește **un singur canal**: dacă a primit deja WhatsApp sau e în lista de apeluri, cererea de email e refuzată (409), afară de cazul în care un admin a permis emailul din fișa firmei. Fiecare firmă primește cel mult un email. Cererea pune data emailului; din acel moment firma nu mai intră în lista de WhatsApp sau de apeluri.
+
+### 7.1 Înainte de trimitere: `email_de_trimis`
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/eveniment \
@@ -113,13 +172,13 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/eveniment \
 ```
 
 - **200** `{ "ok": true, "trimite": true, "firma": { "email": "…", "link_demo": "…", "persoana_contact": "…" }, "casuta": { "trimise_azi": 12, "limita_azi": 40 } }`: trimiți. Firma are acum data emailului: alt email nu mai primește.
-- **409**: firma a primit deja email, e pe telefon (lista de apeluri) sau e „Nu contacta” / respinsă / client. **Nu trimiți.**
+- **409**: firma a primit deja email, are alt canal (WhatsApp sau telefon) fără permisiune din fișă, sau e „Nu contacta” / respinsă / client. **Nu trimiți.**
 - **429**: căsuța și-a atins limita de azi (sau e oprită din admin). Încerci altă căsuță sau mâine. Firma rămâne fără email, poate primi mai târziu.
 - **422**: firma nu are adresă de email sau nu are site gata cu link (etapa `site_gata` sau `whatsapp_trimis`).
 
 `limita_azi` (opțional): limita căsuței pe ziua de azi, din încălzire. Dacă în admin e pusă o limită fixă pentru căsuță, aceea câștigă.
 
-### 5.2 După trimitere: `email_trimis`
+### 7.2 După trimitere: `email_trimis`
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/eveniment \
@@ -129,9 +188,9 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/eveniment \
 
 `{ "ok": true, "nou": true, "nr": 412, "etapa": "email_trimis" }`. Același `message_id` trimis a doua oară (o cerere repetată după o pană de rețea) întoarce `nou: false` și nu se mai numără.
 
-Dacă SMTP-ul a refuzat emailul după `email_de_trimis`, nu trimiți `email_trimis`. Data emailului rămâne pusă (regula: o singură dată), deci firma nu mai primește email, nici la o cerere nouă (409). Dacă are mobil, intră în lista de WhatsApp după o zi.
+Dacă SMTP-ul a refuzat emailul după `email_de_trimis`, nu trimiți `email_trimis`. Data emailului rămâne pusă (regula: o singură dată), deci firma nu mai primește email, nici la o cerere nouă (409), și nici alt canal fără permisiune din fișă.
 
-### 5.3 Bounce și răspunsuri
+### 7.3 Bounce și răspunsuri
 
 ```bash
 -d '{"tip":"bounce","domeniu":"tamplariepvc-somes.ro","casuta":"stefan@meridianxweb.com","message_id":"<bounce-1@…>","motiv":"550 mailbox not found"}'
@@ -157,6 +216,17 @@ def cere(ruta, corp):
         raise RuntimeError("limită: " + date["eroare"]["mesaj"])
     return r.status_code, date
 
+# Cercetare: rezervi nișa, sari peste domeniile deja evaluate, notezi tot (și respinsele).
+st, d = cere("nisa", {"actiune": "rezerva", "nisa": "instalatori", "zona": "Muntenia"})
+if st == 200:
+    nisa_id = d["nisa"]["id"]
+    st, v = cere("evaluare", {"actiune": "verifica", "domenii": domenii_gasite})
+    evaluate = [evalueaza(dom) for dom in v["noi"]]   # {"domeniu", "scor", "evaluare", "motiv", …}
+    cere("evaluare", {"actiune": "noteaza", "nisa_id": nisa_id, "firme": evaluate})
+    cere("nisa", {"actiune": "termina", "nisa_id": nisa_id})
+# 409 la nișă: e a altui robot (mesajul spune cine) sau e terminată; alegi alta.
+
+# Construcție: orice firmă din coada comună.
 st, d = cere("rezerva", {"tip_lucru": "construire"})
 firma = d.get("firma")
 if firma:

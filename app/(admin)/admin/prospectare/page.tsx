@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Building2, Cpu, Mail, MessageCircle, Phone, Sparkles, Users } from "lucide-react";
+import { ArrowRight, Building2, Cpu, LockOpen, Mail, MapPinned, MessageCircle, Phone, Sparkles, Users } from "lucide-react";
 import { dateTimeRo, num, relativeRo } from "@/components/panou/ui/format";
 import { btnClass, Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
@@ -22,7 +22,11 @@ const IESITE: Etapa[] = ["nu_contacta", "respins"];
 
 const linkMic = "rounded-sm text-[11.5px] text-muted-foreground hover:text-foreground";
 
-/** Câte firme au primit fiecare canal. Email și WhatsApp se pot aduna pe aceeași firmă; telefonul e separat. */
+/**
+ * Câte firme au primit fiecare canal. Implicit, un singur canal pe firmă;
+ * „email + WhatsApp” sunt firmele din regula veche (istoric) și cele cu al
+ * doilea canal permis din fișă.
+ */
 function Canale({ canale }: { canale: Rezumat["canale"] }) {
   const randuri: { cheie: string; label: string; n: number; punct?: string }[] = [
     { cheie: "email", label: "Email", n: canale.email, punct: "bg-mint" },
@@ -75,8 +79,8 @@ function Palnie({ rezumat }: { rezumat: Rezumat }) {
       <p className={`${EYEBROW} mt-4 border-t border-border pt-3`}>Canale folosite</p>
       <Canale canale={rezumat.canale} />
       <p className="mt-4 border-t border-border pt-3 text-[11.5px] text-muted-foreground">
-        Roboții construiesc, oamenii contactează. O firmă poate primi email și WhatsApp, dar fiecare canal o singură dată. Telefonul e separat: în Apeluri azi intră
-        doar firme fără email și fără WhatsApp.
+        Roboții construiesc, oamenii contactează. Fiecare firmă primește un singur canal: email, WhatsApp sau apel. Primul canal le blochează pe celelalte; al doilea se
+        permite doar din fișa firmei, cu motiv.
         {rezumat.de_refacut > 0 ? ` ${cate(rezumat.de_refacut, "site e marcat", "site-uri sunt marcate")} de refăcut.` : null}
       </p>
     </Card>
@@ -138,8 +142,8 @@ export default async function PrezentarePage() {
   const head = (
     <PageHead
       title="Prospectare"
-      pill="fiecare canal o dată"
-      subtitle="Firmele cercetate de roboți, site-urile demo gata de arătat și contactul: email și WhatsApp, fiecare o singură dată; telefonul, separat."
+      pill="un singur canal"
+      subtitle="Firmele cercetate de roboți, site-urile demo gata de arătat și contactul: un singur canal pe firmă (email, WhatsApp sau apel). Al doilea canal îl permite doar un admin, din fișa firmei."
       actions={
         <Link href="/admin/prospectare/firme" className={btnClass({ variant: "primary", size: "sm" })}>
           Deschide Firme
@@ -189,6 +193,9 @@ export default async function PrezentarePage() {
   }
 
   const clienti = r.etape.client ?? 0;
+  // Câmpurile din migrarea 34: cu o bază încă nemigrată, pagina arată zero, nu cade.
+  const evaluate = r.evaluate ?? { eligibile: 0, respinse: 0 };
+  const nise = r.nise ?? { libere: 0, rezervate: 0, terminate: 0 };
   // „contul 1: 12 · contul 2: 8”: limita pe cont e doar avertisment, aici doar se vede câte au plecat.
   const peConturi = Object.entries(r.azi.whatsapp_pe_cont ?? {})
     .filter(([, n]) => Number(n) > 0)
@@ -206,6 +213,10 @@ export default async function PrezentarePage() {
           <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.total)}</p>
           <p className="mt-1.5 text-[11.5px] text-muted-foreground">
             {num(r.etape.site_gata ?? 0)} cu site gata · {num(r.in_lucru)} în lucru la roboți
+          </p>
+          <p className="mt-1 text-[11.5px] text-muted-foreground">
+            Evaluate: {num(evaluate.eligibile)} eligibile · {num(evaluate.respinse)} respinse
+            {(r.azi.evaluate ?? 0) > 0 ? ` · ${num(r.azi.evaluate)} azi` : ""}
           </p>
         </Card>
 
@@ -237,14 +248,21 @@ export default async function PrezentarePage() {
         <Card className="p-4">
           <p className={EYEBROW}>Gata de contactat</p>
           <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.rezerva_telefon)}</p>
-          <p className="mt-1.5 text-[11.5px] text-muted-foreground">în rezerva de apeluri: site gata, fără email și fără WhatsApp</p>
+          <p className="mt-1.5 text-[11.5px] text-muted-foreground">în rezerva de apeluri: site gata, niciun contact până acum</p>
           <Link href="/admin/prospectare/whatsapp" className={`${linkMic} mt-1.5 flex items-start gap-1.5`}>
             <MessageCircle className="mt-0.5 h-3 w-3 shrink-0 text-lav" aria-hidden="true" />
             <span>
-              <span className="pu-num font-medium text-foreground/85">{num(r.whatsapp_lista)}</span> în lista de WhatsApp ·{" "}
-              <span className="pu-num font-medium text-foreground/85">{num(r.whatsapp_dupa_email)}</span> intră după email (24 h) →
+              <span className="pu-num font-medium text-foreground/85">{num(r.whatsapp_lista)}</span> în lista de WhatsApp →
             </span>
           </Link>
+          {(r.recontactari_permise ?? 0) > 0 ? (
+            <p className="mt-1 flex items-start gap-1.5 text-[11.5px] text-muted-foreground">
+              <LockOpen className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+              <span>
+                {cate(r.recontactari_permise, "recontactare permisă", "recontactări permise")} din fișă, {r.recontactari_permise === 1 ? "încă nefolosită" : "încă nefolosite"}
+              </span>
+            </p>
+          ) : null}
         </Card>
 
         <Card className="p-4">
@@ -276,7 +294,7 @@ export default async function PrezentarePage() {
       <Card>
         <SectionTitle
           title="Roboți"
-          hint={`${cate(r.roboti_activi, "robot activ", "roboți activi")} acum, din ${cate(r.roboti, "pornit", "porniți")} · ${cate(r.in_lucru, "firmă", "firme")} în lucru`}
+          hint={`${cate(r.roboti_activi, "robot activ", "roboți activi")} acum, din ${cate(r.roboti, "pornit", "porniți")} · ${cate(r.in_lucru, "firmă", "firme")} în lucru · ${num(r.coada_constructie)} în coada de construcție`}
           action={
             <Link href="/admin/prospectare/roboti" className={linkMic}>
               Toți roboții →
@@ -284,6 +302,17 @@ export default async function PrezentarePage() {
           }
         />
         <div className="mt-3">{dispozitive.ok ? <Roboti dispozitive={dispozitive.data} acum={acum} /> : <EroareCitire title="Roboții nu s-au putut citi" message={dispozitive.message} className="py-8" />}</div>
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 text-[11.5px] text-muted-foreground">
+          <MapPinned className="h-3 w-3 shrink-0" aria-hidden="true" />
+          <span>
+            Nișe: <span className="pu-num font-medium text-foreground/85">{num(nise.rezervate)}</span> rezervate ·{" "}
+            <span className="pu-num font-medium text-foreground/85">{num(nise.libere)}</span> libere ·{" "}
+            <span className="pu-num font-medium text-foreground/85">{num(nise.terminate)}</span> terminate
+          </span>
+          <Link href="/admin/prospectare/nise" className={`${linkMic} ml-auto`}>
+            Tabla de nișe →
+          </Link>
+        </p>
       </Card>
 
       <Card>

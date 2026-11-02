@@ -9,6 +9,20 @@ import { PanouMark } from "./mark";
 import { activeModule, firmaModule, isItemActive, modules, type PanouModuleId } from "./nav";
 
 /**
+ * Contrastul meniului, măsurat pe fundalul lui (#09090C): textul inactiv
+ * (foreground/80 = #C3C2C1) are 11,2:1; eticheta modulului (foreground/70 =
+ * #ABABAB) 8,7:1; textul alb pe fundalul elementului activ (lav/13 ≈ #221F2C)
+ * 16,1:1. Ecranul pe care ești: fundal lav, bară lav în stânga, text alb, semibold.
+ */
+const ACTIV = "bg-lav/[0.13] font-semibold text-white";
+const INACTIV = "text-foreground/80 hover:bg-white/[0.05] hover:text-white";
+
+/** Bara verticală din stânga elementului activ (doar vizuală: starea o spune `aria-current`). */
+function BaraActiva() {
+  return <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-lav" aria-hidden="true" />;
+}
+
+/**
  * Meniul din stânga (de la 1024 px): modulele, apoi subpaginile celui activ, jos
  * Firma și contul. `badges`: câte lead-uri noi, câte postări eșuate.
  */
@@ -31,7 +45,7 @@ export function PanouSidebar({
         <PanouMark />
         <div className="min-w-0">
           <p className="pu-display text-[19px] leading-none tracking-[0.16em] text-foreground">MERIDIAN</p>
-          <p className="mt-1 text-[9.5px] uppercase tracking-[0.24em] text-muted-foreground/80">panou intern</p>
+          <p className="mt-1 text-[9.5px] uppercase tracking-[0.24em] text-muted-foreground">panou intern</p>
         </div>
       </Link>
 
@@ -45,13 +59,14 @@ export function PanouSidebar({
               href={module.to}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium transition-colors",
-                isActive ? "bg-white/[0.07] text-foreground" : "text-foreground/60 hover:bg-white/[0.04] hover:text-foreground"
+                "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] transition-colors",
+                isActive ? ACTIV : `font-medium ${INACTIV}`
               )}
             >
-              <module.icon className={cn("h-[17px] w-[17px] shrink-0", isActive ? "text-lav" : "text-foreground/45 group-hover:text-foreground/70")} aria-hidden="true" />
+              {isActive ? <BaraActiva /> : null}
+              <module.icon className={cn("h-[17px] w-[17px] shrink-0", isActive ? "text-lav" : "text-foreground/70 group-hover:text-white")} aria-hidden="true" />
               <span className="truncate">{module.label}</span>
-              {count > 0 ? <span className="pu-num ml-auto rounded-full border border-lav/25 bg-lav/12 px-1.5 text-[10.5px] leading-[18px] text-[#D8CCFF]">{count}</span> : null}
+              {count > 0 ? <span className="pu-num ml-auto rounded-full border border-lav/25 bg-lav/12 px-1.5 text-[10.5px] font-medium leading-[18px] text-[#D8CCFF]">{count}</span> : null}
             </Link>
           );
         })}
@@ -59,9 +74,9 @@ export function PanouSidebar({
 
       <div className="mt-5 flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between px-5 pb-2">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">{active.label}</p>
+          <p className="text-[10.5px] font-medium uppercase tracking-[0.18em] text-foreground/70">{active.label}</p>
           {active.id === "reclame" ? (
-            <Link href="/admin/ads/nou" className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/[0.07] hover:text-foreground" aria-label="Plan nou">
+            <Link href="/admin/ads/nou" className="rounded-md p-1 text-foreground/80 transition-colors hover:bg-white/[0.07] hover:text-white" aria-label="Plan nou">
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           ) : null}
@@ -74,14 +89,12 @@ export function PanouSidebar({
                 key={item.to}
                 href={item.to}
                 aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "group flex items-center gap-2 rounded-lg py-2 pl-3 pr-2 text-[12.5px] transition-colors",
-                  isActive ? "bg-white/[0.05] text-foreground" : "text-foreground/50 hover:text-foreground"
-                )}
+                className={cn("group relative flex items-center gap-2.5 rounded-lg py-2 pl-3 pr-2 text-[12.5px] transition-colors", isActive ? ACTIV : INACTIV)}
               >
-                <span className={cn("h-1 w-1 rounded-full transition-colors", isActive ? "bg-lav" : "bg-white/15 group-hover:bg-white/40")} aria-hidden="true" />
+                {isActive ? <BaraActiva /> : null}
+                <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full transition-colors", isActive ? "bg-lav" : "bg-white/30 group-hover:bg-white/70")} aria-hidden="true" />
                 <span className="truncate">{item.label}</span>
-                {isActive ? <ChevronRight className="ml-auto h-3 w-3 text-foreground/30" aria-hidden="true" /> : null}
+                {isActive ? <ChevronRight className="ml-auto h-3 w-3 shrink-0 text-lav" aria-hidden="true" /> : null}
               </Link>
             );
           })}
@@ -93,10 +106,11 @@ export function PanouSidebar({
           href={firmaModule.to}
           aria-current={firmaActive ? "page" : undefined}
           className={cn(
-            "mb-2 flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors",
-            firmaActive ? "border-white/[0.14] bg-white/[0.07] text-foreground" : "border-dashed border-white/[0.09] text-foreground/45 hover:border-white/[0.16] hover:text-foreground"
+            "relative mb-2 flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors",
+            firmaActive ? `border-lav/30 ${ACTIV}` : "border-dashed border-white/[0.12] text-foreground/80 hover:border-white/[0.2] hover:bg-white/[0.05] hover:text-white"
           )}
         >
+          {firmaActive ? <BaraActiva /> : null}
           <firmaModule.icon className="h-3.5 w-3.5" aria-hidden="true" />
           <span className="text-[12px]">{firmaModule.label}</span>
           <span className="ml-auto text-[9px] uppercase tracking-[0.14em]">{firmaActive ? "deschis" : "intră"}</span>

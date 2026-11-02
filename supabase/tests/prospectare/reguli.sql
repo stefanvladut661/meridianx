@@ -1,4 +1,4 @@
--- Testele regulilor din migrările 28–33, pe Postgres local (nu pe producție).
+-- Testele regulilor din migrările 28–34, pe Postgres local (nu pe producție).
 \set ON_ERROR_STOP 1
 set client_min_messages = warning;
 
@@ -45,10 +45,19 @@ select pg_temp.verifica((select este_mobil from public.prospectare_firme where n
 select pg_temp.verifica((select count(*) from public.prospectare_activitate where tip = 'creata') = 35, 'fiecare firmă nouă intră în activitate');
 select pg_temp.asteapta_eroare($$insert into public.prospectare_firme (nume, domeniu) values ('Dublură', 'unu.ro')$$, '23505', 'domeniul e unic');
 
--- Canalele: mai multe pe firmă, fiecare o singură dată -------------------------------
+-- Canalele: unul singur pe firmă; al doilea doar cu permisiune din fișă -------------
 update public.prospectare_firme set email_la = now() where nr = 2;
+select pg_temp.asteapta_eroare($$update public.prospectare_firme set whatsapp_la = now(), whatsapp_cont = 3 where nr = 2$$, 'PR409', 'al doilea canal fără permisiune: refuzat');
+select pg_temp.asteapta_eroare($$select public.prospectare_permite_recontactare((select id from public.prospectare_firme where nr = 2), 'whatsapp', 'nu', 'Ștefan')$$, 'PR422', 'recontactare: motivul e obligatoriu');
+select pg_temp.asteapta_eroare($$select public.prospectare_permite_recontactare((select id from public.prospectare_firme where nr = 2), 'email', 'A cerut încă o ofertă', 'Ștefan')$$, 'PR409', 'recontactare pe același canal: refuzată');
+select pg_temp.asteapta_eroare($$select public.prospectare_permite_recontactare((select id from public.prospectare_firme where nr = 1), 'whatsapp', 'A cerut pe WhatsApp', 'Ștefan')$$, 'PR422', 'recontactare pentru o firmă necontactată: nu e nevoie');
+select pg_temp.asteapta_eroare($$select public.prospectare_permite_recontactare((select id from public.prospectare_firme where nr = 5), 'telefon', 'A cerut să fie sunată', 'Ștefan')$$, 'PR410', 'recontactare pentru „Nu contacta”: refuzată');
+select public.prospectare_permite_recontactare((select id from public.prospectare_firme where nr = 2), 'whatsapp', 'A răspuns la email că preferă WhatsApp', 'Ștefan');
+select pg_temp.verifica((select canal_permis = 'whatsapp' and canal_permis_de = 'Ștefan' from public.prospectare_firme where nr = 2), 'recontactare permisă: canalul și cine a permis');
+select pg_temp.verifica((select count(*) = 1 from public.prospectare_activitate a join public.prospectare_firme f on f.id = a.firma_id where f.nr = 2 and a.tip = 'recontactare' and a.detalii ->> 'motiv' like 'A răspuns la email%'), 'recontactarea e scrisă în activitate, cu motivul');
 update public.prospectare_firme set whatsapp_la = now(), whatsapp_cont = 3 where nr = 2;
-select pg_temp.verifica((select email_la is not null and whatsapp_la is not null and whatsapp_cont = 3 from public.prospectare_firme where nr = 2), 'email și WhatsApp pe aceeași firmă: permis, câte o dată');
+select pg_temp.verifica((select email_la is not null and whatsapp_la is not null and whatsapp_cont = 3 and canal_permis is null from public.prospectare_firme where nr = 2), 'cu permisiune: al doilea canal trece, iar permisiunea se consumă');
+select pg_temp.asteapta_eroare($$update public.prospectare_firme set telefon_la = now() where nr = 2$$, 'PR409', 'al treilea canal cere altă permisiune');
 select pg_temp.asteapta_eroare($$update public.prospectare_firme set email_la = now() + interval '1 minute' where nr = 2$$, 'PR409', 'al doilea email aceleiași firme e refuzat');
 select pg_temp.asteapta_eroare($$update public.prospectare_firme set whatsapp_la = null where nr = 2$$, 'PR409', 'data unui canal nu se golește');
 select pg_temp.asteapta_eroare($$update public.prospectare_firme set whatsapp_cont = 2 where nr = 2$$, 'PR409', 'contul WhatsApp nu se schimbă după trimitere');
@@ -116,7 +125,8 @@ select pg_temp.asteapta_eroare($$select public.prospectare_schimba_etapa((select
 
 -- Lista de WhatsApp, continuă -------------------------------------------------------
 -- #7 mobil fără email · #8 email trimis acum 2 ore · #9 email trimis acum 25 de ore · #10 mobil fără email
--- #11 mobil fără email (apoi „Nu contacta”) · #12 email de acum 25 de ore, dar a răspuns · #13 fix, fără email
+-- #11 mobil fără email (apoi „Nu contacta”) · #12 email de acum 25 de ore, a răspuns · #13 fix, fără email
+-- #4 are adresă de email, dar n-a primit nimic: intră și ea (regula „la o zi după email” nu mai există)
 insert into public.prospectare_firme (nr, nume, domeniu, scor, telefon, email, etapa, link_demo, email_la) values
   (7, 'Firma Șapte', 'sapte.ro', 97, '0745 777 777', null, 'site_gata', 'https://demo.test/sapte/', null),
   (8, 'Firma Opt', 'opt.ro', 96, '0745 888 888', 'office@opt.ro', 'email_trimis', 'https://demo.test/opt/', now() - interval '2 hours'),
@@ -127,25 +137,31 @@ insert into public.prospectare_firme (nr, nume, domeniu, scor, telefon, email, e
   (13, 'Firma Treisprezece', 'treisprezece.ro', 91, '0231 131 313', null, 'site_gata', 'https://demo.test/13/', null);
 insert into public.prospectare_activitate (firma_id, tip, canal, autor, detalii) select id, 'raspuns', 'email', 'test', '{"tip":"altul"}' from public.prospectare_firme where nr = 12;
 update public.prospectare_firme set link_demo = 'https://demo.test/patru/' where nr = 4;
-select pg_temp.verifica(pg_temp.coada() = array[7, 9, 10, 11], 'lista de WhatsApp: mobil + site gata; cu email doar la o zi după email; fără cei care au răspuns, fără fix (' || pg_temp.coada()::text || ')');
-select pg_temp.verifica(not (4 = any(pg_temp.coada())), 'firmă cu email și mobil: nu intră înainte să plece emailul (#4)');
+select pg_temp.verifica(pg_temp.coada() = array[4, 7, 10, 11], 'lista de WhatsApp: doar firme cu site gata, mobil și niciun contact; cele cu email nu intră (' || pg_temp.coada()::text || ')');
+select pg_temp.verifica(not (9 = any(pg_temp.coada())), 'email trimis acum 25 de ore: nu intră singură în lista de WhatsApp (#9)');
 select pg_temp.verifica(not (1 = any(pg_temp.coada())) and not (3 = any(pg_temp.coada())), 'firmele de pe telefon nu intră în lista de WhatsApp');
 select pg_temp.verifica((public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 7), 1::smallint, 'Vlăduț') ->> 'trimise_azi')::integer = 1, 'WhatsApp trimis: contorul contului 1 = 1');
 select pg_temp.verifica((select whatsapp_la is not null and whatsapp_cont = 1 and etapa = 'whatsapp_trimis' from public.prospectare_firme where nr = 7), 'WhatsApp trimis: data, contul, etapa WhatsApp trimis');
 select pg_temp.verifica((select count(*) from public.prospectare_activitate a join public.prospectare_firme f on f.id = a.firma_id where f.nr = 7 and a.tip = 'whatsapp' and a.autor = 'Vlăduț' and a.detalii ->> 'cont' = '1') = 1, 'WhatsApp trimis: în activitate, cu autorul și contul');
 select pg_temp.asteapta_eroare($$select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 7), 2::smallint, 'Ștefan')$$, 'PR409', 'al doilea WhatsApp aceleiași firme e refuzat');
-select pg_temp.asteapta_eroare($$select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 8), 1::smallint, 'Ștefan')$$, 'PR422', 'WhatsApp la mai puțin de o zi după email: refuzat');
+select pg_temp.asteapta_eroare($$select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 8), 1::smallint, 'Ștefan')$$, 'PR409', 'WhatsApp pentru o firmă care a primit email: refuzat fără permisiune');
 select pg_temp.asteapta_eroare($$select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 1), 1::smallint, 'Ștefan')$$, 'PR410', 'WhatsApp pentru „Nu contacta”: refuzat');
 select pg_temp.asteapta_eroare($$select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 3), 1::smallint, 'Ștefan')$$, 'PR409', 'WhatsApp pentru o firmă de pe telefon: refuzat');
-select pg_temp.asteapta_eroare($$select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 9), 7::smallint, 'Ștefan')$$, 'PR422', 'cont WhatsApp care nu e în Setări: refuzat');
+select pg_temp.asteapta_eroare($$select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 10), 7::smallint, 'Ștefan')$$, 'PR422', 'cont WhatsApp care nu e în Setări: refuzat');
+select public.prospectare_permite_recontactare((select id from public.prospectare_firme where nr = 9), 'whatsapp', 'A cerut detalii pe WhatsApp', 'Vlăduț');
+select pg_temp.verifica((select nr from public.prospectare_whatsapp_coada(1, 0)) = 9, 'cu WhatsApp permis din fișă, firma intră prima în listă');
 select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 9), 2::smallint, 'Ștefan');
-select pg_temp.verifica((select email_la is not null and whatsapp_la is not null and etapa = 'whatsapp_trimis' from public.prospectare_firme where nr = 9), 'după email, WhatsApp: firma are ambele canale');
-update public.prospectare_setari set whatsapp_pe_cont = '{"1": 1, "2": 30, "3": 30}' where id = 1;
+select pg_temp.verifica((select email_la is not null and whatsapp_la is not null and etapa = 'whatsapp_trimis' and canal_permis is null from public.prospectare_firme where nr = 9), 'după email + permisiune, WhatsApp: firma are ambele canale');
+update public.prospectare_conturi_whatsapp set limita_zi = 1 where id = 1;
 select pg_temp.verifica((public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 10), 1::smallint, 'Ștefan') ->> 'peste_limita')::boolean, 'peste limita contului: mesajul pleacă, contorul doar avertizează');
-update public.prospectare_setari set whatsapp_pe_cont = '{"1": 30, "2": 30, "3": 30}' where id = 1;
+update public.prospectare_conturi_whatsapp set limita_zi = 30 where id = 1;
+select pg_temp.verifica((select public.prospectare_salveaza_cont_whatsapp(null, 'Cont 4', '+40 744 000 444', 25, true, 'Ștefan') ->> 'id')::integer = 4, 'Setări: cont nou de WhatsApp (#4)');
+select pg_temp.asteapta_eroare($$select public.prospectare_salveaza_cont_whatsapp(null, 'Cont greșit', '021 312 3456', 30, true, 'Ștefan')$$, 'PR422', 'Setări: contul cere număr de mobil');
+select public.prospectare_salveaza_cont_whatsapp(4::smallint, 'Cont 4', '+40 744 000 444', 25, false, 'Ștefan');
+select pg_temp.asteapta_eroare($$select public.prospectare_whatsapp_trimis((select id from public.prospectare_firme where nr = 4), 4::smallint, 'Ștefan')$$, 'PR422', 'cont dezactivat în Setări: nu se trimite de pe el');
 select pg_temp.verifica((public.prospectare_rezumat() -> 'azi' -> 'whatsapp_pe_cont' ->> '1')::integer = 2, 'rezumat: trimise azi pe contul 1 = 2');
 select public.prospectare_schimba_etapa((select id from public.prospectare_firme where nr = 11), 'nu_contacta', 'Vlăduț', 'A cerut pe WhatsApp');
-select pg_temp.verifica(pg_temp.coada() = '{}'::integer[], '„Nu contacta” iese și din lista de WhatsApp (' || pg_temp.coada()::text || ')');
+select pg_temp.verifica(pg_temp.coada() = array[4], '„Nu contacta” iese și din lista de WhatsApp (' || pg_temp.coada()::text || ')');
 select pg_temp.verifica((select whatsapp_la is null from public.prospectare_firme where nr = 8), 'refuzul nu consumă canalul');
 
 -- Roboții ---------------------------------------------------------------------------
@@ -244,3 +260,44 @@ select pg_temp.asteapta_eroare($$select public.prospectare_continua_pe_whatsapp(
 set role authenticated;
 select pg_temp.asteapta_eroare($$select public.prospectare_continua_pe_whatsapp(1)$$, '42501', 'adminul prin REST nu cheamă funcția (doar serverul)');
 reset role;
+
+-- Nișele: tabla comună (migrarea 34) ---------------------------------------------------
+select pg_temp.verifica((public.prospectare_nisa_rezerva((select id from public.prospectare_dispozitive where nume = 'robot-5'), 'instalatori', 'Muntenia') ->> 'status') = 'rezervata', 'nișa nouă: robotul o rezervă (și o creează)');
+select pg_temp.verifica((select ce_face = 'cercetare' and ce_face_detaliu = 'instalatori · Muntenia' from public.prospectare_dispozitive where nume = 'robot-5'), 'pagina Roboți: robot-5 face cercetare pe „instalatori · Muntenia”');
+select pg_temp.asteapta_eroare($$select public.prospectare_nisa_rezerva((select id from public.prospectare_dispozitive where nume = 'robot-6'), 'Instalatori ', 'muntenia')$$, 'PR409', 'nișa rezervată de alt robot: 409 (fără diferență de litere mari și spații)');
+select pg_temp.verifica((select count(*) = 1 from public.prospectare_nise), 'aceeași nișă nu apare de două ori pe tablă');
+select pg_temp.asteapta_eroare($$select public.prospectare_nisa_progres((select id from public.prospectare_dispozitive where nume = 'robot-6'), (select id from public.prospectare_nise limit 1), 5, 3, 2)$$, 'PR409', 'progresul vine doar de la robotul care a rezervat');
+update public.prospectare_nise set rezervata_la = now() - interval '25 hours', semn_la = now() - interval '25 hours';
+select pg_temp.verifica((public.prospectare_nisa_rezerva((select id from public.prospectare_dispozitive where nume = 'robot-6'), 'instalatori', 'Muntenia') ->> 'preluata_de_la') = (select id::text from public.prospectare_dispozitive where nume = 'robot-5'), 'după 24 h fără semn de viață, alt robot preia nișa');
+select pg_temp.verifica((public.prospectare_nisa_progres((select id from public.prospectare_dispozitive where nume = 'robot-6'), (select id from public.prospectare_nise limit 1), 12, 7, 5) ->> 'status') = 'in_cercetare', 'progresul: nișa trece în cercetare, cu cifrele');
+select pg_temp.verifica((select gasite = 12 and eligibile = 7 and respinse = 5 from public.prospectare_nise limit 1), 'cifrele nișei: găsite, eligibile, respinse');
+select public.prospectare_nisa_progres((select id from public.prospectare_dispozitive where nume = 'robot-6'), (select id from public.prospectare_nise limit 1), null, null, null, true);
+select pg_temp.asteapta_eroare($$select public.prospectare_nisa_rezerva((select id from public.prospectare_dispozitive where nume = 'robot-7'), 'instalatori', 'Muntenia')$$, 'PR410', 'nișa terminată nu se mai rezervă');
+select pg_temp.verifica((public.prospectare_nisa_admin('adauga', null, 'tâmplărie', 'Oltenia', 'Ștefan') ->> 'status') = 'libera', 'din admin: nișă nouă, liberă, pe tablă');
+select pg_temp.asteapta_eroare($$select public.prospectare_nisa_admin('adauga', null, 'Tâmplărie', 'oltenia', 'Ștefan')$$, 'PR409', 'din admin: aceeași nișă de două ori, refuzată');
+
+-- Evaluările: toate firmele evaluate se notează, o singură dată -----------------------
+select public.prospectare_nisa_rezerva((select id from public.prospectare_dispozitive where nume = 'robot-7'), 'tâmplărie', 'Oltenia');
+select pg_temp.verifica((public.prospectare_evaluare_verifica('["https://www.unu.ro/", "necunoscut.ro"]') -> 'noi') = '["necunoscut.ro"]'::jsonb
+  and jsonb_array_length(public.prospectare_evaluare_verifica('["unu.ro", "necunoscut.ro"]') -> 'deja_evaluate') = 1, 'verifică: domeniul deja evaluat e semnalat, cel nou nu');
+select pg_temp.verifica((public.prospectare_evaluare_noteaza((select id from public.prospectare_dispozitive where nume = 'robot-7'), (select id from public.prospectare_nise where nisa = 'tâmplărie'),
+  '[{"domeniu":"eval1.ro","nume":"Eval Unu","scor":60,"evaluare":"eligibila","email":"office@eval1.ro"},
+    {"domeniu":"eval2.ro","nume":"Eval Doi","scor":20,"evaluare":"respinsa","motiv":"site modern, bine întreținut"},
+    {"domeniu":"eval3.ro","nume":"Eval Trei","scor":70,"evaluare":"eligibila"},
+    {"domeniu":"eval4.ro","scor":30,"evaluare":"respinsa"},
+    {"domeniu":"unu.ro","scor":90,"evaluare":"eligibila"}]') -> 'deja_evaluate') = '["unu.ro"]'::jsonb, 'notează: domeniul deja evaluat e sărit („deja evaluat”)');
+select pg_temp.verifica((select count(*) = 3 from public.prospectare_firme where domeniu in ('eval1.ro', 'eval2.ro', 'eval3.ro')) and not exists (select 1 from public.prospectare_firme where domeniu = 'eval4.ro'), 'notează: respinsa fără motiv nu se scrie');
+select pg_temp.verifica((select evaluare = 'respinsa' and evaluare_motiv like 'site modern%' and scor = 20 from public.prospectare_firme where domeniu = 'eval2.ro'), 'firma respinsă e notată, cu motivul și scorul');
+select pg_temp.verifica((select gasite = 3 and eligibile = 2 and respinse = 1 and status = 'in_cercetare' from public.prospectare_nise where nisa = 'tâmplărie'), 'evaluările urcă cifrele nișei');
+select pg_temp.verifica((select count(*) from public.prospectare_activitate a join public.prospectare_firme f on f.id = a.firma_id where f.domeniu in ('eval1.ro', 'eval2.ro', 'eval3.ro') and a.tip = 'evaluare') = 3, 'fiecare evaluare intră în activitate');
+
+-- Coada comună de construcție: orice robot, orice firmă eligibilă ----------------------
+update public.prospectare_firme set etapa = 'site_gata' where etapa = 'site_in_lucru';
+delete from public.prospectare_rezervari;
+select pg_temp.verifica((public.prospectare_rezumat() ->> 'coada_constructie')::integer = 1, 'coada de construcție: doar eval1 (scor ≥ 45, email; eval3 n-are contact, eval2 e respinsă)');
+select pg_temp.verifica((public.prospectare_rezerva_urmatoarea((select id from public.prospectare_dispozitive where nume = 'robot-8'), null) ->> 'domeniu') = 'eval1.ro', 'alt robot decât cel care a cercetat ia firma din coadă');
+select pg_temp.verifica((select etapa = 'site_in_lucru' from public.prospectare_firme where domeniu = 'eval1.ro'), 'firma luată din coadă trece în „site în lucru”');
+select pg_temp.verifica((select ce_face = 'constructie' and ce_face_detaliu like '%Eval Unu' from public.prospectare_dispozitive where nume = 'robot-8'), 'pagina Roboți: robot-8 construiește Eval Unu');
+select pg_temp.verifica(public.prospectare_rezerva_urmatoarea((select id from public.prospectare_dispozitive where nume = 'robot-9'), null) is null, 'firma rezervată nu o ia alt robot (coada e goală)');
+select public.prospectare_termina((select id from public.prospectare_dispozitive where nume = 'robot-8'), (select id from public.prospectare_firme where domeniu = 'eval1.ro'), 'https://demo.test/eval1/');
+select pg_temp.verifica((select etapa = 'site_gata' and link_demo is not null from public.prospectare_firme where domeniu = 'eval1.ro'), 'site publicat: firma intră în rezerva pentru canale');

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Cpu, KeyRound, Loader2, Plus } from "lucide-react";
+import { Cpu, Hammer, KeyRound, Loader2, Plus, Search, Send, type LucideIcon } from "lucide-react";
 import { comutaRobot, creeazaRobot } from "@/app/(admin)/admin/prospectare/actions";
 import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
 import { dateTimeRo, num, relativeRo, untilRo } from "@/components/panou/ui/format";
@@ -13,6 +13,7 @@ import { SoftSelect } from "@/components/panou/ui/select";
 import { EmptyState, inputClass } from "@/components/panou/ui/states";
 import { useToast } from "@/components/panou/ui/toast";
 import type { Dispozitiv } from "@/lib/prospectare/types";
+import { cn } from "@/lib/utils";
 import { PageHead } from "./page-head";
 import { EroareCitire } from "./prezentare-eroare";
 import { linkFirma, RobotStare, stareRobot } from "./prezentare-comun";
@@ -31,6 +32,65 @@ const PROPRIETARI = [
 
 /** Mesajele acțiunii care privesc câmpul „Nume”: se arată sub el, nu doar în notificare. */
 const eroareDeNume = (message: string) => message.startsWith("Numele robotului") || message.startsWith("Există deja un robot");
+
+/** Fără sarcină raportată în ultima jumătate de oră, robotul e „Inactiv”. */
+const INACTIV_DUPA_MS = 30 * 60 * 1000;
+
+const SARCINI: Record<NonNullable<Dispozitiv["ce_face"]>, { label: string; icon: LucideIcon; culoare: string }> = {
+  cercetare: { label: "Cercetare", icon: Search, culoare: "text-sky" },
+  constructie: { label: "Construcție", icon: Hammer, culoare: "text-apricot" },
+  trimitere: { label: "Trimitere", icon: Send, culoare: "text-mint" },
+};
+
+/** Cel mai recent dintre momentele în care robotul a dat semn (cerere sau sarcină raportată). */
+function vazutLa(d: Dispozitiv): string | null {
+  const momente = [d.ultima_activitate, d.ce_face_la].filter((v): v is string => Boolean(v));
+  if (momente.length === 0) return null;
+  return momente.reduce((a, b) => (Date.parse(b) > Date.parse(a) ? b : a));
+}
+
+/** Ce face robotul acum: „Cercetare: instalatori · Muntenia · acum 3 min”, sau „Inactiv · văzut acum 2 h”. */
+function CeFace({ d, acum }: { d: Dispozitiv; acum: number }) {
+  const la = d.ce_face_la ? Date.parse(d.ce_face_la) : NaN;
+  const sarcina = d.ce_face ? SARCINI[d.ce_face] : undefined;
+  if (!sarcina || !d.ce_face_la || Number.isNaN(la) || acum - la > INACTIV_DUPA_MS) {
+    const vazut = vazutLa(d);
+    const ultima = sarcina && d.ce_face_la ? `Ultima sarcină: ${sarcina.label}${d.ce_face_detaliu ? `, ${d.ce_face_detaliu}` : ""} (${dateTimeRo(d.ce_face_la)})` : undefined;
+    return (
+      <span className="flex items-start gap-1.5 text-[12px]" title={ultima}>
+        <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-white/30" aria-hidden="true" />
+        <span className="min-w-0">
+          <span className="font-medium text-foreground/80">Inactiv</span>
+          <span className="text-muted-foreground">
+            {" · "}
+            {vazut ? (
+              <time dateTime={vazut} title={dateTimeRo(vazut)}>
+                văzut {relativeRo(vazut, acum)}
+              </time>
+            ) : (
+              "nevăzut încă"
+            )}
+          </span>
+        </span>
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-start gap-1.5 text-[12px]">
+      <sarcina.icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", sarcina.culoare)} aria-hidden="true" />
+      <span className="min-w-0 break-words">
+        <span className="font-medium text-foreground">{sarcina.label}</span>
+        {d.ce_face_detaliu ? `: ${d.ce_face_detaliu}` : null}
+        <span className="text-muted-foreground">
+          {" · "}
+          <time dateTime={d.ce_face_la} title={dateTimeRo(d.ce_face_la)}>
+            {relativeRo(d.ce_face_la, acum)}
+          </time>
+        </span>
+      </span>
+    </span>
+  );
+}
 
 function FirmaCurenta({ d, acum, scurt = false }: { d: Dispozitiv; acum: number; scurt?: boolean }) {
   const f = d.firma_curenta;
@@ -143,7 +203,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         title="Roboți"
         pill={eroare ? undefined : `${acumActivi} ${acumActivi === 1 ? "activ" : "activi"} acum`}
         pillTone="mint"
-        subtitle="Dispozitivele care cercetează firmele și construiesc site-urile demo. Fiecare robot are un token de acces, afișat o singură dată."
+        subtitle="Dispozitivele care cercetează firmele, construiesc site-urile demo și trimit emailurile. „Ce face acum” arată sarcina raportată în ultima jumătate de oră; altfel robotul apare „Inactiv”. Tokenul de acces al fiecărui robot se afișează o singură dată."
         actions={
           <Btn size="sm" variant="primary" icon={Plus} onClick={deschide}>
             Adaugă robot
@@ -167,7 +227,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
           />
         ) : (
           <>
-            <div className="hidden overflow-x-auto md:block">
+            <div className="hidden overflow-x-auto xl:block">
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-border text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
@@ -179,6 +239,9 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                     </th>
                     <th scope="col" className="py-2.5 pr-3 font-medium">
                       Stare
+                    </th>
+                    <th scope="col" className="py-2.5 pr-3 font-medium">
+                      Ce face acum
                     </th>
                     <th scope="col" className="py-2.5 pr-3 font-medium">
                       Ultima activitate
@@ -207,6 +270,9 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                       <td className="py-2.5 pr-3">
                         <RobotStare stare={stareRobot(d, acum)} />
                       </td>
+                      <td className="min-w-[200px] max-w-[300px] py-2.5 pr-3">
+                        <CeFace d={d} acum={acum} />
+                      </td>
                       <td className="whitespace-nowrap py-2.5 pr-3 text-[12px] text-muted-foreground">
                         {d.ultima_activitate ? (
                           <time dateTime={d.ultima_activitate} title={dateTimeRo(d.ultima_activitate)}>
@@ -229,7 +295,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
               </table>
             </div>
 
-            <ul className="divide-y divide-border md:hidden">
+            <ul className="divide-y divide-border xl:hidden">
               {dispozitive.map((d) => (
                 <li key={d.id} className="space-y-2 px-4 py-3">
                   <div className="flex items-center justify-between gap-2">
@@ -242,6 +308,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                   <p className="text-[11.5px] text-muted-foreground">
                     {d.proprietar} · {d.ultima_activitate ? relativeRo(d.ultima_activitate, acum) : "niciodată activ"}
                   </p>
+                  <CeFace d={d} acum={acum} />
                   <div className="flex gap-1 text-[11.5px]">
                     <span className="shrink-0 text-muted-foreground">construiește:</span>
                     <FirmaCurenta d={d} acum={acum} scurt />

@@ -38,7 +38,7 @@ export default async function EmailPage() {
       <PageHead
         title="Email"
         pill="căsuțe separate"
-        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. Fiecare firmă primește un singur email, iar cele din lista de apeluri nu primesc deloc. La 24 de ore după email, firmele cu mobil intră în lista de WhatsApp.`}
+        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. Un singur canal pe firmă: cine primește email nu mai intră în WhatsApp sau la apeluri, iar firmele contactate deja nu primesc email. Al doilea canal se permite doar din fișa firmei.`}
       />
 
       <Card>

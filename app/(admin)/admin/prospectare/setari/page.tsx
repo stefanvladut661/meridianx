@@ -4,20 +4,21 @@ import { relativeRo } from "@/components/panou/ui/format";
 import { Card } from "@/components/panou/ui/primitives";
 import { PageHead } from "@/components/panou/prospectare/page-head";
 import { EroareCitire } from "@/components/panou/prospectare/prezentare-eroare";
+import { SetariConturi } from "@/components/panou/prospectare/setari-conturi";
 import { SetariLimite } from "@/components/panou/prospectare/setari-limite";
 import { SetariSabloane } from "@/components/panou/prospectare/setari-sabloane";
-import { aziBucuresti, citesteCasute, citesteSetari } from "@/lib/prospectare/citire";
+import { aziBucuresti, citesteCasute, citesteConturiWhatsapp, citesteSetari } from "@/lib/prospectare/citire";
 import { COOKIE_UTILIZATOR, isUtilizator, UTILIZATORI } from "@/lib/prospectare/labels";
 
 export const metadata: Metadata = { title: "Setări — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-/** /admin/prospectare/setari — limitele roboților, pragul pe cont WhatsApp (avertisment), plafoanele căsuțelor, șabloanele de mesaj. */
+/** /admin/prospectare/setari — conturile WhatsApp, limitele roboților și ale căsuțelor, șabloanele de mesaj. */
 export default async function SetariPage() {
   const { azi } = aziBucuresti();
-  const [setari, casute, jar] = await Promise.all([citesteSetari(), citesteCasute(azi), cookies()]);
+  const [setari, casute, conturi, jar] = await Promise.all([citesteSetari(), citesteCasute(azi), citesteConturiWhatsapp(), cookies()]);
   const ales = jar.get(COOKIE_UTILIZATOR)?.value;
-  // Previzualizarea șabloanelor pune în {utilizator} numele ales în comutator.
+  // Previzualizarea scriptului de apel și a mesajului de după apel pune în {utilizator} numele ales în comutatorul de la Apeluri.
   const utilizator = UTILIZATORI[isUtilizator(ales) ? ales : "stefan"];
   const acum = Date.now();
 
@@ -29,7 +30,13 @@ export default async function SetariPage() {
 
   return (
     <div className="space-y-4">
-      <PageHead title="Setări prospectare" pill={pill} subtitle="Limitele care opresc roboții, pragul de avertisment pe WhatsApp și textele pe care le folosesc oamenii la apel și pe WhatsApp." />
+      <PageHead
+        title="Setări prospectare"
+        pill={pill}
+        subtitle="Conturile de pe care trimiteți WhatsApp, limitele care opresc roboții și căsuțele, și textele pe care le folosiți la apel și pe WhatsApp."
+      />
+
+      <SetariConturi conturi={conturi.ok ? conturi.data : null} eroare={conturi.ok ? null : conturi.message} />
 
       {!setari.ok ? (
         <Card>
@@ -40,9 +47,9 @@ export default async function SetariPage() {
           <SetariLimite
             setari={{
               incercari_max: setari.data.incercari_max,
-              whatsapp_pe_cont: setari.data.whatsapp_pe_cont,
               rezervare_ore: setari.data.rezervare_ore,
               cereri_pe_minut: setari.data.cereri_pe_minut,
+              scor_minim_constructie: setari.data.scor_minim_constructie,
             }}
             casute={casute.ok ? casute.data : null}
             eroareCasute={casute.ok ? null : casute.message}

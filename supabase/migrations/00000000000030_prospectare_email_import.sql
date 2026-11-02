@@ -598,5 +598,5 @@ select 'importul și autentificarea doar pentru cheia de service',
   not has_function_privilege('anon', 'public.prospectare_autentifica(text)', 'execute')
   and not has_function_privilege('authenticated', 'public.prospectare_upsert_firme(jsonb, text, text, boolean)', 'execute')
 union all
-select 'toate cele 8 tabele ale prospectării au RLS',
-  (select count(*) = 8 from pg_class where relname like 'prospectare\_%' and relkind = 'r' and relrowsecurity and relnamespace = 'public'::regnamespace);
+select 'toate tabelele prospectării (cel puțin 8) au RLS',
+  (select count(*) >= 8 and bool_and(relrowsecurity) from pg_class where relname like 'prospectare\_%' and relkind = 'r' and relnamespace = 'public'::regnamespace);

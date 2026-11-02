@@ -7,7 +7,7 @@ import { getAdminUser } from "@/lib/supabase/clients";
 import { db, failure, NO_DB, rpc, SESSION_EXPIRED } from "@/lib/prospectare/db";
 import { COOKIE_UTILIZATOR, isUtilizator, UTILIZATORI } from "@/lib/prospectare/labels";
 import { hashToken, newRobotToken } from "@/lib/prospectare/tokens";
-import type { Utilizator } from "@/lib/prospectare/types";
+import type { ContWhatsapp, Utilizator } from "@/lib/prospectare/types";
 
 /**
  * Acțiunile paginilor Prospectare. Fiecare verifică întâi sesiunea de admin
@@ -134,12 +134,13 @@ export async function salveazaNotaLista(input: unknown): Promise<ActionResult> {
 
 const whatsappSchema = z.object({
   firmaId: z.uuid("Firma nu e validă."),
-  cont: z.coerce.number().int("Alege contul WhatsApp.").min(1, "Alege contul WhatsApp.").max(9, "Alege contul WhatsApp."),
+  cont: z.coerce.number().int("Alege contul WhatsApp.").min(1, "Alege contul WhatsApp.").max(99, "Alege contul WhatsApp."),
 });
 
 export interface WhatsappTrimis {
   nr: number;
   cont: number;
+  contNume: string;
   trimiseAzi: number;
   limita: number;
   /** Contul a trecut de limita zilei: mesajul a plecat, e doar avertisment. */
@@ -156,10 +157,11 @@ export async function trimiteWhatsapp(input: unknown): Promise<ActionResult<What
   if (!who) return { ok: false, message: SESSION_EXPIRED };
   const parsed = whatsappSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
-  const result = await rpc<{ nr: number; cont: number; trimise_azi: number; limita: number; peste_limita: boolean }>("prospectare_whatsapp_trimis", {
+  // Pe WhatsApp, autorul e contul de pe care pleacă mesajul (lista e comună, fără Ștefan / Vlăduț).
+  const result = await rpc<{ nr: number; cont: number; cont_nume: string; trimise_azi: number; limita: number; peste_limita: boolean }>("prospectare_whatsapp_trimis", {
     p_firma: parsed.data.firmaId,
     p_cont: parsed.data.cont,
-    p_autor: who.nume,
+    p_autor: null,
   });
   if (!result.ok) return { ok: false, message: result.message };
   gata();
@@ -167,9 +169,9 @@ export async function trimiteWhatsapp(input: unknown): Promise<ActionResult<What
   return {
     ok: true,
     message: r.peste_limita
-      ? `WhatsApp notat pe contul ${r.cont}. Atenție: contul are ${r.trimise_azi} mesaje azi, peste limita de ${r.limita}.`
-      : `WhatsApp notat pe contul ${r.cont} (${r.trimise_azi}/${r.limita} azi). Firma nu mai primește altul.`,
-    data: { nr: r.nr, cont: r.cont, trimiseAzi: r.trimise_azi, limita: r.limita, pesteLimita: r.peste_limita },
+      ? `WhatsApp notat pe ${r.cont_nume}. Atenție: contul are ${r.trimise_azi} mesaje azi, peste limita de ${r.limita}.`
+      : `WhatsApp notat pe ${r.cont_nume} (${r.trimise_azi}/${r.limita} azi). Firma nu mai primește alt canal.`,
+    data: { nr: r.nr, cont: r.cont, contNume: r.cont_nume, trimiseAzi: r.trimise_azi, limita: r.limita, pesteLimita: r.peste_limita },
   };
 }
 
@@ -304,9 +306,7 @@ const limiteSchema = z.object({
   incercariMax: z.coerce.number().int("Încercările: un număr întreg.").min(1, "Încercări: între 1 și 10.").max(10, "Încercări: între 1 și 10."),
   rezervareOre: z.coerce.number().int("Rezervarea: un număr întreg de ore.").min(1, "Rezervarea: între 1 și 24 de ore.").max(24, "Rezervarea: între 1 și 24 de ore."),
   cereriPeMinut: z.coerce.number().int().min(10, "Cereri pe minut: între 10 și 6000.").max(6000, "Cereri pe minut: între 10 și 6000."),
-  whatsappPeCont: z
-    .record(z.string().regex(/^[1-9]$/), z.coerce.number().int().min(0, "Limita pe cont: între 0 și 500.").max(500, "Limita pe cont: între 0 și 500."))
-    .refine((v) => Object.keys(v).length >= 1 && Object.keys(v).length <= 9, "Între 1 și 9 conturi WhatsApp."),
+  scorMinimConstructie: z.coerce.number().int("Scorul minim: un număr întreg.").min(0, "Scorul minim: între 0 și 1000.").max(1000, "Scorul minim: între 0 și 1000."),
 });
 
 export async function salveazaLimite(input: unknown): Promise<ActionResult> {
@@ -322,7 +322,7 @@ export async function salveazaLimite(input: unknown): Promise<ActionResult> {
       incercari_max: parsed.data.incercariMax,
       rezervare_ore: parsed.data.rezervareOre,
       cereri_pe_minut: parsed.data.cereriPeMinut,
-      whatsapp_pe_cont: parsed.data.whatsappPeCont,
+      scor_minim_constructie: parsed.data.scorMinimConstructie,
       actualizat_la: new Date().toISOString(),
       actualizat_de: who.nume,
     })
@@ -330,6 +330,95 @@ export async function salveazaLimite(input: unknown): Promise<ActionResult> {
   if (error) return { ok: false, message: failure(error).message };
   gata();
   return { ok: true, message: "Limitele sunt salvate." };
+}
+
+// ---------------------------------------------------------------------------
+// Conturile de WhatsApp (Setări)
+// ---------------------------------------------------------------------------
+
+const contSchema = z.object({
+  id: z.coerce.number().int().min(1).max(99).nullable().optional(),
+  nume: z.string().trim().min(1, "Contul are nevoie de un nume.").max(60, "Numele: cel mult 60 de caractere."),
+  telefon: z
+    .string()
+    .trim()
+    .refine((v) => /^(40|0)?7\d{8}$/.test(v.replace(/\D/g, "")), "Numărul contului: un mobil românesc, ex. +40 771 464 310."),
+  limita: z.coerce.number().int("Limita: un număr întreg.").min(0, "Limita pe zi: între 0 și 1000.").max(1000, "Limita pe zi: între 0 și 1000."),
+  activ: z.boolean(),
+});
+
+export async function salveazaContWhatsapp(input: unknown): Promise<ActionResult<ContWhatsapp>> {
+  const who = await cine();
+  if (!who) return { ok: false, message: SESSION_EXPIRED };
+  const parsed = contSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const { id, nume, telefon, limita, activ } = parsed.data;
+  const result = await rpc<ContWhatsapp>("prospectare_salveaza_cont_whatsapp", {
+    p_id: id ?? null,
+    p_nume: nume,
+    p_telefon: telefon,
+    p_limita: limita,
+    p_activ: activ,
+    p_autor: who.nume,
+  });
+  if (!result.ok) return { ok: false, message: result.message };
+  gata();
+  return { ok: true, message: id ? `${nume} e salvat${activ ? "" : " (dezactivat)"}.` : `${nume} e adăugat.`, data: result.data };
+}
+
+// ---------------------------------------------------------------------------
+// Recontactare pe alt canal (din fișa firmei)
+// ---------------------------------------------------------------------------
+
+const recontactareSchema = z.object({
+  firmaId: z.uuid("Firma nu e validă."),
+  canal: z.enum(["email", "whatsapp", "telefon"], "Alege canalul."),
+  motiv: z.string().trim().min(5, "Scrie motivul recontactării (cel puțin 5 caractere).").max(500, "Motivul: cel mult 500 de caractere."),
+});
+
+/** Un admin permite al doilea canal; firma intră în lista acelui canal. Se scrie în activitate. */
+export async function permiteRecontactare(input: unknown): Promise<ActionResult> {
+  const who = await cine();
+  if (!who) return { ok: false, message: SESSION_EXPIRED };
+  const parsed = recontactareSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const result = await rpc<{ nr: number; canal: string }>("prospectare_permite_recontactare", {
+    p_firma: parsed.data.firmaId,
+    p_canal: parsed.data.canal,
+    p_motiv: parsed.data.motiv,
+    p_autor: who.nume,
+  });
+  if (!result.ok) return { ok: false, message: result.message };
+  gata();
+  const unde = parsed.data.canal === "email" ? "robotul de email o poate lua" : parsed.data.canal === "whatsapp" ? "intră în lista de WhatsApp" : "intră în rezerva pentru apeluri";
+  return { ok: true, message: `Recontactare permisă: ${unde}.` };
+}
+
+// ---------------------------------------------------------------------------
+// Nișele (tabla comună a roboților)
+// ---------------------------------------------------------------------------
+
+const nisaSchema = z.discriminatedUnion("actiune", [
+  z.object({ actiune: z.literal("adauga"), nisa: z.string().trim().min(1, "Scrie nișa.").max(120), zona: z.string().trim().min(1, "Scrie zona.").max(120) }),
+  z.object({ actiune: z.literal("elibereaza"), id: z.coerce.number().int().positive() }),
+]);
+
+export async function nisaAdmin(input: unknown): Promise<ActionResult> {
+  const who = await cine();
+  if (!who) return { ok: false, message: SESSION_EXPIRED };
+  const parsed = nisaSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const d = parsed.data;
+  const result = await rpc<{ nisa: string; zona: string }>("prospectare_nisa_admin", {
+    p_actiune: d.actiune,
+    p_id: d.actiune === "elibereaza" ? d.id : null,
+    p_nisa: d.actiune === "adauga" ? d.nisa : null,
+    p_zona: d.actiune === "adauga" ? d.zona : null,
+    p_autor: who.nume,
+  });
+  if (!result.ok) return { ok: false, message: result.message };
+  gata();
+  return { ok: true, message: d.actiune === "adauga" ? `„${result.data.nisa} · ${result.data.zona}” e pe tablă, liberă.` : `„${result.data.nisa} · ${result.data.zona}” e liberă: o poate lua orice robot.` };
 }
 
 const sablonSchema = z.object({

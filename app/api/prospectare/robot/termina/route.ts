@@ -30,6 +30,8 @@ export const POST = robotRoute(schema, async (robot, body) => {
     p_detalii: body.detalii ?? {},
   });
   if (!result.ok) return result;
+  // Pagina Roboți: ce a făcut robotul ultima dată.
+  await rpc("prospectare_robot_ce_face", { p_dispozitiv: robot.id, p_tip: "constructie", p_detaliu: `a publicat #${String(result.data.nr ?? "")} (site gata)` });
   return { ok: true, data: { firma: result.data } };
 });
 

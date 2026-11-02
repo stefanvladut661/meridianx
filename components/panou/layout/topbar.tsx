@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Bell, ChevronRight, Command, Lock, LogOut, Search, ShieldCheck, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Menu, MenuLabel, MenuSeparator, menuItemClass } from "../ui/menu";
@@ -42,6 +42,15 @@ export function PanouTopbar({
   const pathname = usePathname();
   const meta = getScreenMeta(pathname);
   const active = activeModule(pathname);
+  const subRef = useRef<HTMLElement>(null);
+
+  // Pe telefon, pastila subpaginii curente se aduce în mijlocul benzii (fără animație), ca să se vadă unde ești.
+  useEffect(() => {
+    const bara = subRef.current;
+    const curenta = bara?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!bara || !curenta || bara.scrollWidth <= bara.clientWidth) return;
+    bara.scrollLeft = curenta.offsetLeft - bara.offsetLeft - (bara.clientWidth - curenta.offsetWidth) / 2;
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/[0.06] pu-glass">
@@ -151,7 +160,7 @@ export function PanouTopbar({
 
       {selectors ? <div className="flex border-t border-white/[0.05] px-4 py-2 sm:px-6 xl:hidden"><div className="pu-no-scrollbar overflow-x-auto">{selectors}</div></div> : null}
 
-      <nav aria-label={`Subpagini ${active.label}`} className="pu-no-scrollbar flex gap-1.5 overflow-x-auto border-t border-white/[0.05] px-4 py-2 sm:px-6 lg:hidden">
+      <nav ref={subRef} aria-label={`Subpagini ${active.label}`} className="pu-no-scrollbar flex gap-1.5 overflow-x-auto border-t border-white/[0.05] px-4 py-2 sm:px-6 lg:hidden">
         {active.items.map((item) => {
           const isActive = isItemActive(pathname, item, active);
           return (
@@ -161,7 +170,8 @@ export function PanouTopbar({
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "whitespace-nowrap rounded-full border px-3 py-1.5 text-[12px] transition-colors",
-                isActive ? "border-white/[0.12] bg-white/[0.08] text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+                // Contrast măsurat pe bara de sus (#0C0C0F): inactiv foreground/80 = 11:1; alb pe lav/16 = 14,6:1.
+                isActive ? "border-lav/45 bg-lav/[0.16] font-semibold text-white" : "border-transparent text-foreground/80 hover:bg-white/[0.05] hover:text-white"
               )}
             >
               {item.label}

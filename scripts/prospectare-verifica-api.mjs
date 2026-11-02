@@ -94,6 +94,31 @@ check("tip necunoscut → 422", r.status === 422, r);
 r = await call("eveniment", { tip: "email_de_trimis", casuta: "stefan@casuta-test.ro" }, T1);
 check("fără domeniu și fără nr → 422", r.status === 422, r);
 
+// Nișele: tabla comună. Numele nișei e unic pe rulare, ca proba să meargă și pe o bază folosită.
+const nisaTest = `api-nisa-${Date.now()}`;
+r = await call("nisa", { actiune: "rezerva", nisa: nisaTest, zona: "Test" }, T1);
+const nisaId = r.json?.nisa?.id;
+check("nisa rezerva → 200, rezervată", r.status === 200 && r.json?.nisa?.status === "rezervata" && Number.isInteger(nisaId), r);
+r = await call("nisa", { actiune: "rezerva", nisa: nisaTest.toUpperCase(), zona: "test" }, T2);
+check("nisa rezervată de alt robot → 409 cu cine și de când", r.status === 409 && /api-robot-1/.test(r.json?.eroare?.mesaj ?? ""), r);
+r = await call("nisa", { actiune: "progres", nisa_id: nisaId, gasite: 3 }, T2);
+check("progres de la alt robot → 409", r.status === 409, r);
+r = await call("nisa", { actiune: "progres", nisa_id: nisaId, gasite: 3, eligibile: 1, respinse: 2 }, T1);
+check("progres → 200, în cercetare", r.status === 200 && r.json?.nisa?.status === "in_cercetare", r);
+
+// Evaluările: deja evaluat → sărit; respinse cu motiv.
+const domEval = `api-eval-${Date.now()}.ro`;
+r = await call("evaluare", { actiune: "verifica", domenii: ["https://www.api-gata.ro/", domEval] }, T1);
+check("verifica: domeniul existent e „deja evaluat”, cel nou nu", r.status === 200 && r.json?.deja_evaluate?.some((d) => d.domeniu === "api-gata.ro") && r.json?.noi?.includes(domEval), r);
+r = await call("evaluare", { actiune: "noteaza", nisa_id: nisaId, firme: [{ domeniu: domEval, scor: 20, evaluare: "respinsa" }] }, T1);
+check("noteaza: respinsă fără motiv → 422", r.status === 422, r);
+r = await call("evaluare", { actiune: "noteaza", nisa_id: nisaId, firme: [{ domeniu: domEval, nume: "API Eval", scor: 20, evaluare: "respinsa", motiv: "site modern" }, { domeniu: "api-gata.ro", scor: 90, evaluare: "eligibila" }] }, T1);
+check("noteaza: 1 adăugată, cea existentă sărită", r.status === 200 && r.json?.adaugate === 1 && r.json?.deja_evaluate?.includes("api-gata.ro"), r);
+r = await call("nisa", { actiune: "termina", nisa_id: nisaId }, T1);
+check("nisa termina → 200, terminată", r.status === 200 && r.json?.nisa?.status === "terminata", r);
+r = await call("nisa", { actiune: "rezerva", nisa: nisaTest, zona: "Test" }, T2);
+check("nișa terminată nu se mai rezervă → 409", r.status === 409, r);
+
 // Limita de cereri: robotul 2 face cereri până trece de limita pe minut din Setări.
 let limit = null;
 for (let i = 0; i < 200 && !limit; i++) {

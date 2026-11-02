@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightLeft, Bot, CircleSlash, Cpu, Lock, Mail, MailX, MessageCircle, Phone, Reply, Search, StickyNote, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, Bot, CircleSlash, ClipboardCheck, Cpu, Lock, LockOpen, Mail, MailX, MessageCircle, Phone, Reply, Search, StickyNote, type LucideIcon } from "lucide-react";
 import { dateTimeRo, relativeRo } from "@/components/panou/ui/format";
 import type { ActivitateCuFirma } from "@/lib/prospectare/citire";
 import { CANALE, ETAPE, isCanal, isEtapa, REZULTATE } from "@/lib/prospectare/labels";
@@ -24,6 +24,8 @@ const TIPURI: Record<string, { icon: LucideIcon; label: string }> = {
   apel: { icon: Phone, label: "Apel" },
   nota: { icon: StickyNote, label: "Notă" },
   canal: { icon: Lock, label: "Canal" },
+  recontactare: { icon: LockOpen, label: "Recontactare" },
+  evaluare: { icon: ClipboardCheck, label: "Evaluare" },
   import: { icon: ArrowRightLeft, label: "Listă" },
   etapa: { icon: CircleSlash, label: "Etapă" },
 };
@@ -39,6 +41,12 @@ const ora = (v: unknown): string | null => {
 };
 
 const RASPUNS: Record<string, string> = { pozitiv: "pozitiv", nu: "„NU”", automat: "automat", altul: "de citit" };
+
+/** `canale_folosite` de la o recontactare: „email și WhatsApp”. */
+const canaleFolosite = (v: unknown): string | null => {
+  const lista = Array.isArray(v) ? v.filter(isCanal).map((c) => (c === "email" ? "email" : c === "whatsapp" ? "WhatsApp" : "telefon")) : [];
+  return lista.length ? lista.join(" și ") : null;
+};
 
 /** Datele canalelor cu care a venit firma din import (`email_la`, `whatsapp_la`, `telefon_la`). */
 const CANALE_LA: { cheie: string; canal: Canal }[] = [
@@ -100,8 +108,9 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
     case "whatsapp": {
       // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
       if (d.continuare_apel === true) return { ce: "Continuare apel pe WhatsApp", amanunt: "După „Interesat”. Firma rămâne pe telefon; canalul WhatsApp nu se folosește." };
-      const cont = numar(d.cont);
-      return { ce: cont ? `WhatsApp trimis de pe contul ${cont}` : "WhatsApp trimis", amanunt: null };
+      // „Cont 2” din migrarea 34; rândurile vechi au doar numărul contului.
+      const cont = text(d.cont_nume) ?? (numar(d.cont) ? `contul ${numar(d.cont)}` : null);
+      return { ce: cont ? `WhatsApp trimis de pe ${cont}` : "WhatsApp trimis", amanunt: null };
     }
     case "site":
       return { ce: "Site demo gata", amanunt: null };
@@ -115,6 +124,19 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
     }
     case "nota":
       return { ce: text(d.text) ?? "Notă actualizată", amanunt: null };
+    case "recontactare": {
+      // Din migrarea 34: un admin permite al doilea canal din fișă, cu motiv. Cine, apare la autor.
+      const folosite = canaleFolosite(d.canale_folosite);
+      const amanunt = [citat(text(d.motiv)), folosite ? `A primit deja ${folosite}.` : null].filter(Boolean).join(" · ");
+      return { ce: `Recontactare permisă: ${canal(d.canal) ?? "alt canal"}`, amanunt: amanunt || null };
+    }
+    case "evaluare": {
+      const scor = numar(d.scor);
+      const fel = d.evaluare === "eligibila" ? "eligibilă" : d.evaluare === "respinsa" ? "respinsă" : (text(d.evaluare) ?? "fără verdict");
+      const nisa = text(d.nisa);
+      const amanunt = [text(d.motiv), nisa ? `Nișa: ${nisa}` : null].filter(Boolean).join(" · ");
+      return { ce: `Evaluată: ${fel}${scor !== null ? `, scor ${scor}` : ""}`, amanunt: amanunt || null };
+    }
     case "creata": {
       const start = d.etapa;
       // Doar numele canalelor: datele lor sunt în fișa firmei, aici rândul rămâne scurt.
@@ -176,8 +198,8 @@ export function ActivitateFeed({
                 <time dateTime={a.la} title={dateTimeRo(a.la)}>
                   {relativeRo(a.la, acum)}
                 </time>
-                {/* La un rând de tip „canal”, ce s-a întâmplat spune deja canalul. */}
-                {a.canal && a.tip !== "canal" ? (
+                {/* La „canal” și „recontactare”, ce s-a întâmplat spune deja canalul. */}
+                {a.canal && a.tip !== "canal" && a.tip !== "recontactare" ? (
                   <>
                     <span aria-hidden="true">·</span>
                     <span>{CANALE[a.canal]?.label ?? a.canal}</span>

@@ -9,7 +9,7 @@ delete from public.prospectare_rezervari;
 delete from public.prospectare_liste_zi;
 insert into public.prospectare_firme (nr, nume, domeniu, scor, etapa) select 9000 + g, 'Conc ' || g, 'conc' || g || '.ro', g, 'site_in_lucru' from generate_series(1, 30) g;
 insert into public.prospectare_firme (nr, nume, domeniu, scor, telefon, etapa, link_demo) select 9100 + g, 'Gata ' || g, 'concgata' || g || '.ro', g, '0745 100 ' || lpad(g::text, 3, '0'), 'site_gata', 'https://demo.test/' || g || '/' from generate_series(1, 100) g;
-insert into public.prospectare_firme (nr, nume, domeniu, scor, telefon, email, email_la, etapa, link_demo) values (9300, 'WhatsApp deodată', 'concwa.ro', 1, '0745 930 930', 'office@concwa.ro', now() - interval '2 days', 'email_trimis', 'https://demo.test/wa/');
+insert into public.prospectare_firme (nr, nume, domeniu, scor, telefon, email, email_la, etapa, link_demo, canal_permis, canal_permis_motiv) values (9300, 'WhatsApp deodată', 'concwa.ro', 1, '0745 930 930', 'office@concwa.ro', now() - interval '2 days', 'email_trimis', 'https://demo.test/wa/', 'whatsapp', 'proba de concurență');
 insert into public.prospectare_dispozitive (nume, proprietar, token_hash) select 'conc-' || g, 'test', encode(sha256(('conc-' || g)::bytea), 'hex') from generate_series(1, 10) g on conflict do nothing;
 SQL
 for g in $(seq 1 10); do q -c "select public.prospectare_rezerva_urmatoarea((select id from public.prospectare_dispozitive where nume = 'conc-$g'), 'construire') ->> 'nr'" > "$W/r$g" 2>&1 & done

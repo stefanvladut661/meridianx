@@ -16,7 +16,8 @@ import { firmeText, TAP_SM } from "./apeluri-ui";
  * Importul din rezervă în lista de apeluri a zilei (ImportPanel din prototip).
  * Doar telefon: lista de WhatsApp e continuă, firmele intră singure în ea.
  * Rezerva vine grupată de la server (`citesteRezerva`): firme cu site gata,
- * fără email și fără WhatsApp. „X firme disponibile” se numără aici, fără să
+ * fără niciun contact (un singur canal pe firmă), plus cele cu apel permis
+ * din fișă. „X firme disponibile” se numără aici, fără să
  * aducem firmele. Importul îl face baza, atomic: firmele primesc canalul
  * Telefon în aceeași tranzacție în care intră în listă.
  */
@@ -266,7 +267,7 @@ export function PanouRezerva({
               </label>
               <label
                 className="flex min-h-11 items-center gap-2 text-[13px] text-muted-foreground sm:min-h-0 sm:text-[12px]"
-                title="Telefonul e separat: firmele care au primit email sau WhatsApp nu intră în lista de apeluri"
+                title="Un singur canal pe firmă: cele care au primit email sau WhatsApp nu intră în lista de apeluri, decât cu apel permis din fișă"
               >
                 <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
                 fără email și fără WhatsApp
@@ -297,8 +298,9 @@ export function PanouRezerva({
               </Btn>
             </div>
             <p className="text-[12px] leading-relaxed text-muted-foreground sm:text-[11px]">
-              Telefonul e separat: intră doar firme cu site gata care n-au primit nici email, nici WhatsApp. La import primesc canalul Telefon și nu mai primesc email
-              sau WhatsApp. Excepția: după „Interesat” poți continua pe WhatsApp, iar asta apare doar în activitate.
+              Un singur canal pe firmă: intră doar firme cu site gata care n-au primit niciun contact, plus cele cu apel permis din fișa firmei. La import primesc
+              canalul Telefon și nu mai primesc email sau WhatsApp; alt canal se permite doar din fișă. Excepția: după „Interesat” poți continua pe WhatsApp, iar asta
+              apare doar în activitate.
             </p>
           </div>
         ) : null}

@@ -68,7 +68,7 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
       <PageHead
         title="Firme"
         pill="tabel complet"
-        subtitle="Toate firmele cercetate, cu etapa, canalele folosite și site-ul demo. Click pe un rând pentru detalii și cronologie."
+        subtitle="Toate firmele cercetate, cu etapa, canalul folosit și site-ul demo. Click pe un rând pentru detalii, cronologie și recontactare pe alt canal."
         actions={<FirmeExport href={cu(filtruQ, `${CALE}/export`)} total={total} />}
       />
 
@@ -81,7 +81,7 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
 
       <Card padded={false} className="overflow-hidden">
         <div className="border-b border-border px-4 py-3">
-          <SectionTitle title={total === null ? "Firme" : firmeCuNumar(total)} hint="Bordură stângă = etapa firmei. Fiecare canal se folosește o singură dată." action={<FirmeOrdine />} />
+          <SectionTitle title={total === null ? "Firme" : firmeCuNumar(total)} hint="Bordură stângă = etapa firmei. Un singur canal pe firmă; al doilea se permite doar din fișă." action={<FirmeOrdine />} />
         </div>
 
         {!firme.ok ? (

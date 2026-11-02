@@ -49,6 +49,16 @@ export interface Firma {
   whatsapp_cont: number | null;
   /** Când a intrat în lista de apeluri; se golește doar după ultima încercare fără răspuns. */
   telefon_la: string | null;
+  /** Al doilea canal permis de un admin din fișă (cu motiv); se consumă când e folosit. */
+  canal_permis: Canal | null;
+  canal_permis_motiv: string | null;
+  canal_permis_la: string | null;
+  canal_permis_de: string | null;
+  /** Evaluarea robotului: eligibilă sau respinsă (cu motiv și scor). */
+  evaluare: "eligibila" | "respinsa" | null;
+  evaluare_motiv: string | null;
+  evaluat_la: string | null;
+  nisa_id: number | null;
   link_demo: string | null;
   captura_url: string | null;
   lot: string | null;
@@ -122,12 +132,57 @@ export interface Dispozitiv {
   firma_curenta: { id: string; nr: number; nume: string; expira_la: string; tip_lucru: string } | null;
   site_uri_azi: number;
   site_uri_total: number;
+  /** Ce face acum: cercetare (pe o nișă), construcție (o firmă) sau trimitere (emailuri). */
+  ce_face: "cercetare" | "constructie" | "trimitere" | null;
+  ce_face_detaliu: string | null;
+  ce_face_la: string | null;
+}
+
+/** Un cont de WhatsApp de pe care se trimite (din Setări). */
+export interface ContWhatsapp {
+  id: number;
+  nume: string;
+  telefon: string;
+  /** Mesaje pe zi; peste limită e doar avertisment. */
+  limita_zi: number;
+  activ: boolean;
+  ordine: number;
+  actualizat_la: string;
+  actualizat_de: string | null;
+}
+
+export const NISE_STATUS_IDS = ["libera", "rezervata", "in_cercetare", "terminata"] as const;
+export type NisaStatus = (typeof NISE_STATUS_IDS)[number];
+
+/** O nișă de pe tabla comună a roboților (nișă + zonă). */
+export interface Nisa {
+  id: number;
+  nisa: string;
+  zona: string;
+  status: NisaStatus;
+  dispozitiv_id: string | null;
+  /** Numele robotului care a rezervat-o. */
+  dispozitiv: string | null;
+  rezervata_la: string | null;
+  semn_la: string | null;
+  terminata_la: string | null;
+  gasite: number;
+  eligibile: number;
+  respinse: number;
+  nota: string | null;
+  creat_la: string;
+  creat_de: string | null;
+  /** Rezervată, dar fără semn de viață de 24 de ore: alt robot o poate prelua. */
+  expirata: boolean;
 }
 
 export interface Setari {
   incercari_max: number;
+  /** Vechi: limitele pe cont stau acum în `prospectare_conturi_whatsapp`. */
   whatsapp_pe_cont: Record<string, number>;
   rezervare_ore: number;
+  /** Scorul minim pentru coada comună de construcție. */
+  scor_minim_constructie: number;
   cereri_pe_minut: number;
   sablon_whatsapp_primul: string;
   sablon_whatsapp_dupa_apel: string;

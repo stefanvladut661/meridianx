@@ -27,12 +27,16 @@ const VARIABILE: { v: string; ce: string }[] = [
   { v: "{persoana_contact}", ce: "persoana de contact (dacă lipsește, salutul rămâne fără nume)" },
   { v: "{link_demo}", ce: "linkul site-ului demo" },
   { v: "{oras}", ce: "orașul firmei" },
-  { v: "{utilizator}", ce: "cine lucrează: Ștefan sau Vlăduț, din comutator" },
+  { v: "{utilizator}", ce: "cine sună: Ștefan sau Vlăduț, din comutatorul de la Apeluri (în primul mesaj WhatsApp rămâne gol)" },
 ];
 const CUNOSCUTE = new Set(VARIABILE.map((x) => x.v));
 
 const SABLOANE: { cheie: Cheie; label: string; hint: string }[] = [
-  { cheie: "sablon_whatsapp_primul", label: "WhatsApp — primul mesaj", hint: "Mesajul din lista de WhatsApp. Fiecare firmă îl primește o singură dată." },
+  {
+    cheie: "sablon_whatsapp_primul",
+    label: "WhatsApp — primul mesaj",
+    hint: "Mesajul din lista de WhatsApp. Fiecare firmă îl primește o singură dată, de pe contul ales.",
+  },
   { cheie: "sablon_whatsapp_dupa_apel", label: "WhatsApp — după apel „Interesat”", hint: "Se deschide automat când marchezi o firmă interesată la telefon." },
   { cheie: "sablon_script_apel", label: "Script de apel", hint: "Se vede pliabil pe fiecare card din Apeluri azi." },
 ];
@@ -42,6 +46,9 @@ const MAX = 2000;
 
 /** Firmă inventată, doar pentru previzualizare. */
 const EXEMPLU = { nume: "Tâmplăria Exemplu", persoana_contact: "Ana Popescu", link_demo: "https://demo-exemplu.meridianx.ro", oras: "Cluj-Napoca" };
+
+/** În lista de WhatsApp se trimite de pe un cont, nu în numele cuiva: acolo {utilizator} rămâne gol. */
+const faraUtilizator = (cheie: Cheie): boolean => cheie === "sablon_whatsapp_primul";
 
 const necunoscute = (text: string): string[] => [...new Set(text.match(/\{[^{}\s]{1,40}\}/g) ?? [])].filter((v) => !CUNOSCUTE.has(v));
 
@@ -147,6 +154,11 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
                     {eroare}
                   </span>
                 ) : null}
+                {faraUtilizator(s.cheie) && valoare.includes("{utilizator}") ? (
+                  <p className="mt-1 text-[11.5px] text-apricot">
+                    {"{utilizator}"} rămâne gol aici: pe WhatsApp trimiteți de pe un cont, nu în numele cuiva. Scoate-l din mesaj.
+                  </p>
+                ) : null}
                 {gresite.length ? (
                   <p className="mt-1 text-[11.5px] text-apricot">
                     {gresite.length === 1 ? "Variabilă necunoscută" : "Variabile necunoscute"}: {gresite.join(", ")}. Rămân așa, ca text, în mesaj.
@@ -155,7 +167,7 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
                 <div className="mt-2 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] px-3 py-2.5">
                   <p className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Exemplu · firmă inventată ({EXEMPLU.nume})</p>
                   <p className="mt-1 whitespace-pre-wrap break-words text-[12.5px] leading-relaxed text-foreground/85">
-                    {umpleSablon(valoare, EXEMPLU, utilizator) || <span className="text-muted-foreground">Șablonul e gol.</span>}
+                    {umpleSablon(valoare, EXEMPLU, faraUtilizator(s.cheie) ? "" : utilizator) || <span className="text-muted-foreground">Șablonul e gol.</span>}
                   </p>
                 </div>
               </div>

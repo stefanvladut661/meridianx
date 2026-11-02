@@ -2,24 +2,34 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Check, MessageCircle } from "lucide-react";
+import { Ban, Check, MessageCircle, Repeat } from "lucide-react";
 import { schimbaEtapa, trimiteWhatsapp } from "@/app/(admin)/admin/prospectare/actions";
 import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
 import { dayMonthRo, num, timeRo } from "@/components/panou/ui/format";
 import { Btn, btnClass, Card, Pill } from "@/components/panou/ui/primitives";
 import { useToast } from "@/components/panou/ui/toast";
 import { linkWhatsApp, numarAfisat, numarScurt } from "@/lib/prospectare/contact";
-import type { FirmaRand } from "@/lib/prospectare/types";
+import type { ContWhatsapp, FirmaRand } from "@/lib/prospectare/types";
 import { cn } from "@/lib/utils";
 import { TAP_SM } from "./apeluri-ui";
-import { CanaleBadge } from "./stage-badge";
+import { CanaleBadge, canaleFolosite } from "./stage-badge";
 
 /**
  * WhatsAppCard din prototip, pe lista continuă: firma, numărul fără 0, mesajul
- * pregătit și trimiterea. Firma se marchează ÎNAINTE de deschiderea
- * conversației (ca emailul): baza pune WhatsApp-ul o singură dată, deci dacă
- * celălalt a luat-o între timp, cererea e refuzată și nimeni nu scrie de două ori.
+ * pregătit și trimiterea de pe contul ales. Firma se marchează ÎNAINTE de
+ * deschiderea conversației (ca emailul): baza pune WhatsApp-ul o singură dată,
+ * deci dacă alt telefon a luat-o între timp, cererea e refuzată și nimeni nu
+ * scrie de două ori. Firmele cu WhatsApp permis din fișă poartă motivul și cine l-a permis.
  */
+
+/** Contul de pe care se trimite: numele și numărul lui, din Setări. */
+export type ContAles = Pick<ContWhatsapp, "id" | "nume" | "telefon">;
+
+/** Numărul unui cont, ca în Setări: „+40 771 464 310” (un număr care nu e mobil românesc rămâne cum e scris). */
+export function telefonCont(telefon: string): string {
+  const scurt = numarScurt(telefon);
+  return /^7\d{8}$/.test(scurt) ? `+40 ${scurt.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")}` : telefon.trim();
+}
 
 /** Copierile mici din prototip (xs), cu 44 px pe telefon. */
 const COPIE = "h-11 px-3 text-[13px] sm:h-7 sm:px-2.5 sm:text-[12px]";
@@ -36,7 +46,7 @@ const CONEXIUNE =
 export interface FirmaLuata {
   firma: FirmaRand;
   mesaj: string;
-  cont: number;
+  cont: ContAles;
   /** blocat: browserul n-a deschis WhatsApp singur; manual: omul trimite din alt telefon sau din altă aplicație. */
   motiv: "blocat" | "manual";
 }
@@ -51,6 +61,45 @@ function pregatesteFereastra(fereastra: Window): void {
   } catch {
     /* unele browsere nu lasă scrierea în fereastra nouă; nu contează */
   }
+}
+
+/** Firma a primit WhatsApp-ul ca al doilea canal, permis de un admin din fișa ei. */
+const permisa = (firma: FirmaRand): boolean => firma.canal_permis === "whatsapp";
+
+/**
+ * De ce e firma în listă deși a fost contactată: pastila „Recontactare
+ * permisă”, canalele de până acum, motivul și cine l-a permis.
+ */
+function Recontactare({ firma }: { firma: FirmaRand }) {
+  const canale = canaleFolosite(firma).length > 0;
+  if (!permisa(firma) && !canale) return null;
+  const cine = [firma.canal_permis_de, firma.canal_permis_la ? momentScurt(firma.canal_permis_la) : null].filter(Boolean).join(", ");
+
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">
+        {permisa(firma) ? (
+          <Pill tone="sky">
+            <Repeat className="h-3 w-3" aria-hidden="true" />
+            Recontactare permisă
+          </Pill>
+        ) : null}
+        {canale ? (
+          <>
+            <span>contactată deja pe</span>
+            <CanaleBadge firma={firma} />
+          </>
+        ) : null}
+      </div>
+      {permisa(firma) ? (
+        <p className="text-[13px] leading-relaxed text-foreground/85 sm:text-[12px]">
+          <span className="text-muted-foreground">Motiv: </span>
+          {firma.canal_permis_motiv ? `„${firma.canal_permis_motiv}”` : "nescris"}
+          {cine ? <span className="text-muted-foreground"> · permisă de {cine}</span> : null}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 /** Numele, numărul și mesajul, cu butoanele de copiere: la fel în cardul de trimis și în cel marcat. */
@@ -68,12 +117,7 @@ function CorpFirma({ firma, mesaj, faraMesaj, eticheta }: { firma: FirmaRand; me
         <CopyButton value={firma.nume} label="Copiază numele" size="xs" className={COPIE} />
       </div>
 
-      {firma.email_la ? (
-        <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">
-          <CanaleBadge firma={firma} />
-          <span aria-hidden="true">a primit emailul pe {momentScurt(firma.email_la)}</span>
-        </p>
-      ) : null}
+      <Recontactare firma={firma} />
 
       {firma.telefon ? (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -110,9 +154,10 @@ function CorpFirma({ firma, mesaj, faraMesaj, eticheta }: { firma: FirmaRand; me
 
 /**
  * O firmă din listă. „Trimite pe WhatsApp” deschide fereastra chiar în clic
- * (după `await` browserul ar bloca-o), marchează firma pe contul ales și abia
- * apoi trimite fereastra la WhatsApp, cu mesajul gata. „Marchează și trimit
- * manual” doar marchează: pentru WhatsApp-ul de pe alt telefon sau din altă aplicație.
+ * (după `await` browserul ar bloca-o), marchează firma pe contul ales (contul
+ * e autorul din activitate) și abia apoi trimite fereastra la WhatsApp, cu
+ * mesajul gata. „Marchează și trimit manual” doar marchează: pentru WhatsApp-ul
+ * de pe alt telefon sau din altă aplicație.
  */
 export function WhatsAppCard({
   firma,
@@ -127,8 +172,8 @@ export function WhatsAppCard({
   mesaj: string;
   /** Ce scrie în locul mesajului când acesta lipsește (șablon gol, setări necitite). */
   faraMesaj: string;
-  /** Contul ales; null: încă neales (sau niciun cont în Setări). */
-  cont: number | null;
+  /** Contul ales; null: încă neales (sau niciun cont activ în Setări). */
+  cont: ContAles | null;
   /** De ce nu se poate trimite fără cont. */
   faraCont: string;
   onLuata: (luata: FirmaLuata) => void;
@@ -162,7 +207,7 @@ export function WhatsAppCard({
     if (fereastra) pregatesteFereastra(fereastra);
     setEroare(null);
     setLucru(deschide ? "deschide" : "manual");
-    const result = await trimiteWhatsapp({ firmaId: firma.id, cont }).catch(() => ({ ok: false as const, message: CONEXIUNE }));
+    const result = await trimiteWhatsapp({ firmaId: firma.id, cont: cont.id }).catch(() => ({ ok: false as const, message: CONEXIUNE }));
     setLucru(null);
     inCurs.current = false;
 
@@ -180,10 +225,10 @@ export function WhatsAppCard({
       notify(text, ton);
     } else if (deschide) {
       // Browserul a blocat fereastra (sau a fost închisă): firma rămâne sus, cu butonul de deschis.
-      onLuata({ firma, mesaj, cont, motiv: "blocat" });
+      onLuata({ firma, mesaj, cont: { ...cont, nume: result.data?.contNume ?? cont.nume }, motiv: "blocat" });
       notify(`${text} WhatsApp nu s-a deschis singur: apasă „Deschide WhatsApp” la firmă, sus.`, "warn");
     } else {
-      onLuata({ firma, mesaj, cont, motiv: "manual" });
+      onLuata({ firma, mesaj, cont: { ...cont, nume: result.data?.contNume ?? cont.nume }, motiv: "manual" });
       notify(text, ton);
     }
     router.refresh();
@@ -203,7 +248,7 @@ export function WhatsAppCard({
   };
 
   return (
-    <Card padded={false} className="p-4 sm:p-5" aria-busy={lucru !== null || undefined}>
+    <Card padded={false} className={cn("p-4 sm:p-5", permisa(firma) && "border-sky/20")} aria-busy={lucru !== null || undefined}>
       <CorpFirma firma={firma} mesaj={mesaj} faraMesaj={faraMesaj} />
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -284,7 +329,7 @@ export function WhatsAppLuata({ luata, faraMesaj, onGata }: { luata: FirmaLuata;
           eticheta={
             <Pill tone="mint" className="mb-1.5">
               <Check className="h-3 w-3" aria-hidden="true" />
-              Marcată trimisă · contul {cont}
+              Marcată trimisă · {cont.nume}
             </Pill>
           }
         />
@@ -292,7 +337,7 @@ export function WhatsAppLuata({ luata, faraMesaj, onGata }: { luata: FirmaLuata;
         <p className="mt-3 text-[13px] leading-relaxed text-foreground/85 sm:text-[12.5px]">
           {motiv === "blocat"
             ? "Browserul n-a deschis WhatsApp singur. Firma e deja marcată: apasă „Deschide WhatsApp” și trimite mesajul."
-            : `Firma e marcată pe contul ${cont}. Copiază numărul și mesajul în WhatsApp-ul contului ${cont}, trimite, apoi apasă „Gata”.`}
+            : `Firma e marcată pe ${cont.nume}. Copiază numărul și mesajul în WhatsApp-ul de pe ${telefonCont(cont.telefon)}, trimite, apoi apasă „Gata”.`}
         </p>
 
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">

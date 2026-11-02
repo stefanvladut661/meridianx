@@ -3,12 +3,15 @@ import type {
   Activitate,
   Canal,
   Casuta,
+  ContWhatsapp,
   Dispozitiv,
   EmailTrimis,
   Etapa,
   Firma,
   FirmaRand,
   ListaCuFirma,
+  Nisa,
+  NisaStatus,
   RaspunsEmail,
   Setari,
   Utilizator,
@@ -21,7 +24,7 @@ import type {
  */
 
 export const COLOANE_FIRMA =
-  "id, nr, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, link_demo, captura_url, lot, slug, de_refacut, nota, creat_la, actualizat_la";
+  "id, nr, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, canal_permis, canal_permis_motiv, canal_permis_la, canal_permis_de, evaluare, evaluare_motiv, evaluat_la, nisa_id, link_demo, captura_url, lot, slug, de_refacut, nota, creat_la, actualizat_la";
 
 const MIN_FIRMA = "id, nr, nume, domeniu, etapa, persoana_contact, oras";
 
@@ -51,8 +54,12 @@ export interface Rezumat {
   rezerva_telefon: number;
   /** Câte firme sunt acum în lista de WhatsApp (continuă). */
   whatsapp_lista: number;
-  /** Au primit emailul în ultimele 24 de ore și au mobil: intră în lista de WhatsApp după o zi. */
-  whatsapp_dupa_email: number;
+  /** Firme cu al doilea canal permis din fișă, încă nefolosit. */
+  recontactari_permise: number;
+  /** Coada comună de construcție: cercetate, eligibile, cu scor ≥ prag, cu email sau mobil, nerezervate. */
+  coada_constructie: number;
+  evaluate: { eligibile: number; respinse: number };
+  nise: { libere: number; rezervate: number; terminate: number };
   in_lucru: number;
   roboti_activi: number;
   roboti: number;
@@ -62,6 +69,8 @@ export interface Rezumat {
     whatsapp_trimise: number;
     /** Trimise azi pe fiecare cont (cheia = numărul contului). */
     whatsapp_pe_cont: Record<string, number>;
+    /** Firme evaluate azi de roboți. */
+    evaluate: number;
     emailuri: number;
     raspunsuri: number;
     bounce: number;
@@ -268,15 +277,13 @@ export interface ListaWhatsapp {
   firme: FirmaRand[];
   /** Câte sunt în listă în total. */
   total: number;
-  /** Au primit emailul în ultimele 24 de ore: intră în listă după o zi. */
-  dupaEmail: number;
   /** Trimise azi, cele mai noi întâi. */
   trimiseAzi: FirmaRand[];
   /** Trimise azi pe fiecare cont (cheia = numărul contului). */
   peCont: Record<string, number>;
 }
 
-/** Lista de WhatsApp: firmele intră singure (site gata + mobil; cu email, la o zi după email). */
+/** Lista de WhatsApp: firmele cu site gata, mobil și niciun contact (plus cele cu WhatsApp permis din fișă) intră singure. */
 export async function citesteListaWhatsapp(limit = 200): Promise<Result<ListaWhatsapp>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
@@ -292,7 +299,6 @@ export async function citesteListaWhatsapp(limit = 200): Promise<Result<ListaWha
     data: {
       firme: (coada.data ?? []) as unknown as FirmaRand[],
       total: rez.whatsapp_lista ?? 0,
-      dupaEmail: rez.whatsapp_dupa_email ?? 0,
       trimiseAzi: (trimise.data ?? []) as FirmaRand[],
       peCont: rez.azi?.whatsapp_pe_cont ?? {},
     },
@@ -308,7 +314,7 @@ export async function citesteSetari(): Promise<Result<Setari>> {
   if (!client) return { ok: false, message: NO_DB };
   const { data, error } = await client
     .from("prospectare_setari")
-    .select("incercari_max, whatsapp_pe_cont, rezervare_ore, cereri_pe_minut, sablon_whatsapp_primul, sablon_whatsapp_dupa_apel, sablon_script_apel, actualizat_la, actualizat_de")
+    .select("incercari_max, whatsapp_pe_cont, rezervare_ore, scor_minim_constructie, cereri_pe_minut, sablon_whatsapp_primul, sablon_whatsapp_dupa_apel, sablon_script_apel, actualizat_la, actualizat_de")
     .eq("id", 1)
     .maybeSingle();
   if (error) return failure(error);
@@ -457,7 +463,7 @@ export async function citesteDispozitive(): Promise<Result<Dispozitiv[]>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   const [disp, rez, stat] = await Promise.all([
-    client.from("prospectare_dispozitive").select("id, nume, proprietar, activ, ultima_activitate, creat_la").order("creat_la", { ascending: true }),
+    client.from("prospectare_dispozitive").select("id, nume, proprietar, activ, ultima_activitate, creat_la, ce_face, ce_face_detaliu, ce_face_la").order("creat_la", { ascending: true }),
     client.from("prospectare_rezervari").select("dispozitiv_id, tip_lucru, expira_la, firma:prospectare_firme(id, nr, nume)").gt("expira_la", new Date().toISOString()),
     client.rpc("prospectare_statistici_roboti"),
   ]);
@@ -479,6 +485,43 @@ export async function citesteDispozitive(): Promise<Result<Dispozitiv[]>> {
       site_uri_total: Number(peRobot.get(d.id)?.total ?? 0),
     })),
   };
+}
+
+/** Conturile de WhatsApp din Setări, în ordinea lor (și cele dezactivate). */
+export async function citesteConturiWhatsapp(): Promise<Result<ContWhatsapp[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client
+    .from("prospectare_conturi_whatsapp")
+    .select("id, nume, telefon, limita_zi, activ, ordine, actualizat_la, actualizat_de")
+    .order("ordine", { ascending: true })
+    .order("id", { ascending: true });
+  if (error) return failure(error);
+  return { ok: true, data: (data ?? []) as ContWhatsapp[] };
+}
+
+/** Tabla comună de nișe: rezervate întâi, apoi libere, apoi terminate. */
+export async function citesteNise(): Promise<Result<Nisa[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client
+    .from("prospectare_nise")
+    .select("id, nisa, zona, status, dispozitiv_id, rezervata_la, semn_la, terminata_la, gasite, eligibile, respinse, nota, creat_la, creat_de, robot:prospectare_dispozitive(nume)")
+    .order("actualizat_la", { ascending: false })
+    .limit(1000);
+  if (error) return failure(error);
+  const acum = Date.now();
+  const ordine: Record<NisaStatus, number> = { in_cercetare: 0, rezervata: 1, libera: 2, terminata: 3 };
+  const nise = ((data ?? []) as unknown as (Omit<Nisa, "dispozitiv" | "expirata"> & { robot: { nume: string } | { nume: string }[] | null })[]).map((n) => {
+    const robot = Array.isArray(n.robot) ? n.robot[0] : n.robot;
+    const semn = n.semn_la ?? n.rezervata_la;
+    const ocupata = n.status === "rezervata" || n.status === "in_cercetare";
+    const { robot: _r, ...rest } = n;
+    void _r;
+    return { ...rest, dispozitiv: robot?.nume ?? null, expirata: ocupata && (!semn || acum - Date.parse(semn) > 24 * 3600 * 1000) } as Nisa;
+  });
+  nise.sort((a, b) => (a.expirata ? 2 : ordine[a.status]) - (b.expirata ? 2 : ordine[b.status]));
+  return { ok: true, data: nise };
 }
 
 /** Ziua de azi și începutul ei, la București (ca în bază). */

@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Bot, Building2, CalendarDays, Check, ExternalLink, ImageIcon, Loader2, Lock, Mail, MapPin, MessageCircle, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
-import { salveazaNota, schimbaEtapa } from "@/app/(admin)/admin/prospectare/actions";
+import { Ban, Bot, Building2, CalendarDays, Check, ExternalLink, ImageIcon, Loader2, Lock, LockOpen, Mail, MapPin, MessageCircle, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
+import { permiteRecontactare, salveazaNota, schimbaEtapa } from "@/app/(admin)/admin/prospectare/actions";
 import { cn } from "@/lib/utils";
-import { ConfirmDialog, CopyButton } from "@/components/panou/ui/actions";
+import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
 import { Modal } from "@/components/panou/ui/modal";
 import { Btn, btnClass, Pill } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState, Field, inputClass } from "@/components/panou/ui/states";
@@ -13,7 +13,7 @@ import { dateRo, dateTimeRo, num, relativeRo, untilRo } from "@/components/panou
 import { useToast } from "@/components/panou/ui/toast";
 import { CANALE, REZULTATE, UTILIZATORI } from "@/lib/prospectare/labels";
 import { numarAfisat, numarScurt } from "@/lib/prospectare/contact";
-import { REZULTATE_IDS, type Canal, type Firma, type Rezultat } from "@/lib/prospectare/types";
+import { CANALE_IDS, REZULTATE_IDS, type Canal, type Firma, type Rezultat } from "@/lib/prospectare/types";
 import type { FisaFirma } from "@/lib/prospectare/citire";
 import { CanaleBadge, StageBadge } from "./stage-badge";
 import { ActivitateFirma } from "./firme-activitate";
@@ -136,8 +136,48 @@ const rezultatLista = (v: string | null) => (v && (REZULTATE_IDS as readonly str
 
 const ICON_CANAL: Record<Canal, LucideIcon> = { email: Mail, whatsapp: MessageCircle, telefon: Phone };
 
-/** Un rând din „Canale”: folosit (bifă, cu data) sau liber, cu motivul pentru care nu se poate folosi. */
-function RandCanal({ canal, la, inainte, dupa, liber, motiv }: { canal: Canal; la: string | null; inainte: string; dupa?: string; liber: string; motiv: string | null }) {
+/** Canalul în mijlocul unei propoziții („a primit email”, „blocat de WhatsApp”). */
+const CANAL_MIC: Record<Canal, string> = { email: "email", whatsapp: "WhatsApp", telefon: "telefon" };
+
+/** Unde ajunge firma după ce un admin îi permite canalul. */
+const UNDE_PERMIS: Record<Canal, string> = {
+  email: "robotul de email o poate lua",
+  whatsapp: "intră în lista de WhatsApp",
+  telefon: "intră în rezerva pentru apeluri",
+};
+
+const laCanal = (f: Firma, c: Canal): string | null => (c === "email" ? f.email_la : c === "whatsapp" ? f.whatsapp_la : f.telefon_la);
+
+/** Canalele pe care firma le-a primit deja. */
+const canaleFolosite = (f: Firma): Canal[] => CANALE_IDS.filter((c) => Boolean(laCanal(f, c)));
+
+/** De ce firma nu poate primi canalul (îi lipsesc datele), sau null dacă îl poate primi. Aceleași verificări ca în bază. */
+function lipsaPentru(f: Firma, c: Canal): string | null {
+  if (c === "email") return f.email ? null : "fără adresă de email";
+  if (c === "whatsapp") return !f.telefon ? "fără telefon" : !f.este_mobil ? "număr fix: fără WhatsApp" : null;
+  return f.telefon ? null : "fără număr";
+}
+
+const listaCanale = (canale: Canal[]): string => canale.map((c) => CANAL_MIC[c]).join(" și ");
+
+/** Un rând din „Canale”: folosit (bifă, cu data), permis din fișă sau liber, cu motivul pentru care nu se poate folosi. */
+function RandCanal({
+  canal,
+  la,
+  inainte,
+  dupa,
+  liber,
+  motiv,
+  permis = false,
+}: {
+  canal: Canal;
+  la: string | null;
+  inainte: string;
+  dupa?: string;
+  liber: string;
+  motiv: string | null;
+  permis?: boolean;
+}) {
   const Icon = ICON_CANAL[canal];
   return (
     <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-3">
@@ -152,6 +192,11 @@ function RandCanal({ canal, la, inainte, dupa, liber, motiv }: { canal: Canal; l
             {inainte} <time dateTime={la}>{dateTimeRo(la)}</time>
             {dupa ?? ""}
           </span>
+        ) : permis ? (
+          <span className="text-[#D8CCFF]">
+            <LockOpen className="mr-1 inline h-3 w-3 -translate-y-px" aria-hidden="true" />
+            permis din fișă, încă nefolosit
+          </span>
         ) : (
           <span className="text-muted-foreground">
             {liber}
@@ -164,49 +209,256 @@ function RandCanal({ canal, la, inainte, dupa, liber, motiv }: { canal: Canal; l
 }
 
 /**
- * Cele trei canale ale firmei. Regula e în bază: fiecare canal o singură
- * dată, email și WhatsApp pot merge amândouă, telefonul rămâne separat,
- * iar „Nu contacta” le blochează pe toate.
+ * Cele trei canale ale firmei. Regula e în bază: un singur canal pe firmă,
+ * primul folosit le blochează pe celelalte. Al doilea canal îl dă doar un
+ * admin, de aici, cu motiv; permisiunea se consumă când canalul e folosit.
+ * „Nu contacta” le blochează pe toate.
  */
 function Canale({ firma }: { firma: Firma }) {
+  const router = useRouter();
+  const { notify } = useToast();
+  const [dialog, setDialog] = useState(false);
+  // Toast-urile stau sub fișă, deci rezultatul se vede și aici.
+  const [raspuns, setRaspuns] = useState<string | null>(null);
+
   const blocata = firma.etapa === "nu_contacta";
-  const peTelefon = Boolean(firma.telefon_la);
-  const primite = [firma.email_la ? "email" : null, firma.whatsapp_la ? "WhatsApp" : null].filter(Boolean).join(" și ");
+  const folosite = canaleFolosite(firma);
+  const permis = blocata ? null : firma.canal_permis;
+  const posibile = CANALE_IDS.filter((c) => !laCanal(firma, c) && !lipsaPentru(firma, c));
+  const poatePermite = !blocata && folosite.length > 0 && posibile.length > 0;
+
+  const motivLiber = (c: Canal): string | null => {
+    if (blocata) return "blocat";
+    const lipsa = lipsaPentru(firma, c);
+    if (lipsa) return lipsa;
+    return folosite.length ? `blocat de ${listaCanale(folosite)}` : null;
+  };
+
+  const gata = (mesaj: string) => {
+    setDialog(false);
+    setRaspuns(mesaj);
+    notify(`${firma.nume}. ${mesaj}`);
+    router.refresh();
+  };
+
   return (
-    <div className="space-y-2.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px] leading-relaxed">
-      <h3 className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
-        <Lock className="h-3 w-3" aria-hidden="true" />
-        Canale
-      </h3>
-      <dl className="space-y-1.5">
-        <RandCanal
-          canal="email"
-          la={firma.email_la}
-          inainte="trimis"
-          liber="netrimis"
-          motiv={blocata ? "blocat" : !firma.email ? "fără adresă" : peTelefon ? "e pe telefon" : null}
+    <>
+      <div className="space-y-2.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px] leading-relaxed">
+        <h3 className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+          <Lock className="h-3 w-3" aria-hidden="true" />
+          Canale
+        </h3>
+        <dl className="space-y-1.5">
+          <RandCanal canal="email" la={firma.email_la} inainte="trimis" liber="netrimis" motiv={motivLiber("email")} permis={permis === "email"} />
+          <RandCanal
+            canal="whatsapp"
+            la={firma.whatsapp_la}
+            inainte="trimis"
+            dupa={firma.whatsapp_cont ? `, contul ${firma.whatsapp_cont}` : undefined}
+            liber="netrimis"
+            motiv={motivLiber("whatsapp")}
+            permis={permis === "whatsapp"}
+          />
+          <RandCanal canal="telefon" la={firma.telefon_la} inainte="în lista de apeluri din" liber="nu" motiv={motivLiber("telefon")} permis={permis === "telefon"} />
+        </dl>
+
+        {permis ? (
+          <div className="rounded-lg border border-lav/25 bg-lav/[0.07] px-3 py-2.5 text-[#D8CCFF]">
+            <p>
+              <span className="font-medium">Recontactare permisă: {CANALE[permis].label}</span> · {UNDE_PERMIS[permis]}
+              {firma.link_demo ? "" : " după ce site-ul demo e gata"}.
+            </p>
+            {firma.canal_permis_motiv ? <p className="mt-1 break-words border-l-2 border-lav/30 pl-2 italic text-foreground/80">„{firma.canal_permis_motiv}”</p> : null}
+            <p className="mt-1 text-[11px] text-foreground/65">
+              {firma.canal_permis_de ?? "Un admin"}
+              {firma.canal_permis_la ? (
+                <>
+                  {" "}
+                  · <time dateTime={firma.canal_permis_la}>{dateTimeRo(firma.canal_permis_la)}</time>
+                </>
+              ) : null}
+              . Se consumă când canalul e folosit.
+            </p>
+          </div>
+        ) : null}
+
+        <p className="text-muted-foreground">
+          {blocata ? (
+            <span className="text-[#FFB0C0]">„Nu contacta”: firma nu mai primește nimic, pe niciun canal.</span>
+          ) : (
+            <>
+              {folosite.length
+                ? `Un singur canal pe firmă, iar ea a primit deja ${listaCanale(folosite)}.`
+                : "Un singur canal pe firmă: primul care o contactează (email, WhatsApp sau apel) le blochează pe celelalte."}{" "}
+              Al doilea canal îl permite doar un admin, de aici, cu motiv. „Nu contacta” le blochează pe toate.
+            </>
+          )}
+        </p>
+
+        {poatePermite ? (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border pt-2.5">
+            <Btn
+              size="sm"
+              variant="outline"
+              icon={LockOpen}
+              className="h-10 w-full sm:h-8 sm:w-auto"
+              onClick={() => {
+                setRaspuns(null);
+                setDialog(true);
+              }}
+            >
+              Permite recontactare pe alt canal
+            </Btn>
+            {/* Toast-ul stă sub fișă: confirmarea se vede (și se anunță) și aici. */}
+            <span className="text-[11.5px] text-[#B4F2CD]" aria-live="polite">
+              {raspuns}
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      <Modal open={dialog} onOpenChange={setDialog} label="Permite recontactare pe alt canal" className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-6">
+        <DialogRecontactare firma={firma} folosite={folosite} onGata={gata} onRenunta={() => setDialog(false)} />
+      </Modal>
+    </>
+  );
+}
+
+/** Dialogul „Permite recontactare”: canalul (doar cele nefolosite și posibile) și motivul, obligatoriu. */
+function DialogRecontactare({ firma, folosite, onGata, onRenunta }: { firma: Firma; folosite: Canal[]; onGata: (mesaj: string) => void; onRenunta: () => void }) {
+  const id = useId();
+  const { notify } = useToast();
+  const posibile = CANALE_IDS.filter((c) => !laCanal(firma, c) && !lipsaPentru(firma, c));
+  const permisAcum = firma.canal_permis;
+  const [canal, setCanal] = useState<Canal | null>(posibile.length === 1 ? posibile[0] : null);
+  const [motiv, setMotiv] = useState("");
+  const [eroare, setEroare] = useState<string | null>(null);
+  const [trimit, startTrimitere] = useTransition();
+  const lungime = motiv.trim().length;
+  const gata = Boolean(canal) && lungime >= 5 && lungime <= 500;
+
+  const trimite = (event: FormEvent) => {
+    event.preventDefault();
+    if (!canal || lungime < 5) {
+      setEroare(!canal ? "Alege canalul." : "Scrie motivul recontactării (cel puțin 5 caractere).");
+      return;
+    }
+    setEroare(null);
+    startTrimitere(async () => {
+      const result = await permiteRecontactare({ firmaId: firma.id, canal, motiv: motiv.trim() });
+      if (!result.ok) {
+        setEroare(result.message);
+        notify(result.message, "error");
+        return;
+      }
+      onGata(result.message);
+    });
+  };
+
+  return (
+    <form onSubmit={trimite} className="space-y-4 text-left">
+      <div className="space-y-1.5">
+        <h2 className="text-[17px] font-semibold leading-tight">Permite recontactare pe alt canal</h2>
+        <p className="text-[13px] leading-relaxed text-muted-foreground">
+          {firma.nume} a primit deja {listaCanale(folosite)}. Alege pe ce canal o mai contactăm o dată și scrie de ce. Motivul rămâne în cronologie.
+        </p>
+      </div>
+
+      {permisAcum ? (
+        <InlineNote tone="neutral" className="text-[12px]">
+          Firma are deja recontactare permisă pe {CANALE[permisAcum].label}, încă nefolosită. Dacă alegi alt canal, permisiunea veche se înlocuiește.
+        </InlineNote>
+      ) : null}
+
+      <fieldset className="space-y-2" disabled={trimit}>
+        <legend className="mb-1.5 text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Canalul</legend>
+        {CANALE_IDS.map((c) => {
+          const Icon = ICON_CANAL[c];
+          const folosit = laCanal(firma, c);
+          const lipsa = lipsaPentru(firma, c);
+          const oprit = Boolean(folosit || lipsa);
+          const ales = canal === c;
+          const nota = folosit
+            ? `folosit pe ${dateRo(folosit)}`
+            : lipsa
+              ? lipsa
+              : permisAcum === c
+                ? "permis deja; motivul se înlocuiește"
+                : `${UNDE_PERMIS[c]}${firma.link_demo ? "" : " după ce site-ul demo e gata"}`;
+          return (
+            <label
+              key={c}
+              className={cn(
+                "flex items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors",
+                oprit ? "cursor-not-allowed border-white/[0.06] opacity-60" : "cursor-pointer hover:border-white/20",
+                ales ? "border-lav/40 bg-lav/[0.08]" : oprit ? "" : "border-white/[0.09]"
+              )}
+            >
+              <input
+                type="radio"
+                name={`${id}-canal`}
+                value={c}
+                checked={ales}
+                disabled={oprit}
+                onChange={() => {
+                  setCanal(c);
+                  setEroare(null);
+                }}
+                className="mt-1 h-4 w-4 shrink-0 accent-[#C6B5FF]"
+              />
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5 text-[13px] font-medium">
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  {CANALE[c].label}
+                </span>
+                <span className="mt-0.5 block text-[11.5px] leading-snug text-muted-foreground">{nota}</span>
+              </span>
+            </label>
+          );
+        })}
+      </fieldset>
+
+      <div>
+        <label htmlFor={`${id}-motiv`} className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          Motivul
+        </label>
+        <textarea
+          id={`${id}-motiv`}
+          value={motiv}
+          onChange={(event) => {
+            setMotiv(event.target.value);
+            setEroare(null);
+          }}
+          rows={3}
+          maxLength={500}
+          required
+          readOnly={trimit}
+          aria-describedby={`${id}-motiv-ajutor`}
+          aria-invalid={eroare && lungime < 5 ? true : undefined}
+          placeholder="ex. a cerut la telefon să-i trimitem și pe email linkul"
+          className={inputClass("mt-1.5 h-auto resize-y py-2 leading-relaxed read-only:opacity-60")}
         />
-        <RandCanal
-          canal="whatsapp"
-          la={firma.whatsapp_la}
-          inainte="trimis"
-          dupa={firma.whatsapp_cont ? `, contul ${firma.whatsapp_cont}` : undefined}
-          liber="netrimis"
-          motiv={blocata ? "blocat" : !firma.telefon ? "fără telefon" : !firma.este_mobil ? "număr fix: fără WhatsApp" : peTelefon ? "e pe telefon" : null}
-        />
-        <RandCanal
-          canal="telefon"
-          la={firma.telefon_la}
-          inainte="în lista de apeluri din"
-          liber="nu"
-          motiv={blocata ? "blocat" : !firma.telefon ? "fără număr" : primite ? `a primit ${primite}` : null}
-        />
-      </dl>
-      <p className="text-muted-foreground">
-        {blocata ? <span className="text-[#FFB0C0]">„Nu contacta”: firma nu mai primește nimic, pe niciun canal. </span> : null}
-        Fiecare canal se folosește o singură dată. Email și WhatsApp pot merge amândouă; telefonul rămâne separat, doar pentru firme fără email și fără WhatsApp. „Nu contacta” le blochează pe toate.
-      </p>
-    </div>
+        <p id={`${id}-motiv-ajutor`} className="mt-1 flex justify-between gap-3 text-[11.5px] text-muted-foreground">
+          <span>{lungime < 5 ? `Cel puțin 5 caractere${lungime ? `: mai scrie ${5 - lungime}` : ""}.` : "Se vede în cronologia firmei."}</span>
+          <span className="pu-num shrink-0">{motiv.length}/500</span>
+        </p>
+      </div>
+
+      {eroare ? (
+        <p className="rounded-xl border border-rose/25 bg-rose/[0.07] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[#FFC2CE]" role="alert">
+          {eroare}
+        </p>
+      ) : null}
+
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Btn variant="ghost" onClick={onRenunta} className="h-11 sm:h-10">
+          Renunță
+        </Btn>
+        <Btn type="submit" variant="primary" icon={trimit ? Loader2 : LockOpen} disabled={!gata || trimit} aria-busy={trimit || undefined} className="h-11 sm:h-10">
+          {trimit ? "Se permite…" : canal ? `Permite ${CANAL_MIC[canal]}` : "Permite"}
+        </Btn>
+      </div>
+    </form>
   );
 }
 
@@ -236,6 +488,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
   const siteVechi = linkWeb(firma.site_vechi);
   const statusRobot = textExtra(firma.date_extra?.status_robot);
   const terminatLa = textExtra(firma.date_extra?.terminat_la);
+  const evaluatDe = textExtra(firma.date_extra?.evaluat_de);
 
   const salveaza = () =>
     startSalvare(async () => {
@@ -327,6 +580,25 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
           <Detaliu eticheta="Adăugată" icon={CalendarDays}>
             {dateRo(firma.creat_la)}
           </Detaliu>
+          {firma.evaluare ? (
+            <div className="col-span-2 min-w-0">
+              <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Evaluarea robotului</dt>
+              <dd className="mt-1 space-y-1">
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <Pill tone={firma.evaluare === "eligibila" ? "mint" : "rose"}>{firma.evaluare === "eligibila" ? "eligibilă" : "respinsă"}</Pill>
+                  {firma.scor !== null ? <span className="pu-num">scor {num(firma.scor)}</span> : null}
+                  {firma.evaluat_la || evaluatDe ? (
+                    <span className="text-muted-foreground">
+                      {firma.evaluat_la ? <time dateTime={firma.evaluat_la}>{dateTimeRo(firma.evaluat_la)}</time> : null}
+                      {firma.evaluat_la && evaluatDe ? " · " : null}
+                      {evaluatDe}
+                    </span>
+                  ) : null}
+                </p>
+                {firma.evaluare_motiv ? <p className="break-words leading-relaxed text-foreground/75">{firma.evaluare_motiv}</p> : null}
+              </dd>
+            </div>
+          ) : null}
         </dl>
 
         <div className="space-y-1.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px]">
