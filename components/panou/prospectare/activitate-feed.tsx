@@ -80,6 +80,8 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
       return { ce: `Răspuns la email: ${tip}`, amanunt: citat(text(d.extras)) };
     }
     case "whatsapp": {
+      // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
+      if (d.continuare_apel === true) return { ce: "Continuare apel pe WhatsApp", amanunt: "După „Interesat”; canalul rămâne Telefon." };
       const cont = numar(d.cont);
       return { ce: cont ? `WhatsApp trimis de pe contul ${cont}` : "WhatsApp trimis", amanunt: null };
     }

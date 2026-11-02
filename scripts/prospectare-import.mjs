@@ -323,7 +323,7 @@ async function rpc(name, params) {
   const { data, error } = await db.rpc(name, params);
   if (error) {
     if (error.code === "PGRST202" || /schema cache|does not exist/i.test(error.message ?? "")) {
-      stop(`funcția ${name} lipsește în bază: rulează întâi migrările 28–31 în Supabase → SQL Editor.`);
+      stop(`funcția ${name} lipsește în bază: rulează întâi migrările 28–32 în Supabase → SQL Editor.`);
     }
     stop(`${name}: ${error.message} (${error.code ?? "fără cod"})`);
   }

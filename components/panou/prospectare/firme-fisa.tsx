@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { Ban, Bot, Building2, CalendarDays, ExternalLink, ImageIcon, Loader2, Lock, Mail, MapPin, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
 import { salveazaNota, schimbaEtapa } from "@/app/(admin)/admin/prospectare/actions";
 import { cn } from "@/lib/utils";
-import { ConfirmDialog } from "@/components/panou/ui/actions";
+import { ConfirmDialog, CopyButton } from "@/components/panou/ui/actions";
 import { Modal } from "@/components/panou/ui/modal";
 import { Btn, btnClass, Pill } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState, Field, inputClass } from "@/components/panou/ui/states";
 import { dateRo, dateTimeRo, num, relativeRo, untilRo } from "@/components/panou/ui/format";
 import { useToast } from "@/components/panou/ui/toast";
 import { REZULTATE, UTILIZATORI } from "@/lib/prospectare/labels";
-import { linkTelefon } from "@/lib/prospectare/contact";
+import { numarAfisat, numarScurt } from "@/lib/prospectare/contact";
 import { REZULTATE_IDS, type Firma, type Rezultat } from "@/lib/prospectare/types";
 import type { FisaFirma } from "@/lib/prospectare/citire";
 import { CanalBadge, StageBadge } from "./stage-badge";
@@ -101,6 +101,37 @@ function Detaliu({ eticheta, icon: Icon, children }: { eticheta: string; icon?: 
   );
 }
 
+/** Telefonul sau emailul din fișă: text de citit și de copiat, nu link de apel sau de email. */
+function Contact({
+  icon: Icon,
+  eticheta,
+  valoare,
+  detaliu,
+  copie,
+  labelCopie,
+}: {
+  icon: LucideIcon;
+  eticheta: string;
+  valoare: string;
+  detaliu?: string;
+  copie: string;
+  labelCopie: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-white/[0.03] px-3.5 py-2.5">
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+          {eticheta}
+          {detaliu ? <span className="normal-case tracking-normal"> · {detaliu}</span> : null}
+        </p>
+        <p className="pu-num mt-0.5 select-all break-all text-[14px] font-medium leading-snug">{valoare}</p>
+      </div>
+      <CopyButton value={copie} label={labelCopie} size="xs" className="h-9 shrink-0 px-2.5 text-[12px] sm:h-8" />
+    </div>
+  );
+}
+
 const rezultatLista = (v: string | null) => (v && (REZULTATE_IDS as readonly string[]).includes(v) ? REZULTATE[v as Rezultat] : null);
 
 /** „Setat 2 nov. 2026, 14:20 de Ștefan. ” — fără propoziție dacă baza nu știe nici când, nici cine. */
@@ -178,31 +209,26 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
       </div>
 
       <div className="space-y-5 px-5 py-5">
-        {firma.telefon || demo || firma.email ? (
-          <div className="flex flex-wrap gap-2">
+        {/* Fără tel: și mailto: aici: apelurile pleacă doar din „Apeluri azi”, unde firma primește canalul. */}
+        {firma.telefon || firma.email ? (
+          <div className="space-y-2">
             {firma.telefon ? (
-              <a href={linkTelefon(firma.telefon)} className={btnClass({ variant: "solid", size: "sm" })}>
-                <Phone className="h-4 w-4" aria-hidden="true" />
-                {firma.telefon}
-              </a>
+              <Contact icon={Phone} eticheta="Telefon" detaliu={firma.este_mobil ? "mobil" : "fix"} valoare={numarAfisat(firma.telefon)} copie={numarScurt(firma.telefon)} labelCopie="Copiază numărul" />
             ) : null}
-            {demo ? (
-              <a href={demo} target="_blank" rel="noreferrer" className={btnClass({ variant: "primary", size: "sm" })}>
-                Deschide demo
-                <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only"> (se deschide într-o filă nouă)</span>
-              </a>
-            ) : null}
-            {firma.email ? (
-              <a href={`mailto:${firma.email}`} className={btnClass({ variant: "outline", size: "sm" })}>
-                <Mail className="h-4 w-4" aria-hidden="true" />
-                Email
-              </a>
-            ) : null}
+            {firma.email ? <Contact icon={Mail} eticheta="Email" valoare={firma.email} copie={firma.email} labelCopie="Copiază emailul" /> : null}
+            <p className="text-[11px] leading-relaxed text-muted-foreground">Suni din „Apeluri azi”, unde firma primește canalul Telefon. Emailul îl trimite robotul.</p>
           </div>
         ) : (
           <p className="text-[12.5px] text-muted-foreground">Fișa nu are telefon sau email. Robotul le adaugă când le găsește pe site-ul vechi sau pe hartă.</p>
         )}
+
+        {demo ? (
+          <a href={demo} target="_blank" rel="noreferrer" className={btnClass({ variant: "primary", size: "sm" })}>
+            Deschide demo
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            <span className="sr-only"> (se deschide într-o filă nouă)</span>
+          </a>
+        ) : null}
 
         <Captura firma={firma} demo={demo} />
 
@@ -225,13 +251,6 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
                   <span className="block h-full rounded-full bg-lav" style={{ width: `${Math.min(100, Math.max(0, firma.scor))}%` }} />
                 </span>
               ) : null}
-            </dd>
-          </div>
-          <Detaliu eticheta="Telefon">{firma.telefon ? `${firma.telefon} · ${firma.este_mobil ? "mobil" : "fix"}` : "—"}</Detaliu>
-          <div className="min-w-0">
-            <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Email</dt>
-            <dd className="mt-0.5 truncate" title={firma.email ?? undefined}>
-              {firma.email ?? "—"}
             </dd>
           </div>
           <Detaliu eticheta="Lot">{firma.lot ?? "—"}</Detaliu>

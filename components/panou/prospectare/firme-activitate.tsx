@@ -69,6 +69,8 @@ export function descrieActivitate(a: Activitate): Descriere {
     case "bounce":
       return { titlu: `Email întors (bounce)${text(d.casuta) ? ` la ${text(d.casuta)}` : ""}` };
     case "whatsapp":
+      // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
+      if (d.continuare_apel === true) return { titlu: "Continuare apel pe WhatsApp", detaliu: "după „Interesat”; canalul rămâne Telefon" };
       return { titlu: `WhatsApp trimis${numar(d.cont) ? ` de pe contul ${numar(d.cont)}` : ""}` };
     case "raspuns":
       return {

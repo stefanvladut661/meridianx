@@ -1167,7 +1167,8 @@ la `/admin/auth/callback`: schimbă codul pe sesiune și verifică
 
 Firmele cercetate de roboții din `auto-web-rebuilder`, site-urile demo și contactul pe **un singur canal** (email, WhatsApp sau telefon), impus în bază. Detalii, pași manuali și decizii: `lib/prospectare/README.md`; API-ul roboților: `docs/prospectare-api.md`.
 
-- **Baza:** migrările 28–31 (`prospectare_*`, 8 tabele, RLS doar `is_lead_admin()`, funcții doar pentru cheia de service). Teste: `bash supabase/tests/prospectare/ruleaza.sh` (Postgres local în Docker; 78 de reguli + concurență).
+- **Baza:** migrările 28–32 (`prospectare_*`, 8 tabele, RLS doar `is_lead_admin()`, funcții doar pentru cheia de service). Teste: `bash supabase/tests/prospectare/ruleaza.sh` (Postgres local în Docker; 87 de reguli + concurență).
+- **Deciziile omului (2 nov, după livrare):** (1) fără `tel:`/`mailto:` în fișa firmei și în tabelul Firme: telefonul și emailul rămân text, în fișă cu „Copiază”; se sună doar din „Apeluri azi”. (2) WhatsApp după un apel „Interesat” e excepția acceptată: firma rămâne pe Telefon, iar activitatea primește „Continuare apel pe WhatsApp” (migrarea 32). Butonul WhatsApp de pe cardul de apel dinainte de rezultat a fost scos (nu era în prototip). (3) Rezerva de firme pentru liste se rezolvă în `auto-web-rebuilder` (publicarea site-urilor gata), nu aici.
 - **Admin:** `/admin/prospectare` (Prezentare, Firme, Apeluri azi, WhatsApp azi, Email, Roboți, Setări), din exportul Base44, pe tema închisă a adminului. Meniul are acum cinci module (`components/panou/layout/nav.ts`): Prospectare după Lead-uri; bara de jos pe telefon are șase locuri.
 - **API:** `/api/prospectare/robot/{firme,rezerva,heartbeat,termina,eveniment}`, token de dispozitiv (doar hash în bază), limită de cereri pe minut.
 - **Import:** `scripts/prospectare-import.mjs --env <fișier din afara repo-ului> [--proba]`.

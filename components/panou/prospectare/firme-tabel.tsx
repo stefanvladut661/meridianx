@@ -3,12 +3,11 @@
 import { useState, useTransition, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ExternalLink, Loader2, Phone } from "lucide-react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dateTimeRo, num, relativeRo } from "@/components/panou/ui/format";
 import { ErrorState } from "@/components/panou/ui/states";
 import { ETAPE } from "@/lib/prospectare/labels";
-import { linkTelefon } from "@/lib/prospectare/contact";
 import type { FirmaRand } from "@/lib/prospectare/types";
 import { CanalBadge, StageBadge } from "./stage-badge";
 import { linkWeb } from "./firme-format";
@@ -48,7 +47,7 @@ export function FirmeTabel({ firme, acum, selectatId }: { firme: FirmaRand[]; ac
     deschide(id);
   };
 
-  // Clicul pe telefon sau pe demo își face treaba lui, nu deschide fișa.
+  // Clicul pe linkul demo își face treaba lui, nu deschide fișa.
   const peRand = (event: MouseEvent<HTMLTableRowElement>, id: string) => {
     if ((event.target as HTMLElement).closest("a, button")) return;
     deschide(id);
@@ -124,14 +123,8 @@ export function FirmeTabel({ firme, acum, selectatId }: { firme: FirmaRand[]; ac
                     <CanalBadge canal={f.canal} />
                   </td>
                   <td className="whitespace-nowrap py-2.5 pr-2 text-[11.5px]">
-                    {f.telefon ? (
-                      <a href={linkTelefon(f.telefon)} aria-label={`Sună ${f.nume}: ${f.telefon}`} className="inline-flex items-center gap-1 rounded-sm hover:text-lav">
-                        <Phone className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
-                        {f.telefon}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
+                    {/* Text, nu link de apel: se sună doar din „Apeluri azi”, unde firma primește canalul. */}
+                    {f.telefon ?? <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="max-w-[170px] truncate py-2.5 pr-2 text-[11.5px] text-muted-foreground">{f.email ?? "—"}</td>
                   <td className="py-2.5 pr-2">

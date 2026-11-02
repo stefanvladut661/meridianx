@@ -2,14 +2,14 @@
 
 import { useId, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, ExternalLink, Flag, MessageCircle, Phone, RotateCcw, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Clock, ExternalLink, Flag, Phone, RotateCcw, ThumbsDown, ThumbsUp } from "lucide-react";
 import { salveazaNotaLista } from "@/app/(admin)/admin/prospectare/actions";
 import { ConfirmDialog, CopyButton } from "@/components/panou/ui/actions";
 import { Modal } from "@/components/panou/ui/modal";
 import { Btn, btnClass, Card } from "@/components/panou/ui/primitives";
 import { Field, inputClass, Spinner } from "@/components/panou/ui/states";
 import { useToast } from "@/components/panou/ui/toast";
-import { linkTelefon, linkWhatsApp, numarAfisat, numarScurt } from "@/lib/prospectare/contact";
+import { linkTelefon, numarAfisat, numarScurt } from "@/lib/prospectare/contact";
 import type { ListaCuFirma } from "@/lib/prospectare/types";
 import { cn } from "@/lib/utils";
 import { CAMP, Dezvaluire, TAP_MD, TAP_SM, TextPregatit } from "./apeluri-ui";
@@ -254,23 +254,11 @@ export function CallCard({
               <a
                 href={linkTelefon(telefon)}
                 aria-label={`Sună ${firma.nume} la ${numarAfisat(telefon)}`}
-                className={btnClass({ variant: "solid", size: "sm", className: cn("h-12 gap-2 text-[15px] sm:h-8 sm:text-[12.5px]", !whatsapp && "col-span-2") })}
+                className={btnClass({ variant: "solid", size: "sm", className: "col-span-2 h-12 gap-2 text-[15px] sm:h-8 sm:text-[12.5px]" })}
               >
                 <Phone className="h-4 w-4" aria-hidden="true" />
                 Sună
               </a>
-              {whatsapp ? (
-                <a
-                  href={linkWhatsApp(telefon, mesajDupaApel)}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`WhatsApp către ${firma.nume}, cu mesajul de după apel`}
-                  className={btnClass({ variant: "mint", size: "sm", className: "h-12 gap-2 text-[15px] sm:h-8 sm:text-[12.5px]" })}
-                >
-                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                  WhatsApp
-                </a>
-              ) : null}
               {firma.link_demo ? (
                 <a
                   href={firma.link_demo}
@@ -283,7 +271,7 @@ export function CallCard({
                 </a>
               ) : null}
             </div>
-            {!firma.este_mobil ? <p className="w-full text-[12px] text-muted-foreground sm:text-[11px]">Număr fix: fără WhatsApp.</p> : null}
+            {!firma.este_mobil ? <p className="w-full text-[12px] text-muted-foreground sm:text-[11px]">Număr fix: după „Interesat” nu se poate continua pe WhatsApp.</p> : null}
           </div>
         ) : (
           <p className="mt-3 rounded-xl border border-rose/25 bg-rose/[0.07] px-3 py-2 text-[12.5px] text-[#FFC2CE]">
@@ -300,11 +288,13 @@ export function CallCard({
             )}
           </Dezvaluire>
           {whatsapp ? (
-            <Dezvaluire titlu="Mesaj WhatsApp după apel">
+            <Dezvaluire titlu="Mesaj WhatsApp după „Interesat”">
               {mesajDupaApel ? (
                 <>
                   <TextPregatit>{mesajDupaApel}</TextPregatit>
-                  <CopyButton value={mesajDupaApel} label="Copiază mesajul" className={cn(TAP_SM, "mt-2")} />
+                  <p className="mt-2 text-[12.5px] leading-snug text-muted-foreground sm:text-[11.5px]">
+                    Se deschide pe WhatsApp când apeși „Interesat”. Firma rămâne pe canalul Telefon; în activitate apare „Continuare apel pe WhatsApp”.
+                  </p>
                 </>
               ) : (
                 <p className="text-[12.5px] text-muted-foreground sm:text-[11.5px]">Șablonul de după apel e gol: scrie-l în Setări, la șabloane.</p>

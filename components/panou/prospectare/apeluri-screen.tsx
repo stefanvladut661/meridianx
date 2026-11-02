@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock, CircleCheck, CloudDownload, MessageCircle, Phone, X } from "lucide-react";
-import { seteazaRezultat } from "@/app/(admin)/admin/prospectare/actions";
+import { continuaPeWhatsapp, seteazaRezultat } from "@/app/(admin)/admin/prospectare/actions";
 import { InlineNote } from "@/components/panou/ui/actions";
 import { dateRo, num, timeRo } from "@/components/panou/ui/format";
 import { Btn, btnClass, Card, Pill } from "@/components/panou/ui/primitives";
@@ -107,10 +107,16 @@ export function ApeluriScreen({
         notify(`${firma.nume} e marcată interesată. Șablonul de WhatsApp după apel e gol: scrie-l în Setări.`, "warn");
       } else {
         // Ca în prototip: WhatsApp se deschide singur cu mesajul de după apel.
+        // Întâi fereastra (browserul o permite doar imediat după clic), apoi activitatea.
         const fereastra = window.open(linkWhatsApp(firma.telefon, mesaj), "_blank");
         if (fereastra) {
           fereastra.opener = null;
-          notify(`${firma.nume} e marcată interesată. WhatsApp s-a deschis cu mesajul pregătit.`);
+          const scris = await continuaPeWhatsapp(linie.id);
+          if (scris.ok) {
+            notify(`${firma.nume} e marcată interesată. WhatsApp s-a deschis cu mesajul pregătit; în activitate: continuare apel pe WhatsApp.`);
+          } else {
+            notify(`${firma.nume}: WhatsApp s-a deschis, dar continuarea nu s-a scris în activitate. ${scris.message}`, "error");
+          }
         } else {
           notify(`${firma.nume} e marcată interesată. Browserul n-a deschis WhatsApp singur: apasă „WhatsApp după apel” la firmă, în Terminate.`, "warn");
         }
@@ -123,6 +129,16 @@ export function ApeluriScreen({
       notify(`${firma.nume}: refuz notat. Firma trece la Respins.`);
     }
     router.refresh();
+  };
+
+  /** Butonul din Terminate: linkul deschide WhatsApp, iar activitatea primește continuarea (o singură dată pe apel). */
+  const dupaApel = async (linie: ListaCuFirma): Promise<void> => {
+    const scris = await continuaPeWhatsapp(linie.id);
+    if (!scris.ok) {
+      notify(`${linie.firma.nume}: continuarea pe WhatsApp nu s-a scris în activitate. ${scris.message}`, "error");
+    } else if (!scris.data?.deja) {
+      notify(`${linie.firma.nume}: ${mic(scris.message)}`);
+    }
   };
 
   const card = (linie: ListaCuFirma) => (
@@ -291,6 +307,7 @@ export function ApeluriScreen({
                         href={linkWhatsApp(firma.telefon, mesaj)}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => void dupaApel(linie)}
                         aria-label={`WhatsApp după apel către ${firma.nume}`}
                         className={btnClass({ variant: "mint", size: "sm", className: cn(TAP_SM, "w-full gap-1.5 sm:w-auto") })}
                       >

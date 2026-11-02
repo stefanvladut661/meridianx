@@ -148,6 +148,26 @@ export async function marcheazaWhatsapp(listaId: unknown): Promise<ActionResult>
   return { ok: true, message: result.data.deja ? "Era deja marcat ca trimis." : "Marcat ca trimis." };
 }
 
+/**
+ * WhatsApp după un apel „Interesat”: excepția acceptată de la regula unui
+ * singur canal. Firma rămâne pe Telefon; în activitate apare „Continuare apel
+ * pe WhatsApp”, o singură dată pe apel. Baza refuză orice alt rezultat.
+ */
+export async function continuaPeWhatsapp(listaId: unknown): Promise<ActionResult<{ deja: boolean }>> {
+  const who = await cine();
+  if (!who) return { ok: false, message: SESSION_EXPIRED };
+  const id = z.coerce.number().int().positive().safeParse(listaId);
+  if (!id.success) return { ok: false, message: "Rândul din listă nu e valid." };
+  const result = await rpc<{ deja: boolean }>("prospectare_continua_pe_whatsapp", { p_lista: id.data, p_autor: who.nume });
+  if (!result.ok) return { ok: false, message: result.message };
+  gata();
+  return {
+    ok: true,
+    message: result.data.deja ? "Continuarea pe WhatsApp era deja în activitate." : "Scris în activitate: continuare apel pe WhatsApp.",
+    data: { deja: result.data.deja },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Firma
 // ---------------------------------------------------------------------------

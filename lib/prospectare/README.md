@@ -5,6 +5,7 @@ Modulul din admin (`/admin/prospectare`) pentru firmele cercetate de roboții di
 ## Regula de bază, în bază
 
 - Canalul se setează **o singură dată**, din gol. Orice altă schimbare e refuzată de un trigger (`PR409`), oricine ar scrie: admin, robot, import sau SQL Editor. Singura excepție e `prospectare_seteaza_rezultat`: după ultima încercare „Nu răspunde” (Setări → încercări, implicit 3) firma iese din listă și își pierde canalul telefon. Asta se scrie în activitate, cu motiv.
+- Excepția acceptată pe canalul telefon: după un apel „Interesat”, conversația poate continua pe WhatsApp (`prospectare_continua_pe_whatsapp`, migrarea 32). Firma rămâne pe Telefon și nu consumă limita conturilor de WhatsApp. În activitate apare „Continuare apel pe WhatsApp”, o singură dată pe apel. Înainte de „Interesat”, pe număr fix sau pe lista de WhatsApp, baza refuză.
 - „Nu contacta” nu primește canal și nu intră în liste (`PR410`). Când o firmă devine „Nu contacta” (din admin, număr greșit, răspuns „NU” la email) iese din listele neterminate și din rezervări.
 - Activitatea se poate doar completa: modificarea, ștergerea și golirea sunt refuzate și pentru superuser (`PR403`). Fiecare firmă nouă și fiecare schimbare de etapă sau canal intră acolo automat.
 - RLS: citire doar pentru `is_lead_admin()` (tabela `admin_emails`). Scrierile trec doar prin server, cu cheia de service, prin funcțiile modulului. Roboții nu au acces direct: trec prin `/api/prospectare/robot` (vezi `docs/prospectare-api.md`).
@@ -17,7 +18,8 @@ Modulul din admin (`/admin/prospectare`) pentru firmele cercetate de roboții di
 | `…29_prospectare_lucru.sql` | roboții, rezervările, listele zilei; rezervarea atomică, rezultatele apelurilor |
 | `…30_prospectare_email_import.sql` | căsuțele, cererea de canal email, evenimentele, importul, autentificarea roboților |
 | `…31_prospectare_citire.sql` | numărătorile pentru Prezentare, filtre și roboți (doar citire) |
-| `supabase/tests/prospectare/` | 78 de teste de reguli + proba de concurență, pe Postgres local în Docker: `bash supabase/tests/prospectare/ruleaza.sh` |
+| `…32_prospectare_whatsapp_dupa_apel.sql` | WhatsApp după un apel „Interesat”, scris în activitate |
+| `supabase/tests/prospectare/` | 87 de teste de reguli + proba de concurență, pe Postgres local în Docker: `bash supabase/tests/prospectare/ruleaza.sh` |
 | `lib/prospectare/` | tipuri, etichete, citiri, telefon / WhatsApp / .vcf / CSV, API-ul roboților |
 | `app/(admin)/admin/prospectare/` | paginile, acțiunile, exportul CSV |
 | `app/api/prospectare/robot/` | `firme`, `rezerva`, `heartbeat`, `termina`, `eveniment` |
@@ -26,7 +28,7 @@ Modulul din admin (`/admin/prospectare`) pentru firmele cercetate de roboții di
 
 ## Pașii omului
 
-1. **Migrările 28–31** în Supabase → SQL Editor: fișierul unic `C:\Users\PC\Desktop\meridian-prospectare-migrari-28-31.sql` (în afara repo-ului). Lipești tot și dai Run. Ultimul rezultat e verificarea finală: toate rândurile `true`. Dacă rândul cu `admin_emails` e `false`, adaugi adresa lui Vlăduț: `insert into public.admin_emails (email) values ('<adresa lui>');` (aceeași adresă și în `ADMIN_EMAILS` din Vercel).
+1. **Migrările 28–32** în Supabase → SQL Editor: fișierul unic `C:\Users\PC\Desktop\meridian-prospectare-migrari-28-32.sql` (în afara repo-ului). Lipești tot și dai Run. Merge și dacă 28–31 sunt deja aplicate. Ultimul rezultat e verificarea finală: toate rândurile `true`. Dacă rândul cu `admin_emails` e `false`, adaugi adresa lui Vlăduț: `insert into public.admin_emails (email) values ('<adresa lui>');` (aceeași adresă și în `ADMIN_EMAILS` din Vercel).
 2. **Importul**: fișierul `C:\Users\PC\meridian-prospectare-import.env` (în afara repo-ului) cu `PROSPECTARE_SUPABASE_URL` și `PROSPECTARE_SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API). Apoi, din repo: `git -C C:\Users\PC\MeridianX\auto-web-rebuilder pull` și `node scripts/prospectare-import.mjs --env C:\Users\PC\meridian-prospectare-import.env --proba`. Fără `--proba` scrie. Se poate rula oricând din nou.
 3. **Vercel**: nicio variabilă nouă. Modulul folosește `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` și `ADMIN_EMAILS`, care există deja.
 4. **Roboții**: în admin → Prospectare → Roboți → „Adaugă robot”. Tokenul se arată o dată și se pune pe calculatorul robotului în variabila de mediu `MERIDIAN_ROBOT_TOKEN`.
@@ -39,4 +41,6 @@ Modulul din admin (`/admin/prospectare`) pentru firmele cercetate de roboții di
 - Statusul `eroare` al robotului → `cercetat`, cu statusul păstrat în `date_extra.status_robot`.
 - Cele 30 de firme din `asignari-2026-11-01.json` → „trimise”, care primiseră deja email pe 30 oct, își păstrează canalul email. WhatsApp-ul de pe 1 nov e în activitate.
 - Listele zilei intră doar cu firme care au site gata **cu link demo** și telefon. WhatsApp-ul doar cu mobil.
+- Apelurile pleacă doar din „Apeluri azi”, unde firma primește canalul Telefon. În fișa firmei și în tabelul Firme, telefonul și emailul sunt text, fără `tel:` sau `mailto:`. În fișă au buton „Copiază” (decizia din 2 nov).
+- WhatsApp-ul de după apel se deschide doar după „Interesat”: singur, când apeși butonul, sau din tabul Terminate. Pe cardul de apel nu mai e buton WhatsApp înainte de rezultat.
 - Listele neterminate trec pe ziua de azi la deschiderea paginilor de apeluri și WhatsApp (`prospectare_reporteaza_liste`), fără cron.

@@ -1,4 +1,4 @@
--- Testele regulilor din migrările 28–30, pe Postgres local (nu pe producție).
+-- Testele regulilor din migrările 28–32, pe Postgres local (nu pe producție).
 \set ON_ERROR_STOP 1
 set client_min_messages = warning;
 
@@ -180,3 +180,21 @@ select public.prospectare_upsert_firme('[{"domeniu":"lucru29.ro","de_refacut":tr
 select pg_temp.verifica((select de_refacut and etapa = 'site_in_lucru' from public.prospectare_firme where nr = 129), 'de refăcut pe un site gata necontactat: se întoarce în lucru (nu pleacă pe v1)');
 select pg_temp.verifica((public.prospectare_import_activitate('[{"nr":500,"tip":"email","canal":"email","detalii":{"casuta":"a@b.ro"},"cheie":"import:email:x1","la":"2026-10-30T09:40:00+02:00"}]', 'import') ->> 'noi')::integer = 1, 'activitate importată');
 select pg_temp.verifica((public.prospectare_import_activitate('[{"nr":500,"tip":"email","canal":"email","detalii":{},"cheie":"import:email:x1"}]', 'import') ->> 'existente')::integer = 1, 'activitatea importată nu se dublează');
+
+-- WhatsApp după „Interesat” (migrarea 32): excepția acceptată pe canalul telefon ---
+insert into public.prospectare_firme (nr, nume, domeniu, telefon, etapa, link_demo, canal) values
+  (600, 'Firma Șase', 'sase.ro', '0745 666 666', 'site_gata', 'https://demo.test/sase/', 'telefon');
+insert into public.prospectare_liste_zi (utilizator, canal, firma_id) select 'stefan', 'telefon', id from public.prospectare_firme where nr = 600;
+select pg_temp.asteapta_eroare($$select public.prospectare_continua_pe_whatsapp((select l.id from public.prospectare_liste_zi l join public.prospectare_firme f on f.id = l.firma_id where f.nr = 600))$$, 'PR409', 'WhatsApp după apel: refuzat înainte de „Interesat”');
+select public.prospectare_seteaza_rezultat((select l.id from public.prospectare_liste_zi l join public.prospectare_firme f on f.id = l.firma_id where f.nr = 600), 'interesat');
+select pg_temp.verifica(not (public.prospectare_continua_pe_whatsapp((select l.id from public.prospectare_liste_zi l join public.prospectare_firme f on f.id = l.firma_id where f.nr = 600), 'Ștefan') ->> 'deja')::boolean, 'după „Interesat”: continuarea pe WhatsApp se scrie');
+select pg_temp.verifica((select count(*) = 1 and bool_and(a.canal = 'telefon' and a.autor = 'Ștefan' and (a.detalii ->> 'continuare_apel')::boolean and a.detalii ->> 'text' = 'Continuare apel pe WhatsApp')
+  from public.prospectare_activitate a join public.prospectare_firme f on f.id = a.firma_id where f.nr = 600 and a.tip = 'whatsapp'), 'activitate: „Continuare apel pe WhatsApp”, pe canalul telefon');
+select pg_temp.verifica((public.prospectare_continua_pe_whatsapp((select l.id from public.prospectare_liste_zi l join public.prospectare_firme f on f.id = l.firma_id where f.nr = 600)) ->> 'deja')::boolean, 'a doua deschidere: „deja”');
+select pg_temp.verifica((select count(*) from public.prospectare_activitate a join public.prospectare_firme f on f.id = a.firma_id where f.nr = 600 and a.tip = 'whatsapp') = 1, 'a doua deschidere nu dublează activitatea');
+select pg_temp.verifica((select canal = 'telefon' and etapa = 'interesat' from public.prospectare_firme where nr = 600), 'canalul rămâne Telefon, etapa Interesat');
+select pg_temp.asteapta_eroare($$select public.prospectare_continua_pe_whatsapp((select l.id from public.prospectare_liste_zi l join public.prospectare_firme f on f.id = l.firma_id where f.nr = 3))$$, 'PR422', 'WhatsApp după apel: refuzat la număr fix');
+select pg_temp.asteapta_eroare($$select public.prospectare_continua_pe_whatsapp((select l.id from public.prospectare_liste_zi l join public.prospectare_firme f on f.id = l.firma_id where f.nr = 4))$$, 'PR422', 'WhatsApp după apel: refuzat pe lista de WhatsApp');
+set role authenticated;
+select pg_temp.asteapta_eroare($$select public.prospectare_continua_pe_whatsapp(1)$$, '42501', 'adminul prin REST nu cheamă funcția (doar serverul)');
+reset role;
