@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * Căsuțele de email, ca `MailboxTable` din prototip: tabel de la 768 în sus,
- * carduri sub. Limita zilei e cea pusă din admin sau, dacă nu e pusă, cea
- * raportată de robot (încălzirea). Fără stare: merge pe server.
+ * carduri sub. Limita zilei e cea folosită la programare: cea pusă pe căsuță
+ * în Setări sau, dacă nu e pusă, plafonul de încălzire. Fără stare: merge pe server.
  */
 
 const BARE = { mint: "bg-mint", apricot: "bg-apricot", rose: "bg-rose" } as const;
@@ -29,7 +29,7 @@ function Limita({ casuta }: { casuta: Casuta }) {
     <div className="min-w-[120px]">
       <p className="pu-num text-[12.5px] font-medium">
         {num(casuta.trimise_azi)}{" "}
-        <span className="text-muted-foreground" title={casuta.limita_azi === null ? "Robotul n-a raportat încă limita de azi" : casuta.limita_zi !== null ? "Limită pusă din admin" : "Limita din încălzirea robotului"}>
+        <span className="text-muted-foreground" title={casuta.limita_azi === null ? "Limita de azi nu e încă stabilită" : !casuta.activa ? "Căsuța e oprită din admin" : casuta.limita_zi !== null ? "Limită pusă pe căsuță, în Setări" : "Plafonul de încălzire din Setări"}>
           / {casuta.limita_azi === null ? "—" : num(casuta.limita_azi)}
         </span>
       </p>

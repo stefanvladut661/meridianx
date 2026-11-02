@@ -63,7 +63,7 @@ export function ApeluriScreen({
   const [tab, setTab] = useState<Tab>("de_sunat");
   const [importDeschis, setImportDeschis] = useState(false);
   const [cerereFocus, setCerereFocus] = useState(0);
-  // Firmele care ies din listă (ultima încercare, număr greșit) dispar din ecran: spunem de ce, până închide omul.
+  // Firmele care se întorc în distribuție („Nu răspunde”, număr greșit): spunem ce s-a întâmplat, până închide omul.
   const [anunt, setAnunt] = useState<{ text: string; ton: "apricot" | "rose" } | null>(null);
 
   const nume = UTILIZATORI[cine];
@@ -156,7 +156,7 @@ export function ApeluriScreen({
       <PageHead
         title="Apeluri azi"
         pill={nume}
-        subtitle="Lista de telefon a zilei. Un singur canal pe firmă: intră doar firme cu site gata care n-au primit niciun contact. La import primesc canalul Telefon și rămân așa; alt canal se permite doar din fișa firmei."
+        subtitle="Lista de telefon a zilei. Intră doar firme cu site gata și publicat, care n-au primit niciun contact. Cele importate rămân pe telefon până la 00:00; atunci cele nesunate se întorc în distribuție. „Interesat” și „Sună înapoi” rămân pe telefon; alt canal se permite doar din fișa firmei."
         actions={toate.length ? <VcfButton firme={toate.map((r) => r.firma)} numeFisier={`apeluri-${cine}-${azi}.vcf`} /> : null}
       />
 
@@ -169,7 +169,7 @@ export function ApeluriScreen({
 
       {eroareSetari ? (
         <InlineNote tone="rose">
-          Setările nu s-au citit: {eroareSetari} Până se rezolvă, lista merge cu {limita} încercări și fără script sau mesaj pregătit.
+          Setările nu s-au citit: {eroareSetari} Până se rezolvă, lista merge fără script și fără mesaj pregătit.
         </InlineNote>
       ) : null}
 
@@ -182,7 +182,7 @@ export function ApeluriScreen({
             </p>
           </div>
           <p className="text-[12px] text-muted-foreground sm:text-[11.5px]">
-            {deSunat.length === 0 ? "Lista e golită" : `rămân ${num(deSunat.length)} de sunat`} · ce nu e sunat rămâne pentru mâine
+            {deSunat.length === 0 ? "Lista e golită" : `rămân ${num(deSunat.length)} de sunat`} · ce nu suni azi se întoarce în distribuție la 00:00
           </p>
         </div>
         <ProgressBar className="mt-2.5" value={toate.length ? (sunate / toate.length) * 100 : 0} tone="sky" />
@@ -237,7 +237,7 @@ export function ApeluriScreen({
               <EmptyState
                 icon={Phone}
                 title="Nicio firmă de sunat azi"
-                text="Importă din rezervă firmele cu site gata care n-au primit niciun contact. La import primesc canalul Telefon și rămân doar la tine."
+                text="Importă din rezervă firmele cu site gata care n-au primit niciun contact, cele mai vechi site-uri primele. Rămân pe telefon, în lista ta, până la 00:00."
                 action={
                   <Btn size="sm" variant="primary" icon={CloudDownload} onClick={deschideImport} className={TAP_SM}>
                     Importă din rezervă
@@ -280,7 +280,7 @@ export function ApeluriScreen({
             <EmptyState
               icon={CircleCheck}
               title="Nicio firmă terminată încă"
-              text="Aici apar firmele cu rezultat: interesat sau nu vrea. Cele cu număr greșit ies din listă și devin „Nu contacta”."
+              text="Aici apar firmele cu rezultat: interesat, nu vrea sau număr greșit. „Nu vrea” trece la „Nu contacta”; cu număr greșit, firma se întoarce în distribuție doar pentru email."
             />
           </Card>
         ) : (
@@ -296,7 +296,7 @@ export function ApeluriScreen({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13.5px] font-medium sm:text-[12.5px]">{firma.nume}</p>
                       <p className="text-[12px] text-muted-foreground sm:text-[11px]">
-                        {[firma.telefon ? numarAfisat(firma.telefon) : null, firma.oras, `încercări ${linie.incercari}/${limita}`].filter(Boolean).join(" · ")}
+                        {[firma.telefon ? numarAfisat(firma.telefon) : null, firma.oras, linie.incercari ? `${linie.incercari} ${linie.incercari === 1 ? "încercare" : "încercări"}` : null].filter(Boolean).join(" · ")}
                       </p>
                       {linie.nota ? <p className="mt-0.5 break-words text-[12px] text-muted-foreground sm:text-[11px]">„{linie.nota}”</p> : null}
                     </div>

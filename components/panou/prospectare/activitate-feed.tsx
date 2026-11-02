@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightLeft, Bot, CircleSlash, ClipboardCheck, Cpu, Lock, LockOpen, Mail, MailX, MessageCircle, Phone, Reply, Search, StickyNote, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, Bot, CalendarClock, CircleSlash, ClipboardCheck, Cpu, Lock, LockOpen, Mail, MailX, MessageCircle, Phone, Reply, Search, StickyNote, type LucideIcon } from "lucide-react";
 import { dateTimeRo, relativeRo } from "@/components/panou/ui/format";
 import type { ActivitateCuFirma } from "@/lib/prospectare/citire";
 import { CANALE, ETAPE, isCanal, isEtapa, REZULTATE } from "@/lib/prospectare/labels";
@@ -25,6 +25,7 @@ const TIPURI: Record<string, { icon: LucideIcon; label: string }> = {
   nota: { icon: StickyNote, label: "Notă" },
   canal: { icon: Lock, label: "Canal" },
   recontactare: { icon: LockOpen, label: "Recontactare" },
+  programare: { icon: CalendarClock, label: "Programare" },
   evaluare: { icon: ClipboardCheck, label: "Evaluare" },
   import: { icon: ArrowRightLeft, label: "Listă" },
   etapa: { icon: CircleSlash, label: "Etapă" },
@@ -73,7 +74,8 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
         if (!text(d.la)) return { ce: `Canal setat: ${canal(nou)}`, amanunt: motiv };
         return { ce: `Canal folosit: ${canal(nou)}${nou === "whatsapp" && cont ? ` (contul ${cont})` : ""}`, amanunt: motiv };
       }
-      if (!vechi || vechi === "telefon") return { ce: "Telefon golit", amanunt: motiv };
+      if (!vechi || vechi === "telefon") return { ce: "Ieșită din apeluri: înapoi în distribuție", amanunt: motiv };
+      if (vechi === "whatsapp") return { ce: "WhatsApp anulat", amanunt: motiv };
       return { ce: `Canal scos: ${canal(vechi)}`, amanunt: motiv };
     }
     case "apel": {
@@ -85,6 +87,7 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
       const inapoi = ora(d.suna_inapoi_la);
       const amanunt = [
         d.revenit_in_rezerva === true ? "A ieșit din listă, și-a pierdut telefonul și a revenit în rezerva de apeluri." : null,
+        d.revenit_in_distributie === true ? (d.doar_email === true ? "Număr greșit: înapoi în distribuție, doar pentru email." : "Nu e contact: înapoi în distribuție.") : null,
         inapoi ? `Sună înapoi: ${inapoi}` : null,
         citat(text(d.nota)),
       ]
@@ -108,6 +111,7 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
     case "whatsapp": {
       // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
       if (d.continuare_apel === true) return { ce: "Continuare apel pe WhatsApp", amanunt: "După „Interesat”. Firma rămâne pe telefon; canalul WhatsApp nu se folosește." };
+      if (d.anulat === true) return { ce: "WhatsApp anulat imediat după trimitere", amanunt: "Firma e din nou în lista zilei." };
       // „Cont 2” din migrarea 34; rândurile vechi au doar numărul contului.
       const cont = text(d.cont_nume) ?? (numar(d.cont) ? `contul ${numar(d.cont)}` : null);
       return { ce: cont ? `WhatsApp trimis de pe ${cont}` : "WhatsApp trimis", amanunt: null };
@@ -129,6 +133,13 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
       const folosite = canaleFolosite(d.canale_folosite);
       const amanunt = [citat(text(d.motiv)), folosite ? `A primit deja ${folosite}.` : null].filter(Boolean).join(" · ");
       return { ce: `Recontactare permisă: ${canal(d.canal) ?? "alt canal"}`, amanunt: amanunt || null };
+    }
+    case "programare": {
+      const zi = text(d.zi);
+      const pe = zi ? ` pentru ${zi.slice(8, 10)}.${zi.slice(5, 7)}` : "";
+      const cn = canal(d.canal) ?? "un canal";
+      if (d.anulata === true) return { ce: `Programare anulată: ${cn}${pe}`, amanunt: "Firma s-a întors în rezervă." };
+      return { ce: `Programată pe ${cn}${pe}`, amanunt: [text(d.sursa) === "manual" ? "Manual" : "Automat", text(d.casuta), d.zi_ceruta ? "ziua cerută era plină" : null].filter(Boolean).join(" · ") || cn };
     }
     case "evaluare": {
       const scor = numar(d.scor);

@@ -13,14 +13,17 @@ import { cn } from "@/lib/utils";
 import { EroareCitire } from "./prezentare-eroare";
 
 /**
- * „Limite” din Setări, ca în prototip: încercările la „Nu răspunde” și
- * plafonul fiecărei căsuțe; plus ce are baza și prototipul nu: scorul minim al
- * cozii comune de construcție, ora rezervării, cererile pe minut și oprirea
- * unei căsuțe. Limitele pe cont WhatsApp stau acum la „Conturi WhatsApp”.
+ * „Limite” din Setări: plafonul fiecărei căsuțe și plafonul de încălzire (căsuțele
+ * fără limită proprie), câte apeluri pe zi primește un om la programarea manuală,
+ * scorul minim al cozii comune de construcție, ora rezervării, cererile pe minut și
+ * oprirea unei căsuțe. Limitele pe cont WhatsApp stau la „Conturi WhatsApp”.
+ * „Încercări la «Nu răspunde»” nu mai are câmp: „Nu răspunde” nu scoate firma după
+ * N încercări (firma se întoarce în distribuție, încercările doar se numără), deci
+ * valoarea veche pleacă neschimbată la salvare.
  * Un singur buton salvează tot ce s-a schimbat.
  */
 
-type Limite = Pick<Setari, "incercari_max" | "rezervare_ore" | "cereri_pe_minut" | "scor_minim_constructie">;
+type Limite = Pick<Setari, "incercari_max" | "rezervare_ore" | "cereri_pe_minut" | "scor_minim_constructie" | "email_plafon_casuta" | "apeluri_pe_zi">;
 type Stare = { ton: "ok" | "eroare"; text: string } | null;
 
 const intreg = (s: string, min: number, max: number): boolean => /^\d+$/.test(s.trim()) && Number(s) >= min && Number(s) <= max;
@@ -29,7 +32,8 @@ const limitaDin = (c: Casuta): string => (c.limita_zi === null ? "" : String(c.l
 
 /** Mesajul acțiunii spune câmpul: îl punem sub el. */
 function campDinMesaj(message: string): string | null {
-  if (message.startsWith("Încercări")) return "incercari";
+  if (message.startsWith("Plafonul de încălzire")) return "plafon";
+  if (message.startsWith("Apeluri pe zi")) return "apeluri";
   if (message.startsWith("Rezervarea")) return "rezervare";
   if (message.startsWith("Cereri pe minut")) return "cereri";
   if (message.startsWith("Scorul minim")) return "scor";
@@ -98,7 +102,8 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
   const { notify } = useToast();
   const [pending, startTransition] = useTransition();
 
-  const [incercari, setIncercari] = useState(String(setari.incercari_max));
+  const [plafon, setPlafon] = useState(String(setari.email_plafon_casuta));
+  const [apeluri, setApeluri] = useState(String(setari.apeluri_pe_zi));
   const [rezervare, setRezervare] = useState(String(setari.rezervare_ore));
   const [cereri, setCereri] = useState(String(setari.cereri_pe_minut));
   const [scor, setScor] = useState(String(setari.scor_minim_constructie));
@@ -108,7 +113,8 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
   const [stare, setStare] = useState<Stare>(null);
 
   const limiteSchimbate =
-    incercari.trim() !== String(setari.incercari_max) ||
+    plafon.trim() !== String(setari.email_plafon_casuta) ||
+    apeluri.trim() !== String(setari.apeluri_pe_zi) ||
     rezervare.trim() !== String(setari.rezervare_ore) ||
     cereri.trim() !== String(setari.cereri_pe_minut) ||
     scor.trim() !== String(setari.scor_minim_constructie);
@@ -126,7 +132,8 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
 
   const valideaza = (): Record<string, string> => {
     const e: Record<string, string> = {};
-    if (!intreg(incercari, 1, 10)) e.incercari = "Încercări: între 1 și 10.";
+    if (!intreg(plafon, 0, 500)) e.plafon = "Plafonul de încălzire: între 0 și 500.";
+    if (!intreg(apeluri, 1, 500)) e.apeluri = "Apeluri pe zi: între 1 și 500.";
     if (!intreg(rezervare, 1, 24)) e.rezervare = "Rezervarea: între 1 și 24 de ore.";
     if (!intreg(cereri, 10, 6000)) e.cereri = "Cereri pe minut: între 10 și 6000.";
     if (!intreg(scor, 0, 1000)) e.scor = "Scorul minim: între 0 și 1000.";
@@ -150,10 +157,13 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
       const mesaje: string[] = [];
       if (limiteSchimbate) {
         const result = await salveazaLimite({
-          incercariMax: Number(incercari),
+          // Fără câmp în pagină: valoarea din bază pleacă neschimbată.
+          incercariMax: setari.incercari_max,
           rezervareOre: Number(rezervare),
           cereriPeMinut: Number(cereri),
           scorMinimConstructie: Number(scor),
+          emailPlafonCasuta: Number(plafon),
+          apeluriPeZi: Number(apeluri),
         });
         if (!result.ok) {
           const camp = campDinMesaj(result.message);
@@ -210,18 +220,21 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
             />
 
             <Camp
-              id="incercari"
-              label="Încercări la „Nu răspunde”"
-              hint="La atingerea limitei, firma iese din listă și revine în rezervă."
-              value={incercari}
+              id="apeluri"
+              label="Apeluri pe zi, pe om"
+              hint="Câte firme intră în lista unui om într-o zi, la programarea manuală. Ce nu încape trece în zilele următoare. Importul în „Apeluri azi” nu ține cont de ea."
+              value={apeluri}
               onChange={(v) => {
-                setIncercari(v);
-                curata("incercari");
+                setApeluri(v);
+                curata("apeluri");
               }}
               min={1}
-              max={10}
-              eroare={erori.incercari}
+              max={500}
+              eroare={erori.apeluri}
             />
+            <p className="text-[11.5px] leading-relaxed text-muted-foreground">
+              „Nu răspunde” nu scoate firma după un număr de încercări: nu e contact, firma se întoarce în distribuție, iar încercările doar se numără în fișa ei.
+            </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Camp
@@ -258,6 +271,19 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
               <Mail className="h-3.5 w-3.5 text-mint" aria-hidden="true" />
               Plafon email pe căsuță
             </legend>
+            <Camp
+              id="plafon"
+              label="Plafon de încălzire"
+              hint="Emailuri pe zi pentru o căsuță fără limită proprie: la 00:00, distribuția îi programează cel mult atâtea. 0 = căsuțele fără limită proprie nu trimit."
+              value={plafon}
+              onChange={(v) => {
+                setPlafon(v);
+                curata("plafon");
+              }}
+              min={0}
+              max={500}
+              eroare={erori.plafon}
+            />
             {casute === null ? (
               <EroareCitire title="Căsuțele nu s-au putut citi" message={eroareCasute ?? "Căsuțele nu s-au putut citi."} className="py-6" />
             ) : casute.length === 0 ? (
@@ -268,7 +294,8 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
                   const id = `casuta-${i}`;
                   const eroare = erori[`c:${c.adresa}`];
                   const activa = active[c.adresa] ?? c.activa;
-                  const auto = c.limita_zi === null && c.limita_azi !== null ? `auto · ${c.limita_azi}` : "auto";
+                  // Fără limită proprie, căsuța ia plafonul de încălzire de mai sus (cel din câmp, înainte de salvare).
+                  const auto = intreg(plafon, 0, 500) ? `plafon · ${Number(plafon)}` : "plafon";
                   return (
                     <li key={c.adresa}>
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
@@ -316,7 +343,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
               </ul>
             )}
             <p id="casute-h" className="pt-1 text-[11px] leading-relaxed text-muted-foreground">
-              O căsuță atinsă nu mai trimite până a doua zi. Gol = limita o dă încălzirea robotului; 0 = nu trimite azi. Fără bifa „trimite”, căsuța e oprită din admin.
+              Limita căsuței: câte emailuri i se programează pe zi. Gol = plafonul de încălzire; 0 = nu trimite. Fără bifa „trimite”, căsuța e oprită din admin și nu primește programări.
             </p>
           </fieldset>
         </div>

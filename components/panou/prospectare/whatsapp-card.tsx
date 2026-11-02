@@ -1,29 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { Ban, Check, MessageCircle, Repeat } from "lucide-react";
-import { schimbaEtapa, trimiteWhatsapp } from "@/app/(admin)/admin/prospectare/actions";
-import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
-import { dayMonthRo, num, timeRo } from "@/components/panou/ui/format";
-import { Btn, btnClass, Card, Pill } from "@/components/panou/ui/primitives";
-import { useToast } from "@/components/panou/ui/toast";
+import { useEffect, useId, useRef, useState, type Ref } from "react";
+import Link from "next/link";
+import { Check, Copy, MessageCircle } from "lucide-react";
+import { timeRo } from "@/components/panou/ui/format";
+import { btnClass } from "@/components/panou/ui/primitives";
 import { linkWhatsApp, numarAfisat, numarScurt } from "@/lib/prospectare/contact";
-import type { ContWhatsapp, FirmaRand } from "@/lib/prospectare/types";
+import type { FirmaRand } from "@/lib/prospectare/types";
 import { cn } from "@/lib/utils";
-import { TAP_SM } from "./apeluri-ui";
-import { CanaleBadge, canaleFolosite } from "./stage-badge";
 
 /**
- * WhatsAppCard din prototip, pe lista continuă: firma, numărul fără 0, mesajul
- * pregătit și trimiterea de pe contul ales. Firma se marchează ÎNAINTE de
- * deschiderea conversației (ca emailul): baza pune WhatsApp-ul o singură dată,
- * deci dacă alt telefon a luat-o între timp, cererea e refuzată și nimeni nu
- * scrie de două ori. Firmele cu WhatsApp permis din fișă poartă motivul și cine l-a permis.
+ * Rândurile compacte din „WhatsApp azi”: un rând pe firmă (nume, număr fără 0,
+ * oraș, cont), mesajul pe o singură linie cu „vezi tot”, „Trimite pe WhatsApp”
+ * și copierile mici. La 360 px un rând are ~92 px: pe un telefon de 800 px
+ * încap 6–7 firme între bara de sus și meniul de jos.
  */
-
-/** Contul de pe care se trimite: numele și numărul lui, din Setări. */
-export type ContAles = Pick<ContWhatsapp, "id" | "nume" | "telefon">;
 
 /** Numărul unui cont, ca în Setări: „+40 771 464 310” (un număr care nu e mobil românesc rămâne cum e scris). */
 export function telefonCont(telefon: string): string {
@@ -31,28 +22,15 @@ export function telefonCont(telefon: string): string {
   return /^7\d{8}$/.test(scurt) ? `+40 ${scurt.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3")}` : telefon.trim();
 }
 
-/** Copierile mici din prototip (xs), cu 44 px pe telefon. */
-const COPIE = "h-11 px-3 text-[13px] sm:h-7 sm:px-2.5 sm:text-[12px]";
-/** Butoanele mari ale cardului: toată lățimea pe telefon. */
-const MARE = "h-12 w-full gap-2 text-[15px] sm:h-11 sm:w-auto sm:text-sm";
+/** Fișa firmei: tabelul Firme o deschide din `?firma=<id>`. */
+const linkFisa = (id: string): string => `/admin/prospectare/firme?firma=${encodeURIComponent(id)}`;
 
-const mic = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1);
-const momentScurt = (iso: string): string => `${dayMonthRo(iso)}, ${timeRo(iso)}`;
-
-const CONEXIUNE =
-  "Conexiunea a căzut și nu știm dacă firma s-a marcat. Lista se reîncarcă: dacă firma e tot aici, încearcă din nou.";
-
-/** O firmă marcată din ecranul ăsta care rămâne vizibilă până termină omul cu ea. */
-export interface FirmaLuata {
-  firma: FirmaRand;
-  mesaj: string;
-  cont: ContAles;
-  /** blocat: browserul n-a deschis WhatsApp singur; manual: omul trimite din alt telefon sau din altă aplicație. */
-  motiv: "blocat" | "manual";
-}
-
-/** Fereastra deschisă în clic, cât așteptăm baza: un text, nu o pagină albă goală. */
-function pregatesteFereastra(fereastra: Window): void {
+/**
+ * Fereastra deschisă chiar în clic, cât așteptăm baza: un text, nu o pagină
+ * albă. Legătura cu pagina noastră se taie (`opener`), dar referința rămâne
+ * la noi: o trimitem la WhatsApp după marcare sau o închidem la refuz.
+ */
+export function pregatesteFereastra(fereastra: Window): void {
   try {
     fereastra.opener = null;
     fereastra.document.title = "Se deschide WhatsApp…";
@@ -63,301 +41,233 @@ function pregatesteFereastra(fereastra: Window): void {
   }
 }
 
-/** Firma a primit WhatsApp-ul ca al doilea canal, permis de un admin din fișa ei. */
-const permisa = (firma: FirmaRand): boolean => firma.canal_permis === "whatsapp";
+/** Copiere secundară, mică: eticheta vizibilă e prima parte din numele accesibil. */
+function CopiazaMic({
+  valoare,
+  eticheta,
+  descriere,
+  anunt,
+  onCopiat,
+}: {
+  valoare: string;
+  eticheta: string;
+  descriere: string;
+  /** Ce aude cititorul de ecran după copiere. */
+  anunt: string;
+  onCopiat: (text: string) => void;
+}) {
+  const [copiat, setCopiat] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-/**
- * De ce e firma în listă deși a fost contactată: pastila „Recontactare
- * permisă”, canalele de până acum, motivul și cine l-a permis.
- */
-function Recontactare({ firma }: { firma: FirmaRand }) {
-  const canale = canaleFolosite(firma).length > 0;
-  if (!permisa(firma) && !canale) return null;
-  const cine = [firma.canal_permis_de, firma.canal_permis_la ? momentScurt(firma.canal_permis_la) : null].filter(Boolean).join(", ");
-
-  return (
-    <div className="mt-2 space-y-1.5">
-      <div className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">
-        {permisa(firma) ? (
-          <Pill tone="sky">
-            <Repeat className="h-3 w-3" aria-hidden="true" />
-            Recontactare permisă
-          </Pill>
-        ) : null}
-        {canale ? (
-          <>
-            <span>contactată deja pe</span>
-            <CanaleBadge firma={firma} />
-          </>
-        ) : null}
-      </div>
-      {permisa(firma) ? (
-        <p className="text-[13px] leading-relaxed text-foreground/85 sm:text-[12px]">
-          <span className="text-muted-foreground">Motiv: </span>
-          {firma.canal_permis_motiv ? `„${firma.canal_permis_motiv}”` : "nescris"}
-          {cine ? <span className="text-muted-foreground"> · permisă de {cine}</span> : null}
-        </p>
-      ) : null}
-    </div>
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    []
   );
-}
 
-/** Numele, numărul și mesajul, cu butoanele de copiere: la fel în cardul de trimis și în cel marcat. */
-function CorpFirma({ firma, mesaj, faraMesaj, eticheta }: { firma: FirmaRand; mesaj: string; faraMesaj: string; eticheta?: ReactNode }) {
-  const meta = [`#${firma.nr}`, firma.oras, firma.nisa, firma.scor !== null ? `scor ${num(firma.scor)}` : null].filter(Boolean).join(" · ");
+  const copiaza = async () => {
+    try {
+      await navigator.clipboard.writeText(valoare);
+      onCopiat(anunt);
+    } catch {
+      onCopiat("Browserul n-a lăsat copierea: ține apăsat pe text și copiază-l manual.");
+      return;
+    }
+    setCopiat(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopiat(false), 2000);
+  };
 
+  const Icon = copiat ? Check : Copy;
   return (
-    <>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          {eticheta}
-          <h3 className="break-words text-[16px] font-semibold leading-tight sm:text-[15px]">{firma.nume}</h3>
-          <p className="mt-0.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">{meta}</p>
-        </div>
-        <CopyButton value={firma.nume} label="Copiază numele" size="xs" className={COPIE} />
-      </div>
-
-      <Recontactare firma={firma} />
-
-      {firma.telefon ? (
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          <span className="pu-num mr-auto text-[21px] font-medium leading-none tracking-tight sm:mr-0">{numarAfisat(firma.telefon)}</span>
-          <CopyButton value={numarScurt(firma.telefon)} label="Copiază numărul" size="xs" className={COPIE} />
-        </div>
-      ) : (
-        <p className="mt-2.5 text-[12.5px] text-[#FFB0C0]">Firma nu are telefon în fișă.</p>
-      )}
-
-      <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5">
-        {mesaj ? (
-          <>
-            <p className="whitespace-pre-wrap break-words text-[14px] leading-relaxed text-foreground/85 sm:text-[12px]">{mesaj}</p>
-            <div className="mt-2">
-              <CopyButton value={mesaj} label="Copiază mesajul" size="xs" className={COPIE} />
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="text-[12.5px] text-muted-foreground sm:text-[12px]">{faraMesaj}</p>
-            {firma.link_demo ? (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="min-w-0 break-all font-mono text-[12.5px] text-foreground/85 sm:text-[12px]">{firma.link_demo}</span>
-                <CopyButton value={firma.link_demo} label="Copiază linkul demo" size="xs" className={COPIE} />
-              </div>
-            ) : null}
-          </>
-        )}
-      </div>
-    </>
+    <button
+      type="button"
+      onClick={copiaza}
+      title={descriere}
+      className={btnClass({
+        variant: "outline",
+        size: "xs",
+        className: cn("h-8 gap-1 border-white/[0.09] px-2 text-[11.5px] font-normal text-muted-foreground hover:text-foreground", copiat && "text-mint"),
+      })}
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {copiat ? "Copiat" : eticheta}
+      <span className="sr-only">: {descriere}</span>
+    </button>
   );
 }
 
 /**
- * O firmă din listă. „Trimite pe WhatsApp” deschide fereastra chiar în clic
- * (după `await` browserul ar bloca-o), marchează firma pe contul ales (contul
- * e autorul din activitate) și abia apoi trimite fereastra la WhatsApp, cu
- * mesajul gata. „Marchează și trimit manual” doar marchează: pentru WhatsApp-ul
- * de pe alt telefon sau din altă aplicație.
+ * O firmă de trimis. Pe telefon: numele și numărul cu „Trimite pe WhatsApp” în
+ * dreapta, apoi mesajul pe o linie cu „vezi tot” și copierile. De la `sm`, tot
+ * rândul pe o singură linie, cu butonul principal la capăt.
  */
-export function WhatsAppCard({
+export function WhatsAppRand({
   firma,
   mesaj,
-  faraMesaj,
-  cont,
-  faraCont,
-  onLuata,
-  onEroare,
+  contNume,
+  limita,
+  lucru,
+  eroare,
+  motivBlocare,
+  butonRef,
+  onTrimite,
+  onCopiat,
 }: {
   firma: FirmaRand;
+  /** Șablonul umplut; gol când șablonul lipsește din Setări. */
   mesaj: string;
-  /** Ce scrie în locul mesajului când acesta lipsește (șablon gol, setări necitite). */
-  faraMesaj: string;
-  /** Contul ales; null: încă neales (sau niciun cont activ în Setări). */
-  cont: ContAles | null;
-  /** De ce nu se poate trimite fără cont. */
-  faraCont: string;
-  onLuata: (luata: FirmaLuata) => void;
-  onEroare: (firma: FirmaRand, text: string) => void;
+  contNume: string;
+  /** Contul e la limita zilei sau peste: doar avertisment, mesajul pleacă oricum. */
+  limita: "la" | "peste" | null;
+  /** „anulare”: firma tocmai s-a întors din „Trimise azi” și așteaptă baza. */
+  lucru: "anulare" | null;
+  eroare: string | null;
+  /** De ce nu se poate trimite (fără telefon, cont dezactivat); null: se poate. */
+  motivBlocare: string | null;
+  butonRef: Ref<HTMLButtonElement>;
+  onTrimite: () => void;
+  onCopiat: (text: string) => void;
 }) {
-  const router = useRouter();
-  const { notify } = useToast();
-  const [lucru, setLucru] = useState<"deschide" | "manual" | null>(null);
-  // Marcată cu succes: cardul pleacă la reîncărcare; până atunci, butoanele stau oprite.
-  const [marcata, setMarcata] = useState(false);
-  const [eroare, setEroare] = useState<string | null>(null);
-  const [confirmare, setConfirmare] = useState(false);
-  // Două atingeri rapide ar ajunge amândouă aici înainte de randare: a doua se oprește.
-  const inCurs = useRef(false);
-
-  const motivBlocare = !firma.telefon ? "Firma nu are telefon în fișă." : cont === null ? faraCont : null;
-  const blocat = lucru !== null || marcata || motivBlocare !== null;
-
-  const esec = (text: string) => {
-    setEroare(text);
-    onEroare(firma, text);
-    notify(`${firma.nume}: ${text}`, "error");
-    router.refresh();
-  };
-
-  const trimite = async (deschide: boolean) => {
-    if (blocat || inCurs.current || cont === null || !firma.telefon) return;
-    inCurs.current = true;
-    // Fereastra se deschide acum, cât suntem încă în clic; primește adresa după ce baza a marcat firma.
-    const fereastra = deschide ? window.open("", "_blank") : null;
-    if (fereastra) pregatesteFereastra(fereastra);
-    setEroare(null);
-    setLucru(deschide ? "deschide" : "manual");
-    const result = await trimiteWhatsapp({ firmaId: firma.id, cont: cont.id }).catch(() => ({ ok: false as const, message: CONEXIUNE }));
-    setLucru(null);
-    inCurs.current = false;
-
-    if (!result.ok) {
-      fereastra?.close();
-      esec(result.message);
-      return;
-    }
-
-    setMarcata(true);
-    const ton = result.data?.pesteLimita ? "warn" : "default";
-    const text = `${firma.nume}: ${mic(result.message)}`;
-    if (fereastra && !fereastra.closed) {
-      fereastra.location.href = linkWhatsApp(firma.telefon, mesaj);
-      notify(text, ton);
-    } else if (deschide) {
-      // Browserul a blocat fereastra (sau a fost închisă): firma rămâne sus, cu butonul de deschis.
-      onLuata({ firma, mesaj, cont: { ...cont, nume: result.data?.contNume ?? cont.nume }, motiv: "blocat" });
-      notify(`${text} WhatsApp nu s-a deschis singur: apasă „Deschide WhatsApp” la firmă, sus.`, "warn");
-    } else {
-      onLuata({ firma, mesaj, cont: { ...cont, nume: result.data?.contNume ?? cont.nume }, motiv: "manual" });
-      notify(text, ton);
-    }
-    router.refresh();
-  };
-
-  const nuContacta = async () => {
-    const result = await schimbaEtapa({ firmaId: firma.id, etapa: "nu_contacta", motiv: "Marcată din lista de WhatsApp" }).catch(() => ({
-      ok: false as const,
-      message: "Conexiunea a căzut și nu știm dacă firma s-a marcat „Nu contacta”. Lista se reîncarcă: verifică dacă e tot aici.",
-    }));
-    if (!result.ok) {
-      esec(result.message);
-      return;
-    }
-    notify(`${firma.nume}. ${result.message}`, "warn");
-    router.refresh();
-  };
+  const [deschis, setDeschis] = useState(false);
+  const idMesaj = useId();
+  const ocupat = lucru !== null;
+  const deCopiat = mesaj || firma.link_demo || "";
 
   return (
-    <Card padded={false} className={cn("p-4 sm:p-5", permisa(firma) && "border-sky/20")} aria-busy={lucru !== null || undefined}>
-      <CorpFirma firma={firma} mesaj={mesaj} faraMesaj={faraMesaj} />
+    <li className="px-3 py-2 sm:px-4 sm:py-2.5" aria-busy={ocupat || undefined}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:flex-nowrap">
+        <div className="min-w-0 flex-1 sm:w-60 sm:flex-none lg:w-72">
+          <Link
+            href={linkFisa(firma.id)}
+            className="inline-block max-w-full truncate align-top text-[14px] font-medium leading-5 underline-offset-2 hover:underline"
+          >
+            {firma.nume}
+          </Link>
+          <p className="truncate text-[12px] leading-4 text-muted-foreground">
+            {firma.telefon ? <span className="pu-num text-foreground/85">{numarAfisat(firma.telefon)}</span> : <span className="text-[#FFB0C0]">fără telefon</span>}
+            {firma.oras ? ` · ${firma.oras}` : ""}
+            {` · ${contNume}`}
+            {limita ? <span className="text-[#FFC79C]"> · {limita === "peste" ? "peste limită" : "la limită"}</span> : null}
+          </p>
+        </div>
 
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <Btn variant="primary" size="lg" icon={MessageCircle} className={MARE} disabled={blocat} onClick={() => void trimite(true)}>
-          {lucru === "deschide" ? "Se marchează…" : marcata ? "Marcată" : "Trimite pe WhatsApp"}
-        </Btn>
-        <Btn variant="outline" size="lg" className={MARE} disabled={blocat} onClick={() => void trimite(false)}>
-          {lucru === "manual" ? "Se marchează…" : "Marchează și trimit manual"}
-        </Btn>
-        <Btn
-          variant="ghost"
-          size="sm"
-          icon={Ban}
-          className={cn(TAP_SM, "self-start sm:ml-auto sm:self-auto")}
-          disabled={lucru !== null || marcata}
-          onClick={() => setConfirmare(true)}
+        <button
+          ref={butonRef}
+          type="button"
+          onClick={onTrimite}
+          disabled={ocupat || motivBlocare !== null}
+          className={btnClass({
+            variant: "primary",
+            size: "sm",
+            className:
+              "h-10 w-[6.75rem] shrink-0 whitespace-normal px-2 text-center text-[12.5px] leading-[1.15] sm:order-last sm:h-9 sm:w-auto sm:whitespace-nowrap sm:px-3.5 sm:text-[13px]",
+          })}
         >
-          Nu contacta
-        </Btn>
+          <MessageCircle className="hidden h-4 w-4 sm:block" aria-hidden="true" />
+          {lucru === "anulare" ? "Se anulează…" : "Trimite pe WhatsApp"}
+          <span className="sr-only"> către {firma.nume}</span>
+        </button>
+
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-1 sm:w-auto sm:flex-1">
+          {mesaj ? (
+            <>
+              <p
+                id={idMesaj}
+                className={cn(
+                  "text-[12.5px] leading-5 text-foreground/75",
+                  deschis ? "basis-full whitespace-pre-wrap break-words rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-2" : "min-w-0 flex-1 truncate"
+                )}
+              >
+                {mesaj}
+              </p>
+              <button
+                type="button"
+                aria-expanded={deschis}
+                aria-controls={idMesaj}
+                onClick={() => setDeschis((v) => !v)}
+                className="h-8 shrink-0 rounded-md px-1.5 text-[12px] text-lav/90 underline-offset-2 hover:text-lav hover:underline"
+              >
+                {deschis ? "ascunde" : "vezi tot"}
+                <span className="sr-only"> mesajul pentru {firma.nume}</span>
+              </button>
+            </>
+          ) : (
+            <p className="min-w-0 flex-1 truncate text-[12.5px] leading-5 text-muted-foreground">Fără mesaj pregătit: WhatsApp se deschide gol.</p>
+          )}
+          <span className="ml-auto flex shrink-0 gap-1">
+            {firma.telefon ? <CopiazaMic valoare={numarScurt(firma.telefon)} eticheta="Nr." descriere={`copiază numărul ${numarAfisat(firma.telefon)}, fără 0`} anunt="Numărul copiat, fără 0 în față." onCopiat={onCopiat} /> : null}
+            {deCopiat ? (
+              <CopiazaMic
+                valoare={deCopiat}
+                eticheta={mesaj ? "Mesaj" : "Link"}
+                descriere={mesaj ? `copiază mesajul pentru ${firma.nume}` : `copiază linkul demo al firmei ${firma.nume}`}
+                anunt={mesaj ? "Mesajul copiat." : "Linkul demo copiat."}
+                onCopiat={onCopiat}
+              />
+            ) : null}
+          </span>
+        </div>
       </div>
 
-      {motivBlocare ? <p className="mt-2 text-[12.5px] text-muted-foreground sm:text-[11.5px]">{motivBlocare}</p> : null}
-      {eroare ? (
-        <InlineNote tone="rose" className="mt-3">
-          {eroare}
-        </InlineNote>
-      ) : null}
-
-      <ConfirmDialog
-        open={confirmare}
-        onOpenChange={setConfirmare}
-        title="Marchezi firma „Nu contacta”?"
-        description={[firma.nume, firma.oras].filter(Boolean).join(" · ")}
-        consequence="Firma iese din lista de WhatsApp și nu mai primește nimic, pe niciun canal: nici email, nici WhatsApp, nici apel. Etapa nu se mai schimbă după asta."
-        confirmLabel="Marchează „Nu contacta”"
-        onConfirm={nuContacta}
-      />
-    </Card>
+      {motivBlocare ? <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{motivBlocare}</p> : null}
+      {eroare ? <p className="mt-1.5 rounded-lg border border-rose/25 bg-rose/[0.07] px-2.5 py-1.5 text-[12px] leading-snug text-[#FFC2CE]">{eroare}</p> : null}
+    </li>
   );
 }
 
 /**
- * Firma marcată acum, care încă are nevoie de un pas: WhatsApp-ul nu s-a
- * deschis singur (browserul a blocat fereastra) sau omul trimite manual.
- * Stă sus, deasupra listei, până o deschide sau apasă „Gata”.
+ * O firmă din „Trimise azi”: ora, contul, numărul; „Anulează” cât mai merge
+ * (2 minute de la trimitere) și conversația, redeschisă fără mesajul pregătit,
+ * ca să nu-l trimiți de două ori.
  */
-export function WhatsAppLuata({ luata, faraMesaj, onGata }: { luata: FirmaLuata; faraMesaj: string; onGata: (firmaId: string) => void }) {
-  const { firma, mesaj, cont, motiv } = luata;
-  const ref = useRef<HTMLDivElement>(null);
-
-  // Cardul de la care a plecat omul a dispărut din listă: focusul și privirea vin aici.
-  useEffect(() => {
-    ref.current?.focus();
-  }, []);
-
-  const deschide = firma.telefon ? (
-    <a
-      href={linkWhatsApp(firma.telefon, mesaj)}
-      target="_blank"
-      rel="noreferrer"
-      // Odată deschisă, conversația are mesajul; a doua deschidere l-ar pune din nou.
-      onClick={() => setTimeout(() => onGata(firma.id), 400)}
-      className={btnClass({ variant: motiv === "blocat" ? "primary" : "outline", size: "lg", className: MARE })}
-    >
-      <MessageCircle className="h-4 w-4" aria-hidden="true" />
-      Deschide WhatsApp
-      <span className="sr-only"> către {firma.nume}, cu mesajul pregătit (filă nouă)</span>
-    </a>
-  ) : null;
-
+export function WhatsAppTrimisaRand({
+  firma,
+  contNume,
+  la,
+  lucru,
+  poateAnula,
+  onAnuleaza,
+}: {
+  firma: FirmaRand;
+  contNume: string;
+  la: string | null;
+  /** „trimitere”: se marchează chiar acum. */
+  lucru: "trimitere" | null;
+  poateAnula: boolean;
+  onAnuleaza: () => void;
+}) {
   return (
-    <div ref={ref} tabIndex={-1} className="rounded-[22px] outline-none focus-visible:ring-2 focus-visible:ring-mint/50">
-      <Card padded={false} className="border-mint/25 p-4 sm:p-5">
-        <CorpFirma
-          firma={firma}
-          mesaj={mesaj}
-          faraMesaj={faraMesaj}
-          eticheta={
-            <Pill tone="mint" className="mb-1.5">
-              <Check className="h-3 w-3" aria-hidden="true" />
-              Marcată trimisă · {cont.nume}
-            </Pill>
-          }
-        />
-
-        <p className="mt-3 text-[13px] leading-relaxed text-foreground/85 sm:text-[12.5px]">
-          {motiv === "blocat"
-            ? "Browserul n-a deschis WhatsApp singur. Firma e deja marcată: apasă „Deschide WhatsApp” și trimite mesajul."
-            : `Firma e marcată pe ${cont.nume}. Copiază numărul și mesajul în WhatsApp-ul de pe ${telefonCont(cont.telefon)}, trimite, apoi apasă „Gata”.`}
+    <li className="flex items-center gap-2 px-3 py-2 sm:px-4" aria-busy={lucru !== null || undefined}>
+      <div className="min-w-0 flex-1">
+        <Link href={linkFisa(firma.id)} className="inline-block max-w-full truncate align-top text-[13.5px] font-medium leading-5 underline-offset-2 hover:underline">
+          {firma.nume}
+        </Link>
+        <p className="truncate text-[12px] leading-4 text-muted-foreground">
+          <span className={cn("pu-num", lucru ? "text-lav" : "text-foreground/85")}>{lucru ? "Se marchează…" : la ? timeRo(la) : "azi"}</span>
+          {` · ${contNume}`}
+          {firma.telefon ? <span className="pu-num"> · {numarAfisat(firma.telefon)}</span> : null}
         </p>
-
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          {motiv === "blocat" ? (
-            <>
-              {deschide}
-              <Btn variant="ghost" size="sm" className={cn(TAP_SM, "self-start sm:self-auto")} onClick={() => onGata(firma.id)}>
-                Ascunde
-              </Btn>
-            </>
-          ) : (
-            <>
-              <Btn variant="mint" size="lg" icon={Check} className={MARE} onClick={() => onGata(firma.id)}>
-                Gata, l-am trimis
-              </Btn>
-              {deschide}
-            </>
-          )}
-        </div>
-      </Card>
-    </div>
+      </div>
+      {poateAnula && !lucru ? (
+        <button type="button" onClick={onAnuleaza} className={btnClass({ variant: "outline", size: "xs", className: "h-9 px-2.5 text-[12px] sm:h-8" })}>
+          Anulează
+          <span className="sr-only"> marcarea pentru {firma.nume}</span>
+        </button>
+      ) : null}
+      {firma.telefon ? (
+        <a
+          href={linkWhatsApp(firma.telefon)}
+          target="_blank"
+          rel="noreferrer"
+          title="Deschide conversația, fără mesaj"
+          className={btnClass({ variant: "ghost", size: "xs", className: "h-9 w-9 shrink-0 px-0 sm:h-8 sm:w-8" })}
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only">Deschide conversația cu {firma.nume}, fără mesaj (filă nouă)</span>
+        </a>
+      ) : null}
+    </li>
   );
 }

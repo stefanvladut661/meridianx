@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Building2, Cpu, LayoutTemplate, LockOpen, Mail, MapPinned, MessageCircle, Phone, Sparkles, Users } from "lucide-react";
-import { dateTimeRo, num, relativeRo } from "@/components/panou/ui/format";
+import { ArrowRight, Building2, Cpu, LayoutTemplate, LockOpen, Mail, MapPinned, MessageCircle, Phone, Sparkles, Users, type LucideIcon } from "lucide-react";
+import { dateTimeRo, num, relativeRo, timeRo } from "@/components/panou/ui/format";
 import { btnClass, Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
 import { ActivitateFeed } from "@/components/panou/prospectare/activitate-feed";
@@ -9,9 +9,18 @@ import { MailboxTable } from "@/components/panou/prospectare/email-casute";
 import { PageHead } from "@/components/panou/prospectare/page-head";
 import { cate, linkFirma, RobotStare, stareRobot } from "@/components/panou/prospectare/prezentare-comun";
 import { EroareCitire } from "@/components/panou/prospectare/prezentare-eroare";
-import { aziBucuresti, citesteActivitateRecenta, citesteCasute, citesteDispozitive, citesteRezumat, citesteSiteuriConstruite, type Rezumat } from "@/lib/prospectare/citire";
+import {
+  aziBucuresti,
+  citesteActivitateRecenta,
+  citesteCasute,
+  citesteDispozitive,
+  citesteRezumat,
+  citesteRezumatDistributie,
+  citesteSiteuriConstruite,
+  type Rezumat,
+} from "@/lib/prospectare/citire";
 import { ETAPE, ETAPE_ORDINE } from "@/lib/prospectare/labels";
-import type { Dispozitiv, Etapa } from "@/lib/prospectare/types";
+import type { Dispozitiv, Etapa, RezumatDistributie } from "@/lib/prospectare/types";
 
 export const metadata: Metadata = { title: "Prezentare — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -133,15 +142,185 @@ function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number
   );
 }
 
-/** /admin/prospectare — rezumatul prospectării: cifrele zilei, pâlnia, căsuțele, roboții, ultimele schimbări. */
+/** Un canal din „Distribuția pe canale”: azi, mâine, rezerva și ce s-a întors la 00:00. */
+interface RandDistributie {
+  cheie: string;
+  label: string;
+  Icon: LucideIcon;
+  ton: string;
+  href: string;
+  azi: number;
+  aziDetaliu: string;
+  maine: number;
+  maineDetaliu: string;
+  rezerva: number;
+  intoarse: number;
+  intoarseDetaliu: string;
+}
+
+function randuriDistributie(d: RezumatDistributie): RandDistributie[] {
+  return [
+    {
+      cheie: "email",
+      label: "Email",
+      Icon: Mail,
+      ton: "text-mint",
+      href: "/admin/prospectare/email",
+      azi: d.programate_azi.email,
+      aziDetaliu: `din ${num(d.capacitate.email)} posibile · ${num(d.programate_azi.email_ramase)} de trimis`,
+      maine: d.programate_maine.email,
+      maineDetaliu: "manuale; restul la 00:00",
+      rezerva: d.rezerva.email,
+      intoarse: d.intoarse_la_00.email,
+      intoarseDetaliu: "neplecate ieri",
+    },
+    {
+      cheie: "whatsapp",
+      label: "WhatsApp",
+      Icon: MessageCircle,
+      ton: "text-lav",
+      href: "/admin/prospectare/whatsapp",
+      azi: d.programate_azi.whatsapp,
+      aziDetaliu: `din ${num(d.capacitate.whatsapp)} posibile · ${num(d.programate_azi.whatsapp_ramase)} de trimis`,
+      maine: d.programate_maine.whatsapp,
+      maineDetaliu: "manuale; restul la 00:00",
+      rezerva: d.rezerva.whatsapp,
+      intoarse: d.intoarse_la_00.whatsapp,
+      intoarseDetaliu: "netrimise ieri",
+    },
+    {
+      cheie: "telefon",
+      label: "Apeluri",
+      Icon: Phone,
+      ton: "text-sky",
+      href: "/admin/prospectare/apeluri",
+      azi: d.apeluri_azi.total,
+      aziDetaliu: `în listele de azi · ${num(d.apeluri_azi.sunate)} sunate`,
+      maine: d.programate_maine.telefon,
+      maineDetaliu: "programate manual",
+      rezerva: d.rezerva.telefon,
+      intoarse: d.intoarse_la_00.telefon,
+      intoarseDetaliu: "nesunate ieri",
+    },
+  ];
+}
+
+/**
+ * Distribuția de la 00:00, pe canale: emailul și WhatsApp-ul se programează singure (cât permit
+ * căsuțele și conturile), apelurile doar prin import sau programare manuală. Tabel de la 768 în sus, carduri sub.
+ */
+function Distributie({ d }: { d: RezumatDistributie }) {
+  const randuri = randuriDistributie(d);
+  const c = d.ciclu;
+  const laZeroZero = [
+    c.mutate > 0 ? `${cate(c.mutate, "programare manuală mutată", "programări manuale mutate")} pe mâine (ziua era plină)` : null,
+    c.anulate > 0 ? `${cate(c.anulate, "programare anulată", "programări anulate")} (firma nu mai putea merge pe canal)` : null,
+    c.suna_inapoi > 0 ? `${cate(c.suna_inapoi, "„Sună înapoi” trecut", "„Sună înapoi” trecute")} pe azi` : null,
+  ].filter(Boolean);
+  return (
+    <Card>
+      <SectionTitle
+        title="Distribuția pe canale"
+        hint={`${c.zi === d.azi ? `A rulat azi la ${timeRo(c.rulat_la)}` : `Ultima rulare: ${dateTimeRo(c.rulat_la)}`} · ${cate(d.rezerva.total, "firmă", "firme")} în rezervă, neprogramate`}
+      />
+
+      <div className="mt-3 hidden overflow-x-auto md:block">
+        <table className="w-full border-collapse text-left">
+          <caption className="sr-only">Programate azi și mâine, rezerva și ce s-a întors la 00:00, pe fiecare canal</caption>
+          <thead>
+            <tr className="border-b border-border text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+              <th scope="col" className="py-2 pr-3 font-medium">
+                Canal
+              </th>
+              <th scope="col" className="py-2 pr-3 font-medium">
+                Azi
+              </th>
+              <th scope="col" className="py-2 pr-3 font-medium">
+                Mâine
+              </th>
+              <th scope="col" className="py-2 pr-3 font-medium">
+                În rezervă
+              </th>
+              <th scope="col" className="py-2 font-medium">
+                Întoarse la 00:00
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {randuri.map((r) => (
+              <tr key={r.cheie} className="border-b border-border/70 align-top last:border-0">
+                <th scope="row" className="py-2.5 pr-3 text-left font-normal">
+                  <Link href={r.href} className="inline-flex items-center gap-1.5 rounded-sm text-[12.5px] font-medium hover:underline">
+                    <r.Icon className={`h-3.5 w-3.5 shrink-0 ${r.ton}`} aria-hidden="true" />
+                    {r.label}
+                  </Link>
+                </th>
+                <td className="py-2.5 pr-3">
+                  <p className="pu-num text-[18px] font-medium leading-none">{num(r.azi)}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{r.aziDetaliu}</p>
+                </td>
+                <td className="py-2.5 pr-3">
+                  <p className="pu-num text-[18px] font-medium leading-none">{num(r.maine)}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{r.maineDetaliu}</p>
+                </td>
+                <td className="py-2.5 pr-3">
+                  <p className="pu-num text-[18px] font-medium leading-none">{num(r.rezerva)}</p>
+                </td>
+                <td className="py-2.5">
+                  <p className="pu-num text-[18px] font-medium leading-none">{num(r.intoarse)}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{r.intoarseDetaliu}</p>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <ul className="mt-3 space-y-2.5 md:hidden">
+        {randuri.map((r) => (
+          <li key={r.cheie} className="rounded-xl border border-border p-3">
+            <Link href={r.href} className="inline-flex items-center gap-1.5 rounded-sm text-[12.5px] font-medium hover:underline">
+              <r.Icon className={`h-3.5 w-3.5 shrink-0 ${r.ton}`} aria-hidden="true" />
+              {r.label}
+            </Link>
+            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2.5">
+              {[
+                { label: "Azi", n: r.azi, detaliu: r.aziDetaliu },
+                { label: "Mâine", n: r.maine, detaliu: r.maineDetaliu },
+                { label: "În rezervă", n: r.rezerva, detaliu: null },
+                { label: "Întoarse la 00:00", n: r.intoarse, detaliu: r.intoarseDetaliu },
+              ].map((x) => (
+                <div key={x.label} className="min-w-0">
+                  <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">{x.label}</dt>
+                  <dd className="pu-num mt-0.5 text-[16px] font-medium leading-tight">{num(x.n)}</dd>
+                  {x.detaliu ? <dd className="text-[11px] leading-snug text-muted-foreground">{x.detaliu}</dd> : null}
+                </div>
+              ))}
+            </dl>
+          </li>
+        ))}
+      </ul>
+
+      <p className="mt-3 border-t border-border pt-3 text-[11.5px] leading-relaxed text-muted-foreground">
+        La 00:00, firmele cu site gata și publicat, necontactate, se programează de la cele mai vechi site-uri: întâi pe email (pe căsuța domeniului din linkul demo), apoi
+        pe WhatsApp, cât permit căsuțele și conturile. Apelurile nu se programează singure: rezerva lor se importă în „Apeluri azi” sau se programează manual. O firmă poate
+        merge pe mai multe canale, deci rezervele se suprapun; totalul de sus o numără o singură dată.
+        {laZeroZero.length ? ` Tot la 00:00: ${laZeroZero.join(" · ")}.` : null}
+      </p>
+    </Card>
+  );
+}
+
+/** /admin/prospectare — rezumatul prospectării: cifrele zilei, distribuția pe canale, pâlnia, căsuțele, roboții, ultimele schimbări. */
 export default async function PrezentarePage() {
   const { azi } = aziBucuresti();
-  const [rezumat, activitate, casute, dispozitive, construite] = await Promise.all([
+  const [rezumat, activitate, casute, dispozitive, construite, distributie] = await Promise.all([
     citesteRezumat(),
     citesteActivitateRecenta(20),
     citesteCasute(azi),
     citesteDispozitive(),
     citesteSiteuriConstruite(),
+    citesteRezumatDistributie(),
   ]);
   const acum = Date.now();
 
@@ -282,14 +461,36 @@ export default async function PrezentarePage() {
 
         <Card className="p-4">
           <p className={EYEBROW}>Gata de contactat</p>
-          <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.rezerva_telefon)}</p>
-          <p className="mt-1.5 text-[11.5px] text-muted-foreground">în rezerva de apeluri: site gata, niciun contact până acum</p>
-          <Link href="/admin/prospectare/whatsapp" className={`${linkMic} mt-1.5 flex items-start gap-1.5`}>
-            <MessageCircle className="mt-0.5 h-3 w-3 shrink-0 text-lav" aria-hidden="true" />
-            <span>
-              <span className="pu-num font-medium text-foreground/85">{num(r.whatsapp_lista)}</span> în lista de WhatsApp →
-            </span>
-          </Link>
+          {distributie.ok ? (
+            <>
+              <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(distributie.data.rezerva.total)}</p>
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">în rezervă: site gata și publicat, niciun contact, neprogramate</p>
+              <Link href="/admin/prospectare/email" className={`${linkMic} mt-1.5 flex items-start gap-1.5`}>
+                <Mail className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" />
+                <span>
+                  <span className="pu-num font-medium text-foreground/85">{num(distributie.data.programate_azi.email_ramase)}</span> programate azi pe email, încă netrimise →
+                </span>
+              </Link>
+              <Link href="/admin/prospectare/whatsapp" className={`${linkMic} mt-1 flex items-start gap-1.5`}>
+                <MessageCircle className="mt-0.5 h-3 w-3 shrink-0 text-lav" aria-hidden="true" />
+                <span>
+                  <span className="pu-num font-medium text-foreground/85">{num(distributie.data.programate_azi.whatsapp_ramase)}</span> programate azi pe WhatsApp, încă
+                  netrimise →
+                </span>
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.rezerva_telefon)}</p>
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">pot merge la apeluri: site gata și publicat, niciun contact, neprogramate</p>
+              <Link href="/admin/prospectare/whatsapp" className={`${linkMic} mt-1.5 flex items-start gap-1.5`}>
+                <MessageCircle className="mt-0.5 h-3 w-3 shrink-0 text-lav" aria-hidden="true" />
+                <span>
+                  <span className="pu-num font-medium text-foreground/85">{num(r.whatsapp_lista)}</span> programate azi pe WhatsApp, încă netrimise →
+                </span>
+              </Link>
+            </>
+          )}
           {(r.recontactari_permise ?? 0) > 0 ? (
             <p className="mt-1 flex items-start gap-1.5 text-[11.5px] text-muted-foreground">
               <LockOpen className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
@@ -308,6 +509,15 @@ export default async function PrezentarePage() {
           </p>
         </Card>
       </div>
+
+      {distributie.ok ? (
+        <Distributie d={distributie.data} />
+      ) : (
+        <Card>
+          <SectionTitle title="Distribuția pe canale" />
+          <EroareCitire title="Distribuția nu s-a putut citi" message={distributie.message} className="py-8" />
+        </Card>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Palnie rezumat={r} />

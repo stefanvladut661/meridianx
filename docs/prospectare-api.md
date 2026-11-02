@@ -1,10 +1,12 @@
 # API-ul Prospectare pentru roboți
 
-Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–34. Regulile (un singur canal pe firmă, „Nu contacta”, o nișă și o firmă la un singur robot) stau în bază, nu în robot.
+Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–34. Regulile (un singur canal pe firmă, „Nu contacta”, o nișă și o firmă la un singur robot, distribuția pe canale) stau în bază, nu în robot.
 
-**Fluxul unui robot:** (1) rezervă o nișă (`/nisa`), (2) înainte să cercetezi un domeniu, întreabă dacă e deja evaluat (`/evaluare` → `verifica`), (3) notează fiecare firmă evaluată, și pe cele respinse (`/evaluare` → `noteaza`), (4) trimite progresul și, la final, termină nișa (`/nisa`), (5) ia din coada comună o firmă de construit (`/rezerva`), semn de viață (`/heartbeat`), publici și o marchezi imediat (`/termina`), (6) emailul doar după ce ceri canalul (`/eveniment`).
+**Fluxul unui robot:** (1) rezervă o nișă (`/nisa`), (2) înainte să cercetezi un domeniu, întreabă dacă e deja evaluat (`/evaluare` → `verifica`), (3) notează fiecare firmă evaluată, și pe cele respinse (`/evaluare` → `noteaza`), (4) trimite progresul și, la final, termină nișa (`/nisa`), (5) ia din coada comună o firmă de construit (`/rezerva`), semn de viață (`/heartbeat`), publici și o marchezi imediat (`/termina`), (6) emailul: iei lista zilei din `/coada-email` și, pentru fiecare firmă, ceri canalul (`/eveniment` → `email_de_trimis`) înainte să trimiți.
 
 **Regula canalelor:** o firmă e contactată pe **un singur canal** (email, WhatsApp sau apel); primul canal o blochează pentru celelalte. Al doilea canal îl dă doar un admin, din fișa firmei, cu motiv. Robotul de email primește 409 dacă firma are deja alt canal.
+
+**Distribuția pe canale (migrarea 35):** robotul de email **nu mai alege singur** ce firme contactează. În fiecare zi la 00:00 (ora României) adminul programează firmele cu site gata, publicat (link verificat) și necontactate, de la cele mai vechi site-uri: întâi pe email (pe căsuța domeniului din linkul demo: `demo.meridianxweb.com/…` → `stefan@meridianxweb.com`, cât permite limita căsuței), apoi pe WhatsApp (pe conturi). Ce era programat ieri și n-a plecat se întoarce în distribuție. Robotul trimite **doar** ce primește din `/coada-email`; orice altă firmă primește 409.
 
 Adresa: `https://www.meridianx.ro/api/prospectare/robot/<ruta>`. Toate rutele primesc **doar `POST` cu JSON**.
 
@@ -92,18 +94,20 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/heartbeat \
 
 ## 4. `POST /termina`: site gata
 
-După ce site-ul demo e publicat. Firma trece pe „Site gata”, primește linkul demo și linkul capturii (Drive, nu fișierul), iar rezervarea se închide. Doar robotul care are firma rezervată.
+După ce site-ul demo e publicat **și linkul verificat** (200 + noindex). Firma trece pe „Site gata”, primește linkul demo și linkul capturii (Drive, nu fișierul), iar rezervarea se închide. Doar robotul care are firma rezervată. Data site-ului gata (ordinea distribuției) și robotul care l-a construit se scriu singure.
 
-Din acest moment firma e gata de contact: dacă are adresă de email, o ia robotul de email (`email_de_trimis`); dacă are mobil și n-are email, intră singură în lista de WhatsApp din admin (cele cu email intră acolo la o zi după email).
+`link_verificat` (opțional, implicit `true`): trimite `false` dacă publici înainte să verifici linkul; firma intră în distribuție abia când un import o marchează verificată.
+
+Din acest moment firma e în distribuție: la următorul 00:00 se programează pe email (dacă are email verificat „bun”) sau pe WhatsApp (dacă are mobil), în ordinea site-urilor terminate.
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/termina \
   -H "Authorization: Bearer $MERIDIAN_ROBOT_TOKEN" -H "Content-Type: application/json" \
-  -d '{"firma_id":"6f1c…","link_demo":"https://demo.meridianxstudio.com/tamplarie-somes/","captura_url":"https://drive.google.com/file/d/…/view","detalii":{"versiune":"v3"}}'
+  -d '{"firma_id":"6f1c…","link_demo":"https://demo.meridianxstudio.com/tamplarie-somes/","captura_url":"https://drive.google.com/file/d/…/view","link_verificat":true,"detalii":{"versiune":"v3"}}'
 ```
 
 ```json
-{ "ok": true, "firma": { "nr": 412, "etapa": "site_gata", "link_demo": "https://demo.meridianxstudio.com/tamplarie-somes/" } }
+{ "ok": true, "firma": { "nr": 412, "etapa": "site_gata", "link_demo": "https://demo.meridianxstudio.com/tamplarie-somes/", "demo_verificat": true } }
 ```
 
 ## 5. `POST /nisa`: tabla comună de nișe
@@ -161,7 +165,7 @@ Câmpuri: `domeniu`, `scor` (0–1000), `evaluare` (`eligibila` | `respinsa`) ob
 
 ## 7. `POST /eveniment`: emailurile
 
-**Ordinea e obligatorie.** Robotul cere canalul email **înainte** să trimită. O firmă primește **un singur canal**: dacă a primit deja WhatsApp sau e în lista de apeluri, cererea de email e refuzată (409), afară de cazul în care un admin a permis emailul din fișa firmei. Fiecare firmă primește cel mult un email. Cererea pune data emailului; din acel moment firma nu mai intră în lista de WhatsApp sau de apeluri.
+**Ordinea e obligatorie.** Robotul ia lista zilei din `/coada-email` (secțiunea 8) și cere canalul email **înainte** să trimită, pentru fiecare firmă, de pe căsuța primită în listă. Firma trebuie să fie programată azi pe email, pe acea căsuță; altfel 409. O firmă primește **un singur canal**: dacă a primit deja WhatsApp sau e în lista de apeluri, cererea de email e refuzată (409), afară de cazul în care un admin a permis emailul din fișa firmei. Fiecare firmă primește cel mult un email. Cererea pune data emailului; din acel moment firma nu mai intră în lista de WhatsApp sau de apeluri.
 
 ### 7.1 Înainte de trimitere: `email_de_trimis`
 
@@ -172,7 +176,7 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/eveniment \
 ```
 
 - **200** `{ "ok": true, "trimite": true, "firma": { "email": "…", "link_demo": "…", "persoana_contact": "…" }, "casuta": { "trimise_azi": 12, "limita_azi": 40 } }`: trimiți. Firma are acum data emailului: alt email nu mai primește.
-- **409**: firma a primit deja email, are alt canal (WhatsApp sau telefon) fără permisiune din fișă, sau e „Nu contacta” / respinsă / client. **Nu trimiți.**
+- **409**: firma nu e programată azi pe email (sau e programată pe altă căsuță, ori pe WhatsApp / apeluri), a primit deja email, are alt canal (WhatsApp sau telefon) fără permisiune din fișă, sau e „Nu contacta” / respinsă / client. **Nu trimiți.**
 - **429**: căsuța și-a atins limita de azi (sau e oprită din admin). Încerci altă căsuță sau mâine. Firma rămâne fără email, poate primi mai târziu.
 - **422**: firma nu are adresă de email sau nu are site gata cu link (etapa `site_gata` sau `whatsapp_trimis`).
 
@@ -200,6 +204,28 @@ Dacă SMTP-ul a refuzat emailul după `email_de_trimis`, nu trimiți `email_trim
 `raspuns`: `pozitiv` | `nu` | `automat` | `altul`. Un **„nu” trece firma pe „Nu contacta”**: iese din toate listele și nu mai primește niciun mesaj. Răspunsurile pozitive apar în admin → Email, de unde omul o mută la „Interesați”.
 
 Firma se identifică pe `domeniu` (preferat) sau pe `nr`.
+
+## 8. `POST /coada-email`: ce trimiți azi
+
+Lista firmelor programate **azi** pe email, încă netrimise, în ordinea în care pleacă (pe căsuțe; manualele întâi), fiecare cu căsuța de pe care trimiți. Dacă ciclul de la 00:00 n-a rulat încă (cronul din Supabase), cererea îl pornește. Cere lista o dată la începutul trimiterii și, dacă vrei, din nou mai târziu: o firmă trimisă nu mai apare.
+
+```bash
+curl -s https://www.meridianx.ro/api/prospectare/robot/coada-email \
+  -H "Authorization: Bearer $MERIDIAN_ROBOT_TOKEN" -H "Content-Type: application/json" \
+  -d '{"casuta":"stefan@meridianxweb.com"}'
+```
+
+`casuta` (opțional): doar programările acelei căsuțe. Fără ea, toate.
+
+```json
+{ "ok": true, "zi": "2026-11-03",
+  "firme": [ { "programare_id": 812, "firma_id": "6f1c…", "nr": 412, "nume": "Tâmplărie PVC Someș", "domeniu": "tamplariepvc-somes.ro",
+               "email": "office@tamplariepvc-somes.ro", "persoana_contact": null, "link_demo": "https://demo.meridianxweb.com/tamplarie-somes/",
+               "oras": "Baia Mare", "nisa": "tâmplărie", "casuta": "stefan@meridianxweb.com", "sursa": "automat" } ],
+  "casute": [ { "adresa": "stefan@meridianxweb.com", "activa": true, "limita": 2, "programate": 2, "trimise": 0 } ] }
+```
+
+Ce nu pleacă azi (SMTP căzut, limită atinsă, robot oprit) se întoarce în distribuție la 00:00 și poate fi programat din nou, pe email sau pe alt canal. Limita zilei pe căsuță: cea pusă în Setări pe căsuță, altfel plafonul de încălzire din Setări.
 
 ## Exemplu Python (robotul)
 
@@ -233,11 +259,14 @@ if firma:
     # … construiești site-ul, cu cere("heartbeat", {"firma_id": firma["id"]}) o dată la 30–60 de minute …
     cere("termina", {"firma_id": firma["id"], "link_demo": link, "captura_url": link_drive})
 
-st, d = cere("eveniment", {"tip": "email_de_trimis", "domeniu": dom, "casuta": casuta})
-if st == 200 and d.get("trimite"):
-    message_id = trimite_smtp(d["firma"], casuta)          # doar acum
-    cere("eveniment", {"tip": "email_trimis", "domeniu": dom, "casuta": casuta, "message_id": message_id})
-# 409: nu trimiți. 429: altă căsuță sau mâine.
+# Email: doar ce e programat azi, de pe căsuța primită în listă.
+st, coada = cere("coada-email", {})
+for f in coada["firme"]:
+    st, d = cere("eveniment", {"tip": "email_de_trimis", "domeniu": f["domeniu"], "casuta": f["casuta"]})
+    if st == 200 and d.get("trimite"):
+        message_id = trimite_smtp(d["firma"], f["casuta"])          # doar acum
+        cere("eveniment", {"tip": "email_trimis", "domeniu": f["domeniu"], "casuta": f["casuta"], "message_id": message_id})
+    # 409: nu trimiți (programată altundeva sau deja contactată). 429: căsuța e la limită; restul revine mâine.
 ```
 
 ## Proba locală

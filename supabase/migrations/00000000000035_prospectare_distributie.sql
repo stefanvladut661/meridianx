@@ -772,7 +772,7 @@ begin
       v_autor,
       case when v_d > p_zi then format('ziua de %s era plină: trecută pe %s', to_char(p_zi, 'DD.MM'), to_char(v_d, 'DD.MM')) end);
     perform public.prospectare_noteaza(f.id, 'programare', p_canal,
-      jsonb_strip_nulls(jsonb_build_object('zi', v_d, 'zi_ceruta', case when v_d > p_zi then p_zi end, 'sursa', 'manual',
+      jsonb_strip_nulls(jsonb_build_object('canal', p_canal, 'zi', v_d, 'zi_ceruta', case when v_d > p_zi then p_zi end, 'sursa', 'manual',
         'casuta', case when p_canal = 'email' then v_loc end, 'cont', case when p_canal = 'whatsapp' then v_loc::integer end,
         'utilizator', case when p_canal = 'telefon' then v_loc end)));
     v_programate := v_programate + 1;
@@ -817,7 +817,7 @@ begin
       where id = any(p_ids) and stare = 'programata' and zi > public.prospectare_azi()
       returning firma_id, canal, zi
   loop
-    perform public.prospectare_noteaza(r.firma_id, 'programare', r.canal, jsonb_build_object('zi', r.zi, 'anulata', true));
+    perform public.prospectare_noteaza(r.firma_id, 'programare', r.canal, jsonb_build_object('canal', r.canal, 'zi', r.zi, 'anulata', true));
     v_anulate := v_anulate + 1;
   end loop;
   return jsonb_build_object('anulate', v_anulate, 'refuzate', cardinality(p_ids) - v_anulate);
@@ -1192,19 +1192,21 @@ begin
 end;
 $$;
 
+-- Grupele rezervei de apeluri (pentru numărătoarea filtrelor din „Apeluri azi”): și lotul, calculatorul, ziua site-ului gata.
+drop function if exists public.prospectare_rezerva_grupe();
 create or replace function public.prospectare_rezerva_grupe()
-returns table (nisa text, oras text, judet text, scor smallint, este_mobil boolean, n bigint)
+returns table (nisa text, oras text, judet text, scor smallint, este_mobil boolean, lot text, construit_de text, zi_gata date, n bigint)
 language sql
 stable
 security definer
 set search_path = public
 as $$
-  select f.nisa, f.oras, f.judet, f.scor, f.este_mobil, count(*)
+  select f.nisa, f.oras, f.judet, f.scor, f.este_mobil, f.lot, f.construit_de, (f.site_gata_la at time zone 'Europe/Bucharest')::date, count(*)
   from public.prospectare_firme f
   where public.prospectare_poate_canal(f, 'telefon')
     and not exists (select 1 from public.prospectare_programari p where p.firma_id = f.id and p.stare = 'programata')
     and not exists (select 1 from public.prospectare_liste_zi l where l.firma_id = f.id and l.data = public.prospectare_azi())
-  group by f.nisa, f.oras, f.judet, f.scor, f.este_mobil
+  group by 1, 2, 3, 4, 5, 6, 7, 8
 $$;
 
 -- Ce a rămas de ieri pe telefon: doar „Sună înapoi” (nesunatele se eliberează la 00:00).
@@ -1773,6 +1775,25 @@ begin
 end;
 $$;
 
+-- Starea jobului (pentru verificarea de la final și pentru admin).
+create or replace function public.prospectare_cron_stare()
+returns text
+language plpgsql
+stable
+security definer
+set search_path = public
+as $f$
+declare
+  v text;
+begin
+  if to_regclass($q$cron.job$q$) is null then
+    return $q$pg_cron nu e activ: ciclul rulează la prima cerere de după 00:00$q$;
+  end if;
+  execute $q$select schedule from cron.job where jobname = $$prospectare-ciclu-zi$$$q$ into v;
+  return coalesce($q$programat în pg_cron, $q$ || v || $q$ UTC$q$, $q$pg_cron e activ, dar jobul lipsește: rulează fișierul din nou$q$);
+end;
+$f$;
+
 -- 14. Drepturi -------------------------------------------------------------------------------
 
 do $$
@@ -1806,7 +1827,8 @@ begin
     'public.prospectare_termina(uuid, uuid, text, text, jsonb, boolean)',
     'public.prospectare_rezumat()',
     'public.prospectare_rezumat_distributie()',
-    'public.prospectare_optiuni_distributie()'
+    'public.prospectare_optiuni_distributie()',
+    'public.prospectare_cron_stare()'
   ] loop
     execute format('revoke all on function %s from public', fn);
     execute format('revoke all on function %s from anon, authenticated', fn);
@@ -1834,6 +1856,8 @@ select 'funcțiile noi doar pentru cheia de service',
   not has_function_privilege('authenticated', 'public.prospectare_programeaza(text, date, uuid[], smallint, text, text)', 'execute')
   and not has_function_privilege('anon', 'public.prospectare_coada_email(uuid, text)', 'execute')
   and has_function_privilege('service_role', 'public.prospectare_ciclu_zi(date, boolean)', 'execute')
+union all
+select 'ciclul de la 00:00: ' || public.prospectare_cron_stare(), true
 union all
 select 'termina are o singură semnătură (cu linkul verificat)',
   (select count(*) = 1 from pg_proc where proname = 'prospectare_termina' and pronamespace = 'public'::regnamespace);

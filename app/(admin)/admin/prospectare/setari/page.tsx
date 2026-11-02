@@ -13,7 +13,7 @@ import { COOKIE_UTILIZATOR, isUtilizator, UTILIZATORI } from "@/lib/prospectare/
 export const metadata: Metadata = { title: "Setări — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-/** /admin/prospectare/setari — conturile WhatsApp, limitele roboților și ale căsuțelor, șabloanele de mesaj. */
+/** /admin/prospectare/setari — conturile WhatsApp, limitele distribuției și ale roboților, șabloanele de mesaj. */
 export default async function SetariPage() {
   const { azi } = aziBucuresti();
   const [setari, casute, conturi, jar] = await Promise.all([citesteSetari(), citesteCasute(azi), citesteConturiWhatsapp(), cookies()]);
@@ -33,7 +33,7 @@ export default async function SetariPage() {
       <PageHead
         title="Setări prospectare"
         pill={pill}
-        subtitle="Conturile de pe care trimiteți WhatsApp, limitele care opresc roboții și căsuțele, și textele pe care le folosiți la apel și pe WhatsApp."
+        subtitle="Conturile de pe care trimiteți WhatsApp, limitele distribuției de la 00:00 (căsuțe, plafonul de încălzire, apeluri pe zi) și ale roboților, și textele pe care le folosiți la apel și pe WhatsApp."
       />
 
       <SetariConturi conturi={conturi.ok ? conturi.data : null} eroare={conturi.ok ? null : conturi.message} />
@@ -50,6 +50,8 @@ export default async function SetariPage() {
               rezervare_ore: setari.data.rezervare_ore,
               cereri_pe_minut: setari.data.cereri_pe_minut,
               scor_minim_constructie: setari.data.scor_minim_constructie,
+              email_plafon_casuta: setari.data.email_plafon_casuta,
+              apeluri_pe_zi: setari.data.apeluri_pe_zi,
             }}
             casute={casute.ok ? casute.data : null}
             eroareCasute={casute.ok ? null : casute.message}

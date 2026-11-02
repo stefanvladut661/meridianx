@@ -166,13 +166,13 @@ const REZULTAT_BTN = "h-auto min-h-12 justify-start py-1.5 text-left text-[14px]
 
 export function CallCard({
   linie,
-  limita,
   script,
   mesajDupaApel,
   onRezultat,
 }: {
   linie: ListaCuFirma;
-  limita: number;
+  /** Vechi (încercările de la Setări): „Nu răspunde” nu mai scoate firma după N încercări, deci nu se mai folosește. */
+  limita?: number;
   /** Scriptul de apel, completat pentru firmă și utilizator. */
   script: string;
   /** Mesajul WhatsApp de după apel, completat. */
@@ -191,8 +191,7 @@ export function CallCard({
   const [confirmGresit, setConfirmGresit] = useState(false);
 
   const incercari = linie.incercari || 0;
-  const urmatoarea = Math.min(incercari + 1, limita);
-  const ultima = incercari + 1 >= limita;
+  const urmatoarea = incercari + 1;
   const telefon = firma.telefon;
   const whatsapp = Boolean(telefon && firma.este_mobil);
 
@@ -240,7 +239,7 @@ export function CallCard({
           </div>
           {incercari > 0 ? (
             <span className="pu-num shrink-0 rounded-full border border-white/[0.1] px-2 py-0.5 text-[11px] text-muted-foreground">
-              încercări {incercari}/{limita}
+              {incercari === 1 ? "1 încercare" : `${incercari} încercări`}
             </span>
           ) : null}
         </div>
@@ -275,7 +274,7 @@ export function CallCard({
           </div>
         ) : (
           <p className="mt-3 rounded-xl border border-rose/25 bg-rose/[0.07] px-3 py-2 text-[12.5px] text-[#FFC2CE]">
-            Firma nu are telefon în fișă. Marchează „Număr greșit” ca să iasă din listă.
+            Firma nu are telefon în fișă. Marchează „Număr greșit”: iese din listă și rămâne doar pentru email.
           </p>
         )}
 
@@ -311,8 +310,7 @@ export function CallCard({
                 <span className="hidden sm:inline" aria-hidden="true">
                   {" · "}
                 </span>
-                <span className="sm:hidden">încercarea </span>
-                {urmatoarea}/{limita}
+                încercarea {urmatoarea}
               </span>
             </span>
           </Btn>
@@ -327,9 +325,9 @@ export function CallCard({
           </Btn>
         </div>
 
-        {ultima ? (
+        {linie.rezultat === "nu_raspunde" ? (
           <p className="mt-2 text-[12.5px] leading-snug text-[#FFD0AC] sm:text-[11.5px]">
-            Încă un „Nu răspunde” și firma iese din listă: își pierde canalul Telefon și revine în rezervă.
+            N-a răspuns: firma e înapoi în distribuție, încercările rămân notate. O poți suna din nou azi; dacă răspunde, rămâne pe telefon.
           </p>
         ) : null}
 
@@ -375,7 +373,7 @@ export function CallCard({
         onOpenChange={setConfirmGresit}
         title="Număr greșit?"
         description={telefon ? `${firma.nume}, ${numarAfisat(telefon)}.` : firma.nume}
-        consequence="Firma e marcată „Nu contacta”: iese din listă și nu mai primește niciun mesaj, pe niciun canal."
+        consequence="Firma iese din listă și se întoarce în distribuție doar pentru email: nu mai primește WhatsApp și nu mai intră la apeluri. Fără un email valid, nu mai primește nimic."
         confirmLabel="Da, număr greșit"
         onConfirm={() => onRezultat(linie, "numar_gresit", { nota: notaNesalvata() })}
       />

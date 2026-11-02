@@ -196,19 +196,38 @@ export interface FisaFirma {
   rezervare: { dispozitiv: string; tip_lucru: string; expira_la: string } | null;
   /** Pentru un duplicat (`date_extra.duplicat_de`): firma originală, dacă e în bază. */
   original: { nr: number; firma: Pick<Firma, "id" | "nr" | "nume" | "domeniu" | "etapa"> | null } | null;
+  /**
+   * Programările firmei (distribuția pe canale), cele mai noi primele, cu numele contului de WhatsApp.
+   * `null` = nu s-au putut citi: restul fișei se vede oricum.
+   */
+  programari: (Programare & { cont_nume: string | null })[] | null;
 }
 
 export async function citesteFisa(id: string): Promise<Result<FisaFirma | null>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: true, data: null };
-  const [firma, activitate, liste, rezervare] = await Promise.all([
+  const [firma, activitate, liste, rezervare, programari, conturi] = await Promise.all([
     client.from("prospectare_firme").select(`${COLOANE_FIRMA}, date_extra`).eq("id", id).maybeSingle(),
     client.from("prospectare_activitate").select("id, firma_id, tip, canal, autor, detalii, la").eq("firma_id", id).order("la", { ascending: false }).order("id", { ascending: false }).limit(200),
     client.from("prospectare_liste_zi").select("id, data, utilizator, canal, rezultat, incercari").eq("firma_id", id).order("data", { ascending: false }).limit(30),
     client.from("prospectare_rezervari").select("tip_lucru, expira_la, prospectare_dispozitive(nume)").eq("firma_id", id).gt("expira_la", new Date().toISOString()).maybeSingle(),
+    // Aceeași interogare ca `citesteProgramariFirma`, în același drum.
+    client
+      .from("prospectare_programari")
+      .select("id, firma_id, canal, zi, sursa, casuta, cont_whatsapp, utilizator, stare, zi_ceruta, creat_la, creat_de, inchis_la, motiv")
+      .eq("firma_id", id)
+      .order("creat_la", { ascending: false })
+      .limit(20),
+    client.from("prospectare_conturi_whatsapp").select("id, nume"),
   ]);
   for (const r of [firma, activitate, liste, rezervare]) if (r.error) return failure(r.error);
+  // Programările nu opresc fișa: fără ele (sau fără conturi), restul se vede.
+  if (programari.error) failure(programari.error);
+  const numeCont = new Map(((conturi.error ? [] : conturi.data) ?? []).map((c) => [Number(c.id), String(c.nume)]));
+  const programariFirma: FisaFirma["programari"] = programari.error
+    ? null
+    : ((programari.data ?? []) as Programare[]).map((p) => ({ ...p, cont_nume: p.cont_whatsapp === null ? null : (numeCont.get(Number(p.cont_whatsapp)) ?? null) }));
   if (!firma.data) return { ok: true, data: null };
   const rez = rezervare.data as { tip_lucru: string; expira_la: string; prospectare_dispozitive: { nume: string } | { nume: string }[] | null } | null;
   const disp = rez ? (Array.isArray(rez.prospectare_dispozitive) ? rez.prospectare_dispozitive[0] : rez.prospectare_dispozitive) : null;
@@ -227,6 +246,7 @@ export async function citesteFisa(id: string): Promise<Result<FisaFirma | null>>
       liste: (liste.data ?? []) as FisaFirma["liste"],
       rezervare: rez ? { dispozitiv: disp?.nume ?? "robot", tip_lucru: rez.tip_lucru, expira_la: rez.expira_la } : null,
       original,
+      programari: programariFirma,
     },
   };
 }
@@ -268,6 +288,10 @@ export interface GrupaRezerva {
   judet: string | null;
   scor: number | null;
   este_mobil: boolean;
+  /** Lotul, calculatorul și ziua site-ului gata (migrarea 35), pentru filtrele importului. */
+  lot: string | null;
+  construit_de: string | null;
+  zi_gata: string | null;
   n: number;
 }
 
@@ -348,12 +372,15 @@ export async function citesteSetari(): Promise<Result<Setari>> {
 export async function citesteCasute(azi: string): Promise<Result<Casuta[]>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
-  const [casute, zi] = await Promise.all([
+  const [casute, zi, setari] = await Promise.all([
     client.from("prospectare_casute").select("adresa, domeniu, limita_zi, incalzire_activa, activa").order("domeniu").order("adresa"),
     client.from("prospectare_casute_zi").select("adresa, trimise, limita, limita_atinsa_la, bounce, raspunsuri").eq("zi", azi),
+    client.from("prospectare_setari").select("email_plafon_casuta").eq("id", 1).maybeSingle(),
   ]);
   if (casute.error) return failure(casute.error);
   if (zi.error) return failure(zi.error);
+  // Limita zilei, ca la programare: cea pusă pe căsuță, altfel plafonul de încălzire din Setări (migrarea 35).
+  const plafon = setari.error ? null : ((setari.data as { email_plafon_casuta?: number } | null)?.email_plafon_casuta ?? null);
   const peAdresa = new Map((zi.data ?? []).map((z) => [z.adresa as string, z]));
   return {
     ok: true,
@@ -362,7 +389,7 @@ export async function citesteCasute(azi: string): Promise<Result<Casuta[]>> {
       return {
         ...(c as Pick<Casuta, "adresa" | "domeniu" | "limita_zi" | "incalzire_activa" | "activa">),
         trimise_azi: z?.trimise ?? 0,
-        limita_azi: (c.limita_zi as number | null) ?? z?.limita ?? null,
+        limita_azi: !c.activa ? 0 : ((c.limita_zi as number | null) ?? plafon ?? z?.limita ?? null),
         limita_atinsa_la: z?.limita_atinsa_la ?? null,
         bounce_azi: z?.bounce ?? 0,
         raspunsuri_azi: z?.raspunsuri ?? 0,

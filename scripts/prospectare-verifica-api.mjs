@@ -72,6 +72,21 @@ r = await call("termina", { firma_id: firma?.id, link_demo: "https://demo.test/a
 check("termina de la alt robot → 409", r.status === 409, r);
 r = await call("termina", { firma_id: firma?.id, link_demo: "https://demo.test/api-lucru/", captura_url: "https://drive.google.com/file/d/test/view" }, T1);
 check("termina → 200, site gata", r.status === 200 && r.json?.firma?.etapa === "site_gata", r);
+check("termina → linkul verificat (implicit), firma intră în distribuție", r.json?.firma?.demo_verificat === true, r);
+
+// Distribuția (migrarea 35): robotul trimite doar ce e programat azi, de pe căsuța primită în coadă.
+r = await call("coada-email", {}, null);
+check("coada-email fără token → 401", r.status === 401, r);
+r = await call("coada-email", {}, T1, "GET");
+check("coada-email GET → 405", r.status === 405, r);
+r = await call("coada-email", {}, T1);
+check("coada-email → 200: api-gata.ro e programată azi pe căsuța de test", r.status === 200 && (r.json?.firme ?? []).some((f) => f.domeniu === "api-gata.ro" && f.casuta === "stefan@casuta-test.ro"), r);
+r = await call("coada-email", { casuta: "Alta@Casuta-Test.ro" }, T1);
+check("coada-email pe altă căsuță → listă goală", r.status === 200 && Array.isArray(r.json?.firme) && r.json.firme.length === 0, r);
+r = await call("coada-email", { casuta: "nu-e-email" }, T1);
+check("coada-email cu căsuță invalidă → 422", r.status === 422, r);
+r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-gata.ro", casuta: "alta@casuta-test.ro" }, T1);
+check("email_de_trimis de pe altă căsuță decât cea programată → 409", r.status === 409 && /programată azi pe căsuța/.test(r.json?.eroare?.mesaj ?? ""), r);
 
 r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-telefon.ro", casuta: "stefan@casuta-test.ro" }, T1);
 check("email_de_trimis pentru o firmă de pe telefon → 409 (telefonul e separat)", r.status === 409 && r.json?.eroare?.cod === "conflict", r);
@@ -81,6 +96,8 @@ r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-gata.ro", ca
 check("email_de_trimis pentru o firmă fără email → 200, trimite", r.status === 200 && r.json?.trimite === true && r.json?.firma?.email === "office@api-gata.ro", r);
 r = await call("eveniment", { tip: "email_de_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro" }, T2);
 check("email_de_trimis din nou pentru aceeași firmă → 409 (același canal nu de două ori)", r.status === 409 && /deja email/.test(r.json?.eroare?.mesaj ?? ""), r);
+r = await call("coada-email", {}, T1);
+check("după cererea canalului, firma nu mai e în coada de email", r.status === 200 && !(r.json?.firme ?? []).some((f) => f.domeniu === "api-gata.ro"), r);
 r = await call("eveniment", { tip: "email_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", message_id: "<test-1@local>", subiect: "Site demo" }, T1);
 check("email_trimis → 200, etapa email_trimis", r.status === 200 && r.json?.nou === true && r.json?.etapa === "email_trimis", r);
 r = await call("eveniment", { tip: "email_trimis", domeniu: "api-gata.ro", casuta: "stefan@casuta-test.ro", message_id: "<test-1@local>" }, T1);

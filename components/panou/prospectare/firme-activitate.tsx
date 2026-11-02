@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Bot, CircleSlash, ClipboardCheck, Lock, LockOpen, Mail, MailX, MessageCircle, Phone, Reply, Search, StickyNote, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, Bot, CalendarClock, CircleSlash, ClipboardCheck, Lock, LockOpen, Mail, MailX, MessageCircle, Phone, Reply, Search, StickyNote, type LucideIcon } from "lucide-react";
 import { dateTimeRo, relativeRo } from "@/components/panou/ui/format";
 import { CANALE, ETAPE, REZULTATE, isCanal, isEtapa } from "@/lib/prospectare/labels";
 import { REZULTATE_IDS, type Activitate, type Canal, type Rezultat } from "@/lib/prospectare/types";
@@ -23,6 +23,7 @@ const ICONITE: Record<string, LucideIcon> = {
   rezervare: Bot,
   nota: StickyNote,
   recontactare: LockOpen,
+  programare: CalendarClock,
   evaluare: ClipboardCheck,
 };
 
@@ -93,7 +94,8 @@ export function descrieActivitate(a: Activitate): Descriere {
         if (!text(d.la)) return { titlu: `Canal setat: ${canal(nou)}`, detaliu: motiv };
         return { titlu: `Canal folosit: ${canal(nou)}${nou === "whatsapp" && cont ? ` (contul ${cont})` : ""}`, detaliu: motiv };
       }
-      if (!vechi || vechi === "telefon") return { titlu: "Telefon golit", detaliu: motiv };
+      if (!vechi || vechi === "telefon") return { titlu: "Ieșită din apeluri: înapoi în distribuție", detaliu: motiv };
+      if (vechi === "whatsapp") return { titlu: "WhatsApp anulat", detaliu: motiv };
       return { titlu: `Canal golit: ${canal(vechi)}`, detaliu: motiv };
     }
     case "apel": {
@@ -102,7 +104,11 @@ export function descrieActivitate(a: Activitate): Descriere {
       const sunaLa = text(d.suna_inapoi_la);
       return {
         titlu: `Apel: ${rezultat(d.rezultat)}${incercari && limita ? ` (${incercari}/${limita})` : incercari ? ` (încercarea ${incercari})` : ""}`,
-        detaliu: unite([d.revenit_in_rezerva === true && "a ieșit din listă, și-a pierdut telefonul și a revenit în rezerva de apeluri", sunaLa && `sună înapoi ${dateTimeRo(sunaLa)}`]),
+        detaliu: unite([
+          d.revenit_in_rezerva === true && "a ieșit din listă, și-a pierdut telefonul și a revenit în rezerva de apeluri",
+          d.revenit_in_distributie === true && (d.doar_email === true ? "număr greșit: s-a întors în distribuție, doar pentru email" : "nu e contact: s-a întors în distribuție"),
+          sunaLa && `sună înapoi ${dateTimeRo(sunaLa)}`,
+        ]),
         citat: text(d.nota),
       };
     }
@@ -113,6 +119,7 @@ export function descrieActivitate(a: Activitate): Descriere {
     case "whatsapp":
       // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
       if (d.continuare_apel === true) return { titlu: "Continuare apel pe WhatsApp", detaliu: "după „Interesat”; firma rămâne pe telefon, canalul WhatsApp nu se folosește" };
+      if (d.anulat === true) return { titlu: `WhatsApp anulat${contWhatsapp(d) ? ` (${contWhatsapp(d)})` : ""}`, detaliu: "imediat după trimitere: firma e din nou în lista zilei" };
       return { titlu: `WhatsApp trimis${contWhatsapp(d) ? ` de pe ${contWhatsapp(d)}` : ""}` };
     case "raspuns":
       return {
@@ -144,6 +151,18 @@ export function descrieActivitate(a: Activitate): Descriere {
         titlu: `Recontactare permisă: ${canal(d.canal ?? a.canal)}`,
         detaliu: folosite ? `a primit deja ${folosite}` : null,
         citat: text(d.motiv),
+      };
+    }
+    case "programare": {
+      // Din migrarea 35: programarea manuală (zi, ziua cerută dacă a fost mutată, căsuța / contul / cine sună) și anularea.
+      const zi = text(d.zi);
+      const pe = zi ? ` pentru ${dateTimeRo(`${zi}T12:00:00Z`).split(",")[0]}` : "";
+      if (d.anulata === true) return { titlu: `Programare anulată: ${canal(a.canal)}${pe}`, detaliu: "firma s-a întors în rezervă" };
+      const cerut = text(d.zi_ceruta);
+      const unde = text(d.casuta) ?? (numar(d.cont) ? `contul ${numar(d.cont)}` : null) ?? (text(d.utilizator) ? `sună ${text(d.utilizator) === "vladut" ? "Vlăduț" : "Ștefan"}` : null);
+      return {
+        titlu: `Programată pe ${canal(a.canal)}${pe}`,
+        detaliu: unite([text(d.sursa) === "manual" ? "manual" : "automat", unde, cerut && `ziua cerută era plină (${dateTimeRo(`${cerut}T12:00:00Z`).split(",")[0]})`]),
       };
     }
     case "evaluare": {

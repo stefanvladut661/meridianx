@@ -1,16 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { dateTimeRo, num } from "@/components/panou/ui/format";
+import { InlineNote } from "@/components/panou/ui/actions";
+import { dateTimeRo, num, timeRo } from "@/components/panou/ui/format";
 import { Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { PageHead } from "@/components/panou/prospectare/page-head";
 import { MailboxTable } from "@/components/panou/prospectare/email-casute";
 import { EmailGrafic } from "@/components/panou/prospectare/email-grafic";
 import { EmailPeZile } from "@/components/panou/prospectare/email-pe-zile";
+import { EmailProgramate, randuriProgramate } from "@/components/panou/prospectare/email-programate";
 import { EmailRaspunsuri } from "@/components/panou/prospectare/email-raspunsuri";
 import { EmailTrimise, FiltruCasute } from "@/components/panou/prospectare/email-trimise";
 import { EroareCitire } from "@/components/panou/prospectare/prezentare-eroare";
 import { cate } from "@/components/panou/prospectare/prezentare-comun";
-import { aziBucuresti, citesteCasute, citesteCasutePeZile, citesteEmailuriTrimise, citesteIstoricCasute, citesteRaspunsuri } from "@/lib/prospectare/citire";
+import { ProgramariViitoare } from "@/components/panou/prospectare/programari-viitoare";
+import { ProgrameazaButon } from "@/components/panou/prospectare/programeaza";
+import {
+  asiguraCiclu,
+  aziBucuresti,
+  citesteCasute,
+  citesteCasutePeZile,
+  citesteEmailuriTrimise,
+  citesteIstoricCasute,
+  citesteOptiuniDistributie,
+  citesteProgramari,
+  citesteProgramariViitoare,
+  citesteRaspunsuri,
+  citesteSetari,
+  maineBucuresti,
+} from "@/lib/prospectare/citire";
 
 export const metadata: Metadata = { title: "Email — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -18,15 +35,28 @@ export const dynamic = "force-dynamic";
 const ZILE = 14;
 
 /**
- * /admin/prospectare/email — căsuțele azi, ce a trimis fiecare căsuță în total și pe fiecare zi,
+ * /admin/prospectare/email — căsuțele azi, ce e programat azi și mâine pe fiecare căsuță (distribuția
+ * de la 00:00), programările de mâine încolo, ce a trimis fiecare căsuță în total și pe fiecare zi,
  * lista tuturor emailurilor trimise (filtrabilă pe căsuță), ultimele 14 zile și răspunsurile.
  */
 export default async function EmailPage({ searchParams }: { searchParams: Promise<{ casuta?: string | string[] }> }) {
   const params = await searchParams;
   const { azi } = aziBucuresti();
+  const maine = maineBucuresti(azi);
   const acum = Date.now();
   const de = new Date(acum - ZILE * 24 * 60 * 60 * 1000).toISOString();
-  const [casute, peZile, istoric, raspunsuri] = await Promise.all([citesteCasute(azi), citesteCasutePeZile(azi), citesteIstoricCasute(azi, ZILE), citesteRaspunsuri(de)]);
+  // Ciclul de azi (00:00) înainte de programări: dacă cronul n-a rulat, îl pornește citirea asta.
+  const ciclu = await asiguraCiclu();
+  const [casute, peZile, istoric, raspunsuri, programari, viitoare, optiuni, setari] = await Promise.all([
+    citesteCasute(azi),
+    citesteCasutePeZile(azi),
+    citesteIstoricCasute(azi, ZILE),
+    citesteRaspunsuri(de),
+    citesteProgramari("email", [azi, maine], ["programata", "folosita"]),
+    citesteProgramariViitoare("email", maine),
+    citesteOptiuniDistributie(),
+    citesteSetari(),
+  ]);
 
   // Filtrul acceptă doar o căsuță cunoscută; altfel arată toate emailurile.
   const ceruta = typeof params.casuta === "string" ? params.casuta.trim().toLowerCase() : undefined;
@@ -35,14 +65,25 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
 
   const nrCasute = casute.ok ? casute.data.length : 0;
   const pozitive = raspunsuri.ok ? raspunsuri.data.filter((r) => r.tip === "pozitiv").length : 0;
+  const plafon = setari.ok ? setari.data.email_plafon_casuta : null;
+  const programate = casute.ok && programari.ok ? randuriProgramate(casute.data, programari.data, azi, maine, plafon) : null;
+  const t = programate?.total;
+  const optiuniProgramare = optiuni.ok ? optiuni.data : null;
 
   return (
     <div className="space-y-4">
       <PageHead
         title="Email"
         pill="căsuțe separate"
-        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. Un singur canal pe firmă: cine primește email nu mai intră în WhatsApp sau la apeluri, iar firmele contactate deja nu primesc email. Al doilea canal se permite doar din fișa firmei.`}
+        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. La 00:00, firmele cu site gata și publicat se programează pe căsuța domeniului din linkul demo, cele mai vechi primele, cât permite limita căsuței sau plafonul de încălzire. Robotul trimite doar ce e programat azi. Un singur canal pe firmă: cine primește email nu mai intră în WhatsApp sau la apeluri.`}
+        actions={<ProgrameazaButon canal="email" azi={azi} optiuni={optiuniProgramare} />}
       />
+
+      {!ciclu.ok ? (
+        <InlineNote tone="rose">
+          Distribuția de azi nu s-a putut porni: {ciclu.message} Ce vezi la „Programate” poate fi incomplet; reîncarcă pagina peste un minut.
+        </InlineNote>
+      ) : null}
 
       <Card>
         <SectionTitle
@@ -55,6 +96,51 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
           }
         />
         <div className="mt-3">{casute.ok ? <MailboxTable casute={casute.data} /> : <EroareCitire title="Căsuțele nu s-au putut citi" message={casute.message} className="py-8" />}</div>
+      </Card>
+
+      <Card>
+        <SectionTitle
+          title="Programate azi și mâine, pe căsuțe"
+          hint={
+            t
+              ? `Azi: ${num(t.azi)} programate${t.capacitate === null ? "" : ` din ${num(t.capacitate)} posibile`} · ${num(t.trimise)} trimise · ${num(t.ramase)} rămase. Mâine: ${num(t.maine)} programate manual.`
+              : "Ce a pus distribuția de la 00:00 pe fiecare căsuță"
+          }
+        />
+        <div className="mt-3">
+          {programate ? (
+            <EmailProgramate randuri={programate.randuri} total={programate.total} />
+          ) : !programari.ok ? (
+            <EroareCitire title="Programările nu s-au putut citi" message={programari.message} className="py-8" />
+          ) : (
+            <EroareCitire title="Fără căsuțe, programările nu se pot împărți" message={casute.ok ? "" : casute.message} className="py-8" />
+          )}
+        </div>
+        <p className="mt-3 border-t border-border pt-3 text-[11.5px] leading-relaxed text-muted-foreground">
+          {ciclu.ok ? `Distribuția de azi a rulat la ${timeRo(ciclu.data.rulat_la)}. ` : null}
+          Trimise = cerute azi de robot de pe căsuță; ce rămâne netrimis se întoarce în distribuție la 00:00. Mâine apar doar programările manuale: restul le pune distribuția la
+          00:00, de la cele mai vechi site-uri, până la limita fiecărei căsuțe
+          {plafon === null ? null : <> (fără limită proprie: plafonul de încălzire, {num(plafon)} pe zi)</>}.
+          {!setari.ok ? ` Plafonul de încălzire nu s-a citit: ${setari.message}` : null}
+        </p>
+      </Card>
+
+      <Card>
+        <SectionTitle
+          title="Programate de mâine încolo"
+          hint={viitoare.ok ? `${cate(viitoare.data.length, "programare", "programări")} · se anulează până în ziua lor` : undefined}
+        />
+        <div className="mt-3">
+          {viitoare.ok ? (
+            <ProgramariViitoare
+              canal="email"
+              programari={viitoare.data}
+              gol="Nimic programat manual de mâine încolo. Cu „Programează” (sus) alegi firmele și ziua; altfel, la 00:00 distribuția le pune singură pe căsuțe, de la cele mai vechi site-uri."
+            />
+          ) : (
+            <EroareCitire title="Programările viitoare nu s-au putut citi" message={viitoare.message} className="py-8" />
+          )}
+        </div>
       </Card>
 
       <Card>

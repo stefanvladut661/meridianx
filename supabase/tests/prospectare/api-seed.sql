@@ -1,5 +1,5 @@
 -- Datele pentru scripts/prospectare-verifica-api.mjs, pe o bază de TEST locală,
--- după migrările 28–33 (o singură dată pe bază: firmele nu se mai pot șterge,
+-- după migrările 28–35 (o singură dată pe bază: firmele nu se mai pot șterge,
 -- activitatea lor rămâne). Tokenurile sunt cele de test din script, nu reale.
 select set_config('prospectare.autor', 'test-api', false);
 
@@ -15,6 +15,15 @@ insert into public.prospectare_firme (nr, nume, domeniu, scor, telefon, email, e
   (7002, 'API Telefon', 'api-telefon.ro', 50, '0745 700 002', 'office@api-telefon.ro', 'site_gata', 'https://demo.test/api-telefon/', now()),
   (7003, 'API Gata', 'api-gata.ro', 50, '0232 700 003', 'office@api-gata.ro', 'site_gata', 'https://demo.test/api-gata/', null)
 on conflict do nothing;
+
+-- Distribuția (migrarea 35): linkurile sunt publicate și verificate; api-gata.ro e programată azi pe email,
+-- pe căsuța de test (robotul trimite doar ce primește din /coada-email).
+insert into public.prospectare_casute (adresa, domeniu, limita_zi, activa) values ('stefan@casuta-test.ro', 'casuta-test.ro', 40, true)
+on conflict (adresa) do update set limita_zi = 40, activa = true;
+update public.prospectare_firme set demo_verificat = true where nr in (7002, 7003);
+insert into public.prospectare_programari (firma_id, canal, zi, sursa, casuta, creat_de)
+select f.id, 'email', public.prospectare_azi(), 'manual', 'stefan@casuta-test.ro', 'test-api' from public.prospectare_firme f
+where f.nr = 7003 and f.email_la is null and not exists (select 1 from public.prospectare_programari p where p.firma_id = f.id and p.stare = 'programata');
 
 select 'datele probei API sunt în bază' as verificare,
   (select count(*) = 3 from public.prospectare_dispozitive where nume like 'api-robot-%')

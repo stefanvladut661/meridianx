@@ -3,16 +3,16 @@
 import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Ban, Bot, Building2, CalendarDays, Check, ExternalLink, Files, ImageIcon, Loader2, Lock, LockOpen, Mail, MapPin, MessageCircle, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
+import { Ban, Bot, Building2, CalendarClock, CalendarDays, Check, ExternalLink, Files, ImageIcon, Loader2, Lock, LockOpen, Mail, MapPin, MessageCircle, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
 import { permiteRecontactare, salveazaNota, schimbaEtapa } from "@/app/(admin)/admin/prospectare/actions";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
 import { Modal } from "@/components/panou/ui/modal";
 import { Btn, btnClass, Pill } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState, Field, inputClass } from "@/components/panou/ui/states";
-import { dateRo, dateTimeRo, num, relativeRo, untilRo } from "@/components/panou/ui/format";
+import { dateRo, dateTimeRo, isoDay, num, relativeRo, untilRo } from "@/components/panou/ui/format";
 import { useToast } from "@/components/panou/ui/toast";
-import { CANALE, REZULTATE, UTILIZATORI } from "@/lib/prospectare/labels";
+import { CANALE, ETAPE, REZULTATE, UTILIZATORI } from "@/lib/prospectare/labels";
 import { numarAfisat, numarScurt } from "@/lib/prospectare/contact";
 import { CANALE_IDS, REZULTATE_IDS, type Canal, type Firma, type Rezultat } from "@/lib/prospectare/types";
 import type { FisaFirma } from "@/lib/prospectare/citire";
@@ -140,11 +140,11 @@ const ICON_CANAL: Record<Canal, LucideIcon> = { email: Mail, whatsapp: MessageCi
 /** Canalul în mijlocul unei propoziții („a primit email”, „blocat de WhatsApp”). */
 const CANAL_MIC: Record<Canal, string> = { email: "email", whatsapp: "WhatsApp", telefon: "telefon" };
 
-/** Unde ajunge firma după ce un admin îi permite canalul. */
+/** Unde ajunge firma după ce un admin îi permite canalul (în distribuție, firmele cu canal permis trec primele). */
 const UNDE_PERMIS: Record<Canal, string> = {
-  email: "robotul de email o poate lua",
-  whatsapp: "intră în lista de WhatsApp",
-  telefon: "intră în rezerva pentru apeluri",
+  email: "intră prima în distribuția de email de la 00:00",
+  whatsapp: "intră prima în distribuția de WhatsApp de la 00:00",
+  telefon: "intră prima în rezerva pentru apeluri",
 };
 
 const laCanal = (f: Firma, c: Canal): string | null => (c === "email" ? f.email_la : c === "whatsapp" ? f.whatsapp_la : f.telefon_la);
@@ -155,8 +155,131 @@ const canaleFolosite = (f: Firma): Canal[] => CANALE_IDS.filter((c) => Boolean(l
 /** De ce firma nu poate primi canalul (îi lipsesc datele), sau null dacă îl poate primi. Aceleași verificări ca în bază. */
 function lipsaPentru(f: Firma, c: Canal): string | null {
   if (c === "email") return f.email ? null : "fără adresă de email";
+  // „Număr greșit” la apel: firma merge doar pe email.
+  if (f.telefon_gresit) return "număr greșit: doar email";
   if (c === "whatsapp") return !f.telefon ? "fără telefon" : !f.este_mobil ? "număr fix: fără WhatsApp" : null;
   return f.telefon ? null : "fără număr";
+}
+
+// ---------------------------------------------------------------------------
+// Distribuția pe canale: programarea activă și de ce firma intră (sau nu) la 00:00
+// ---------------------------------------------------------------------------
+
+type ProgramareFisa = NonNullable<FisaFirma["programari"]>[number];
+
+/** Canalul programării în mijlocul propoziției („programată pe email”, „la apeluri”). */
+const PE_CANAL: Record<Canal, string> = { email: "pe email", whatsapp: "pe WhatsApp", telefon: "la apeluri" };
+/** Pagina pe care se vede (și se anulează) programarea. */
+const PAGINA_CANAL: Record<Canal, { href: string; label: string }> = {
+  email: { href: "/admin/prospectare/email", label: "Email" },
+  whatsapp: { href: "/admin/prospectare/whatsapp", label: "WhatsApp" },
+  telefon: { href: "/admin/prospectare/apeluri", label: "Apeluri azi" },
+};
+
+const ddll = (zi: string): string => `${zi.slice(8, 10)}.${zi.slice(5, 7)}`;
+
+function plusZi(zi: string, n: number): string {
+  const d = new Date(`${zi}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** „azi”, „mâine” sau „pe 05.11”. */
+const ziText = (zi: string, azi: string): string => (zi === azi ? "azi" : zi === plusZi(azi, 1) ? "mâine" : `pe ${ddll(zi)}`);
+
+/** De pe ce căsuță, de pe ce cont sau cine sună. */
+function undeText(p: ProgramareFisa): string | null {
+  if (p.canal === "email") return p.casuta ? `de pe ${p.casuta}` : null;
+  if (p.canal === "whatsapp") return p.cont_nume ?? (p.cont_whatsapp ? `contul ${p.cont_whatsapp}` : null);
+  return p.utilizator ? `pentru ${UTILIZATORI[p.utilizator]}` : null;
+}
+
+/** „Programată pe email azi, de pe stefan@…”, „pe WhatsApp mâine, Cont 2”, „la apeluri pe 05.11, pentru Vlăduț”. */
+const programareText = (p: ProgramareFisa, azi: string): string => [`Programată ${PE_CANAL[p.canal]} ${ziText(p.zi, azi)}`, undeText(p)].filter(Boolean).join(", ");
+
+/** Fără programare activă: de ce firma intră sau nu în distribuția de la 00:00. Null = spun deja alte rânduri din fișă. */
+function stareDistributie(f: Firma): { ton: "neutral" | "apricot"; text: string } | null {
+  if (f.etapa === "nu_contacta" || f.etapa === "client" || f.etapa === "respins" || f.date_extra?.duplicat_de) return null;
+  if (!f.link_demo) return { ton: "neutral", text: "Fără site demo publicat: intră în distribuție după ce robotul îl termină și îl publică." };
+  if (!f.demo_verificat) return { ton: "apricot", text: "Linkul demo nu e verificat (site nepublicat): firma nu intră în distribuție până nu e verificat." };
+  if (f.canal_permis) return { ton: "neutral", text: `Recontactare permisă ${PE_CANAL[f.canal_permis]}: ${UNDE_PERMIS[f.canal_permis]}.` };
+  if (f.email_la || f.whatsapp_la) return { ton: "neutral", text: "Contactată deja: nu mai intră în distribuție." };
+  if (f.telefon_la) return { ton: "neutral", text: "E pe telefon, într-o listă de apeluri: nu intră în distribuție cât timp rămâne acolo." };
+  if (f.etapa !== "site_gata") return { ton: "neutral", text: `Etapa „${ETAPE[f.etapa].label}”: în distribuție intră doar firmele cu site gata.` };
+  return {
+    ton: "neutral",
+    text: f.telefon_gresit
+      ? "În rezervă, doar pentru email: la 00:00 poate fi programată pe căsuța domeniului din linkul demo, după vechimea site-ului."
+      : "În rezervă: la 00:00 poate fi programată pe email sau WhatsApp, după vechimea site-ului. La apeluri ajunge doar prin import sau programare.",
+  };
+}
+
+function Distributie({ firma, programari, acum }: { firma: Firma; programari: FisaFirma["programari"]; acum: number }) {
+  const azi = isoDay(acum);
+  const activa = programari?.find((p) => p.stare === "programata") ?? null;
+  const stare = activa ? null : stareDistributie(firma);
+  const pagina = activa ? PAGINA_CANAL[activa.canal] : null;
+  const gata = firma.site_gata_la;
+
+  return (
+    <div className="space-y-2.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px] leading-relaxed">
+      <h3 className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+        <CalendarClock className="h-3 w-3" aria-hidden="true" />
+        Distribuție
+      </h3>
+
+      {activa && pagina ? (
+        <div className="rounded-lg border border-lav/25 bg-lav/[0.07] px-3 py-2.5 text-[#D8CCFF]">
+          <p className="font-medium">{programareText(activa, azi)}.</p>
+          <p className="mt-1 text-[11.5px] text-foreground/70">
+            {activa.sursa === "automat" ? "Din distribuția de la 00:00." : `Programată manual de ${activa.creat_de}.`}
+            {activa.zi_ceruta ? ` Cerută pe ${ddll(activa.zi_ceruta)}: ziua era plină.` : ""}{" "}
+            {activa.zi <= azi
+              ? "Celelalte canale sunt blocate azi; dacă nu pleacă până la 00:00, se întoarce în distribuție."
+              : `Celelalte canale sunt blocate până atunci. Se anulează din pagina ${pagina.label}, până în ziua ei.`}
+          </p>
+          <Link href={pagina.href} className="mt-1 inline-block rounded-sm text-[11.5px] text-foreground/80 underline underline-offset-2 hover:text-foreground">
+            Deschide {pagina.label}
+          </Link>
+        </div>
+      ) : stare ? (
+        <p className={stare.ton === "apricot" ? "text-[#FFD0AC]" : "text-muted-foreground"}>{stare.text}</p>
+      ) : null}
+      {programari === null ? <p className="text-muted-foreground">Programările nu s-au putut citi acum: redeschide fișa peste câteva secunde.</p> : null}
+
+      <dl className="space-y-1.5">
+        <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-3">
+          <dt className="text-muted-foreground">Site gata</dt>
+          <dd className="min-w-0">
+            {gata ? <time dateTime={gata}>{dateTimeRo(gata)}</time> : <span className="text-muted-foreground">fără dată</span>}
+            {firma.construit_de ? <span className="text-muted-foreground">, construit de </span> : null}
+            {firma.construit_de ? <span className="break-words">{firma.construit_de}</span> : null}
+          </dd>
+        </div>
+        {firma.link_demo ? (
+          <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-3">
+            <dt className="text-muted-foreground">Link demo</dt>
+            <dd className={firma.demo_verificat ? undefined : "text-[#FFD0AC]"}>{firma.demo_verificat ? "verificat, publicat" : "neverificat: firma nu intră în distribuție"}</dd>
+          </div>
+        ) : null}
+        {firma.telefon_gresit ? (
+          <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-3">
+            <dt className="text-muted-foreground">Telefon</dt>
+            <dd className="text-[#FFC2CE]">Număr greșit: doar email</dd>
+          </div>
+        ) : null}
+        {firma.apel_incercari > 0 ? (
+          <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-3">
+            <dt className="text-muted-foreground">Apeluri</dt>
+            <dd>
+              <span className="pu-num">{num(firma.apel_incercari)}</span> {firma.apel_incercari === 1 ? "încercare" : "încercări"} fără răspuns
+              <span className="text-muted-foreground"> · nu e contact: firma se întoarce în distribuție</span>
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+    </div>
+  );
 }
 
 const listaCanale = (canale: Canal[]): string => canale.map((c) => CANAL_MIC[c]).join(" și ");
@@ -466,7 +589,7 @@ function DialogRecontactare({ firma, folosite, onGata, onRenunta }: { firma: Fir
 const textExtra = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
 
 function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInchide: () => void }) {
-  const { firma, activitate, liste, rezervare, original } = fisa;
+  const { firma, activitate, liste, rezervare, original, programari } = fisa;
   const router = useRouter();
   const { notify } = useToast();
   const salvata = firma.nota ?? "";
@@ -485,6 +608,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
 
   const modificata = nota.trim() !== salvata.trim();
   const blocata = firma.etapa === "nu_contacta";
+  const programataAcum = programari?.find((p) => p.stare === "programata") ?? null;
   const demo = linkWeb(firma.link_demo);
   const siteVechi = linkWeb(firma.site_vechi);
   const statusRobot = textExtra(firma.date_extra?.status_robot);
@@ -527,6 +651,9 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
               <CanaleBadge firma={firma} />
               {firma.de_refacut ? <Pill tone="apricot">de refăcut</Pill> : null}
               {original ? <Pill tone="neutral">duplicat al #{original.nr}</Pill> : null}
+              {programataAcum ? <Pill tone="lav">programată {PE_CANAL[programataAcum.canal]}, {ziText(programataAcum.zi, isoDay(acum))}</Pill> : null}
+              {firma.telefon_gresit ? <Pill tone="rose">număr greșit</Pill> : null}
+              {firma.link_demo && !firma.demo_verificat ? <Pill tone="apricot">demo neverificat</Pill> : null}
             </div>
           </div>
           <ButonInchide onClick={onInchide} />
@@ -540,10 +667,17 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
         {firma.telefon || firma.email ? (
           <div className="space-y-2">
             {firma.telefon ? (
-              <Contact icon={Phone} eticheta="Telefon" detaliu={firma.este_mobil ? "mobil" : "fix"} valoare={numarAfisat(firma.telefon)} copie={numarScurt(firma.telefon)} labelCopie="Copiază numărul" />
+              <Contact
+                icon={Phone}
+                eticheta="Telefon"
+                detaliu={`${firma.este_mobil ? "mobil" : "fix"}${firma.telefon_gresit ? " · greșit la apel, doar email" : ""}`}
+                valoare={numarAfisat(firma.telefon)}
+                copie={numarScurt(firma.telefon)}
+                labelCopie="Copiază numărul"
+              />
             ) : null}
             {firma.email ? <Contact icon={Mail} eticheta="Email" valoare={firma.email} copie={firma.email} labelCopie="Copiază emailul" /> : null}
-            <p className="text-[11px] leading-relaxed text-muted-foreground">Suni doar din „Apeluri azi”. Emailul îl trimite robotul, iar WhatsApp-ul pleacă din lista de WhatsApp.</p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">Suni doar din „Apeluri azi”. Emailul îl trimite robotul și WhatsApp-ul pleacă din lista zilei, doar în ziua în care firma e programată.</p>
           </div>
         ) : (
           <p className="text-[12.5px] text-muted-foreground">Fișa nu are telefon sau email. Robotul le adaugă când le găsește pe site-ul vechi sau pe hartă.</p>
@@ -629,6 +763,8 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
         </div>
 
         <Canale firma={firma} />
+
+        <Distributie firma={firma} programari={programari} acum={acum} />
 
         {rezervare || statusRobot || firma.de_refacut ? (
           <div className="flex gap-2.5 rounded-xl border border-lav/20 bg-lav/[0.06] px-3.5 py-3 text-[12px] leading-relaxed text-[#D8CCFF]">
@@ -725,7 +861,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
             </p>
           ) : null}
           <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-            Firma dispare din toate listele de apeluri și WhatsApp și nu mai primește niciun mesaj. Rămâne în tabel, cu filtrul „Nu contacta”.
+            Firma iese din listele de apeluri, programările ei se anulează și nu mai primește niciun mesaj. Rămâne în tabel, cu filtrul „Nu contacta”.
           </p>
         </div>
       </div>
@@ -735,7 +871,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
         onOpenChange={setConfirmare}
         title="Marchezi firma „Nu contacta”?"
         description={[firma.nume, firma.oras].filter(Boolean).join(" · ")}
-        consequence="Firma dispare din toate listele de apeluri și WhatsApp și nu mai primește nimic, pe niciun canal. Etapa nu se mai poate schimba după asta. O regăsești în tabel, cu filtrul „Nu contacta”."
+        consequence="Firma iese din listele de apeluri, programările ei se anulează și nu mai primește nimic, pe niciun canal. Etapa nu se mai poate schimba după asta. O regăsești în tabel, cu filtrul „Nu contacta”."
         confirmLabel="Nu contacta"
         onConfirm={nuContacta}
       />
