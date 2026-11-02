@@ -379,6 +379,97 @@ export async function citesteIstoricCasute(azi: string, zile = 14): Promise<Resu
   return { ok: true, data: [...peZi.values()] };
 }
 
+/** O căsuță, cu tot ce a trimis de la primul email: totalul și fiecare zi (din `prospectare_casute_zi`). */
+export interface CasutaPeZile {
+  adresa: string;
+  domeniu: string;
+  activa: boolean;
+  total: number;
+  peZi: Record<string, number>;
+}
+
+/**
+ * Toate zilele cu emailuri, pe fiecare căsuță: de la prima zi cu trimiteri până azi,
+ * cele mai noi primele. Căsuțele fără niciun email apar cu zero.
+ */
+export async function citesteCasutePeZile(azi: string): Promise<Result<{ zile: string[]; casute: CasutaPeZile[]; total: number }>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const [casute, randuri] = await Promise.all([
+    client.from("prospectare_casute").select("adresa, domeniu, activa").order("domeniu").order("adresa"),
+    toate<{ adresa: string; zi: string; trimise: number }>((from, to) =>
+      client.from("prospectare_casute_zi").select("adresa, zi, trimise").gt("trimise", 0).order("zi").order("adresa").range(from, to) as unknown as PromiseLike<{
+        data: { adresa: string; zi: string; trimise: number }[] | null;
+        error: { code?: string; message?: string } | null;
+      }>
+    ),
+  ]);
+  if (casute.error) return failure(casute.error);
+  if (!randuri.ok) return randuri;
+  const pe = new Map<string, CasutaPeZile>();
+  for (const c of (casute.data ?? []) as { adresa: string; domeniu: string; activa: boolean }[]) pe.set(c.adresa, { ...c, total: 0, peZi: {} });
+  let prima: string | null = null;
+  let total = 0;
+  for (const r of randuri.data) {
+    const c = pe.get(r.adresa) ?? pe.set(r.adresa, { adresa: r.adresa, domeniu: r.adresa.split("@")[1] ?? "", activa: true, total: 0, peZi: {} }).get(r.adresa)!;
+    c.peZi[r.zi] = (c.peZi[r.zi] ?? 0) + r.trimise;
+    c.total += r.trimise;
+    total += r.trimise;
+    if (!prima || r.zi < prima) prima = r.zi;
+  }
+  const zile: string[] = [];
+  if (prima) {
+    const d = new Date(`${azi}T12:00:00Z`);
+    const stop = new Date(`${prima}T12:00:00Z`);
+    for (; d >= stop; d.setUTCDate(d.getUTCDate() - 1)) zile.push(d.toISOString().slice(0, 10));
+  }
+  return { ok: true, data: { zile, casute: [...pe.values()], total } };
+}
+
+/** Toate emailurile trimise (activitatea de tip email), cele mai noi primele; opțional, doar de pe o căsuță. */
+export async function citesteEmailuriTrimise(casuta?: string): Promise<Result<EmailTrimis[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const r = await toate<{ id: number; la: string; detalii: Record<string, unknown>; firma: FirmaMin | FirmaMin[] | null }>((from, to) => {
+    let q = client.from("prospectare_activitate").select(`id, la, detalii, firma:prospectare_firme(${MIN_FIRMA})`).eq("tip", "email");
+    if (casuta) q = q.eq("detalii->>casuta", casuta);
+    return q.order("la", { ascending: false }).order("id", { ascending: false }).range(from, to) as unknown as PromiseLike<{
+      data: { id: number; la: string; detalii: Record<string, unknown>; firma: FirmaMin | FirmaMin[] | null }[] | null;
+      error: { code?: string; message?: string } | null;
+    }>;
+  }, 10000);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    data: cuFirma(r.data).map((e) => ({ id: e.id, la: e.la, casuta: typeof e.detalii?.casuta === "string" ? (e.detalii.casuta as string) : null, firma: e.firma })),
+  };
+}
+
+/** Site-urile construite: au trecut de „site gata” (inclusiv cele contactate) sau sunt de refăcut. */
+export interface SiteuriConstruite {
+  total: number;
+  gata: number;
+  contactate: number;
+  de_refacut: number;
+}
+
+const ETAPE_CU_SITE = "site_gata,email_trimis,whatsapp_trimis,sunat,interesat,client";
+
+export async function citesteSiteuriConstruite(): Promise<Result<SiteuriConstruite>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const numara = () => client.from("prospectare_firme").select("id", { count: "exact", head: true });
+  const [total, gata, contactate, deRefacut] = await Promise.all([
+    // Un site construit lasă urme: etapa, „de refăcut”, linkul demo sau un canal folosit (contactul pleacă doar cu site gata).
+    numara().or(`etapa.in.(${ETAPE_CU_SITE}),de_refacut.is.true,link_demo.not.is.null,email_la.not.is.null,whatsapp_la.not.is.null,telefon_la.not.is.null`),
+    numara().eq("etapa", "site_gata"),
+    numara().or("email_la.not.is.null,whatsapp_la.not.is.null,telefon_la.not.is.null"),
+    numara().eq("de_refacut", true).not("etapa", "in", `(${ETAPE_CU_SITE},nu_contacta,respins)`),
+  ]);
+  for (const r of [total, gata, contactate, deRefacut]) if (r.error) return failure(r.error);
+  return { ok: true, data: { total: total.count ?? 0, gata: gata.count ?? 0, contactate: contactate.count ?? 0, de_refacut: deRefacut.count ?? 0 } };
+}
+
 type FirmaMin = RaspunsEmail["firma"];
 
 /** Supabase dă relația ca obiect sau ca listă: o aducem la obiect și scoatem rândurile fără firmă. */

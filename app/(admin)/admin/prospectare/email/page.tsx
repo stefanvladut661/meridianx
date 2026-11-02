@@ -1,34 +1,37 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail } from "lucide-react";
-import { dateTimeRo, timeRo } from "@/components/panou/ui/format";
+import { dateTimeRo, num } from "@/components/panou/ui/format";
 import { Card, SectionTitle } from "@/components/panou/ui/primitives";
-import { EmptyState } from "@/components/panou/ui/states";
 import { PageHead } from "@/components/panou/prospectare/page-head";
-import { StageBadge } from "@/components/panou/prospectare/stage-badge";
 import { MailboxTable } from "@/components/panou/prospectare/email-casute";
 import { EmailGrafic } from "@/components/panou/prospectare/email-grafic";
+import { EmailPeZile } from "@/components/panou/prospectare/email-pe-zile";
 import { EmailRaspunsuri } from "@/components/panou/prospectare/email-raspunsuri";
+import { EmailTrimise, FiltruCasute } from "@/components/panou/prospectare/email-trimise";
 import { EroareCitire } from "@/components/panou/prospectare/prezentare-eroare";
-import { cate, linkFirma } from "@/components/panou/prospectare/prezentare-comun";
-import { aziBucuresti, citesteCasute, citesteEmailuriAzi, citesteIstoricCasute, citesteRaspunsuri } from "@/lib/prospectare/citire";
+import { cate } from "@/components/panou/prospectare/prezentare-comun";
+import { aziBucuresti, citesteCasute, citesteCasutePeZile, citesteEmailuriTrimise, citesteIstoricCasute, citesteRaspunsuri } from "@/lib/prospectare/citire";
 
 export const metadata: Metadata = { title: "Email — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const ZILE = 14;
 
-/** /admin/prospectare/email — căsuțele, ultimele 14 zile, emailurile de azi și răspunsurile. */
-export default async function EmailPage() {
-  const { azi, inceputAzi } = aziBucuresti();
+/**
+ * /admin/prospectare/email — căsuțele azi, ce a trimis fiecare căsuță în total și pe fiecare zi,
+ * lista tuturor emailurilor trimise (filtrabilă pe căsuță), ultimele 14 zile și răspunsurile.
+ */
+export default async function EmailPage({ searchParams }: { searchParams: Promise<{ casuta?: string | string[] }> }) {
+  const params = await searchParams;
+  const { azi } = aziBucuresti();
   const acum = Date.now();
   const de = new Date(acum - ZILE * 24 * 60 * 60 * 1000).toISOString();
-  const [casute, istoric, emailuri, raspunsuri] = await Promise.all([
-    citesteCasute(azi),
-    citesteIstoricCasute(azi, ZILE),
-    citesteEmailuriAzi(inceputAzi),
-    citesteRaspunsuri(de),
-  ]);
+  const [casute, peZile, istoric, raspunsuri] = await Promise.all([citesteCasute(azi), citesteCasutePeZile(azi), citesteIstoricCasute(azi, ZILE), citesteRaspunsuri(de)]);
+
+  // Filtrul acceptă doar o căsuță cunoscută; altfel arată toate emailurile.
+  const ceruta = typeof params.casuta === "string" ? params.casuta.trim().toLowerCase() : undefined;
+  const aleasa = peZile.ok && ceruta && peZile.data.casute.some((c) => c.adresa === ceruta) ? ceruta : undefined;
+  const emailuri = await citesteEmailuriTrimise(aleasa);
 
   const nrCasute = casute.ok ? casute.data.length : 0;
   const pozitive = raspunsuri.ok ? raspunsuri.data.filter((r) => r.tip === "pozitiv").length : 0;
@@ -43,7 +46,7 @@ export default async function EmailPage() {
 
       <Card>
         <SectionTitle
-          title="Căsuțe de email"
+          title="Căsuțe de email azi"
           hint="Trimise azi, limita fiecărei adrese și starea încălzirii"
           action={
             <Link href="/admin/prospectare/setari" className="rounded-sm text-[11.5px] text-muted-foreground hover:text-foreground">
@@ -55,59 +58,67 @@ export default async function EmailPage() {
       </Card>
 
       <Card>
-        <SectionTitle title="Ultimele 14 zile" hint="Mesaje trimise și răspunsuri primite, pe toate căsuțele" />
-        <div className="mt-3">{istoric.ok ? <EmailGrafic zile={istoric.data} /> : <EroareCitire title="Istoricul nu s-a putut citi" message={istoric.message} className="py-8" />}</div>
+        <SectionTitle
+          title="Trimise pe fiecare căsuță"
+          hint={peZile.ok ? `${cate(peZile.data.total, "email trimis", "emailuri trimise")} în total, de la primul până azi` : "Totalul și fiecare zi, pe căsuță"}
+        />
+        <div className="mt-3">
+          {peZile.ok ? (
+            <EmailPeZile zile={peZile.data.zile} casute={peZile.data.casute} total={peZile.data.total} azi={azi} casutaAleasa={aleasa} />
+          ) : (
+            <EroareCitire title="Trimiterile pe zile nu s-au putut citi" message={peZile.message} className="py-8" />
+          )}
+        </div>
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card className="overflow-hidden p-0">
-          <div className="border-b border-border px-4 py-3">
-            <SectionTitle title="Emailuri trimise azi" hint={emailuri.ok ? cate(emailuri.data.length, "mesaj", "mesaje") : undefined} />
+          <div id="trimise" className="scroll-mt-20 space-y-3 border-b border-border px-4 py-3">
+            <SectionTitle
+              title="Emailuri trimise"
+              hint={emailuri.ok ? `${cate(emailuri.data.length, "mesaj", "mesaje")}${aleasa ? ` de pe ${aleasa}` : ", de pe toate căsuțele"} · cele mai noi primele` : undefined}
+            />
+            {peZile.ok && peZile.data.casute.length > 0 ? <FiltruCasute casute={peZile.data.casute} total={peZile.data.total} aleasa={aleasa} /> : null}
           </div>
-          {!emailuri.ok ? (
-            <EroareCitire title="Jurnalul nu s-a încărcat" message={emailuri.message} />
-          ) : emailuri.data.length === 0 ? (
-            <EmptyState icon={Mail} title="Niciun email trimis azi" text="Când roboții trimit, mesajele apar aici cu ora și căsuța folosită." />
-          ) : (
-            <div className="max-h-[560px] overflow-y-auto" tabIndex={0} role="region" aria-label="Emailuri trimise azi">
-              <ul className="divide-y divide-border">
-                {emailuri.data.map((e) => (
-                  <li key={e.id} className="flex flex-wrap items-center gap-2 px-4 py-2.5">
-                    <time dateTime={e.la} className="pu-num w-12 shrink-0 text-[12px] text-muted-foreground">
-                      {timeRo(e.la)}
-                    </time>
-                    <div className="min-w-0 flex-1">
-                      <Link href={linkFirma(e.firma.id)} className="block truncate rounded-sm text-[12.5px] font-medium underline-offset-2 hover:underline">
-                        <span className="pu-num text-muted-foreground">#{e.firma.nr}</span> {e.firma.nume}
-                      </Link>
-                      <p className="truncate text-[11px] text-muted-foreground">{e.casuta ?? "căsuță necunoscută"}</p>
-                    </div>
-                    <StageBadge etapa={e.firma.etapa} className="px-2 py-0 text-[10.5px]" />
-                  </li>
-                ))}
-              </ul>
+          {emailuri.ok ? (
+            <div className="max-h-[640px] overflow-y-auto" tabIndex={0} role="region" aria-label={aleasa ? `Emailuri trimise de pe ${aleasa}` : "Emailuri trimise"}>
+              <EmailTrimise emailuri={emailuri.data} aleasa={aleasa} />
             </div>
+          ) : (
+            <EroareCitire title="Lista emailurilor nu s-a încărcat" message={emailuri.message} />
           )}
+          {emailuri.ok && peZile.ok && !aleasa && emailuri.data.length !== peZile.data.total ? (
+            <p className="border-t border-border px-4 py-2.5 text-[10.5px] text-muted-foreground">
+              Lista are {cate(emailuri.data.length, "mesaj", "mesaje")}, contoarele căsuțelor {num(peZile.data.total)}: contoarele vin de la căsuțe, lista din activitatea firmelor.
+            </p>
+          ) : null}
         </Card>
 
-        <Card className="overflow-hidden p-0">
-          <div className="border-b border-border px-4 py-3">
-            <SectionTitle
-              title="Răspunsuri"
-              hint={raspunsuri.ok ? `${cate(raspunsuri.data.length, "răspuns primit", "răspunsuri primite")} în ultimele 14 zile${pozitive ? ` · ${cate(pozitive, "pozitiv", "pozitive")}` : ""}` : undefined}
-            />
-          </div>
-          {raspunsuri.ok ? (
-            <div className="max-h-[720px] overflow-y-auto" tabIndex={0} role="region" aria-label="Răspunsuri la email">
-              <EmailRaspunsuri raspunsuri={raspunsuri.data} acum={acum} />
+        <div className="space-y-4">
+          <Card>
+            <SectionTitle title="Ultimele 14 zile" hint="Mesaje trimise și răspunsuri primite, pe toate căsuțele" />
+            <div className="mt-3">{istoric.ok ? <EmailGrafic zile={istoric.data} /> : <EroareCitire title="Istoricul nu s-a putut citi" message={istoric.message} className="py-8" />}</div>
+          </Card>
+
+          <Card className="overflow-hidden p-0">
+            <div className="border-b border-border px-4 py-3">
+              <SectionTitle
+                title="Răspunsuri"
+                hint={raspunsuri.ok ? `${cate(raspunsuri.data.length, "răspuns primit", "răspunsuri primite")} în ultimele 14 zile${pozitive ? ` · ${cate(pozitive, "pozitiv", "pozitive")}` : ""}` : undefined}
+              />
             </div>
-          ) : (
-            <EroareCitire title="Răspunsurile nu s-au putut citi" message={raspunsuri.message} />
-          )}
-          <p className="border-t border-border px-4 py-2.5 text-[10.5px] text-muted-foreground">
-            Răspunsurile le raportează roboții din căsuțe. Un „NU” mută firma singur la „Nu contacta” și o oprește pe toate canalele. Ultima actualizare: {dateTimeRo(acum)}.
-          </p>
-        </Card>
+            {raspunsuri.ok ? (
+              <div className="max-h-[520px] overflow-y-auto" tabIndex={0} role="region" aria-label="Răspunsuri la email">
+                <EmailRaspunsuri raspunsuri={raspunsuri.data} acum={acum} />
+              </div>
+            ) : (
+              <EroareCitire title="Răspunsurile nu s-au putut citi" message={raspunsuri.message} />
+            )}
+            <p className="border-t border-border px-4 py-2.5 text-[10.5px] text-muted-foreground">
+              Răspunsurile le raportează roboții din căsuțe. Un „NU” mută firma singur la „Nu contacta” și o oprește pe toate canalele. Ultima actualizare: {dateTimeRo(acum)}.
+            </p>
+          </Card>
+        </div>
       </div>
     </div>
   );

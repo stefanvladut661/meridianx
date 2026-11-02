@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Building2, Cpu, LockOpen, Mail, MapPinned, MessageCircle, Phone, Sparkles, Users } from "lucide-react";
+import { ArrowRight, Building2, Cpu, LayoutTemplate, LockOpen, Mail, MapPinned, MessageCircle, Phone, Sparkles, Users } from "lucide-react";
 import { dateTimeRo, num, relativeRo } from "@/components/panou/ui/format";
 import { btnClass, Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
@@ -9,7 +9,7 @@ import { MailboxTable } from "@/components/panou/prospectare/email-casute";
 import { PageHead } from "@/components/panou/prospectare/page-head";
 import { cate, linkFirma, RobotStare, stareRobot } from "@/components/panou/prospectare/prezentare-comun";
 import { EroareCitire } from "@/components/panou/prospectare/prezentare-eroare";
-import { aziBucuresti, citesteActivitateRecenta, citesteCasute, citesteDispozitive, citesteRezumat, type Rezumat } from "@/lib/prospectare/citire";
+import { aziBucuresti, citesteActivitateRecenta, citesteCasute, citesteDispozitive, citesteRezumat, citesteSiteuriConstruite, type Rezumat } from "@/lib/prospectare/citire";
 import { ETAPE, ETAPE_ORDINE } from "@/lib/prospectare/labels";
 import type { Dispozitiv, Etapa } from "@/lib/prospectare/types";
 
@@ -136,7 +136,13 @@ function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number
 /** /admin/prospectare — rezumatul prospectării: cifrele zilei, pâlnia, căsuțele, roboții, ultimele schimbări. */
 export default async function PrezentarePage() {
   const { azi } = aziBucuresti();
-  const [rezumat, activitate, casute, dispozitive] = await Promise.all([citesteRezumat(), citesteActivitateRecenta(20), citesteCasute(azi), citesteDispozitive()]);
+  const [rezumat, activitate, casute, dispozitive, construite] = await Promise.all([
+    citesteRezumat(),
+    citesteActivitateRecenta(20),
+    citesteCasute(azi),
+    citesteDispozitive(),
+    citesteSiteuriConstruite(),
+  ]);
   const acum = Date.now();
 
   const head = (
@@ -207,13 +213,11 @@ export default async function PrezentarePage() {
     <div className="space-y-4">
       {head}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Card className="p-4">
           <p className={EYEBROW}>Firme cercetate</p>
           <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.total)}</p>
-          <p className="mt-1.5 text-[11.5px] text-muted-foreground">
-            {num(r.etape.site_gata ?? 0)} cu site gata · {num(r.in_lucru)} în lucru la roboți
-          </p>
+          <p className="mt-1.5 text-[11.5px] text-muted-foreground">{num(r.in_lucru)} în lucru la roboți acum</p>
           <p className="mt-1 text-[11.5px] text-muted-foreground">
             Evaluate: {num(evaluate.eligibile)} eligibile · {num(evaluate.respinse)} respinse
             {(r.azi.evaluate ?? 0) > 0 ? ` · ${num(r.azi.evaluate)} azi` : ""}
@@ -221,28 +225,49 @@ export default async function PrezentarePage() {
         </Card>
 
         <Card className="p-4">
-          <p className={EYEBROW}>Contactate azi</p>
-          <div className="mt-2 flex flex-wrap items-end gap-3">
-            <span className="flex items-baseline gap-1" title={`${num(r.azi.apeluri_facute)} apeluri cu rezultat, din ${num(r.azi.apeluri)} în listele de azi`}>
-              <Phone className="h-3.5 w-3.5 text-sky" aria-hidden="true" />
-              <span className="pu-num text-[22px] font-medium leading-none">{num(r.azi.apeluri_facute)}</span>
-              <span className="sr-only">apeluri</span>
-            </span>
-            <span className="flex items-baseline gap-1" title={`${num(r.azi.whatsapp_trimise)} mesaje WhatsApp trimise azi${peConturi ? ` (${peConturi})` : ""}`}>
-              <MessageCircle className="h-3.5 w-3.5 text-lav" aria-hidden="true" />
-              <span className="pu-num text-[22px] font-medium leading-none">{num(r.azi.whatsapp_trimise)}</span>
-              <span className="sr-only">mesaje WhatsApp</span>
-            </span>
-            <span className="flex items-baseline gap-1" title={`${num(r.azi.emailuri)} emailuri trimise azi de roboți`}>
-              <Mail className="h-3.5 w-3.5 text-mint" aria-hidden="true" />
-              <span className="pu-num text-[22px] font-medium leading-none">{num(r.azi.emailuri)}</span>
-              <span className="sr-only">emailuri</span>
-            </span>
-          </div>
-          <p className="mt-1.5 text-[11.5px] text-muted-foreground" aria-hidden="true">
-            telefon · WhatsApp · email
-          </p>
-          {peConturi ? <p className="mt-1 text-[11.5px] text-muted-foreground">WhatsApp pe conturi: {peConturi}</p> : null}
+          <p className={EYEBROW}>Site-uri construite (total)</p>
+          {construite.ok ? (
+            <>
+              <p className="pu-num mt-2 flex items-baseline gap-1.5 text-[28px] font-medium leading-none">
+                <LayoutTemplate className="h-4 w-4 self-center text-muted-foreground" aria-hidden="true" />
+                {num(construite.data.total)}
+              </p>
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                <span className="pu-num font-medium text-foreground/85">{num(construite.data.gata)}</span> gata, necontactate ·{" "}
+                <span className="pu-num font-medium text-foreground/85">{num(construite.data.contactate)}</span> trimise
+              </p>
+              {construite.data.de_refacut > 0 ? (
+                <p className="mt-1 text-[11.5px] text-muted-foreground">
+                  <span className="pu-num font-medium text-foreground/85">{num(construite.data.de_refacut)}</span> de refăcut
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-2 text-[11.5px] text-muted-foreground">Nu am putut număra site-urile: {construite.message}</p>
+          )}
+        </Card>
+
+        <Card className="p-4">
+          <p className={EYEBROW}>Trimise (total)</p>
+          <dl className="mt-2 space-y-1.5">
+            {[
+              { cheie: "email", label: "pe email", n: r.canale.email, azi: r.azi.emailuri, Icon: Mail, ton: "text-mint" },
+              { cheie: "whatsapp", label: "pe WhatsApp", n: r.canale.whatsapp, azi: r.azi.whatsapp_trimise, Icon: MessageCircle, ton: "text-lav" },
+              { cheie: "telefon", label: "prin apel", n: r.canale.telefon, azi: r.azi.apeluri_facute, Icon: Phone, ton: "text-sky" },
+            ].map(({ cheie, label, n, azi: nAzi, Icon, ton }) => (
+              <div key={cheie} className="flex items-baseline justify-between gap-2">
+                <dt className="flex items-center gap-1.5 text-[12.5px] text-foreground/80">
+                  <Icon className={`h-3.5 w-3.5 shrink-0 ${ton}`} aria-hidden="true" />
+                  {label}
+                </dt>
+                <dd className="text-right">
+                  <span className="pu-num text-[18px] font-medium leading-none">{num(n)}</span>
+                  {nAzi > 0 ? <span className="pu-num ml-1.5 text-[11px] text-muted-foreground">+{num(nAzi)} azi</span> : null}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {peConturi ? <p className="mt-1.5 text-[11.5px] text-muted-foreground">WhatsApp azi pe conturi: {peConturi}</p> : null}
         </Card>
 
         <Card className="p-4">
@@ -265,7 +290,7 @@ export default async function PrezentarePage() {
           ) : null}
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-4 sm:col-span-2 xl:col-span-1">
           <p className={EYEBROW}>Interesați</p>
           <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.etape.interesat ?? 0)}</p>
           <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
