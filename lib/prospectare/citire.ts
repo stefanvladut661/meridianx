@@ -8,6 +8,8 @@ import type {
   ContWhatsapp,
   Dispozitiv,
   EmailTrimis,
+  FirmaInLucru,
+  SesiuneRobot,
   Etapa,
   Firma,
   FirmaProgramabila,
@@ -237,7 +239,7 @@ export async function citesteFisa(id: string): Promise<Result<FisaFirma | null>>
     client.from("prospectare_firme").select(`${COLOANE_FIRMA}, date_extra`).eq("id", id).maybeSingle(),
     client.from("prospectare_activitate").select("id, firma_id, tip, canal, autor, detalii, la").eq("firma_id", id).order("la", { ascending: false }).order("id", { ascending: false }).limit(200),
     client.from("prospectare_liste_zi").select("id, data, utilizator, canal, rezultat, incercari").eq("firma_id", id).order("data", { ascending: false }).limit(30),
-    client.from("prospectare_rezervari").select("tip_lucru, expira_la, prospectare_dispozitive(nume)").eq("firma_id", id).gt("expira_la", new Date().toISOString()).maybeSingle(),
+    client.from("prospectare_rezervari").select("tip_lucru, expira_la, sesiune, prospectare_dispozitive(nume)").eq("firma_id", id).gt("expira_la", new Date().toISOString()).maybeSingle(),
     // Aceeași interogare ca `citesteProgramariFirma`, în același drum.
     client
       .from("prospectare_programari")
@@ -255,7 +257,7 @@ export async function citesteFisa(id: string): Promise<Result<FisaFirma | null>>
     ? null
     : ((programari.data ?? []) as Programare[]).map((p) => ({ ...p, cont_nume: p.cont_whatsapp === null ? null : (numeCont.get(Number(p.cont_whatsapp)) ?? null) }));
   if (!firma.data) return { ok: true, data: null };
-  const rez = rezervare.data as { tip_lucru: string; expira_la: string; prospectare_dispozitive: { nume: string } | { nume: string }[] | null } | null;
+  const rez = rezervare.data as { tip_lucru: string; expira_la: string; sesiune?: string | null; prospectare_dispozitive: { nume: string } | { nume: string }[] | null } | null;
   const disp = rez ? (Array.isArray(rez.prospectare_dispozitive) ? rez.prospectare_dispozitive[0] : rez.prospectare_dispozitive) : null;
   // Duplicatul arată spre firma originală (aceeași firmă, alt site): fișa pune linkul spre ea.
   const nrOriginal = Number((firma.data as Firma).date_extra?.duplicat_de);
@@ -270,7 +272,7 @@ export async function citesteFisa(id: string): Promise<Result<FisaFirma | null>>
       firma: firma.data as Firma,
       activitate: (activitate.data ?? []) as Activitate[],
       liste: (liste.data ?? []) as FisaFirma["liste"],
-      rezervare: rez ? { dispozitiv: disp?.nume ?? "robot", tip_lucru: rez.tip_lucru, expira_la: rez.expira_la } : null,
+      rezervare: rez ? { dispozitiv: `${disp?.nume ?? "robot"}${rez.sesiune ? ` (sesiunea ${rez.sesiune})` : ""}`, tip_lucru: rez.tip_lucru, expira_la: rez.expira_la } : null,
       original,
       programari: programariFirma,
     },
@@ -633,28 +635,52 @@ export async function citesteActivitateRecenta(limit = 20): Promise<Result<Activ
   return { ok: true, data: cuFirma((data ?? []) as unknown as (Activitate & { firma: FirmaMin | FirmaMin[] | null })[]) as ActivitateCuFirma[] };
 }
 
+/** Sesiunile ordonate după nume, cu numerele în ordinea lor („2” înaintea lui „10”). */
+const dupaSesiune = (a: { sesiune: string }, b: { sesiune: string }) => a.sesiune.localeCompare(b.sesiune, "ro", { numeric: true });
+
 export async function citesteDispozitive(): Promise<Result<Dispozitiv[]>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
-  const [disp, rez, stat] = await Promise.all([
+  const [disp, rez, stat, ses, statSes] = await Promise.all([
     client.from("prospectare_dispozitive").select("id, nume, proprietar, activ, ultima_activitate, creat_la, ce_face, ce_face_detaliu, ce_face_la").order("creat_la", { ascending: true }),
-    client.from("prospectare_rezervari").select("dispozitiv_id, tip_lucru, expira_la, firma:prospectare_firme(id, nr, nume)").gt("expira_la", new Date().toISOString()),
+    client.from("prospectare_rezervari").select("dispozitiv_id, sesiune, tip_lucru, expira_la, luat_la, firma:prospectare_firme(id, nr, nume)").gt("expira_la", new Date().toISOString()).order("luat_la", { ascending: true }),
     client.rpc("prospectare_statistici_roboti"),
+    // Migrarea 38: sesiunile fiecărui robot și site-urile fiecărei sesiuni.
+    client.from("prospectare_sesiuni").select("dispozitiv_id, sesiune, ultima_activitate, ce_face, ce_face_detaliu, ce_face_la").order("ultima_activitate", { ascending: false }).limit(500),
+    client.rpc("prospectare_statistici_sesiuni"),
   ]);
   if (disp.error) return failure(disp.error);
   if (rez.error) return failure(rez.error);
   if (stat.error) return failure(stat.error);
-  const curent = new Map<string, Dispozitiv["firma_curenta"]>();
-  for (const r of (rez.data ?? []) as unknown as { dispozitiv_id: string; tip_lucru: string; expira_la: string; firma: { id: string; nr: number; nume: string } | { id: string; nr: number; nume: string }[] | null }[]) {
+  if (ses.error) return failure(ses.error);
+  if (statSes.error) return failure(statSes.error);
+  const cheie = (d: string, s: string) => `${d}|${s}`;
+  const curent = new Map<string, FirmaInLucru>();
+  const curentSesiune = new Map<string, FirmaInLucru>();
+  for (const r of (rez.data ?? []) as unknown as { dispozitiv_id: string; sesiune: string; tip_lucru: string; expira_la: string; firma: { id: string; nr: number; nume: string } | { id: string; nr: number; nume: string }[] | null }[]) {
     const f = Array.isArray(r.firma) ? r.firma[0] : r.firma;
-    if (f) curent.set(r.dispozitiv_id, { id: f.id, nr: f.nr, nume: f.nume, expira_la: r.expira_la, tip_lucru: r.tip_lucru });
+    if (!f) continue;
+    const inLucru = { id: f.id, nr: f.nr, nume: f.nume, expira_la: r.expira_la, tip_lucru: r.tip_lucru };
+    if (!curent.has(r.dispozitiv_id)) curent.set(r.dispozitiv_id, inLucru);
+    if (!curentSesiune.has(cheie(r.dispozitiv_id, r.sesiune ?? "1"))) curentSesiune.set(cheie(r.dispozitiv_id, r.sesiune ?? "1"), inLucru);
   }
   const peRobot = new Map(((stat.data ?? []) as { dispozitiv_id: string; azi: number; total: number }[]).map((s) => [s.dispozitiv_id, s]));
+  const peSesiune = new Map(((statSes.data ?? []) as { dispozitiv_id: string; sesiune: string; azi: number; total: number }[]).map((s) => [cheie(s.dispozitiv_id, s.sesiune), s]));
+  const sesiuni = new Map<string, SesiuneRobot[]>();
+  for (const s of (ses.data ?? []) as (Omit<SesiuneRobot, "firma_curenta" | "site_uri_azi" | "site_uri_total"> & { dispozitiv_id: string })[]) {
+    const { dispozitiv_id, ...rest } = s;
+    const k = cheie(dispozitiv_id, s.sesiune);
+    const lista = sesiuni.get(dispozitiv_id) ?? [];
+    lista.push({ ...rest, firma_curenta: curentSesiune.get(k) ?? null, site_uri_azi: Number(peSesiune.get(k)?.azi ?? 0), site_uri_total: Number(peSesiune.get(k)?.total ?? 0) });
+    sesiuni.set(dispozitiv_id, lista);
+  }
+  for (const lista of sesiuni.values()) lista.sort(dupaSesiune);
   return {
     ok: true,
-    data: ((disp.data ?? []) as Omit<Dispozitiv, "firma_curenta" | "site_uri_azi" | "site_uri_total">[]).map((d) => ({
+    data: ((disp.data ?? []) as Omit<Dispozitiv, "firma_curenta" | "sesiuni" | "site_uri_azi" | "site_uri_total">[]).map((d) => ({
       ...d,
       firma_curenta: curent.get(d.id) ?? null,
+      sesiuni: sesiuni.get(d.id) ?? [],
       site_uri_azi: Number(peRobot.get(d.id)?.azi ?? 0),
       site_uri_total: Number(peRobot.get(d.id)?.total ?? 0),
     })),
@@ -680,7 +706,7 @@ export async function citesteNise(): Promise<Result<Nisa[]>> {
   if (!client) return { ok: false, message: NO_DB };
   const { data, error } = await client
     .from("prospectare_nise")
-    .select("id, nisa, zona, status, dispozitiv_id, rezervata_la, semn_la, terminata_la, gasite, eligibile, respinse, nota, creat_la, creat_de, robot:prospectare_dispozitive(nume)")
+    .select("id, nisa, zona, status, dispozitiv_id, sesiune, rezervata_la, semn_la, terminata_la, gasite, eligibile, respinse, nota, creat_la, creat_de, robot:prospectare_dispozitive(nume)")
     .order("actualizat_la", { ascending: false })
     .limit(1000);
   if (error) return failure(error);

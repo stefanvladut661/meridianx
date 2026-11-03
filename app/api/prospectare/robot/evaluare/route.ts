@@ -52,6 +52,7 @@ export const POST = robotRoute(schema, async (robot, body) => {
   }
   const result = await rpc<Record<string, unknown>>("prospectare_evaluare_noteaza", {
     p_dispozitiv: robot.id,
+    p_sesiune: robot.sesiune,
     p_nisa_id: body.nisa_id ?? null,
     p_firme: body.firme,
   });

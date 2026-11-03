@@ -46,8 +46,10 @@ export function relativeRo(v: DateLike, now: number = Date.now()): string {
 
 export function untilRo(v: DateLike, now: number = Date.now()): string {
   const diff = new Date(v).getTime() - now;
-  const h = Math.floor(diff / 3600000);
-  const m = Math.round((diff % 3600000) / 60000);
+  // Minutele se rotunjesc întâi, ca 2 h 59,7 min să fie „3 h 0 min”, nu „2 h 60 min”.
+  const minute = Math.round(diff / 60000);
+  const h = Math.floor(minute / 60);
+  const m = minute % 60;
   if (diff <= 0) return "acum";
   if (h < 1) return `în ${m} min`;
   if (h < 24) return `în ${h} h ${m} min`;

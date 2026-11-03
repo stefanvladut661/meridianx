@@ -57,6 +57,7 @@ export const POST = robotRoute(schema, async (robot, body) => {
   const firme = body.forma === "lot" ? body.firme : [body];
   const result = await rpc<{ terminate: number; erori: number; firme: Rezultat[] }>("prospectare_termina_lot", {
     p_dispozitiv: robot.id,
+    p_sesiune: robot.sesiune,
     p_firme: firme.map((f) => ({ ...f, detalii: f.detalii ?? {}, link_verificat: f.link_verificat ?? true })),
   });
   if (!result.ok) return result;
@@ -65,7 +66,7 @@ export const POST = robotRoute(schema, async (robot, body) => {
   if (ok.length) {
     // Pagina Roboți: ce a făcut robotul ultima dată.
     const ce = ok.length === 1 ? `a publicat #${String(ok[0].nr ?? "")} (site ${String(ok[0].nr_site ?? "")})` : `a publicat ${ok.length} site-uri`;
-    await rpc("prospectare_robot_ce_face", { p_dispozitiv: robot.id, p_tip: "constructie", p_detaliu: ce });
+    await rpc("prospectare_robot_ce_face", { p_dispozitiv: robot.id, p_tip: "constructie", p_detaliu: ce, p_sesiune: robot.sesiune });
   }
 
   if (!lot) {

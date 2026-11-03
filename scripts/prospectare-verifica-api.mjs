@@ -149,6 +149,43 @@ check("nisa termina → 200, terminată", r.status === 200 && r.json?.nisa?.stat
 r = await call("nisa", { actiune: "rezerva", nisa: nisaTest, zona: "Test" }, T2);
 check("nișa terminată nu se mai rezervă → 409", r.status === 409, r);
 
+// Sesiunile (migrarea 38): același token (robotul 1), mai multe terminale.
+r = await call("rezerva", { sesiune: "a b" }, T1);
+check("sesiune invalidă → 422", r.status === 422, r);
+r = await call("rezerva", { sesiune: "2" }, T1);
+const firmaS2 = r.json?.firma;
+check("rezerva din sesiunea 2 → 200, altă firmă decât sesiunea 1, cu sesiunea în răspuns", r.status === 200 && firmaS2 && firmaS2.nr !== 7001 && firmaS2.rezervare?.sesiune === "2", r);
+r = await call("rezerva", { sesiune: 2 }, T1);
+check("sesiunea ca număr (2) = „2”: își reia firma", r.status === 200 && r.json?.firma?.id === firmaS2?.id && r.json?.firma?.rezervare?.reluata === true, r);
+r = await call("heartbeat", { firma_id: firmaS2?.id, sesiune: "3" }, T1);
+check("heartbeat din altă sesiune a aceluiași robot → 409", r.status === 409, r);
+r = await call("heartbeat", { firma_id: firmaS2?.id, sesiune: "2" }, T1);
+check("heartbeat din sesiunea ei → 200", r.status === 200 && Boolean(r.json?.expira_la), r);
+const nisaSes = `sesiuni-api-${Date.now()}`;
+r = await call("nisa", { actiune: "rezerva", nisa: nisaSes, zona: "Test", sesiune: "2" }, T1);
+const nisaSesId = r.json?.nisa?.id;
+check("nisa din sesiunea 2 → 200", r.status === 200 && r.json?.nisa?.sesiune === "2", r);
+r = await call("nisa", { actiune: "rezerva", nisa: nisaSes, zona: "Test", sesiune: "3" }, T1);
+check("aceeași nișă din sesiunea 3 → 409, cu sesiunea care o are", r.status === 409 && /sesiunea 2/.test(r.json?.eroare?.mesaj ?? ""), r);
+r = await call("nisa", { actiune: "progres", nisa_id: nisaSesId, gasite: 1 }, T1);
+check("progres fără sesiune (= „1”) pe nișa sesiunii 2 → 409", r.status === 409, r);
+// Concurență: 3 sesiuni pe același token cer deodată câte o firmă (de 2 ori fiecare) și aceeași nișă.
+const sesiuni = ["c1", "c2", "c3"];
+const cereri = await Promise.all(sesiuni.flatMap((s) => [call("rezerva", { sesiune: s }, T1), call("rezerva", { sesiune: s }, T1)]));
+const peSesiune = sesiuni.map((s, i) => [cereri[2 * i].json?.firma?.id, cereri[2 * i + 1].json?.firma?.id]);
+check(
+  "concurență: 3 sesiuni × 2 cereri /rezerva deodată → fiecare sesiune o singură firmă, toate diferite",
+  cereri.every((x) => x.status === 200 && x.json?.firma) && peSesiune.every(([a, b]) => a && a === b) && new Set(peSesiune.map(([a]) => a)).size === 3,
+  peSesiune
+);
+const nisaConc = `concurenta-api-${Date.now()}`;
+const nise = await Promise.all(sesiuni.map((s) => call("nisa", { actiune: "rezerva", nisa: nisaConc, zona: "Test", sesiune: s }, T1)));
+check(
+  "concurență: 3 sesiuni cer aceeași nișă deodată → una o primește, două primesc 409",
+  nise.filter((x) => x.status === 200).length === 1 && nise.filter((x) => x.status === 409).length === 2,
+  nise.map((x) => x.status)
+);
+
 // Limita de cereri: robotul 2 face cereri până trece de limita pe minut din Setări.
 let limit = null;
 for (let i = 0; i < 200 && !limit; i++) {

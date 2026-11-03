@@ -12,16 +12,16 @@ import { Btn, Card } from "@/components/panou/ui/primitives";
 import { SoftSelect } from "@/components/panou/ui/select";
 import { EmptyState, inputClass } from "@/components/panou/ui/states";
 import { useToast } from "@/components/panou/ui/toast";
-import type { Dispozitiv } from "@/lib/prospectare/types";
+import type { Dispozitiv, SesiuneRobot } from "@/lib/prospectare/types";
 import { cn } from "@/lib/utils";
 import { PageHead } from "./page-head";
 import { EroareCitire } from "./prezentare-eroare";
 import { linkFirma, RobotStare, stareRobot } from "./prezentare-comun";
 
 /**
- * Ecranul Roboți, ca `RobotsPage` din prototip: tabelul dispozitivelor (carduri
- * sub 768), „Adaugă robot” cu tokenul arătat o singură dată și
- * activare / dezactivare. Tokenul stă doar în starea componentei: nu intră în
+ * Ecranul Roboți, ca `RobotsPage` din prototip: un rând pe calculator (un robot = un token), cu
+ * sesiunile lui active (mai multe terminale în paralel, migrarea 38) și ce face fiecare; carduri
+ * sub 1280. „Adaugă robot” cu tokenul arătat o singură dată și activare / dezactivare. Tokenul stă doar în starea componentei: nu intră în
  * URL, în log sau în altă parte și dispare când se închide fereastra.
  */
 
@@ -88,6 +88,88 @@ function CeFace({ d, acum }: { d: Dispozitiv; acum: number }) {
           </time>
         </span>
       </span>
+    </span>
+  );
+}
+
+/** Sesiunea a dat semn în ultima jumătate de oră. */
+const sesiuneActiva = (s: SesiuneRobot, acum: number) => acum - Date.parse(s.ultima_activitate) <= INACTIV_DUPA_MS;
+
+/** O sesiune: „Sesiunea 2 · Construcție: #412 Firma · acum 3 min”, firma ei în lucru și site-urile ei de azi. */
+function SesiuneLinie({ s, acum }: { s: SesiuneRobot; acum: number }) {
+  const la = s.ce_face_la ? Date.parse(s.ce_face_la) : NaN;
+  const sarcina = s.ce_face && s.ce_face_la && !Number.isNaN(la) && acum - la <= INACTIV_DUPA_MS ? SARCINI[s.ce_face] : undefined;
+  const f = s.firma_curenta;
+  // Firma în construcție are rândul ei (cu linkul și expirarea): detaliul sarcinii n-o mai repetă.
+  const detaliu = sarcina && s.ce_face === "constructie" && f && s.ce_face_detaliu?.startsWith(`#${f.nr}`) ? null : s.ce_face_detaliu;
+  return (
+    <li className="flex items-start gap-2 text-[12px]">
+      <span className="pu-num mt-px shrink-0 rounded-md border border-white/[0.12] bg-white/[0.05] px-1.5 text-[11px] font-semibold text-foreground" title={`Sesiunea ${s.sesiune}`}>
+        {/^\d+$/.test(s.sesiune) ? `S${s.sesiune}` : s.sesiune}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-start gap-1.5">
+          {sarcina ? <sarcina.icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", sarcina.culoare)} aria-hidden="true" /> : null}
+          <span className="min-w-0 break-words">
+            {sarcina ? (
+              <>
+                <span className="font-medium text-foreground">{sarcina.label}</span>
+                {detaliu ? `: ${detaliu}` : null}
+              </>
+            ) : (
+              <span className="text-foreground/80">fără sarcină raportată</span>
+            )}
+            <span className="text-muted-foreground">
+              {" · "}
+              <time dateTime={s.ultima_activitate} title={dateTimeRo(s.ultima_activitate)}>
+                {relativeRo(s.ultima_activitate, acum)}
+              </time>
+              {s.site_uri_azi ? ` · ${num(s.site_uri_azi)} ${s.site_uri_azi === 1 ? "site" : "site-uri"} azi` : null}
+            </span>
+          </span>
+        </span>
+        {f ? (
+          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+            {f.tip_lucru === "refacere" ? "reface" : "construiește"}{" "}
+            <Link href={linkFirma(f.id)} className="rounded-sm text-foreground/85 underline-offset-2 hover:underline" title={f.nume}>
+              #{f.nr} {f.nume}
+            </Link>
+            {" · "}
+            <span title={`Rezervarea expiră la ${dateTimeRo(f.expira_la)}`}>expiră {untilRo(f.expira_la, acum)}</span>
+          </span>
+        ) : null}
+      </span>
+    </li>
+  );
+}
+
+/** Sesiunile active ale calculatorului (cele fără semn de o jumătate de oră se numără, nu se listează). */
+function Sesiuni({ d, acum }: { d: Dispozitiv; acum: number }) {
+  const active = d.sesiuni.filter((s) => sesiuneActiva(s, acum));
+  const inactive = d.sesiuni.length - active.length;
+  if (active.length === 0) return <CeFace d={d} acum={acum} />;
+  return (
+    <div className="space-y-1.5">
+      <ul className="space-y-1.5" aria-label={`Sesiunile active ale robotului ${d.nume}`}>
+        {active.map((s) => (
+          <SesiuneLinie key={s.sesiune} s={s} acum={acum} />
+        ))}
+      </ul>
+      {inactive > 0 ? (
+        <p className="text-[11px] text-muted-foreground">
+          + {inactive} {inactive === 1 ? "sesiune inactivă" : "sesiuni inactive"} (fără semn de o jumătate de oră)
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function NumarSesiuni({ d, acum }: { d: Dispozitiv; acum: number }) {
+  const active = d.sesiuni.filter((s) => sesiuneActiva(s, acum)).length;
+  return (
+    <span className="pu-num whitespace-nowrap text-[12px]" title={`${d.sesiuni.length} ${d.sesiuni.length === 1 ? "sesiune cunoscută" : "sesiuni cunoscute"} pe acest calculator`}>
+      <span className={cn("font-semibold", active ? "text-[#A7EFC3]" : "text-muted-foreground")}>{num(active)}</span>
+      <span className="text-muted-foreground"> {active === 1 ? "activă" : "active"}</span>
     </span>
   );
 }
@@ -183,6 +265,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
   };
 
   const acumActivi = dispozitive.filter((d) => stareRobot(d, acum) === "acum").length;
+  const sesiuniActive = dispozitive.reduce((n, d) => n + d.sesiuni.filter((s) => sesiuneActiva(s, acum)).length, 0);
 
   const buton = (d: Dispozitiv, className?: string) => {
     const ocupat = comut && comutId === d.id;
@@ -201,7 +284,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
     <div className="space-y-4">
       <PageHead
         title="Roboți"
-        pill={eroare ? undefined : `${acumActivi} ${acumActivi === 1 ? "activ" : "activi"} acum`}
+        pill={eroare ? undefined : `${acumActivi} ${acumActivi === 1 ? "activ" : "activi"} acum · ${sesiuniActive} ${sesiuniActive === 1 ? "sesiune" : "sesiuni"}`}
         pillTone="mint"
         actions={
           <Btn size="sm" variant="primary" icon={Plus} onClick={deschide}>
@@ -231,7 +314,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                 <thead>
                   <tr className="border-b border-border text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
                     <th scope="col" className="py-2.5 pl-4 pr-3 font-medium">
-                      Nume
+                      Calculator
                     </th>
                     <th scope="col" className="py-2.5 pr-3 font-medium">
                       Proprietar
@@ -240,13 +323,13 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                       Stare
                     </th>
                     <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Ce face acum
+                      Sesiuni
+                    </th>
+                    <th scope="col" className="py-2.5 pr-3 font-medium">
+                      Ce face fiecare sesiune
                     </th>
                     <th scope="col" className="py-2.5 pr-3 font-medium">
                       Ultima activitate
-                    </th>
-                    <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Firma curentă
                     </th>
                     <th scope="col" className="py-2.5 pr-3 font-medium">
                       Site-uri azi / total
@@ -258,7 +341,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                 </thead>
                 <tbody>
                   {dispozitive.map((d) => (
-                    <tr key={d.id} className="border-b border-border/70 last:border-0">
+                    <tr key={d.id} className="border-b border-border/70 align-top last:border-0">
                       <td className="py-2.5 pl-4 pr-3 text-[12.5px] font-medium">
                         <span className="inline-flex items-center gap-1.5">
                           <Cpu className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
@@ -269,8 +352,11 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                       <td className="py-2.5 pr-3">
                         <RobotStare stare={stareRobot(d, acum)} />
                       </td>
-                      <td className="min-w-[200px] max-w-[300px] py-2.5 pr-3">
-                        <CeFace d={d} acum={acum} />
+                      <td className="py-2.5 pr-3">
+                        <NumarSesiuni d={d} acum={acum} />
+                      </td>
+                      <td className="min-w-[280px] max-w-[440px] py-2.5 pr-3">
+                        <Sesiuni d={d} acum={acum} />
                       </td>
                       <td className="whitespace-nowrap py-2.5 pr-3 text-[12px] text-muted-foreground">
                         {d.ultima_activitate ? (
@@ -281,11 +367,8 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                           "niciodată"
                         )}
                       </td>
-                      <td className="max-w-[240px] py-2.5 pr-3 text-[12px]">
-                        <FirmaCurenta d={d} acum={acum} scurt />
-                      </td>
-                      <td className="pu-num whitespace-nowrap py-2.5 pr-3 text-[12px]">
-                        {num(d.site_uri_azi)} / {num(d.site_uri_total)}
+                      <td className="pu-num whitespace-nowrap py-2.5 pr-3 text-[12px]" title="Toate sesiunile calculatorului">
+                        <span className="font-semibold">{num(d.site_uri_azi)}</span> / {num(d.site_uri_total)}
                       </td>
                       <td className="py-2.5 pr-4 text-right">{buton(d)}</td>
                     </tr>
@@ -307,13 +390,16 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                   <p className="text-[11.5px] text-muted-foreground">
                     {d.proprietar} · {d.ultima_activitate ? relativeRo(d.ultima_activitate, acum) : "niciodată activ"}
                   </p>
-                  <CeFace d={d} acum={acum} />
-                  <div className="flex gap-1 text-[11.5px]">
-                    <span className="shrink-0 text-muted-foreground">construiește:</span>
-                    <FirmaCurenta d={d} acum={acum} scurt />
-                  </div>
+                  <NumarSesiuni d={d} acum={acum} />
+                  <Sesiuni d={d} acum={acum} />
+                  {d.sesiuni.some((s) => sesiuneActiva(s, acum)) ? null : (
+                    <div className="flex gap-1 text-[11.5px]">
+                      <span className="shrink-0 text-muted-foreground">construiește:</span>
+                      <FirmaCurenta d={d} acum={acum} scurt />
+                    </div>
+                  )}
                   <p className="pu-num text-[11.5px] text-muted-foreground">
-                    {num(d.site_uri_azi)} azi / {num(d.site_uri_total)} total
+                    {num(d.site_uri_azi)} site-uri azi / {num(d.site_uri_total)} total (toate sesiunile)
                   </p>
                   {buton(d)}
                 </li>

@@ -11,6 +11,12 @@ import { bearerToken, hashToken } from "./tokens";
  * cazuri speciale:
  *   200 { ok: true, ... }
  *   4xx/5xx { ok: false, eroare: { cod, mesaj } }
+ *
+ * Sesiunile (migrarea 38): un calculator = un robot = un token; pe el rulează mai multe sesiuni
+ * (terminale) în paralel. Fiecare cerere poate avea în corp `"sesiune": "2"` (text sau număr; litere,
+ * cifre, . _ -, cel mult 40); fără ea, cererea e a sesiunii „1”. Rezervările de firme și nișele se țin
+ * pe robot + sesiune.
+ *
  * Coduri: 401 token greșit sau robot dezactivat · 409 canal deja folosit
  * (email trimis o dată), firmă pe telefon, „Nu contacta”, rezervare care nu
  * e a robotului · 422 date invalide · 429 peste
@@ -20,6 +26,18 @@ import { bearerToken, hashToken } from "./tokens";
 export interface Robot {
   id: string;
   nume: string;
+  /** Sesiunea (terminalul) de pe calculatorul robotului: „1”, „2”, „3”… („1” dacă cererea n-o are). */
+  sesiune: string;
+}
+
+/** Sesiunea din corpul cererii: text sau număr; lipsă = „1”. `null` = invalidă (422). */
+export function sesiuneDin(raw: unknown): string | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw) || !("sesiune" in raw)) return "1";
+  const v = (raw as { sesiune?: unknown }).sesiune;
+  if (v === undefined || v === null || v === "") return "1";
+  const s = typeof v === "number" && Number.isInteger(v) && v >= 0 ? String(v) : typeof v === "string" ? v.trim() : null;
+  if (s === "") return "1";
+  return s !== null && /^[A-Za-z0-9._-]{1,40}$/.test(s) ? s : null;
 }
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -52,13 +70,11 @@ function codFor(status: number): string {
   }
 }
 
-async function authenticate(request: NextRequest): Promise<{ ok: true; robot: Robot } | { ok: false; response: NextResponse }> {
-  const token = bearerToken(request.headers.get("authorization"));
-  if (!token) return { ok: false, response: fail(401, "neautorizat", "Lipsește tokenul robotului: Authorization: Bearer <token>.") };
+async function authenticate(token: string, sesiune: string): Promise<{ ok: true; robot: Robot } | { ok: false; response: NextResponse }> {
   const client = db();
   if (!client) return { ok: false, response: fail(503, "neconfigurat", NO_DB) };
 
-  const { data, error } = await client.rpc("prospectare_autentifica", { p_token_hash: hashToken(token) });
+  const { data, error } = await client.rpc("prospectare_autentifica", { p_token_hash: hashToken(token), p_sesiune: sesiune });
   if (error) {
     const f = failure(error);
     return { ok: false, response: fail(f.status, codFor(f.status), f.message) };
@@ -72,11 +88,11 @@ async function authenticate(request: NextRequest): Promise<{ ok: true; robot: Ro
       response: fail(429, "prea_multe", `Peste ${robot.limita} cereri pe minut. Așteaptă până la minutul următor.`, { "Retry-After": "60" }),
     };
   }
-  return { ok: true, robot: { id: robot.id, nume: robot.nume } };
+  return { ok: true, robot: { id: robot.id, nume: robot.nume, sesiune } };
 }
 
 /**
- * O rută de robot: autentificare, corp JSON validat cu schema, apoi
+ * O rută de robot: autentificare (cu sesiunea din corp), corp JSON validat cu schema, apoi
  * `handler`. Erorile funcțiilor din bază ajung la robot cu statusul lor.
  */
 export function robotRoute<S extends z.ZodType>(
@@ -84,18 +100,30 @@ export function robotRoute<S extends z.ZodType>(
   handler: (robot: Robot, body: z.infer<S>) => Promise<{ ok: true; data: Record<string, unknown> } | { ok: false; message: string; status?: number }>
 ) {
   return async function POST(request: NextRequest): Promise<NextResponse> {
-    const auth = await authenticate(request);
-    if (!auth.ok) return auth.response;
+    const token = bearerToken(request.headers.get("authorization"));
+    if (!token) return fail(401, "neautorizat", "Lipsește tokenul robotului: Authorization: Bearer <token>.");
 
-    // Corp gol = `{}` (ex. /rezerva fără tip de lucru).
-    let raw: unknown;
+    // Corp gol = `{}` (ex. /rezerva fără tip de lucru). Sesiunea se citește din corp înainte de
+    // autentificare (ca ultima activitate să fie a sesiunii); erorile de corp vin după token.
+    let raw: unknown = undefined;
+    let corpBun = true;
     const text = await request.text();
-    if (text.length > 4_000_000) return fail(422, "date_invalide", "Cererea e prea mare: trimite firmele în loturi mai mici.");
-    try {
-      raw = text.trim() ? JSON.parse(text) : {};
-    } catch {
-      return fail(422, "date_invalide", "Corpul cererii nu e JSON valid.");
+    if (text.length <= 4_000_000) {
+      try {
+        raw = text.trim() ? JSON.parse(text) : {};
+      } catch {
+        corpBun = false;
+      }
     }
+    const sesiune = sesiuneDin(raw);
+
+    const auth = await authenticate(token, sesiune ?? "1");
+    if (!auth.ok) return auth.response;
+    if (text.length > 4_000_000) return fail(422, "date_invalide", "Cererea e prea mare: trimite firmele în loturi mai mici.");
+    if (!corpBun) return fail(422, "date_invalide", "Corpul cererii nu e JSON valid.");
+    if (sesiune === null) return fail(422, "date_invalide", "sesiune: un nume scurt, ex. „1”, „2”, „3” (litere, cifre, punct, liniuță; cel mult 40).");
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) delete (raw as { sesiune?: unknown }).sesiune;
+
     const parsed = schema.safeParse(raw);
     if (!parsed.success) {
       const first = parsed.error.issues[0];

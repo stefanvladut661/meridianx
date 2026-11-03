@@ -141,6 +141,30 @@ export interface ZiCasute {
   bounce: number;
 }
 
+/** O firmă rezervată acum (rezervare neexpirată). */
+export interface FirmaInLucru {
+  id: string;
+  nr: number;
+  nume: string;
+  expira_la: string;
+  tip_lucru: string;
+}
+
+/**
+ * O sesiune (terminal) a robotului (migrarea 38): același token, mai multe sesiuni în paralel.
+ * Fiecare are firma ei în lucru, nișa ei și sarcina ei.
+ */
+export interface SesiuneRobot {
+  sesiune: string;
+  ultima_activitate: string;
+  ce_face: "cercetare" | "constructie" | "trimitere" | null;
+  ce_face_detaliu: string | null;
+  ce_face_la: string | null;
+  firma_curenta: FirmaInLucru | null;
+  site_uri_azi: number;
+  site_uri_total: number;
+}
+
 export interface Dispozitiv {
   id: string;
   nume: string;
@@ -148,8 +172,10 @@ export interface Dispozitiv {
   activ: boolean;
   ultima_activitate: string | null;
   creat_la: string;
-  /** Firma rezervată acum (rezervare neexpirată), dacă are. */
-  firma_curenta: { id: string; nr: number; nume: string; expira_la: string; tip_lucru: string } | null;
+  /** Firma rezervată acum (rezervare neexpirată), dacă are; cu mai multe sesiuni, prima. */
+  firma_curenta: FirmaInLucru | null;
+  /** Sesiunile cunoscute, cele mai recente primele (gol: robot fără cereri de la migrarea 38). */
+  sesiuni: SesiuneRobot[];
   site_uri_azi: number;
   site_uri_total: number;
   /** Ce face acum: cercetare (pe o nișă), construcție (o firmă) sau trimitere (emailuri). */
@@ -183,6 +209,8 @@ export interface Nisa {
   dispozitiv_id: string | null;
   /** Numele robotului care a rezervat-o. */
   dispozitiv: string | null;
+  /** Sesiunea robotului care o are (migrarea 38). */
+  sesiune: string | null;
   rezervata_la: string | null;
   semn_la: string | null;
   terminata_la: string | null;
