@@ -86,7 +86,6 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
         title="Nișe"
         pill={eroare ? undefined : `${num(inLucru)} în lucru`}
         pillTone="lav"
-        subtitle="Tabla pe care roboții își împart cercetarea: fiecare rezervă o nișă într-o zonă, o cercetează și raportează câte firme a găsit. Fără semn de viață 24 de ore, rezervarea expiră și nișa o poate lua alt robot."
       />
 
       <NiseRezumat rezumat={rezumat} nise={nise} />

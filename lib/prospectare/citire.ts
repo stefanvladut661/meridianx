@@ -33,7 +33,7 @@ import type {
  */
 
 export const COLOANE_FIRMA =
-  "id, nr, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, canal_permis, canal_permis_motiv, canal_permis_la, canal_permis_de, evaluare, evaluare_motiv, evaluat_la, nisa_id, link_demo, captura_url, lot, slug, de_refacut, site_gata_la, construit_de, demo_verificat, telefon_gresit, apel_incercari, nota, creat_la, actualizat_la";
+  "id, nr, nr_site, grupa_tabel, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, canal_permis, canal_permis_motiv, canal_permis_la, canal_permis_de, evaluare, evaluare_motiv, evaluat_la, evaluat_de, nisa_id, link_demo, captura_url, lot, slug, de_refacut, site_gata_la, construit_de, demo_verificat, telefon_gresit, apel_incercari, nota, creat_la, actualizat_la";
 
 const MIN_FIRMA = "id, nr, nume, domeniu, etapa, persoana_contact, oras";
 
@@ -56,6 +56,10 @@ async function toate<T>(fetchPage: (from: number, to: number) => PromiseLike<{ d
 export interface Rezumat {
   total: number;
   etape: Partial<Record<Etapa, number>>;
+  /** Etapele firmelor din tabelul Firme (fără cele respinse la evaluare). Din migrarea 37. */
+  etape_vizibile?: Partial<Record<Etapa, number>>;
+  /** Site-urile cu număr (migrarea 37): câte, ultimul număr, câte încă necontactate / contactate. */
+  site_uri?: { numerotate: number; ultimul: number; necontactate: number; contactate: number };
   /** Câte firme au primit fiecare canal (o firmă poate avea email și WhatsApp). */
   canale: { email: number; whatsapp: number; telefon: number; email_si_whatsapp: number; fara: number };
   de_refacut: number;
@@ -127,10 +131,12 @@ export interface FiltreFirme {
   oras?: string | null;
   lot?: string | null;
   scorMin?: number | null;
-  doarMobil?: boolean;
-  doarRefacere?: boolean;
-  ordine?: "scor" | "nr" | "actualizat" | "nume";
+  /** „site” (implicit): cu site necontactate sus, apoi contactate, fiecare grupă cu numărul de site descrescător. */
+  ordine?: OrdineFirme;
 }
+
+export type OrdineFirme = "site" | "scor" | "nr" | "actualizat" | "nume";
+
 
 /** Ce folosim din constructorul de interogări Supabase (fără tipurile lui adânci, care încetinesc tsc). */
 interface Filtrabil {
@@ -138,11 +144,21 @@ interface Filtrabil {
   is(column: string, value: null): Filtrabil;
   not(column: string, operator: string, value: null): Filtrabil;
   gte(column: string, value: number): Filtrabil;
+  gt(column: string, value: number): Filtrabil;
+  in(column: string, values: readonly number[]): Filtrabil;
   or(filters: string): Filtrabil;
+}
+
+interface Ordonabil {
+  order(column: string, options: { ascending: boolean; nullsFirst?: boolean }): Ordonabil;
 }
 
 function aplicaFiltre<Q>(query: Q, f: FiltreFirme): Q {
   let q = query as unknown as Filtrabil;
+  // Firmele respinse la evaluare (doar evidența minimă) nu apar niciodată. Cele fără site apar doar
+  // prin căutare sau filtrul de etapă: tabelul principal are doar firmele cu site (migrarea 37).
+  q = q.gt("grupa_tabel", 0);
+  if (!f.etapa && !(f.q ?? "").trim()) q = q.in("grupa_tabel", [1, 2]);
   if (f.etapa) q = q.eq("etapa", f.etapa);
   // Canalul folosit: o firmă poate avea email și WhatsApp, deci filtrul e „a primit X”.
   if (f.canal === "fara") q = q.is("email_la", null).is("whatsapp_la", null).is("telefon_la", null);
@@ -151,8 +167,6 @@ function aplicaFiltre<Q>(query: Q, f: FiltreFirme): Q {
   if (f.oras) q = q.eq("oras", f.oras);
   if (f.lot) q = q.eq("lot", f.lot);
   if (typeof f.scorMin === "number") q = q.gte("scor", f.scorMin);
-  if (f.doarMobil) q = q.eq("este_mobil", true);
-  if (f.doarRefacere) q = q.eq("de_refacut", true);
   const text = (f.q ?? "").trim().replace(/[%,()*]/g, " ").slice(0, 80).trim();
   if (text) {
     const nr = /^#?\d+$/.test(text) ? Number(text.replace("#", "")) : null;
@@ -166,26 +180,38 @@ export async function citesteFirme(f: FiltreFirme, pagina = 1, pePagina = 50): P
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   const from = (Math.max(1, pagina) - 1) * pePagina;
-  let query = aplicaFiltre(client.from("prospectare_firme").select(COLOANE_FIRMA, { count: "exact" }), f);
-  query =
-    f.ordine === "nr"
-      ? query.order("nr", { ascending: true })
-      : f.ordine === "actualizat"
-        ? query.order("actualizat_la", { ascending: false })
-        : f.ordine === "nume"
-          ? query.order("nume", { ascending: true })
-          : query.order("scor", { ascending: false, nullsFirst: false }).order("nr", { ascending: true });
+  const query = ordoneaza(aplicaFiltre(client.from("prospectare_firme").select(COLOANE_FIRMA, { count: "exact" }), f), f.ordine);
   const { data, error, count } = await query.range(from, from + pePagina - 1);
   if (error) return failure(error);
   return { ok: true, data: { randuri: (data ?? []) as FirmaRand[], total: count ?? 0 } };
 }
 
-/** Toate firmele pentru filtre (exportul CSV), pe pagini de câte 1000. */
+/**
+ * Ordinea tabelului. Implicit („site”): sus firmele cu site încă necontactate, dedesubt cele cu site
+ * contactate (email și/sau WhatsApp), apoi (la căutare sau pe etapă) cele fără site; în fiecare grupă,
+ * numărul de site descrescător, apoi numărul de cercetare.
+ */
+function ordoneaza<Q>(query: Q, ordine: OrdineFirme | undefined): Q {
+  const q = query as unknown as Ordonabil;
+  const r =
+    ordine === "nr"
+      ? q.order("nr", { ascending: true })
+      : ordine === "actualizat"
+        ? q.order("actualizat_la", { ascending: false })
+        : ordine === "nume"
+          ? q.order("nume", { ascending: true })
+          : ordine === "scor"
+            ? q.order("scor", { ascending: false, nullsFirst: false }).order("nr", { ascending: true })
+            : q.order("grupa_tabel", { ascending: true }).order("nr_site", { ascending: false, nullsFirst: false }).order("nr", { ascending: false });
+  return r as unknown as Q;
+}
+
+/** Toate firmele pentru filtre (exportul CSV), pe pagini de câte 1000, în ordinea tabelului. */
 export async function citesteFirmeExport(f: FiltreFirme): Promise<Result<FirmaRand[]>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   return toate<FirmaRand>((from, to) =>
-    aplicaFiltre(client.from("prospectare_firme").select(COLOANE_FIRMA), f).order("nr", { ascending: true }).range(from, to) as unknown as PromiseLike<{ data: FirmaRand[] | null; error: { code?: string; message?: string } | null }>
+    ordoneaza(aplicaFiltre(client.from("prospectare_firme").select(COLOANE_FIRMA), f), f.ordine).order("id", { ascending: true }).range(from, to) as unknown as PromiseLike<{ data: FirmaRand[] | null; error: { code?: string; message?: string } | null }>
   );
 }
 
@@ -725,7 +751,7 @@ export async function citesteProgramabile(canal: CanalProgramare, filtre: Filtre
   return { ok: true, data: data as { total: number; firme: FirmaProgramabila[] } };
 }
 
-/** Programările unui canal în zilele date (cu firma), în ordinea în care pleacă: manualele, apoi automatele. */
+/** Programările unui canal în zilele date (cu firma), în ordinea în care pleacă: de la cel mai mic număr de site. */
 export async function citesteProgramari(canal: CanalProgramare, zile: string[], stari: StareProgramare[] = ["programata", "folosita"]): Promise<Result<ProgramareCuFirma[]>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
@@ -746,8 +772,9 @@ export async function citesteProgramari(canal: CanalProgramare, zile: string[], 
     const firma = Array.isArray(p.firma) ? (p.firma as unknown as FirmaRand[])[0] : p.firma;
     if (firma) out.push({ ...p, firma });
   }
-  // Manualele pleacă primele în ziua lor.
-  out.sort((a, b) => a.zi.localeCompare(b.zi) || Number(b.sursa === "manual") - Number(a.sursa === "manual") || a.id - b.id);
+  // În fiecare zi, de la cel mai mic număr de site (migrarea 37), ca robotul de email și lista de WhatsApp.
+  const nrSite = (p: ProgramareCuFirma) => p.firma.nr_site ?? Number.MAX_SAFE_INTEGER;
+  out.sort((a, b) => a.zi.localeCompare(b.zi) || nrSite(a) - nrSite(b) || a.id - b.id);
   return { ok: true, data: out };
 }
 

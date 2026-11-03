@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type MouseEvent } from "react";
+import { Fragment, useState, useTransition, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ExternalLink, Loader2 } from "lucide-react";
@@ -13,8 +13,9 @@ import { CanaleBadge, StageBadge } from "./stage-badge";
 import { linkWeb } from "./firme-format";
 
 /**
- * Tabelul firmelor (prototip: FirmsTable.jsx): bara din stânga = etapa. Un
- * clic pe rând (sau pe nume, de la tastatură) pune `?firma=<id>` în adresă,
+ * Tabelul firmelor, ca în Excel (pe tema închisă a adminului): celule conturate, antet plin și fix
+ * sus, rânduri alternante, derulare în tabel. Prima coloană e numărul de site; numărul de cercetare
+ * stă mic, sub nume. Un clic pe rând (sau pe nume, de la tastatură) pune `?firma=<id>` în adresă,
  * iar pagina de server deschide fișa. Sub 1024 px, rândurile devin carduri.
  */
 
@@ -22,7 +23,17 @@ const etapaMeta = (f: FirmaRand) => ETAPE[f.etapa] ?? ETAPE.cercetat;
 
 const clasaScor = (scor: number | null) => (scor === null || scor < 60 ? "text-muted-foreground" : scor >= 85 ? "text-mint" : "");
 
-export function FirmeTabel({ firme, acum, selectatId }: { firme: FirmaRand[]; acum: number; selectatId: string | null }) {
+/** Grupele ordinii implicite (migrarea 37): eticheta rândului cu care începe fiecare grupă. */
+const GRUPE: Record<number, string> = {
+  1: "Cu site, încă necontactate",
+  2: "Cu site, contactate (email și/sau WhatsApp) sau închise",
+  3: "Fără site publicat",
+};
+
+const TH = "sticky top-0 z-10 whitespace-nowrap border-b border-r border-white/[0.12] bg-[#22242F] px-2.5 py-2 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-foreground/90";
+const TD = "border-b border-r border-white/[0.08] px-2.5 py-2 align-middle";
+
+export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: FirmaRand[]; acum: number; selectatId: string | null; grupe?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -57,92 +68,137 @@ export function FirmeTabel({ firme, acum, selectatId }: { firme: FirmaRand[]; ac
 
   return (
     <>
-      <div className="hidden overflow-x-auto lg:block">
-        <table className="w-full border-collapse text-left">
+      {/* Derularea e în tabel, cu antetul fix; regiunea se poate focaliza ca să se deruleze și de la tastatură.
+          `relative`: textele pentru cititoarele de ecran (absolute) rămân în regiune și nu lărgesc pagina. */}
+      <div className="relative hidden max-h-[calc(100dvh-13rem)] min-h-[240px] overflow-auto lg:block" tabIndex={0} role="region" aria-label="Tabelul firmelor, cu derulare în interior">
+        <table className="w-full min-w-[1180px] border-separate border-spacing-0 text-left text-[12px]">
           <caption className="sr-only">Firmele din filtrele curente. Numele firmei deschide fișa cu detalii și cronologie.</caption>
           <thead>
-            <tr className="border-b border-border text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-              <th scope="col" className="py-2 pl-3 pr-2 font-medium">Nr</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Nume</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Nișă</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Oraș</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Scor</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Etapă</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Canale</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Telefon</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Email</th>
-              <th scope="col" className="py-2 pr-2 font-medium">Site demo</th>
-              <th scope="col" className="py-2 pr-3 font-medium">Actualizată</th>
+            <tr>
+              <th scope="col" className={cn(TH, "w-[76px] border-l text-center")}>
+                Nr site
+              </th>
+              <th scope="col" className={cn(TH, "text-left")}>
+                Nume
+              </th>
+              <th scope="col" className={cn(TH, "text-left")}>
+                Nișă
+              </th>
+              <th scope="col" className={cn(TH, "text-left")}>
+                Oraș
+              </th>
+              <th scope="col" className={cn(TH, "w-[64px] text-center")}>
+                Scor
+              </th>
+              <th scope="col" className={cn(TH, "text-center")}>
+                Etapă
+              </th>
+              <th scope="col" className={cn(TH, "text-center")}>
+                Canale
+              </th>
+              <th scope="col" className={cn(TH, "text-center")}>
+                Telefon
+              </th>
+              <th scope="col" className={cn(TH, "text-left")}>
+                Email
+              </th>
+              <th scope="col" className={cn(TH, "text-center")}>
+                Site demo
+              </th>
+              <th scope="col" className={cn(TH, "text-center")}>
+                Actualizată
+              </th>
             </tr>
           </thead>
           <tbody>
-            {firme.map((f) => {
+            {firme.map((f, i) => {
               const demo = linkWeb(f.link_demo);
               const activ = selectatId === f.id;
+              const grupaNoua = grupe && (i === 0 || firme[i - 1].grupa_tabel !== f.grupa_tabel) && Boolean(GRUPE[f.grupa_tabel]);
               return (
-                <tr
-                  key={f.id}
-                  onClick={(event) => peRand(event, f.id)}
-                  aria-busy={seDeschide(f.id) || undefined}
-                  className={cn("cursor-pointer border-b border-border/70 transition-colors last:border-0 hover:bg-white/[0.04]", activ && "bg-white/[0.05]")}
-                >
-                  <td className={cn("border-l-2 py-2.5 pl-2.5 pr-2 text-[11.5px] text-muted-foreground", etapaMeta(f).bara)}>
-                    <span className="pu-num">{f.nr}</span>
-                  </td>
-                  <td className="max-w-[190px] py-2.5 pr-2">
-                    <Link
-                      href={hrefFirma(f.id)}
-                      prefetch={false}
-                      scroll={false}
-                      onClick={(event) => peLink(event, f.id)}
-                      aria-current={activ ? "true" : undefined}
-                      className="flex min-w-0 items-center gap-1.5 rounded-sm text-[12.5px] font-medium hover:text-lav"
-                    >
-                      <span className="truncate">{f.nume}</span>
-                      {seDeschide(f.id) ? (
-                        <>
-                          <Loader2 className="h-3 w-3 shrink-0 text-muted-foreground motion-safe:animate-spin" aria-hidden="true" />
-                          <span className="sr-only">Se deschide fișa</span>
-                        </>
-                      ) : null}
-                    </Link>
-                    <p className="truncate font-mono text-[10.5px] text-muted-foreground">{f.domeniu}</p>
-                  </td>
-                  <td className="max-w-[130px] truncate py-2.5 pr-2 text-[11.5px]">{f.nisa ?? <span className="text-muted-foreground">—</span>}</td>
-                  <td className="whitespace-nowrap py-2.5 pr-2 text-[11.5px]">
-                    {f.oras ?? <span className="text-muted-foreground">—</span>}
-                    {f.judet ? <span className="text-muted-foreground"> · {f.judet}</span> : null}
-                  </td>
-                  <td className="py-2.5 pr-2">
-                    <span className={cn("pu-num text-[12.5px] font-medium", clasaScor(f.scor))}>{f.scor === null ? "—" : num(f.scor)}</span>
-                  </td>
-                  <td className="py-2.5 pr-2">
-                    <StageBadge etapa={f.etapa} />
-                  </td>
-                  <td className="py-2.5 pr-2">
-                    <CanaleBadge firma={f} />
-                  </td>
-                  <td className="whitespace-nowrap py-2.5 pr-2 text-[11.5px]">
-                    {/* Text, nu link de apel: se sună doar din „Apeluri azi”, unde firma intră pe telefon. */}
-                    {f.telefon ?? <span className="text-muted-foreground">—</span>}
-                  </td>
-                  <td className="max-w-[170px] truncate py-2.5 pr-2 text-[11.5px] text-muted-foreground">{f.email ?? "—"}</td>
-                  <td className="py-2.5 pr-2">
-                    {demo ? (
-                      <a href={demo} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-sm text-[11.5px] text-lav hover:underline">
-                        demo <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                        <span className="sr-only"> pentru {f.nume} (se deschide într-o filă nouă)</span>
-                      </a>
-                    ) : (
-                      <span className="text-[11.5px] text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap py-2.5 pr-3 text-[11.5px] text-muted-foreground">
-                    <time dateTime={f.actualizat_la} title={dateTimeRo(f.actualizat_la)}>
-                      {relativeRo(f.actualizat_la, acum)}
-                    </time>
-                  </td>
-                </tr>
+                <Fragment key={f.id}>
+                  {grupaNoua ? (
+                    <tr>
+                      <th scope="colgroup" colSpan={11} className="border-b border-l border-r border-white/[0.12] bg-[#1A1C26] px-3 py-1.5 text-left text-[11px] font-semibold text-lav">
+                        {GRUPE[f.grupa_tabel]}
+                      </th>
+                    </tr>
+                  ) : null}
+                  <tr
+                    onClick={(event) => peRand(event, f.id)}
+                    aria-busy={seDeschide(f.id) || undefined}
+                    className={cn("cursor-pointer transition-colors hover:bg-lav/[0.09]", activ ? "bg-lav/[0.13]" : i % 2 === 0 ? "bg-white/[0.012]" : "bg-white/[0.045]")}
+                  >
+                    <td className={cn(TD, "border-l text-center")}>
+                      {f.nr_site === null ? (
+                        <span className="text-muted-foreground" title="Site-ul nu e încă publicat și verificat">
+                          —
+                        </span>
+                      ) : (
+                        <span className="pu-num text-[12.5px] font-semibold">{f.nr_site}</span>
+                      )}
+                    </td>
+                    <td className={cn(TD, "max-w-[240px]")}>
+                      <Link
+                        href={hrefFirma(f.id)}
+                        prefetch={false}
+                        scroll={false}
+                        onClick={(event) => peLink(event, f.id)}
+                        aria-current={activ ? "true" : undefined}
+                        className="flex min-w-0 items-center gap-1.5 rounded-sm text-[12.5px] font-medium hover:text-lav"
+                      >
+                        <span className="truncate">{f.nume}</span>
+                        {seDeschide(f.id) ? (
+                          <>
+                            <Loader2 className="h-3 w-3 shrink-0 text-muted-foreground motion-safe:animate-spin" aria-hidden="true" />
+                            <span className="sr-only">Se deschide fișa</span>
+                          </>
+                        ) : null}
+                      </Link>
+                      <p className="truncate text-[10.5px] text-muted-foreground">
+                        <span className="pu-num" title="Numărul de cercetare">
+                          #{f.nr}
+                        </span>
+                        <span aria-hidden="true"> · </span>
+                        <span className="font-mono">{f.domeniu}</span>
+                      </p>
+                    </td>
+                    <td className={cn(TD, "max-w-[150px] truncate")}>{f.nisa ?? <span className="text-muted-foreground">—</span>}</td>
+                    <td className={cn(TD, "whitespace-nowrap")}>
+                      {f.oras ?? <span className="text-muted-foreground">—</span>}
+                      {f.judet ? <span className="text-muted-foreground"> · {f.judet}</span> : null}
+                    </td>
+                    <td className={cn(TD, "text-center")}>
+                      <span className={cn("pu-num text-[12.5px] font-medium", clasaScor(f.scor))}>{f.scor === null ? "—" : num(f.scor)}</span>
+                    </td>
+                    <td className={cn(TD, "text-center")}>
+                      <StageBadge etapa={f.etapa} />
+                    </td>
+                    <td className={cn(TD, "text-center")}>
+                      <CanaleBadge firma={f} className="justify-center" />
+                    </td>
+                    <td className={cn(TD, "whitespace-nowrap text-center")}>
+                      {/* Text, nu link de apel: se sună doar din „Apeluri azi”, unde firma intră pe telefon. */}
+                      {f.telefon ?? <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className={cn(TD, "max-w-[190px] truncate text-muted-foreground")}>{f.email ?? "—"}</td>
+                    <td className={cn(TD, "text-center")}>
+                      {demo ? (
+                        <a href={demo} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-sm text-lav hover:underline">
+                          demo <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                          <span className="sr-only"> pentru {f.nume} (se deschide într-o filă nouă)</span>
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className={cn(TD, "whitespace-nowrap text-center text-muted-foreground")}>
+                      <time dateTime={f.actualizat_la} title={dateTimeRo(f.actualizat_la)}>
+                        {relativeRo(f.actualizat_la, acum)}
+                      </time>
+                    </td>
+                  </tr>
+                </Fragment>
               );
             })}
           </tbody>
@@ -170,14 +226,21 @@ export function FirmeTabel({ firme, acum, selectatId }: { firme: FirmaRand[]; ac
                     <p className="truncate text-[13px] font-medium">{f.nume}</p>
                     {loc ? <p className="truncate text-[11px] text-muted-foreground">{loc}</p> : null}
                   </div>
-                  <span className="pu-num flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
-                    {seDeschide(f.id) ? (
-                      <>
-                        <Loader2 className="h-3 w-3 motion-safe:animate-spin" aria-hidden="true" />
-                        <span className="sr-only">Se deschide fișa</span>
-                      </>
-                    ) : null}
-                    #{f.nr}
+                  <span className="flex shrink-0 flex-col items-end gap-0.5 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      {seDeschide(f.id) ? (
+                        <>
+                          <Loader2 className="h-3 w-3 motion-safe:animate-spin" aria-hidden="true" />
+                          <span className="sr-only">Se deschide fișa</span>
+                        </>
+                      ) : null}
+                      {f.nr_site === null ? null : (
+                        <span className="pu-num rounded-md border border-white/[0.12] bg-white/[0.06] px-1.5 text-[11.5px] font-semibold text-foreground">Site {f.nr_site}</span>
+                      )}
+                    </span>
+                    <span className="pu-num" title="Numărul de cercetare">
+                      #{f.nr}
+                    </span>
                   </span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">

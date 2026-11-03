@@ -33,7 +33,6 @@ export default async function SetariPage() {
       <PageHead
         title="Setări prospectare"
         pill={pill}
-        subtitle="Conturile de pe care trimiteți WhatsApp, limitele distribuției de la 00:00 (căsuțe, plafonul de încălzire, apeluri pe zi) și ale roboților, și textele pe care le folosiți la apel și pe WhatsApp."
       />
 
       <SetariConturi conturi={conturi.ok ? conturi.data : null} eroare={conturi.ok ? null : conturi.message} />

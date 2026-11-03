@@ -6,10 +6,12 @@ import { methodNotAllowed, robotRoute } from "@/lib/prospectare/robot-api";
  * POST /api/prospectare/robot/evaluare — firmele evaluate de roboți.
  *
  *   { "actiune": "verifica", "domenii": ["firma.ro", "https://www.alta.ro/"] }
- *      → { "deja_evaluate": [{ domeniu, nr, evaluare, scor, motiv, evaluat_la }], "noi": ["alta.ro"] }
- *      Un domeniu deja evaluat (de oricine) se sare: nu se mai cercetează.
+ *      → { "deja_evaluate": [{ domeniu, nr, etapa, evaluare, scor, motiv, evaluat_la, nume, nisa, calculator }], "noi": ["alta.ro"] }
+ *      Un domeniu deja evaluat (de oricine, eligibil sau respins) se sare: nu se mai cercetează.
  *   { "actiune": "noteaza", "nisa_id": 12, "firme": [{ "domeniu", "nume", "scor", "evaluare": "eligibila" | "respinsa", "motiv", … }] }
- *      Se notează TOATE firmele evaluate, și cele respinse (cu motivul și scorul).
+ *      Se notează TOATE firmele evaluate, și cele respinse (cu motivul și scorul). Din cele respinse
+ *      rămân doar domeniul, numele, nișa, scorul, motivul, data și calculatorul (`date_extra.calculator`,
+ *      altfel numele robotului); nu apar în tabelul Firme (migrarea 37).
  *      Răspunsul: adaugate, eligibile, respinse, deja_evaluate (sărite), invalide.
  *      Cifrele nișei cresc singure. Firmele eligibile cu scor ≥ prag (Setări), cu email
  *      sau mobil, intră în coada comună de construcție (/rezerva).

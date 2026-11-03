@@ -669,7 +669,17 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1 text-left">
             <div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground">
-              <span className="pu-num shrink-0">#{firma.nr}</span>
+              {firma.nr_site === null ? null : (
+                <>
+                  <span className="pu-num shrink-0 font-semibold text-foreground" title="Numărul site-ului: dat când site-ul a fost publicat și verificat">
+                    Site {firma.nr_site}
+                  </span>
+                  <span aria-hidden="true">·</span>
+                </>
+              )}
+              <span className="pu-num shrink-0" title="Numărul de cercetare">
+                cercetare #{firma.nr}
+              </span>
               <span aria-hidden="true">·</span>
               <span className="truncate font-mono">{firma.domeniu}</span>
             </div>

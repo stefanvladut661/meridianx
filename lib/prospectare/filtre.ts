@@ -23,8 +23,6 @@ export function filtreDinAdresa(params: Record<string, string | string[] | undef
     oras: p("oras"),
     lot: p("lot"),
     scorMin: scor && /^\d{1,4}$/.test(scor) ? Number(scor) : null,
-    doarMobil: p("mobil") === "1",
-    doarRefacere: p("refacere") === "1",
-    ordine: ordine === "nr" || ordine === "actualizat" || ordine === "nume" ? ordine : "scor",
+    ordine: ordine === "scor" || ordine === "nr" || ordine === "actualizat" || ordine === "nume" ? ordine : "site",
   };
 }

@@ -152,12 +152,39 @@ for (const x of prospecti) {
 const trimisePeNr = new Map();
 for (const r of trimise) if (!trimisePeNr.has(Number(r.nr))) trimisePeNr.set(Number(r.nr), r);
 
-const raport = { etape: {}, statusNecunoscut: {}, faraDomeniu: 0, nuContacta: 0, emailFaraDetalii: [], waCuEmail: [], waSingur: [], waFaraFirma: [], waFaraCont: [], emailDoarInTrimise: [], duplicate: [], gataLa: {}, faraConstructor: 0 };
+const raport = { etape: {}, statusNecunoscut: {}, faraDomeniu: 0, nuContacta: 0, emailFaraDetalii: [], waCuEmail: [], waSingur: [], waFaraFirma: [], waFaraCont: [], emailDoarInTrimise: [], duplicate: [], gataLa: {}, faraConstructor: 0, evaluare: { eligibila: 0, respinsa: 0, in_cercetare: 0 }, respinseMinim: 0 };
 const firme = [];
 const activitate = [];
 
 const textScurt = (v, max) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined);
 const mobil = (t) => /^07\d{8}$/.test(String(t ?? "").replace(/\D/g, "").replace(/^(00)?40/, "0"));
+
+// Evaluarea firmei, cu regulile robotului (auto-web-rebuilder, admin_api.evaluare_firma, fluxul autonom):
+// [„eligibila” | „respinsa”, motiv], sau [null, null] cât cercetarea ei nu e încheiată.
+// Pragurile sunt cele din aproba_auto.py: scor ≥ 45 sau punctajul Site ≥ 20 (site foarte slab).
+const PRAG_SCOR = 45;
+const PRAG_SITE_SLAB = 20;
+const CONSTRUITE = new Set(["ales", "in_lucru", "gata", "refacere", "aprobat", "trimis", "de_verificat", "fara_email"]);
+function evalueaza(x) {
+  const st = String(x.status ?? "candidat");
+  const d = x.scor_detaliu && typeof x.scor_detaliu === "object" ? x.scor_detaliu : {};
+  const motiv = (v) => String(v).replace(/\s+/g, " ").trim().slice(0, 500);
+  if (st === "nu_contacta") return ["respinsa", "pe lista „nu contacta”"];
+  if (x.duplicat_de) return ["respinsa", `duplicat al firmei #${x.duplicat_de}`];
+  if (x.oprit_la) return ["respinsa", motiv(x.oprit_motiv || `oprită la treapta ${x.oprit_la}`)];
+  if (st === "respins") return ["respinsa", motiv(x.oprit_motiv || x.note || "respinsă")];
+  if (d.exclus_motiv) return ["respinsa", motiv(d.exclus_motiv)];
+  if (CONSTRUITE.has(st) || x.link_demo) return ["eligibila", null];
+  const treapta = Number.isFinite(x.treapta) ? x.treapta : 3;
+  if (treapta < 3 || !Object.keys(d).length) return [null, null];
+  const telefoane = [x.telefon, ...(Array.isArray(x.telefoane) ? x.telefoane : [])];
+  if (!String(x.email ?? "").trim() && !telefoane.some(mobil)) return ["respinsa", "fără email și fără mobil (doar telefon fix)"];
+  const scor = Number(d.total) || 0;
+  const site = Number(d.blocuri?.site) || 0;
+  if (scor >= PRAG_SCOR || site >= PRAG_SITE_SLAB) return ["eligibila", null];
+  if (d.incomplet) return [null, null];
+  return ["respinsa", `scor ${scor} sub pragul ${PRAG_SCOR} și punctajul Site ${site} sub ${PRAG_SITE_SLAB}`];
+}
 
 for (const x of prospecti) {
   const dom = normDom(x.domeniu || x.url);
@@ -270,11 +297,42 @@ for (const x of prospecti) {
     }).filter(([, v]) => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0))
   );
 
+  // Evaluarea (migrarea 37). O firmă doar cercetată și respinsă trimite doar evidența minimă: domeniul,
+  // numele, nișa, scorul, motivul, data și calculatorul; baza nu păstrează mai mult.
+  const [evaluare, evaluareMotiv] = evalueaza(x);
+  raport.evaluare[evaluare ?? "in_cercetare"]++;
+  const evaluatLa = evaluare ? laBucuresti(String(x.scor_detaliu?.calculat ?? "").slice(0, 10)) ?? laBucuresti(x.adaugat) ?? undefined : undefined;
+  const evaluatDe = textScurt(x.adaugat_de, 200);
+  if (evaluare === "respinsa" && etapa === "cercetat" && !emailLa && !whatsappLa && !x.link_demo) {
+    raport.respinseMinim++;
+    firme.push(
+      Object.fromEntries(
+        Object.entries({
+          domeniu: dom,
+          nr: Number.isInteger(x.nr) && x.nr > 0 ? x.nr : undefined,
+          nume: textScurt(x.nume, 300) ?? textScurt(x.titlu, 300) ?? dom,
+          nisa: textScurt(x.nisa, 200),
+          scor: Number.isInteger(x.scor) ? x.scor : undefined,
+          etapa,
+          evaluare,
+          evaluare_motiv: evaluareMotiv ?? undefined,
+          evaluat_la: evaluatLa,
+          evaluat_de: evaluatDe,
+        }).filter(([, v]) => v !== undefined)
+      )
+    );
+    continue;
+  }
+
   firme.push(
     Object.fromEntries(
       Object.entries({
         domeniu: dom,
         nr: Number.isInteger(x.nr) && x.nr > 0 ? x.nr : undefined,
+        evaluare: evaluare ?? undefined,
+        evaluare_motiv: evaluare === "respinsa" ? (evaluareMotiv ?? undefined) : undefined,
+        evaluat_la: evaluatLa,
+        evaluat_de: evaluare ? evaluatDe : undefined,
         nume: textScurt(x.nume, 300) ?? textScurt(x.titlu, 300) ?? dom,
         site_vechi: textScurt(x.url, 500),
         nisa: textScurt(x.nisa, 200),
@@ -367,6 +425,7 @@ if (raport.waFaraCont.length) console.log(`  WhatsApp fără cont cunoscut (1–
 console.log(`Duplicate (duplicat_de) → „Nu contacta”: ${raport.duplicate.length}${raport.duplicate.length ? ` (${raport.duplicate.join(", ")})` : ""}`);
 console.log(`Data site-ului gata: ${Object.entries(raport.gataLa).map(([k, n]) => `${k} ${n}`).join(", ") || "—"}${raport.faraConstructor ? ` · ${raport.faraConstructor} site-uri fără calculator cunoscut` : ""}`);
 console.log(`Linkuri demo verificate (link_verificat = da): ${firme.filter((f) => f.demo_verificat).length}`);
+console.log(`Evaluare: ${raport.evaluare.eligibila} eligibile · ${raport.evaluare.respinsa} respinse (${raport.respinseMinim} doar cercetate: intră cu evidența minimă) · ${raport.evaluare.in_cercetare} încă în cercetare`);
 console.log(`Activitate de importat: ${activitate.length} rânduri · statistici căsuțe: ${randuriCasute.length} zile × căsuță`);
 
 // ---------------------------------------------------------------------------
@@ -386,7 +445,7 @@ async function rpc(name, params) {
   return data;
 }
 
-const total = { adaugate: 0, actualizate: 0, neschimbate: 0, etape_pastrate: 0, canale_noi: 0, conflicte: [] };
+const total = { adaugate: 0, actualizate: 0, neschimbate: 0, etape_pastrate: 0, canale_noi: 0, respinse: 0, conflicte: [] };
 for (let i = 0; i < firme.length; i += LOT) {
   const r = await rpc("prospectare_upsert_firme", { p_firme: firme.slice(i, i + LOT), p_sursa: "import", p_autor: "import", p_proba: PROBA });
   total.adaugate += r.adaugate;
@@ -394,6 +453,7 @@ for (let i = 0; i < firme.length; i += LOT) {
   total.neschimbate += r.neschimbate;
   total.etape_pastrate += r.etape_pastrate;
   total.canale_noi += r.canale_noi ?? 0;
+  total.respinse += r.respinse ?? 0;
   total.conflicte.push(...r.conflicte);
   process.stdout.write(`\rFirme: ${Math.min(i + LOT, firme.length)}/${firme.length}`);
 }
@@ -407,6 +467,7 @@ const cas = await rpc("prospectare_import_casute", { p_randuri: randuriCasute, p
 
 console.log(`\n${PROBA ? "AR FI" : "S-AU"}: adăugate ${total.adaugate} · actualizate ${total.actualizate} · neschimbate ${total.neschimbate} · etape păstrate (puse de om sau mai avansate) ${total.etape_pastrate}`);
 console.log(`Firme care ${PROBA ? "ar primi" : "au primit"} date de canal (email_la / whatsapp_la): ${total.canale_noi}`);
+console.log(`Respinse la evaluare ${PROBA ? "care ar rămâne" : "rămase"} doar cu evidența minimă (noi sau acum respinse): ${total.respinse}`);
 console.log(`Conflicte: ${total.conflicte.length}`);
 for (const c of total.conflicte.slice(0, 40)) console.log(`  #${c.nr ?? "?"} ${c.domeniu ?? ""}: ${c.motiv}`);
 if (total.conflicte.length > 40) console.log(`  … încă ${total.conflicte.length - 40}`);

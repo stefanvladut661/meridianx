@@ -16,9 +16,9 @@ export const metadata: Metadata = { title: "Firme — MERIDIAN Prospectare", rob
 export const dynamic = "force-dynamic";
 
 const CALE = "/admin/prospectare/firme";
-const PE_PAGINA = 50;
+const PE_PAGINA = 500;
 /** Cheile pe care le citește `filtreDinAdresa` (pagina și exportul CSV). */
-const CHEI = ["q", "etapa", "canal", "nisa", "oras", "lot", "scor", "mobil", "refacere", "ordine"] as const;
+const CHEI = ["q", "etapa", "canal", "nisa", "oras", "lot", "scor", "ordine"] as const;
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -37,7 +37,11 @@ function interogare(params: Params, extra: Record<string, string | null> = {}): 
 
 const cu = (query: string, cale = CALE): string => (query ? `${cale}?${query}` : cale);
 
-/** /admin/prospectare/firme — toate firmele, filtrate din adresă, cu fișa unei firme în `?firma=<id>`. */
+/**
+ * /admin/prospectare/firme — firmele cu site (sus cele necontactate, dedesubt cele contactate, fiecare
+ * grupă cu numărul de site descrescător), filtrate din adresă, cu fișa unei firme în `?firma=<id>`.
+ * Firmele fără site apar doar la căutare sau pe etapă; cele respinse la evaluare, niciodată.
+ */
 export default async function FirmePage({ searchParams }: { searchParams: Promise<Params> }) {
   const params = await searchParams;
   const filtre = filtreDinAdresa(params);
@@ -59,37 +63,33 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
   const ordineQ = interogare({ ordine: params.ordine });
   const total = firme.ok ? firme.data.total : null;
   const pagini = total ? Math.ceil(total / PE_PAGINA) : 1;
+  const hrefPagina = (p: number) => cu(interogare(params, { pagina: p > 1 ? String(p) : null }));
 
   let stareFisa: StareFisa | null = null;
   if (firmaId && fisa) stareFisa = !fisa.ok ? { tip: "eroare", mesaj: fisa.message } : fisa.data ? { tip: "ok", fisa: fisa.data } : { tip: "lipsa" };
 
   return (
     <div className="space-y-4">
-      <PageHead
-        title="Firme"
-        pill="tabel complet"
-        subtitle="Toate firmele cercetate, cu etapa, canalul folosit și site-ul demo. Click pe un rând pentru detalii, cronologie și recontactare pe alt canal."
-        actions={<FirmeExport href={cu(filtruQ, `${CALE}/export`)} total={total} />}
-      />
+      <PageHead title="Firme" actions={<FirmeExport href={cu(filtruQ, `${CALE}/export`)} total={total} />} />
 
       <FirmeFiltre
         optiuni={optiuni.ok ? { nise: optiuni.data.nise ?? [], orase: optiuni.data.orase ?? [], loturi: optiuni.data.loturi ?? [] } : null}
-        etape={rezumat.ok ? (rezumat.data.etape ?? {}) : null}
-        totalBaza={rezumat.ok ? rezumat.data.total : null}
+        etape={rezumat.ok ? (rezumat.data.etape_vizibile ?? rezumat.data.etape ?? {}) : null}
         gasite={total}
       />
 
       <Card padded={false} className="overflow-hidden">
         <div className="border-b border-border px-4 py-3">
-          <SectionTitle title={total === null ? "Firme" : firmeCuNumar(total)} hint="Bordură stângă = etapa firmei. Un singur canal pe firmă; al doilea se permite doar din fișă." action={<FirmeOrdine />} />
+          <SectionTitle title={total === null ? "Firme" : firmeCuNumar(total)} action={<FirmeOrdine />} />
         </div>
 
         {!firme.ok ? (
           <FirmeEroare mesaj={firme.message} />
         ) : firme.data.randuri.length > 0 ? (
           <>
-            <FirmeTabel firme={firme.data.randuri} acum={acum} selectatId={firmaId} />
-            <FirmePaginare pagina={pagina} pePagina={PE_PAGINA} total={firme.data.total} hrefPagina={(p) => cu(interogare(params, { pagina: p > 1 ? String(p) : null }))} />
+            <FirmePaginare pozitie="sus" pagina={pagina} pePagina={PE_PAGINA} total={firme.data.total} hrefPagina={hrefPagina} />
+            <FirmeTabel firme={firme.data.randuri} acum={acum} selectatId={firmaId} grupe={filtre.ordine === "site"} />
+            <FirmePaginare pozitie="jos" pagina={pagina} pePagina={PE_PAGINA} total={firme.data.total} hrefPagina={hrefPagina} />
           </>
         ) : firme.data.total > 0 ? (
           <EmptyState
@@ -116,8 +116,8 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
         ) : (
           <EmptyState
             icon={Building2}
-            title="Încă nu e nicio firmă"
-            text="Firmele intră din importul auto-web-rebuilder sau de la roboți, cu etapa și site-ul demo. Pornește un robot și primele apar aici."
+            title="Încă nu e niciun site publicat"
+            text="Aici apar firmele al căror site e terminat, publicat și verificat, fiecare cu numărul lui de site. Pe cele fără site le găsești căutând după nume sau alegând o etapă."
             action={
               <Link href="/admin/prospectare/roboti" className={btnClass({ variant: "outline", size: "sm" })}>
                 Vezi roboții

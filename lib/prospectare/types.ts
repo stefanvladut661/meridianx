@@ -29,7 +29,15 @@ export type Utilizator = (typeof UTILIZATORI_IDS)[number];
 
 export interface Firma {
   id: string;
+  /** Numărul de cercetare (al robotului). */
   nr: number;
+  /**
+   * Numărul site-ului (migrarea 37): crescător, fără goluri, dat de bază o singură dată, când site-ul
+   * e terminat și publicat (link demo verificat). `null` cât firma n-are site publicat.
+   */
+  nr_site: number | null;
+  /** Rândul în tabelul Firme: 1 = cu site, necontactată; 2 = cu site, contactată sau închisă; 3 = fără site; 0 = respinsă (nu apare). */
+  grupa_tabel: 0 | 1 | 2 | 3;
   nume: string;
   domeniu: string;
   site_vechi: string | null;
@@ -58,6 +66,8 @@ export interface Firma {
   evaluare: "eligibila" | "respinsa" | null;
   evaluare_motiv: string | null;
   evaluat_la: string | null;
+  /** Calculatorul (robotul) care a evaluat firma. */
+  evaluat_de: string | null;
   nisa_id: number | null;
   link_demo: string | null;
   captura_url: string | null;

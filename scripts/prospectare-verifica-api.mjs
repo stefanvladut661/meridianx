@@ -68,11 +68,24 @@ r = await call("heartbeat", { firma_id: "nu-e-uuid" }, T1);
 check("heartbeat cu id invalid → 422", r.status === 422, r);
 r = await call("termina", { firma_id: firma?.id, link_demo: "http://nesigur.ro" }, T1);
 check("termina cu link http → 422", r.status === 422, r);
-r = await call("termina", { firma_id: firma?.id, link_demo: "https://demo.test/api-lucru/", captura_url: "https://drive.google.com/file/d/test/view" }, T2);
-check("termina de la alt robot → 409", r.status === 409, r);
+r = await call("termina", { link_demo: "https://demo.test/api-lucru/" }, T1);
+check("termina fără firma_id, domeniu sau nr → 404", r.status === 404, r);
 r = await call("termina", { firma_id: firma?.id, link_demo: "https://demo.test/api-lucru/", captura_url: "https://drive.google.com/file/d/test/view" }, T1);
 check("termina → 200, site gata", r.status === 200 && r.json?.firma?.etapa === "site_gata", r);
 check("termina → linkul verificat (implicit), firma intră în distribuție", r.json?.firma?.demo_verificat === true, r);
+const nrSite = r.json?.firma?.nr_site;
+check("termina → întoarce numărul de site (37)", Number.isInteger(nrSite) && nrSite > 0, r);
+// Migrarea 37: orice robot poate termina orice firmă publicată, și mai multe odată; numărul nu se schimbă.
+r = await call("termina", { domeniu: firma?.domeniu, link_demo: "https://demo.test/api-lucru/" }, T2);
+check("termina de la alt robot, după domeniu → 200, același nr_site", r.status === 200 && r.json?.firma?.nr_site === nrSite, r);
+r = await call("termina", { firme: [{ nr: firma?.nr, link_demo: "https://demo.test/api-lucru/" }, { domeniu: "nu-exista-api.ro", link_demo: "https://demo.test/x/" }] }, T2);
+check(
+  "termina în lot → 200: 1 terminată, 1 eroare (PR404) pe poziția ei",
+  r.status === 200 && r.json?.terminate === 1 && r.json?.erori === 1 && r.json?.firme?.[1]?.eroare?.cod === "PR404" && r.json?.firme?.[0]?.nr_site === nrSite,
+  r
+);
+r = await call("termina", { firme: [] }, T2);
+check("termina cu lot gol → 422", r.status === 422, r);
 
 // Distribuția (migrarea 35): robotul trimite doar ce e programat azi, de pe căsuța primită în coadă.
 r = await call("coada-email", {}, null);

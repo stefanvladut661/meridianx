@@ -203,7 +203,6 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         title="Roboți"
         pill={eroare ? undefined : `${acumActivi} ${acumActivi === 1 ? "activ" : "activi"} acum`}
         pillTone="mint"
-        subtitle="Dispozitivele care cercetează firmele, construiesc site-urile demo și trimit emailurile. „Ce face acum” arată sarcina raportată în ultima jumătate de oră; altfel robotul apare „Inactiv”. Tokenul de acces al fiecărui robot se afișează o singură dată."
         actions={
           <Btn size="sm" variant="primary" icon={Plus} onClick={deschide}>
             Adaugă robot

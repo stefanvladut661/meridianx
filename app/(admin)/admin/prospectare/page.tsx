@@ -328,8 +328,6 @@ export default async function PrezentarePage() {
   const head = (
     <PageHead
       title="Prospectare"
-      pill="email + WhatsApp"
-      subtitle="Firmele cercetate de roboți, site-urile demo gata de arătat și contactul: email și WhatsApp câte o dată pe firmă, în zile diferite; apelul rămâne separat și îl permite un admin, din fișa firmei."
       actions={
         <Link href="/admin/prospectare/firme" className={btnClass({ variant: "primary", size: "sm" })}>
           Deschide Firme

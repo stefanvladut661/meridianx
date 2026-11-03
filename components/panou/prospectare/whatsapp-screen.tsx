@@ -678,7 +678,6 @@ export function WhatsAppScreen({
       <PageHead
         title="WhatsApp azi"
         pill={programari && programari.length ? `${num(toateDeTrimis.length)} de trimis` : undefined}
-        subtitle="„Trimite pe WhatsApp” deschide conversația cu mesajul gata și marchează firma ca trimisă."
         actions={
           <>
             {programeaza}

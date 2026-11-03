@@ -63,7 +63,6 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
   const aleasa = peZile.ok && ceruta && peZile.data.casute.some((c) => c.adresa === ceruta) ? ceruta : undefined;
   const emailuri = await citesteEmailuriTrimise(aleasa);
 
-  const nrCasute = casute.ok ? casute.data.length : 0;
   const pozitive = raspunsuri.ok ? raspunsuri.data.filter((r) => r.tip === "pozitiv").length : 0;
   const plafon = setari.ok ? setari.data.email_plafon_casuta : null;
   const programate = casute.ok && programari.ok ? randuriProgramate(casute.data, programari.data, azi, maine, plafon) : null;
@@ -74,8 +73,6 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
     <div className="space-y-4">
       <PageHead
         title="Email"
-        pill="căsuțe separate"
-        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. La 00:00, firmele cu site gata și publicat se programează pe căsuța domeniului din linkul demo, cele mai vechi primele, cât permite limita căsuței sau plafonul de încălzire. Robotul trimite doar ce e programat azi. Cine a primit WhatsApp într-o zi de dinainte primește și email (și invers), niciodată în aceeași zi; la apeluri nu mai intră.`}
         actions={<ProgrameazaButon canal="email" azi={azi} optiuni={optiuniProgramare} />}
       />
 

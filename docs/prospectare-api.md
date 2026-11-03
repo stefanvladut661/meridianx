@@ -1,10 +1,12 @@
 # API-ul Prospectare pentru roboți
 
-Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–36. Regulile (email și WhatsApp câte o dată pe firmă, telefonul separat, „Nu contacta”, o nișă și o firmă la un singur robot, distribuția pe canale) stau în bază, nu în robot.
+Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–37. Regulile (email și WhatsApp câte o dată pe firmă, telefonul separat, „Nu contacta”, o nișă și o firmă la un singur robot, distribuția pe canale) stau în bază, nu în robot.
 
 **Fluxul unui robot:** (1) rezervă o nișă (`/nisa`), (2) înainte să cercetezi un domeniu, întreabă dacă e deja evaluat (`/evaluare` → `verifica`), (3) notează fiecare firmă evaluată, și pe cele respinse (`/evaluare` → `noteaza`), (4) trimite progresul și, la final, termină nișa (`/nisa`), (5) ia din coada comună o firmă de construit (`/rezerva`), semn de viață (`/heartbeat`), publici și o marchezi imediat (`/termina`), (6) emailul: iei lista zilei din `/coada-email` și, pentru fiecare firmă, ceri canalul (`/eveniment` → `email_de_trimis`) înainte să trimiți.
 
 **Regula canalelor (migrarea 36):** fiecare canal se folosește **o singură dată** pe firmă. Firmele cu email valid și mobil primesc și email, și WhatsApp, dar **niciodată în aceeași zi**: al doilea canal pleacă cel mai devreme a doua zi după primul, și doar dacă firma n-a răspuns la email (un om, nu răspunsul automat), nu e interesată, client, respinsă sau „Nu contacta”. Telefonul rămâne separat: în lista de apeluri intră doar firmele necontactate, iar alt canal lângă telefon îl dă doar un admin, din fișa firmei, cu motiv. Robotul de email primește 409 dacă firma a primit WhatsApp azi sau e pe telefon.
+
+**Numărul de site (migrarea 37):** fiecare site terminat și publicat (link verificat) primește un `nr_site`: crescător, fără goluri, dat de bază o singură dată (doi roboți care termină deodată primesc numere diferite) și care nu se mai schimbă. E separat de `nr`, numărul de cercetare. Coada de email și lista de WhatsApp pleacă mereu de la cel mai mic `nr_site` necontactat; `/termina` și `/coada-email` îl întorc.
 
 **Distribuția pe canale (migrarea 35):** robotul de email **nu mai alege singur** ce firme contactează. În fiecare zi la 00:00 (ora României) adminul programează firmele cu site gata și publicat (link verificat), de la cele mai vechi site-uri (inclusiv cele care au primit celălalt canal într-o zi de dinainte): întâi pe email (pe căsuța domeniului din linkul demo: `demo.meridianxweb.com/…` → `stefan@meridianxweb.com`, cât permite limita căsuței), apoi pe WhatsApp (pe conturi). Ce era programat ieri și n-a plecat se întoarce în distribuție. Ziua se completează și peste zi, când apar locuri sau firme noi (o limită mărită, importul, `/termina` cu site publicat): lista din `/coada-email` poate crește în timpul zilei, așa că robotul o recitește. Robotul trimite **doar** ce primește din `/coada-email`; orice altă firmă primește 409.
 
@@ -94,21 +96,37 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/heartbeat \
 
 ## 4. `POST /termina`: site gata
 
-După ce site-ul demo e publicat **și linkul verificat** (200 + noindex). Firma trece pe „Site gata”, primește linkul demo și linkul capturii (Drive, nu fișierul), iar rezervarea se închide. Doar robotul care are firma rezervată. Data site-ului gata (ordinea distribuției) și robotul care l-a construit se scriu singure.
+După ce site-ul demo e publicat **și linkul verificat** (200 + noindex). **Orice firmă publicată de robot**, nu doar cea rezervată de el (migrarea 37), una sau mai multe odată (cel mult 100). Firma se dă după `firma_id`, `domeniu` sau `nr` (numărul de cercetare). Trece pe „Site gata”, primește linkul demo și linkul capturii (Drive, nu fișierul), iar rezervarea ei (a oricui) se închide. Data site-ului gata (ordinea distribuției) și robotul care l-a construit se scriu singure; aceeași firmă raportată din nou cu același link își păstrează data și numărul.
 
-`link_verificat` (opțional, implicit `true`): trimite `false` dacă publici înainte să verifici linkul; firma intră în distribuție abia când un import o marchează verificată.
+`link_verificat` (opțional, implicit `true`): trimite `false` dacă publici înainte să verifici linkul; firma primește `nr_site` și intră în distribuție abia când linkul e marcat verificat.
 
-Din acest moment firma e în distribuție: la următorul 00:00 se programează pe email (dacă are email verificat „bun”) sau pe WhatsApp (dacă are mobil), în ordinea site-urilor terminate.
+Răspunsul are **`nr_site`**: numărul site-ului (vezi mai sus), dat acum sau mai demult. Din acest moment firma e în distribuție: intră chiar azi, dacă e loc, altfel la următorul 00:00, pe email (dacă are email verificat „bun”) sau pe WhatsApp (dacă are mobil), de la cel mai mic `nr_site`.
+
+O firmă:
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/termina \
   -H "Authorization: Bearer $MERIDIAN_ROBOT_TOKEN" -H "Content-Type: application/json" \
-  -d '{"firma_id":"6f1c…","link_demo":"https://demo.meridianxstudio.com/tamplarie-somes/","captura_url":"https://drive.google.com/file/d/…/view","link_verificat":true,"detalii":{"versiune":"v3"}}'
+  -d '{"domeniu":"tamplariepvc-somes.ro","link_demo":"https://demo.meridianxstudio.com/tamplarie-somes/","captura_url":"https://drive.google.com/file/d/…/view","link_verificat":true,"detalii":{"versiune":"v3"}}'
 ```
 
 ```json
-{ "ok": true, "firma": { "nr": 412, "etapa": "site_gata", "link_demo": "https://demo.meridianxstudio.com/tamplarie-somes/", "demo_verificat": true } }
+{ "ok": true, "firma": { "index": 1, "firma_id": "6f1c…", "nr": 412, "nr_site": 118, "etapa": "site_gata", "link_demo": "https://demo.meridianxstudio.com/tamplarie-somes/", "demo_verificat": true } }
 ```
+
+Mai multe (de exemplu, după un deploy): fiecare firmă are rezultatul ei, pe poziția din cerere; o firmă greșită nu le oprește pe celelalte.
+
+```bash
+-d '{"firme":[{"nr":412,"link_demo":"https://demo.meridianxstudio.com/tamplarie-somes/"},{"domeniu":"nu-exista.ro","link_demo":"https://demo.meridianxweb.com/x/"}]}'
+```
+
+```json
+{ "ok": true, "terminate": 1, "erori": 1, "firme": [
+  { "index": 1, "firma_id": "6f1c…", "nr": 412, "nr_site": 118, "etapa": "site_gata", "link_demo": "…", "demo_verificat": true },
+  { "index": 2, "domeniu": "nu-exista.ro", "eroare": { "cod": "PR404", "mesaj": "Firma nu există: nu-exista.ro." } } ] }
+```
+
+O singură firmă cu eroare primește statusul ei (404 firmă inexistentă, 422 link care nu e `https://`); în lot, erorile stau în `firme[].eroare` (`PR404`, `PR422`), iar răspunsul e 200.
 
 ## 5. `POST /nisa`: tabla comună de nișe
 
@@ -139,14 +157,17 @@ Cifrele nu scad niciodată (se păstrează cea mai mare). Ele cresc și singure 
 
 ## 6. `POST /evaluare`: firmele evaluate
 
-**Toate firmele evaluate se notează, și cele respinse**, cu scorul și motivul. Un domeniu deja evaluat (de oricine, oricând) nu se mai cercetează.
+**Toate firmele evaluate se notează, și cele respinse**, cu scorul și motivul. Un domeniu deja evaluat (de oricine, oricând, eligibil sau respins) nu se mai cercetează. Din firmele respinse (scor sub prag, oprite la cercetare) rămân doar domeniul, numele, nișa, scorul, motivul, data și calculatorul; nu apar în tabelul Firme, dar apar aici la `verifica` și în contorul „Evaluate: X eligibile · Y respinse” (migrarea 37).
 
 ```bash
 -d '{"actiune":"verifica","domenii":["tamplariepvc-somes.ro","https://www.instal-nou.ro/"]}'
 ```
 
 ```json
-{ "ok": true, "deja_evaluate": [{ "domeniu": "tamplariepvc-somes.ro", "nr": 412, "etapa": "site_gata", "evaluare": "eligibila", "scor": 82, "motiv": null, "evaluat_la": "2026-10-30T08:00:00+00:00" }], "noi": ["instal-nou.ro"] }
+{ "ok": true, "deja_evaluate": [
+  { "domeniu": "tamplariepvc-somes.ro", "nr": 412, "etapa": "site_gata", "evaluare": "eligibila", "scor": 82, "motiv": null, "evaluat_la": "2026-10-30T08:00:00+00:00", "nume": "Tâmplărie PVC Someș", "nisa": "tâmplărie", "calculator": "pc-stefan" },
+  { "domeniu": "instal-modern.ro", "nr": 2512, "etapa": "cercetat", "evaluare": "respinsa", "scor": 21, "motiv": "site modern, bine întreținut", "evaluat_la": "2026-11-03T08:00:00+00:00", "nume": "Instal Modern", "nisa": "instalatori", "calculator": "pc-stefan" } ],
+  "noi": ["instal-nou.ro"] }
 ```
 
 Cercetezi doar ce e în `noi`. Apoi notezi rezultatul (cel mult 500 de firme pe cerere):
@@ -161,7 +182,7 @@ Cercetezi doar ce e în `noi`. Apoi notezi rezultatul (cel mult 500 de firme pe 
 { "ok": true, "adaugate": 2, "eligibile": 1, "respinse": 1, "deja_evaluate": [], "invalide": [] }
 ```
 
-Câmpuri: `domeniu`, `scor` (0–1000), `evaluare` (`eligibila` | `respinsa`) obligatorii; `motiv` obligatoriu la respinse; opțional `nume`, `site_vechi`, `nisa`, `oras`, `judet`, `telefon`, `email`, `persoana_contact`, `date_extra`. Un domeniu deja evaluat apare în `deja_evaluate` și **nu se suprascrie**. Firmele eligibile cu scor ≥ prag, cu email sau mobil, intră singure în coada comună de construcție (secțiunea 2).
+Câmpuri: `domeniu`, `scor` (0–1000), `evaluare` (`eligibila` | `respinsa`) obligatorii; `motiv` obligatoriu la respinse; opțional `nume`, `site_vechi`, `nisa`, `oras`, `judet`, `telefon`, `email`, `persoana_contact`, `date_extra` (cu `date_extra.calculator` = calculatorul care a evaluat; altfel se notează numele robotului). La respinse se păstrează doar `domeniu`, `nume`, `nisa`, `scor`, `motiv`, data și calculatorul; restul nu se scrie. Un domeniu deja evaluat apare în `deja_evaluate` și **nu se suprascrie**. Firmele eligibile cu scor ≥ prag, cu email sau mobil, intră singure în coada comună de construcție (secțiunea 2).
 
 ## 7. `POST /eveniment`: emailurile
 
@@ -207,7 +228,7 @@ Firma se identifică pe `domeniu` (preferat) sau pe `nr`.
 
 ## 8. `POST /coada-email`: ce trimiți azi
 
-Lista firmelor programate **azi** pe email, încă netrimise, în ordinea în care pleacă (pe căsuțe; manualele întâi), fiecare cu căsuța de pe care trimiți. Dacă ciclul de la 00:00 n-a rulat încă (cronul din Supabase), cererea îl pornește. Cere lista o dată la începutul trimiterii și, dacă vrei, din nou mai târziu: o firmă trimisă nu mai apare.
+Lista firmelor programate **azi** pe email, încă netrimise, în ordinea în care pleacă (pe căsuțe, de la cel mai mic `nr_site`), fiecare cu căsuța de pe care trimiți și numărul site-ului. Dacă ciclul de la 00:00 n-a rulat încă (cronul din Supabase), cererea îl pornește. Cere lista o dată la începutul trimiterii și, dacă vrei, din nou mai târziu: o firmă trimisă nu mai apare.
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/coada-email \
@@ -257,7 +278,8 @@ st, d = cere("rezerva", {"tip_lucru": "construire"})
 firma = d.get("firma")
 if firma:
     # … construiești site-ul, cu cere("heartbeat", {"firma_id": firma["id"]}) o dată la 30–60 de minute …
-    cere("termina", {"firma_id": firma["id"], "link_demo": link, "captura_url": link_drive})
+    st, r = cere("termina", {"firma_id": firma["id"], "link_demo": link, "captura_url": link_drive})
+    nr_site = r["firma"]["nr_site"]   # numărul site-ului, dat o singură dată
 
 # Email: doar ce e programat azi, de pe căsuța primită în listă.
 st, coada = cere("coada-email", {})

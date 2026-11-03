@@ -1,24 +1,25 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Capul ecranelor Prospectare, ca în prototip (components/prospect/PageHead.jsx). */
+/**
+ * Capul ecranelor Prospectare: titlul, o pastilă cu o cifră vie (opțional) și acțiunile. Fără descriere
+ * sub titlu (cerința din 3 nov): ce face pagina se vede din ea.
+ */
 export function PageHead({
   title,
   pill,
   pillTone = "lav",
-  subtitle,
   actions,
   className,
 }: {
   title: ReactNode;
   pill?: ReactNode;
   pillTone?: "lav" | "mint" | "apricot" | "rose";
-  subtitle?: ReactNode;
   actions?: ReactNode;
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-3", className)}>
+    <div className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
       <div>
         <div className="flex flex-wrap items-center gap-2.5">
           <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">{title}</h1>
@@ -36,7 +37,6 @@ export function PageHead({
             </span>
           ) : null}
         </div>
-        {subtitle ? <p className="mt-2 max-w-2xl text-[12.5px] leading-relaxed text-muted-foreground">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>

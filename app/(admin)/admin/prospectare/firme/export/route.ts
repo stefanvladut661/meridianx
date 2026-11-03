@@ -9,6 +9,7 @@ import { ETAPE } from "@/lib/prospectare/labels";
  * GET /admin/prospectare/firme/export — firmele din filtrele curente, ca CSV
  * pentru Excel (BOM UTF-8, separator „;”). Doar pentru admin. Fiecare canal
  * are coloana lui (o firmă poate avea email și WhatsApp); gol = nefolosit.
+ * Aceleași firme și aceeași ordine ca tabelul (numărul de site primul).
  */
 
 export const dynamic = "force-dynamic";
@@ -22,8 +23,9 @@ export async function GET(request: NextRequest) {
   const result = await citesteFirmeExport(filtre);
   if (!result.ok) return NextResponse.json({ error: result.message }, { status: 503 });
 
-  const antet = ["Nr", "Nume", "Domeniu", "Nișă", "Oraș", "Județ", "Scor", "Etapă", "Email trimis la", "WhatsApp trimis la", "Cont WhatsApp", "În apeluri din", "Telefon", "Email", "Persoană de contact", "Site demo", "Site vechi", "Lot", "De refăcut", "Notă", "Actualizat"];
+  const antet = ["Nr site", "Nr cercetare", "Nume", "Domeniu", "Nișă", "Oraș", "Județ", "Scor", "Etapă", "Email trimis la", "WhatsApp trimis la", "Cont WhatsApp", "În apeluri din", "Telefon", "Email", "Persoană de contact", "Site demo", "Site vechi", "Lot", "De refăcut", "Notă", "Actualizat"];
   const randuri = result.data.map((f) => [
+    f.nr_site,
     f.nr,
     f.nume,
     f.domeniu,

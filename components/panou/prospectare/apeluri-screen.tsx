@@ -156,7 +156,6 @@ export function ApeluriScreen({
       <PageHead
         title="Apeluri azi"
         pill={nume}
-        subtitle="Lista de telefon a zilei. Intră doar firme cu site gata și publicat, care n-au primit niciun contact. Cele importate rămân pe telefon până la 00:00; atunci cele nesunate se întorc în distribuție. „Interesat” și „Sună înapoi” rămân pe telefon; alt canal se permite doar din fișa firmei."
         actions={toate.length ? <VcfButton firme={toate.map((r) => r.firma)} numeFisier={`apeluri-${cine}-${azi}.vcf`} /> : null}
       />
 
