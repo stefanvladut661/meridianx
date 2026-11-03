@@ -4,7 +4,8 @@
 # Pornește (o dată) containerul `pgprospectare` din imaginea oficială postgres:17-alpine,
 # face baza `test` de la zero, rulează migrările 28–34 de două ori (trebuie să fie
 # reluabile), apoi testele regulilor și proba de concurență; apoi migrarea 35 de două ori
-# peste baza cu date (ca pe producție), testele distribuției și proba ei de concurență.
+# peste baza cu date (ca pe producție), testele distribuției și proba ei de concurență; apoi
+# migrarea 36 de două ori, testele „email și WhatsApp” și proba de concurență a completării.
 set -u
 T=$(cd "$(dirname "$0")" && pwd); M="$T/../../migrations"
 if ! docker ps --format "{{.Names}}" | grep -qx pgprospectare && ! docker start pgprospectare >/dev/null 2>&1; then
@@ -39,4 +40,15 @@ echo "$rez" | sed 's/→ \([0-9A-Z]*\): .*/→ \1/'
 ok=$(echo "$rez" | grep -c '^ok'); bad=$(echo "$rez" | grep -c '^ERROR')
 echo "Distribuție: $ok ok, $bad picate."
 [ "$bad" -eq 0 ] || exit 1
-bash "$T/concurenta-distributie.sh"
+bash "$T/concurenta-distributie.sh" || exit 1
+for runda in 1 2; do
+  out=$(q < "$M"/00000000000036_*.sql 2>&1) || { echo "MIGRARE PICATĂ ($runda): 36"; echo "$out" | tail -5; exit 1; }
+  echo "$out" | grep -q '|f$' && { echo "VERIFICARE FALSĂ în 36:"; echo "$out" | grep '|f$'; exit 1; }
+done
+echo "Migrarea 36: rulată de două ori peste baza testelor, toate verificările true."
+rez=$(q -1 < "$T/multicanal.sql" 2>&1 | grep -E '^(ok|ERROR)')
+echo "$rez" | sed 's/→ \([0-9A-Z]*\): .*/→ \1/'
+ok=$(echo "$rez" | grep -c '^ok'); bad=$(echo "$rez" | grep -c '^ERROR')
+echo "Email și WhatsApp (36): $ok ok, $bad picate."
+[ "$bad" -eq 0 ] || exit 1
+bash "$T/concurenta-multicanal.sh"

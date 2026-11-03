@@ -597,7 +597,7 @@ export function WhatsAppScreen({
       <EmptyState
         icon={MessageCircle}
         title="Nimic programat azi pe WhatsApp"
-        text="La 00:00 se programează singure firmele cu cele mai vechi site-uri demo și număr de mobil, împărțite pe conturile active, cât încape în limita fiecăruia. Cu „Programează” alegi tu firmele, de mâine încolo."
+        text="La 00:00 se programează singure firmele cu cele mai vechi site-uri demo și număr de mobil (și cele care au primit email într-o zi de dinainte), împărțite pe conturile active, cât încape în limita fiecăruia. Ziua se completează și când crește o limită sau apar site-uri noi. Cu „Programează” alegi tu firmele, de mâine încolo."
         hint={
           conturi !== null && active.length === 0 ? (
             <>

@@ -29,7 +29,8 @@ function firme(n: number): string {
 /**
  * /admin/prospectare/whatsapp — ce e programat AZI pe WhatsApp, pe conturi
  * (migrarea 35): la 00:00 se programează singure cele mai vechi site-uri cu
- * mobil, egal pe conturile active; restul vine din „Programează”. Jos, ce e
+ * mobil, egal pe conturile active (din 36, și cele cu email trimis într-o zi de
+ * dinainte); restul vine din „Programează”. Jos, ce e
  * programat de mâine încolo. Garda de admin e în layout.
  */
 export default async function WhatsAppPage() {

@@ -110,7 +110,7 @@ const TITLES: [string, string, string][] = [
   ["/admin/prospectare/roboti", "Roboți", "Ce face fiecare robot acum"],
   ["/admin/prospectare/nise", "Nișe", "Tabla comună: cine cercetează ce nișă"],
   ["/admin/prospectare/setari", "Setări prospectare", "Limite și șabloane de mesaj"],
-  ["/admin/prospectare", "Prospectare", "Firme cercetate, site-uri demo, un singur canal"],
+  ["/admin/prospectare", "Prospectare", "Firme cercetate, site-uri demo, email și WhatsApp"],
   ["/admin/ads/nou", "Plan nou", "Lipește planul, verifică-l, creează pe pauză"],
   ["/admin/ads/lot", "Lot de planuri", "Până la 50 de planuri, un singur proprietar"],
   ["/admin/ads/creeaza", "Creează ghidat", "Plan pas cu pas, cu previzualizare"],

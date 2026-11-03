@@ -75,7 +75,7 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
       <PageHead
         title="Email"
         pill="căsuțe separate"
-        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. La 00:00, firmele cu site gata și publicat se programează pe căsuța domeniului din linkul demo, cele mai vechi primele, cât permite limita căsuței sau plafonul de încălzire. Robotul trimite doar ce e programat azi. Un singur canal pe firmă: cine primește email nu mai intră în WhatsApp sau la apeluri.`}
+        subtitle={`${nrCasute > 0 ? `${cate(nrCasute, "căsuță care se încălzește", "căsuțe care se încălzesc")} separat` : "Căsuțele se încălzesc separat"}. La 00:00, firmele cu site gata și publicat se programează pe căsuța domeniului din linkul demo, cele mai vechi primele, cât permite limita căsuței sau plafonul de încălzire. Robotul trimite doar ce e programat azi. Cine a primit WhatsApp într-o zi de dinainte primește și email (și invers), niciodată în aceeași zi; la apeluri nu mai intră.`}
         actions={<ProgrameazaButon canal="email" azi={azi} optiuni={optiuniProgramare} />}
       />
 

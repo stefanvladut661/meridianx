@@ -32,9 +32,9 @@ const IESITE: Etapa[] = ["nu_contacta", "respins"];
 const linkMic = "rounded-sm text-[11.5px] text-muted-foreground hover:text-foreground";
 
 /**
- * Câte firme au primit fiecare canal. Implicit, un singur canal pe firmă;
- * „email + WhatsApp” sunt firmele din regula veche (istoric) și cele cu al
- * doilea canal permis din fișă.
+ * Câte firme au primit fiecare canal. Din migrarea 36, firmele cu email și
+ * mobil le primesc pe amândouă, câte o dată, în zile diferite: „email +
+ * WhatsApp” sunt cele care le-au primit deja pe amândouă.
  */
 function Canale({ canale }: { canale: Rezumat["canale"] }) {
   const randuri: { cheie: string; label: string; n: number; punct?: string }[] = [
@@ -88,8 +88,8 @@ function Palnie({ rezumat }: { rezumat: Rezumat }) {
       <p className={`${EYEBROW} mt-4 border-t border-border pt-3`}>Canale folosite</p>
       <Canale canale={rezumat.canale} />
       <p className="mt-4 border-t border-border pt-3 text-[11.5px] text-muted-foreground">
-        Roboții construiesc, oamenii contactează. Fiecare firmă primește un singur canal: email, WhatsApp sau apel. Primul canal le blochează pe celelalte; al doilea se
-        permite doar din fișa firmei, cu motiv.
+        Roboții construiesc, oamenii contactează. Firmele cu email și mobil primesc și email, și WhatsApp: câte o dată, niciodată în aceeași zi, și doar dacă n-au
+        răspuns între timp. Telefonul rămâne separat: alt canal lângă el se permite doar din fișa firmei, cu motiv.
         {rezumat.de_refacut > 0 ? ` ${cate(rezumat.de_refacut, "site e marcat", "site-uri sunt marcate")} de refăcut.` : null}
       </p>
     </Card>
@@ -302,8 +302,9 @@ function Distributie({ d }: { d: RezumatDistributie }) {
       </ul>
 
       <p className="mt-3 border-t border-border pt-3 text-[11.5px] leading-relaxed text-muted-foreground">
-        La 00:00, firmele cu site gata și publicat, necontactate, se programează de la cele mai vechi site-uri: întâi pe email (pe căsuța domeniului din linkul demo), apoi
-        pe WhatsApp, cât permit căsuțele și conturile. Apelurile nu se programează singure: rezerva lor se importă în „Apeluri azi” sau se programează manual. O firmă poate
+        La 00:00, firmele cu site gata și publicat se programează de la cele mai vechi site-uri: întâi pe email (pe căsuța domeniului din linkul demo), apoi
+        pe WhatsApp, cât permit căsuțele și conturile; cele care au primit unul dintre ele într-o zi de dinainte intră și pe celălalt. Ziua se completează și peste zi,
+        când crește o limită sau apar site-uri noi. Apelurile nu se programează singure: rezerva lor se importă în „Apeluri azi” sau se programează manual. O firmă poate
         merge pe mai multe canale, deci rezervele se suprapun; totalul de sus o numără o singură dată.
         {laZeroZero.length ? ` Tot la 00:00: ${laZeroZero.join(" · ")}.` : null}
       </p>
@@ -327,8 +328,8 @@ export default async function PrezentarePage() {
   const head = (
     <PageHead
       title="Prospectare"
-      pill="un singur canal"
-      subtitle="Firmele cercetate de roboți, site-urile demo gata de arătat și contactul: un singur canal pe firmă (email, WhatsApp sau apel). Al doilea canal îl permite doar un admin, din fișa firmei."
+      pill="email + WhatsApp"
+      subtitle="Firmele cercetate de roboți, site-urile demo gata de arătat și contactul: email și WhatsApp câte o dată pe firmă, în zile diferite; apelul rămâne separat și îl permite un admin, din fișa firmei."
       actions={
         <Link href="/admin/prospectare/firme" className={btnClass({ variant: "primary", size: "sm" })}>
           Deschide Firme

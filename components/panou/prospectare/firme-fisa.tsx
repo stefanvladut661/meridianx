@@ -152,6 +152,18 @@ const laCanal = (f: Firma, c: Canal): string | null => (c === "email" ? f.email_
 /** Canalele pe care firma le-a primit deja. */
 const canaleFolosite = (f: Firma): Canal[] => CANALE_IDS.filter((c) => Boolean(laCanal(f, c)));
 
+/** Email bun pentru distribuție: verificat „bun” (sau neverificat), nu „doar WhatsApp”, fără trimiterea oprită. Ca prospectare_email_valid. */
+function emailBun(f: Firma): boolean {
+  const d = (f.date_extra ?? {}) as Record<string, unknown>;
+  const oprita = d.trimitere_oprita;
+  return (
+    Boolean(f.email) &&
+    (d.email_verificat ?? "bun") === "bun" &&
+    String(d.doar_whatsapp ?? "false") !== "true" &&
+    (oprita === undefined || oprita === null || oprita === "" || String(oprita) === "false")
+  );
+}
+
 /** De ce firma nu poate primi canalul (îi lipsesc datele), sau null dacă îl poate primi. Aceleași verificări ca în bază. */
 function lipsaPentru(f: Firma, c: Canal): string | null {
   if (c === "email") return f.email ? null : "fără adresă de email";
@@ -203,8 +215,19 @@ function stareDistributie(f: Firma): { ton: "neutral" | "apricot"; text: string 
   if (!f.link_demo) return { ton: "neutral", text: "Fără site demo publicat: intră în distribuție după ce robotul îl termină și îl publică." };
   if (!f.demo_verificat) return { ton: "apricot", text: "Linkul demo nu e verificat (site nepublicat): firma nu intră în distribuție până nu e verificat." };
   if (f.canal_permis) return { ton: "neutral", text: `Recontactare permisă ${PE_CANAL[f.canal_permis]}: ${UNDE_PERMIS[f.canal_permis]}.` };
-  if (f.email_la || f.whatsapp_la) return { ton: "neutral", text: "Contactată deja: nu mai intră în distribuție." };
   if (f.telefon_la) return { ton: "neutral", text: "E pe telefon, într-o listă de apeluri: nu intră în distribuție cât timp rămâne acolo." };
+  if (f.email_la && f.whatsapp_la) return { ton: "neutral", text: "A primit email și WhatsApp: nu mai intră în distribuție (niciun canal de două ori)." };
+  if (f.email_la || f.whatsapp_la) {
+    const primit: Canal = f.email_la ? "email" : "whatsapp";
+    const urmator: Canal = f.email_la ? "whatsapp" : "email";
+    if (!["site_gata", "email_trimis", "whatsapp_trimis"].includes(f.etapa)) return { ton: "neutral", text: `Etapa „${ETAPE[f.etapa].label}”: continuă omul, nu distribuția.` };
+    const lipsa = urmator === "email" ? (emailBun(f) ? null : f.email ? "emailul nu e verificat ca bun" : "fără adresă de email") : lipsaPentru(f, "whatsapp");
+    if (lipsa) return { ton: "neutral", text: `A primit ${CANAL_MIC[primit]}; pe ${CANAL_MIC[urmator]} nu poate (${lipsa}): nu mai intră în distribuție.` };
+    return {
+      ton: "neutral",
+      text: `A primit ${CANAL_MIC[primit]}: intră și pe ${CANAL_MIC[urmator]}, după vechimea site-ului, cel mai devreme a doua zi și doar dacă n-a răspuns între timp.`,
+    };
+  }
   if (f.etapa !== "site_gata") return { ton: "neutral", text: `Etapa „${ETAPE[f.etapa].label}”: în distribuție intră doar firmele cu site gata.` };
   return {
     ton: "neutral",
@@ -333,10 +356,11 @@ function RandCanal({
 }
 
 /**
- * Cele trei canale ale firmei. Regula e în bază: un singur canal pe firmă,
- * primul folosit le blochează pe celelalte. Al doilea canal îl dă doar un
- * admin, de aici, cu motiv; permisiunea se consumă când canalul e folosit.
- * „Nu contacta” le blochează pe toate.
+ * Cele trei canale ale firmei. Regula e în bază (migrarea 36): emailul și
+ * WhatsApp-ul merg amândouă, câte o dată, în zile diferite; telefonul rămâne
+ * separat, iar alt canal lângă el îl dă doar un admin, de aici, cu motiv
+ * (permisiunea se consumă când canalul e folosit). „Nu contacta” le blochează
+ * pe toate.
  */
 function Canale({ firma }: { firma: Firma }) {
   const router = useRouter();
@@ -348,14 +372,20 @@ function Canale({ firma }: { firma: Firma }) {
   const blocata = firma.etapa === "nu_contacta";
   const folosite = canaleFolosite(firma);
   const permis = blocata ? null : firma.canal_permis;
-  const posibile = CANALE_IDS.filter((c) => !laCanal(firma, c) && !lipsaPentru(firma, c));
+  // Telefonul le blochează pe celelalte (și invers); emailul și WhatsApp-ul nu se blochează între ele.
+  const blocatDe = (c: Canal): Canal[] => {
+    const altele = folosite.filter((x) => x !== c);
+    return c === "telefon" || altele.includes("telefon") ? altele : [];
+  };
+  const posibile = CANALE_IDS.filter((c) => !laCanal(firma, c) && !lipsaPentru(firma, c) && blocatDe(c).length > 0);
   const poatePermite = !blocata && folosite.length > 0 && posibile.length > 0;
 
   const motivLiber = (c: Canal): string | null => {
     if (blocata) return "blocat";
     const lipsa = lipsaPentru(firma, c);
     if (lipsa) return lipsa;
-    return folosite.length ? `blocat de ${listaCanale(folosite)}` : null;
+    const blocante = blocatDe(c);
+    return blocante.length ? `blocat de ${listaCanale(blocante)}` : null;
   };
 
   const gata = (mesaj: string) => {
@@ -411,10 +441,8 @@ function Canale({ firma }: { firma: Firma }) {
             <span className="text-[#FFB0C0]">„Nu contacta”: firma nu mai primește nimic, pe niciun canal.</span>
           ) : (
             <>
-              {folosite.length
-                ? `Un singur canal pe firmă, iar ea a primit deja ${listaCanale(folosite)}.`
-                : "Un singur canal pe firmă: primul care o contactează (email, WhatsApp sau apel) le blochează pe celelalte."}{" "}
-              Al doilea canal îl permite doar un admin, de aici, cu motiv. „Nu contacta” le blochează pe toate.
+              {folosite.length ? `A primit deja ${listaCanale(folosite)}.` : "Încă necontactată."} Emailul și WhatsApp-ul merg amândouă, câte o dată, niciodată
+              în aceeași zi. Telefonul rămâne separat: alt canal lângă el îl permite doar un admin, de aici, cu motiv. „Nu contacta” le blochează pe toate.
             </>
           )}
         </p>
