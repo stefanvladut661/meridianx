@@ -128,7 +128,7 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
             ) : null}
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-4">
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12.5px] text-muted-foreground">
                 {countNoun(readable, "intrare", "intrări")}, {countNoun(snapshot.clients.length, "client", "clienți")}, fără istoric, fără coș.
                 {unreadable > 0 ? ` ${countNoun(unreadable, "intrare ilizibilă rămâne", "intrări ilizibile rămân")} pe dinafară.` : ""}
               </p>
@@ -148,7 +148,7 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
 
         <Card className="pu-sealed">
           <SectionTitle title="Ce intră în fișier" />
-          <ul className="mt-3 space-y-2 text-[12px] text-muted-foreground">
+          <ul className="mt-3 space-y-2 text-[13.5px] text-muted-foreground">
             <li className="flex items-center gap-2">
               <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" /> {countNoun(readable, "intrare activă", "intrări active")}, cu toate câmpurile
             </li>
@@ -159,7 +159,7 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
             <li className="flex items-center gap-2 text-muted-foreground/60">— fără coșul de ștergeri</li>
             <li className="flex items-center gap-2 text-muted-foreground/60">— fără membri sau chei</li>
           </ul>
-          <p className="mt-4 border-t border-white/[0.07] pt-3 text-[10.5px] leading-relaxed text-muted-foreground/70">
+          <p className="mt-4 border-t border-white/[0.07] pt-3 text-[12px] leading-relaxed text-muted-foreground/70">
             Fișierul se importă înapoi din Import, cu parola lui, în acest seif sau în altul, oricând.
           </p>
         </Card>

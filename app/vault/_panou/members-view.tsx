@@ -162,15 +162,15 @@ export function MembersView({
               const working = busyId === row.id;
               return (
                 <li key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-[10.5px] font-semibold text-foreground/70" aria-hidden="true">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.04] text-[12px] font-semibold text-foreground/70" aria-hidden="true">
                     {emailInitials(row.email)}
                   </span>
                   <div className="min-w-0 flex-1 basis-[12rem]">
-                    <p className="truncate text-[12.5px]">
+                    <p className="truncate text-[14px]">
                       {row.email}
-                      {isSelf ? <span className="ml-2 text-[11px] text-muted-foreground">(tu)</span> : null}
+                      {isSelf ? <span className="ml-2 text-[12.5px] text-muted-foreground">(tu)</span> : null}
                     </p>
-                    <p className="text-[10.5px] text-muted-foreground">
+                    <p className="text-[12px] text-muted-foreground">
                       {isActive ? "activ" : "cerere"} din {dateRo(row.createdAt)}
                       {isActive && row.approvedBy === row.id ? " · fondator" : isActive && row.approvedBy ? ` · aprobat de ${emailOf(row.approvedBy)}` : ""}
                       {isActive ? ` · actualizat ${relativeRo(row.updatedAt)}` : ""}
@@ -194,7 +194,7 @@ export function MembersView({
             })}
           </ul>
         )}
-        <p className="border-t border-white/[0.06] px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
+        <p className="border-t border-white/[0.06] px-4 py-3 text-[12.5px] leading-relaxed text-muted-foreground">
           Un membru nou se adaugă din Supabase → Authentication → Users, cu o parolă temporară. Își activează contul la{" "}
           <Link href="/vault/activare" className="underline underline-offset-2 hover:text-foreground">
             Activează seiful
@@ -214,7 +214,7 @@ export function MembersView({
           }
         />
         {meta ? (
-          <p className="mt-2 text-[11px] text-muted-foreground">
+          <p className="mt-2 text-[12.5px] text-muted-foreground">
             creat {dateRo(meta.createdAt)}
             {meta.createdBy ? ` de ${emailOf(meta.createdBy) ?? "un membru eliminat"}` : ""} ·{" "}
             {meta.recoveryRotations === 0

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 /** Filtrul pe căsuță: linkuri simple (merge fără JavaScript), cu numărul de emailuri al fiecăreia. */
 export function FiltruCasute({ casute, total, aleasa }: { casute: CasutaPeZile[]; total: number; aleasa?: string }) {
-  const chip = "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] transition-colors";
+  const chip = "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px] transition-colors";
   const optiuni = [{ adresa: undefined as string | undefined, label: "Toate căsuțele", n: total }, ...casute.map((c) => ({ adresa: c.adresa, label: c.adresa, n: c.total }))];
   return (
     <nav aria-label="Filtrează după căsuță" className="flex flex-wrap gap-1.5">
@@ -47,16 +47,16 @@ export function EmailTrimise({ emailuri, aleasa }: { emailuri: EmailTrimis[]; al
     <ul className="divide-y divide-border">
       {emailuri.map((e) => (
         <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
-          <time dateTime={e.la} className="pu-num w-[92px] shrink-0 text-[12px] text-muted-foreground">
+          <time dateTime={e.la} className="pu-num w-[92px] shrink-0 text-[13.5px] text-muted-foreground">
             {dayMonthRo(e.la)}, {timeRo(e.la)}
           </time>
           <div className="min-w-0 flex-1 basis-48">
-            <Link href={linkFirma(e.firma.id)} className="block truncate rounded-sm text-[12.5px] font-medium underline-offset-2 hover:underline">
+            <Link href={linkFirma(e.firma.id)} className="block truncate rounded-sm text-[14px] font-medium underline-offset-2 hover:underline">
               <span className="pu-num text-muted-foreground">#{e.firma.nr}</span> {e.firma.nume}
             </Link>
-            <p className="break-all text-[11px] text-muted-foreground">{e.casuta ?? "căsuță necunoscută"}</p>
+            <p className="break-all text-[12.5px] text-muted-foreground">{e.casuta ?? "căsuță necunoscută"}</p>
           </div>
-          <StageBadge etapa={e.firma.etapa} className="px-2 py-0 text-[10.5px]" />
+          <StageBadge etapa={e.firma.etapa} className="px-2 py-0 text-[12px]" />
         </li>
       ))}
     </ul>

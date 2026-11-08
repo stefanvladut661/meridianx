@@ -34,7 +34,7 @@ export interface StatusItem {
   value: string;
 }
 
-const labelClass = "text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground";
+const labelClass = "text-[12px] uppercase tracking-[0.12em] text-muted-foreground";
 const TIMEZONES = ["Europe/Bucharest", "Europe/Chisinau"];
 const TZ_LABEL: Record<string, string> = { "Europe/Bucharest": "Europa/București", "Europe/Chisinau": "Europa/Chișinău" };
 const GAPS = [0, 5, 10, 15, 30, 45, 60, 90, 120, 180, 360];
@@ -66,7 +66,7 @@ function initialValues(settings: Setari): Values {
 
 function FieldError({ message }: { message?: string }) {
   return message ? (
-    <span role="alert" className="mt-1 block text-[10.5px] text-[#FFC2CE]">
+    <span role="alert" className="mt-1 block text-[12px] text-[#FFC2CE]">
       {message}
     </span>
   ) : null;
@@ -97,8 +97,8 @@ function InstagramForm({ replacing, keyProblem, connect, onDone, onCancel }: { r
         });
       }}
     >
-      <h2 className="text-[16px] font-semibold">{replacing ? "Înlocuiește tokenul Instagram" : "Conectează Instagram"}</h2>
-      <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">Tokenul se verifică la Instagram, apoi se salvează criptat. Nu se mai vede după salvare și nu ajunge niciodată înapoi în browser.</p>
+      <h2 className="text-[17px] font-semibold">{replacing ? "Înlocuiește tokenul Instagram" : "Conectează Instagram"}</h2>
+      <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">Tokenul se verifică la Instagram, apoi se salvează criptat. Nu se mai vede după salvare și nu ajunge niciodată înapoi în browser.</p>
       {keyProblem ? <InlineNote tone="apricot" className="mt-3">{keyProblem}</InlineNote> : null}
       <label className="mt-4 block">
         <span className={labelClass}>Tokenul din panoul Meta</span>
@@ -109,11 +109,11 @@ function InstagramForm({ replacing, keyProblem, connect, onDone, onCancel }: { r
           autoComplete="off"
           spellCheck={false}
           autoFocus
-          className={inputClass("mt-1.5 h-auto py-2 font-mono text-[12px]")}
+          className={inputClass("mt-1.5 h-auto py-2 font-mono text-[13.5px]")}
           aria-describedby="ig-token-ajutor"
         />
       </label>
-      <p id="ig-token-ajutor" className="mt-2 text-[10.5px] leading-relaxed text-muted-foreground">
+      <p id="ig-token-ajutor" className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
         developers.facebook.com → aplicația → Instagram → <em>API setup with Instagram business login</em> → <em>Generate token</em> lângă contul Meridian. Pașii întregi sunt în README, la „Instagram”.
       </p>
       {error ? (
@@ -277,7 +277,7 @@ export function SettingsScreen({
     return (
       <li key={platform} className="rounded-xl border border-white/[0.07] px-3 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="min-w-[7rem] flex-1 text-[12.5px]">
+          <p className="min-w-[7rem] flex-1 text-[14px]">
             {label} {account?.nume ? <span className="text-muted-foreground">· {account.nume}</span> : null}
           </p>
           <Pill tone={connected ? "mint" : "rose"} dot>
@@ -304,15 +304,15 @@ export function SettingsScreen({
             </Btn>
           ) : null}
         </div>
-        <p className={cn("mt-1 text-[10.5px]", connected ? "text-mint" : "text-rose")}>{line}</p>
+        <p className={cn("mt-1 text-[12px]", connected ? "text-mint" : "text-rose")}>{line}</p>
         {account ? (
-          <p className="mt-1 text-[10.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
             Conectat {dateTimeRo(account.conectatLa)} de {account.conectatDe}.
             {account.reinnoitLa ? ` Ultima reînnoire ${dateTimeRo(account.reinnoitLa)}.` : ""}
             {account.eroare && account.stare === "activ" ? <span className="text-[#FFC2CE]"> {account.eroare}</span> : null}
           </p>
         ) : platform === "tiktok" && tiktokMissing ? (
-          <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#FFD0AC]">{tiktokMissing}</p>
+          <p className="mt-1.5 text-[12px] leading-relaxed text-[#FFD0AC]">{tiktokMissing}</p>
         ) : null}
       </li>
     );
@@ -338,7 +338,7 @@ export function SettingsScreen({
           <span role={notice.tone === "mint" ? "status" : "alert"}>{notice.text}</span>
         </InlineNote>
       ) : null}
-      <p className="text-[10.5px] text-muted-foreground">Cheile (Google, Anthropic, TikTok) stau doar în Vercel; tokenurile conturilor stau criptate în Supabase.</p>
+      <p className="text-[12px] text-muted-foreground">Cheile (Google, Anthropic, TikTok) stau doar în Vercel; tokenurile conturilor stau criptate în Supabase.</p>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -351,7 +351,7 @@ export function SettingsScreen({
               </Pill>
             }
           />
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10.5px] text-muted-foreground">
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted-foreground">
             Legătura (aceeași ca la adminul firmei):{" "}
             {drive.linked ? <span className="text-mint">{drive.linked}</span> : <span className="text-[#FFD0AC]">{drive.missingText}</span>}
           </p>
@@ -359,12 +359,12 @@ export function SettingsScreen({
             <span className={labelClass}>Adresa folderului sau id-ul</span>
             <div className="relative mt-1">
               <FolderOpen className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-              <TextInput className="pl-9 font-mono text-[11.5px]" placeholder="https://drive.google.com/drive/folders/…" value={values.driveFolder} aria-invalid={errors.driveFolder ? true : undefined} onChange={(event) => set("driveFolder", event.target.value)} />
+              <TextInput className="pl-9 font-mono text-[13px]" placeholder="https://drive.google.com/drive/folders/…" value={values.driveFolder} aria-invalid={errors.driveFolder ? true : undefined} onChange={(event) => set("driveFolder", event.target.value)} />
             </div>
             <FieldError message={errors.driveFolder} />
           </label>
           {drive.rootState === "ok" && drive.rootName && drive.rootLink ? (
-            <p className="mt-2 text-[11px] text-muted-foreground">
+            <p className="mt-2 text-[12.5px] text-muted-foreground">
               Acum:{" "}
               <a href={drive.rootLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-lav underline-offset-2 hover:underline">
                 {drive.rootName} <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -391,9 +391,9 @@ export function SettingsScreen({
               Deconectează
             </Btn>
           </div>
-          {dirty ? <p className="mt-2 text-[10.5px] text-muted-foreground">Testul folosește folderul salvat: salvează întâi schimbările.</p> : null}
+          {dirty ? <p className="mt-2 text-[12px] text-muted-foreground">Testul folosește folderul salvat: salvează întâi schimbările.</p> : null}
           {drive.rootState === "ok" ? (
-            <p className="mt-2 flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+            <p className="mt-2 flex items-center gap-1.5 text-[12px] text-muted-foreground">
               <CheckCircle2 className="h-3 w-3 text-mint" aria-hidden="true" /> citire permisă · scriere nu
             </p>
           ) : null}
@@ -403,14 +403,14 @@ export function SettingsScreen({
           <SectionTitle title="Sloturi implicite" hint="orele propuse când nu scrii una" />
           <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Sloturile alese">
             {values.slots.map((slot) => (
-              <li key={slot} className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 font-mono text-[11.5px]">
+              <li key={slot} className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 font-mono text-[13px]">
                 {slot}
                 <button type="button" aria-label={`Scoate slotul ${slot}`} onClick={() => set("slots", values.slots.filter((item) => item !== slot))} className="text-muted-foreground hover:text-rose">
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>
               </li>
             ))}
-            {values.slots.length === 0 ? <li className="text-[11.5px] text-[#FFC2CE]">Adaugă cel puțin un slot.</li> : null}
+            {values.slots.length === 0 ? <li className="text-[13px] text-[#FFC2CE]">Adaugă cel puțin un slot.</li> : null}
           </ul>
           <FieldError message={errors.slots} />
           <div className="mt-3 flex flex-wrap items-end gap-2">
@@ -430,7 +430,7 @@ export function SettingsScreen({
             />
           </div>
           <FieldError message={errors.tz} />
-          <p className="mt-3 text-[10.5px] leading-relaxed text-muted-foreground">Un plan fără „sloturi” proprii folosește orele de aici, începând de mâine. O postare fără oră ia următorul slot liber.</p>
+          <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">Un plan fără „sloturi” proprii folosește orele de aici, începând de mâine. O postare fără oră ia următorul slot liber.</p>
         </Card>
 
         <Card>
@@ -439,13 +439,13 @@ export function SettingsScreen({
             <label className="block">
               <span className={labelClass}>Instagram</span>
               <TextInput type="number" min={1} max={100} className="mt-1" value={values.capIg} aria-invalid={errors.capIg ? true : undefined} onChange={(event) => set("capIg", event.target.value)} />
-              <span className="mt-1 block text-[10px] text-muted-foreground">cota citită din API: 50 (cel mult 100)</span>
+              <span className="mt-1 block text-[11.5px] text-muted-foreground">cota citită din API: 50 (cel mult 100)</span>
               <FieldError message={errors.capIg} />
             </label>
             <label className="block">
               <span className={labelClass}>TikTok</span>
               <TextInput type="number" min={1} max={5} className="mt-1" value={values.capTt} aria-invalid={errors.capTt ? true : undefined} onChange={(event) => set("capTt", event.target.value)} />
-              <span className="mt-1 block text-[10px] text-muted-foreground">limita platformei: 5 ciorne nepublicate</span>
+              <span className="mt-1 block text-[11.5px] text-muted-foreground">limita platformei: 5 ciorne nepublicate</span>
               <FieldError message={errors.capTt} />
             </label>
           </div>
@@ -456,13 +456,13 @@ export function SettingsScreen({
               <FieldError message={errors.gap} />
             </div>
             <label className="block">
-              <span className="mb-1 block text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">Stocare temporară (MB / fișier)</span>
+              <span className="mb-1 block text-[12px] uppercase tracking-[0.14em] text-muted-foreground">Stocare temporară (MB / fișier)</span>
               <TextInput type="number" min={1} max={5000} value={values.storage} aria-invalid={errors.storage ? true : undefined} onChange={(event) => set("storage", event.target.value)} />
-              <span className="mt-1 block text-[10px] text-muted-foreground">planul gratuit Supabase: 50 MB</span>
+              <span className="mt-1 block text-[11.5px] text-muted-foreground">planul gratuit Supabase: 50 MB</span>
               <FieldError message={errors.storage} />
             </label>
           </div>
-          <p className="mt-3 text-[10.5px] leading-relaxed text-muted-foreground">Distanța se ține pe aceeași platformă: două postări mai apropiate sunt suprapuse.</p>
+          <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">Distanța se ține pe aceeași platformă: două postări mai apropiate sunt suprapuse.</p>
         </Card>
 
         <Card>
@@ -472,10 +472,10 @@ export function SettingsScreen({
             <TextInput type="text" inputMode="email" className="mt-1" placeholder="tu@exemplu.ro" value={values.email} aria-invalid={errors.email ? true : undefined} onChange={(event) => set("email", event.target.value)} />
             <FieldError message={errors.email} />
           </label>
-          <p className="mt-2 text-[10.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
             Primești email la o postare eșuată definitiv, la un token care nu se mai reînnoiește (coada se oprește) și la un cont care expiră curând. Fără rapoarte zilnice. Mai multe adrese: separate prin virgulă. Gol = adresele din ADMIN_EMAILS.
           </p>
-          {alertTo ? <p className="mt-1.5 text-[10.5px] text-muted-foreground">Acum pleacă la: <span className="text-foreground/80">{alertTo}</span></p> : null}
+          {alertTo ? <p className="mt-1.5 text-[12px] text-muted-foreground">Acum pleacă la: <span className="text-foreground/80">{alertTo}</span></p> : null}
         </Card>
 
         <Card id="conturi" className="scroll-mt-24">
@@ -485,14 +485,14 @@ export function SettingsScreen({
             {accountRow("instagram", "Instagram", instagram)}
             {accountRow("tiktok", "TikTok", tiktok)}
           </ul>
-          <p className="mt-3 text-[10.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
             Adresa de întoarcere, de pus în aplicația TikTok (Login Kit → Redirect URI): <span className="select-all break-all font-mono text-foreground/80">{redirectUri}</span>
           </p>
         </Card>
 
         <Card>
           <SectionTitle title="Starea programării" hint="cine rulează coada" />
-          <ul className="mt-3 space-y-2 text-[12px]">
+          <ul className="mt-3 space-y-2 text-[13.5px]">
             <li className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">Supabase Cron</span>
               <span className={cn("flex items-center gap-1.5", cron.fresh ? "text-mint" : "text-rose")}>
@@ -516,14 +516,14 @@ export function SettingsScreen({
             {status.map((item) => (
               <li key={item.label} className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11.5px] text-muted-foreground">{item.label}</p>
-                  <p className="text-[10.5px] leading-relaxed text-muted-foreground/80">{item.value}</p>
+                  <p className="text-[13px] text-muted-foreground">{item.label}</p>
+                  <p className="text-[12px] leading-relaxed text-muted-foreground/80">{item.value}</p>
                 </div>
                 <Pill tone={item.ok ? "mint" : "apricot"}>{item.ok ? "da" : "nu"}</Pill>
               </li>
             ))}
           </ul>
-          <p className="mt-3 flex items-start gap-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-3 flex items-start gap-1.5 text-[12px] leading-relaxed text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" />
             Dacă rularea nu pornește, postările rămân în coadă și pleacă la prima rulare următoare, în 6 ore de la ora lor. După, le repui cu „Reîncearcă”. Nimic nu se pierde.
           </p>

@@ -7,6 +7,7 @@ import { LogOut, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Modal } from "../ui/modal";
 import { activeModule, firmaModule, isItemActive, modules } from "./nav";
+import { useShownPath } from "./shell-context";
 
 /**
  * Pe telefon: bară jos cu modulele și „Mai mult”, care deschide toate
@@ -18,7 +19,7 @@ import { activeModule, firmaModule, isItemActive, modules } from "./nav";
  * iconiță lav, text alb semibold.
  */
 export function PanouMobileNav({ email, signOut }: { email: string | null; signOut?: () => Promise<void> }) {
-  const pathname = usePathname();
+  const pathname = useShownPath(usePathname());
   const [open, setOpen] = useState(false);
   const active = activeModule(pathname);
 
@@ -34,7 +35,7 @@ export function PanouMobileNav({ email, signOut }: { email: string | null; signO
                   href={module.to}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "relative flex h-14 flex-col items-center justify-center gap-1 text-[10px] transition-colors",
+                    "relative flex h-14 flex-col items-center justify-center gap-1 text-[10.5px] transition-colors",
                     isActive ? "bg-white/[0.07] font-semibold text-white" : "text-foreground/80 hover:text-white"
                   )}
                 >
@@ -49,7 +50,7 @@ export function PanouMobileNav({ email, signOut }: { email: string | null; signO
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="flex h-14 w-full flex-col items-center justify-center gap-1 text-[10px] text-foreground/80 transition-colors hover:text-white"
+              className="flex h-14 w-full flex-col items-center justify-center gap-1 text-[10.5px] text-foreground/80 transition-colors hover:text-white"
               aria-haspopup="dialog"
             >
               <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden="true" />
@@ -60,11 +61,11 @@ export function PanouMobileNav({ email, signOut }: { email: string | null; signO
       </nav>
 
       <Modal open={open} onOpenChange={setOpen} label="Toate ecranele" className="m-0 mt-auto max-h-[86dvh] w-full overflow-y-auto rounded-b-none rounded-t-[22px] border-white/[0.1] bg-[#101014] p-0 sm:m-auto sm:max-w-md sm:rounded-[22px]">
-        <h2 className="px-5 pb-2 pt-5 text-[15px] font-semibold">Toate ecranele</h2>
+        <h2 className="px-5 pb-2 pt-5 text-[16px] font-semibold">Toate ecranele</h2>
         <div className="px-3 pb-3">
           {[...modules, firmaModule].map((module) => (
             <div key={module.id} className="mb-2">
-              <p className="px-2 py-1 text-[10.5px] font-medium uppercase tracking-[0.16em] text-foreground/70">{module.label}</p>
+              <p className="px-2 py-1 text-[12px] font-medium uppercase tracking-[0.16em] text-foreground/70">{module.label}</p>
               {module.items.map((item) => {
                 const isActive = module.id === active.id && isItemActive(pathname, item, module);
                 return (
@@ -74,7 +75,7 @@ export function PanouMobileNav({ email, signOut }: { email: string | null; signO
                     aria-current={isActive ? "page" : undefined}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "relative flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-[13px] transition-colors",
+                      "relative flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-[14.5px] transition-colors",
                       isActive ? "bg-lav/[0.13] pl-3 font-semibold text-white" : "text-foreground/80 hover:bg-white/[0.05] hover:text-white"
                     )}
                   >
@@ -86,10 +87,10 @@ export function PanouMobileNav({ email, signOut }: { email: string | null; signO
             </div>
           ))}
           <div className="mt-2 border-t border-white/[0.07] pt-3">
-            <p className="truncate px-2 text-[12px] text-muted-foreground">{email ?? "cont fără email"}</p>
+            <p className="truncate px-2 text-[13.5px] text-muted-foreground">{email ?? "cont fără email"}</p>
             {signOut ? (
               <form action={signOut}>
-                <button type="submit" className="mt-1 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[13px] text-rose">
+                <button type="submit" className="mt-1 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[14.5px] text-rose">
                   <LogOut className="h-3.5 w-3.5" aria-hidden="true" /> Ieși din cont
                 </button>
               </form>

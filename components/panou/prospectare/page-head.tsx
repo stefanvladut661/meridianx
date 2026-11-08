@@ -26,7 +26,7 @@ export function PageHead({
           {pill ? (
             <span
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11.5px] font-medium",
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium",
                 pillTone === "mint" && "border-mint/25 bg-mint/10 text-mint",
                 pillTone === "apricot" && "border-apricot/25 bg-apricot/10 text-apricot",
                 pillTone === "lav" && "border-lav/25 bg-lav/10 text-lav",

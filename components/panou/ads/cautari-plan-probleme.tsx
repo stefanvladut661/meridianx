@@ -56,7 +56,7 @@ export function PlanProbleme({
         error ? "border-rose/25 bg-rose/[0.07] text-[#FFC2CE]" : "border-apricot/25 bg-apricot/[0.07] text-[#FFD0AC]"
       )}
     >
-      <h3 className="flex items-center gap-2 text-[12.5px] font-semibold">
+      <h3 className="flex items-center gap-2 text-[14px] font-semibold">
         <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         {title}
       </h3>
@@ -67,13 +67,13 @@ export function PlanProbleme({
               <button
                 type="button"
                 onClick={() => jumpTo(problem.path)}
-                className="group flex w-full items-start gap-2 rounded-lg px-1 py-0.5 text-left text-[12px] leading-relaxed text-foreground/85 hover:text-foreground"
+                className="group flex w-full items-start gap-2 rounded-lg px-1 py-0.5 text-left text-[13.5px] leading-relaxed text-foreground/85 hover:text-foreground"
               >
                 <ArrowRight className="mt-[3px] h-3 w-3 shrink-0 opacity-60 group-hover:opacity-100" aria-hidden="true" />
                 <span>{problem.message}</span>
               </button>
             ) : (
-              <p className="flex items-start gap-2 px-1 py-0.5 text-[12px] leading-relaxed text-foreground/85">
+              <p className="flex items-start gap-2 px-1 py-0.5 text-[13.5px] leading-relaxed text-foreground/85">
                 <ArrowRight className="mt-[3px] h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />
                 <span>{problem.message}</span>
               </p>

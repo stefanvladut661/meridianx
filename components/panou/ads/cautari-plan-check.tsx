@@ -23,11 +23,11 @@ const DOT: Record<Tone, string> = { ok: "bg-mint", warn: "bg-apricot", error: "b
 function Row({ label, tone, children }: { label: string; tone: Tone; children: ReactNode }) {
   return (
     <div className="grid grid-cols-[104px_minmax(0,1fr)] items-start gap-3 py-2.5 sm:grid-cols-[120px_minmax(0,1fr)]">
-      <dt className="flex items-center gap-2 pt-0.5 text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+      <dt className="flex items-center gap-2 pt-0.5 text-[12.5px] uppercase tracking-[0.1em] text-muted-foreground">
         <span aria-hidden="true" className={cn("h-1.5 w-1.5 shrink-0 rounded-full", DOT[tone])} />
         {label}
       </dt>
-      <dd className="min-w-0 text-[12.5px] leading-relaxed text-foreground/85">{children}</dd>
+      <dd className="min-w-0 text-[14px] leading-relaxed text-foreground/85">{children}</dd>
     </div>
   );
 }
@@ -36,10 +36,10 @@ function Names({ title, items }: { title: string; items: ResolvedName[] }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <h5 className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">{title}</h5>
+      <h5 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">{title}</h5>
       <ul className="mt-1.5 space-y-1">
         {items.map((item) => (
-          <li key={item.path} className="grid gap-x-3 text-[12px] leading-snug sm:grid-cols-[minmax(0,11rem)_auto_minmax(0,1fr)]">
+          <li key={item.path} className="grid gap-x-3 text-[13.5px] leading-snug sm:grid-cols-[minmax(0,11rem)_auto_minmax(0,1fr)]">
             <button type="button" onClick={() => jumpTo(item.path)} className="min-w-0 truncate text-left text-foreground/70 underline-offset-4 hover:text-foreground hover:underline">
               {item.asked}
             </button>
@@ -50,7 +50,7 @@ function Names({ title, items }: { title: string; items: ResolvedName[] }) {
               <span className="min-w-0">
                 <span className="sr-only">găsit: </span>
                 {item.found}
-                <span className="ml-2 font-mono text-[10.5px] text-muted-foreground">{item.given ? "id din plan" : item.key}</span>
+                <span className="ml-2 font-mono text-[12px] text-muted-foreground">{item.given ? "id din plan" : item.key}</span>
               </span>
             ) : (
               <span className="text-rose">negăsit</span>
@@ -89,7 +89,7 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
           {check.account ? (
             <>
               {check.account.name}
-              <span className="ml-2 font-mono text-[11px] text-muted-foreground">
+              <span className="ml-2 font-mono text-[12.5px] text-muted-foreground">
                 {check.account.currency} · {check.account.state}
                 {check.manager ? ` · prin managerul ${check.manager}` : " · văzut direct"}
               </span>
@@ -103,7 +103,7 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
             "Nimic trimis la Google încă: întâi corecturile de mai jos, apoi „Verifică din nou” trimite tot planul cu validateOnly."
           ) : (
             <>
-              {countOf(check.operations, "operații")} trimise la Google cu <span className="font-mono text-[11.5px]">validateOnly</span>
+              {countOf(check.operations, "operații")} trimise la Google cu <span className="font-mono text-[13px]">validateOnly</span>
               {check.ok ? " — Google le-ar accepta pe toate. Nu s-a creat nimic." : " — nu s-a creat nimic."}
             </>
           )}
@@ -114,7 +114,7 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
               {check.callConversions.map((item) => (
                 <p key={item.id}>
                   {item.name}{" "}
-                  <span className="font-mono text-[11px] text-muted-foreground">
+                  <span className="font-mono text-[12.5px] text-muted-foreground">
                     {item.type} · {item.id}
                   </span>
                 </p>
@@ -133,7 +133,7 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
                 {badUrls > 0 ? <span className="text-rose">, {badUrls} nu merg</span> : null}.
               </p>
               {badUrls + redirects > 0 ? (
-                <ul className="mt-1.5 space-y-1 text-[12px]">
+                <ul className="mt-1.5 space-y-1 text-[13.5px]">
                   {check.urls
                     .filter((url) => url.verdict !== "ok")
                     .map((url) => (
@@ -151,10 +151,10 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
       </dl>
 
       <div className="mt-4 space-y-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
-        <p className="text-[11.5px] leading-snug text-muted-foreground">Locațiile și limbile, cum le-a înțeles Google. Asta intră în campanie, nu textul din plan.</p>
+        <p className="text-[13px] leading-snug text-muted-foreground">Locațiile și limbile, cum le-a înțeles Google. Asta intră în campanie, nu textul din plan.</p>
         {check.campaigns.map((campaign) => (
           <div key={campaign.key} className="space-y-2.5">
-            <h4 className="text-[12.5px] font-medium">{campaign.name}</h4>
+            <h4 className="text-[14px] font-medium">{campaign.name}</h4>
             <Names title="Locații" items={campaign.locations} />
             <Names title="Excluse" items={campaign.excluded} />
             <Names title="Limbi" items={campaign.languages} />

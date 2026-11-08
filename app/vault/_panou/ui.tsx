@@ -13,7 +13,7 @@ import { formatSeconds } from "./format";
  */
 
 /** Eticheta de câmp, ca în prototip: mică, majusculă, cu spațiere. */
-export const LABEL_CLASS = "text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground";
+export const LABEL_CLASS = "text-[12px] uppercase tracking-[0.12em] text-muted-foreground";
 
 /** Titlul paginii (h1) cu rândul de explicație de sub el și, opțional, acțiuni în dreapta. */
 export function PageHead({ title, text, action }: { title: string; text?: ReactNode; action?: ReactNode }) {
@@ -21,7 +21,7 @@ export function PageHead({ title, text, action }: { title: string; text?: ReactN
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">{title}</h1>
-        {text ? <p className="mt-2 max-w-2xl text-[12.5px] text-muted-foreground">{text}</p> : null}
+        {text ? <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">{text}</p> : null}
       </div>
       {action}
     </div>
@@ -59,12 +59,12 @@ export function LabeledInput({
         {...input}
       />
       {hint ? (
-        <span id={hintId} className="mt-1 block text-[10px] text-muted-foreground">
+        <span id={hintId} className="mt-1 block text-[11.5px] text-muted-foreground">
           {hint}
         </span>
       ) : null}
       {error ? (
-        <span id={errorId} className="mt-1 block text-[10px] text-rose">
+        <span id={errorId} className="mt-1 block text-[11.5px] text-rose">
           {error}
         </span>
       ) : null}
@@ -93,13 +93,13 @@ export function BusyBlock({ label, detail, startedAt }: { label: string; detail?
   const elapsed = useElapsed(startedAt);
   return (
     <div role="status" aria-live="polite">
-      <p className="flex items-center gap-2 text-[12px] text-muted-foreground">
+      <p className="flex items-center gap-2 text-[13.5px] text-muted-foreground">
         <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> {label}…
       </p>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]" aria-hidden="true">
         <div className="h-full w-1/3 animate-sweep rounded-full bg-mint" />
       </div>
-      <p className="mt-1.5 text-[10.5px] text-muted-foreground/70">
+      <p className="mt-1.5 text-[12px] text-muted-foreground/70">
         {detail}
         {detail ? " · " : null}
         <span className="pu-num font-mono text-foreground/80">{formatSeconds(elapsed)}</span>

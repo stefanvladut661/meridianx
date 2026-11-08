@@ -26,7 +26,7 @@ export function ClipPreview({ fileId, name }: { fileId: string; name: string }) 
         <Btn size="xs" variant="outline" icon={Play} onClick={() => setOpen(true)} aria-label={`Vezi clipul ${name}`}>
           Vezi clipul
         </Btn>
-        <a href={view} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+        <a href={view} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12.5px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
           Deschide în Drive <ExternalLink className="h-3 w-3" aria-hidden="true" />
           <span className="sr-only">(filă nouă)</span>
         </a>
@@ -40,10 +40,10 @@ export function ClipPreview({ fileId, name }: { fileId: string; name: string }) 
         <iframe src={`https://drive.google.com/file/d/${fileId}/preview`} title={`Clipul ${name}`} allow="autoplay; fullscreen" className="h-full w-full" />
       </div>
       <div className="flex flex-wrap items-center gap-x-3">
-        <button type="button" onClick={() => setOpen(false)} className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground">
+        <button type="button" onClick={() => setOpen(false)} className="text-[12.5px] text-muted-foreground underline underline-offset-2 hover:text-foreground">
           Ascunde
         </button>
-        <a href={view} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+        <a href={view} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12.5px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
           Deschide în Drive <ExternalLink className="h-3 w-3" aria-hidden="true" />
           <span className="sr-only">(filă nouă)</span>
         </a>
@@ -151,7 +151,7 @@ export function ClipsLot({
         <SectionTitle title={title} hint={hint} />
         <div className="flex flex-wrap items-center gap-2">
           {running ? (
-            <button type="button" onClick={() => (stop.current = true)} className="text-[11.5px] text-muted-foreground underline underline-offset-2 hover:text-foreground">
+            <button type="button" onClick={() => (stop.current = true)} className="text-[13px] text-muted-foreground underline underline-offset-2 hover:text-foreground">
               Oprește după clipul ăsta
             </button>
           ) : null}
@@ -165,7 +165,7 @@ export function ClipsLot({
           </Pill>
         </div>
       </div>
-      <p role="status" aria-live="polite" className="border-b border-white/[0.05] px-4 py-2 text-[11px] text-muted-foreground">
+      <p role="status" aria-live="polite" className="border-b border-white/[0.05] px-4 py-2 text-[12.5px] text-muted-foreground">
         {running
           ? `${running.done} din ${running.total} citite.`
           : onDrive === 0
@@ -192,21 +192,21 @@ export function ClipsLot({
                 <ClipTile platform={igOk ? "instagram" : ttOk ? "tiktok" : null} durationMs={durationMs} />
                 <div className="min-w-0 flex-1 basis-44">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="break-all font-mono text-[12px]">{row.name}</p>
-                    <span className={cn("text-[10.5px]", clip?.probed ? "text-muted-foreground" : "text-muted-foreground/70")}>
+                    <p className="break-all font-mono text-[13.5px]">{row.name}</p>
+                    <span className={cn("text-[12px]", clip?.probed ? "text-muted-foreground" : "text-muted-foreground/70")}>
                       {clip ? (clip.summary ?? (clip.size !== null ? `${mb(clip.size)} · necitit` : "necitit")) : manifest?.durataS ? `${manifest.durataS} s în manifest` : ""}
                     </span>
                     {!clip ? <Pill tone="rose">lipsește din folder</Pill> : null}
                     {hasManifest && clip && !manifest ? <Pill tone="apricot">nu e în manifest</Pill> : null}
                   </div>
-                  {manifest?.hook ? <p className="mt-1 text-[11.5px] text-foreground/75">Hook: {manifest.hook}</p> : null}
+                  {manifest?.hook ? <p className="mt-1 text-[13px] text-foreground/75">Hook: {manifest.hook}</p> : null}
                   {manifest && (manifest.voce || manifest.cta || manifest.stil || manifest.format) ? (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-[12.5px] text-muted-foreground">
                       {[manifest.voce ? `Voce: ${manifest.voce}` : null, manifest.cta ? `CTA: ${manifest.cta}` : null, manifest.stil ? `Stil: ${manifest.stil}` : null, manifest.format ? `Format: ${manifest.format}` : null].filter(Boolean).join(" · ")}
                     </p>
                   ) : null}
                   {error ? (
-                    <p role="alert" className="mt-1.5 text-[11.5px] text-[#FFC2CE]">
+                    <p role="alert" className="mt-1.5 text-[13px] text-[#FFC2CE]">
                       {error}
                     </p>
                   ) : null}
@@ -233,7 +233,7 @@ export function ClipsLot({
         </ul>
       )}
 
-      <div className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-2.5 text-[11px] text-muted-foreground">
+      <div className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-2.5 text-[12.5px] text-muted-foreground">
         <Film className="h-3 w-3 shrink-0" aria-hidden="true" />
         Fiecare clip vertical 9:16, sub {storageLimitMb} MB pentru Instagram. Ce nu e compatibil e marcat — nu se strecoară în plan.
       </div>

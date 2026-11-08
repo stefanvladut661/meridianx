@@ -262,13 +262,13 @@ export function CautariPlanEditor({
           aria-invalid={syntax ? true : undefined}
           placeholder={'{\n  "format": "meridian-google-search/1",\n  "workspace": "google-clienti",\n  …\n}'}
           className={cn(
-            "mt-3 h-[22rem] w-full resize-y whitespace-pre rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[11.5px] leading-relaxed text-foreground/85 outline-none placeholder:text-muted-foreground/50 focus:border-lav/50 lg:h-[calc(100dvh-24rem)] lg:min-h-[22rem]",
+            "mt-3 h-[22rem] w-full resize-y whitespace-pre rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[13px] leading-relaxed text-foreground/85 outline-none placeholder:text-muted-foreground/50 focus:border-lav/50 lg:h-[calc(100dvh-24rem)] lg:min-h-[22rem]",
             syntax && "!border-rose/50"
           )}
         />
-        <div className="mt-1.5 text-right font-mono text-[10.5px] text-muted-foreground">{text ? countOf(text.split("\n").length, "rânduri") : "gol"}</div>
+        <div className="mt-1.5 text-right font-mono text-[12px] text-muted-foreground">{text ? countOf(text.split("\n").length, "rânduri") : "gol"}</div>
 
-        <div id="search-status" className="mt-2 min-h-6 text-[12px] leading-snug">
+        <div id="search-status" className="mt-2 min-h-6 text-[13.5px] leading-snug">
           {syntax ? (
             <InlineNote tone="rose">
               <p>{syntax.message}</p>
@@ -334,7 +334,7 @@ export function CautariPlanEditor({
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <Stamp>Se creează oprită</Stamp>
-          <span className="text-[11.5px] text-muted-foreground">Portalul nu are niciun buton care pornește o campanie. O activezi tu, din Google Ads.</span>
+          <span className="text-[13px] text-muted-foreground">Portalul nu are niciun buton care pornește o campanie. O activezi tu, din Google Ads.</span>
         </div>
 
         {!draft || !summary || !validation ? (
@@ -380,7 +380,7 @@ export function CautariPlanEditor({
         {checkFailure ? (
           <div role="alert" className="space-y-2">
             <InlineNote tone="rose">
-              <p className="text-[13px] font-semibold">Verificarea pe Google n-a mers.</p>
+              <p className="text-[14.5px] font-semibold">Verificarea pe Google n-a mers.</p>
               <p className="mt-1.5">{checkFailure.message}</p>
             </InlineNote>
             <PlanProbleme title="De corectat" problems={checkFailure.problems} tone="error" />
@@ -392,11 +392,11 @@ export function CautariPlanEditor({
         <Card padded={false} className="z-10 p-4 lg:sticky lg:bottom-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0 flex-1 basis-60">
-              <h3 className="flex items-center gap-1.5 text-[13px] font-semibold">
+              <h3 className="flex items-center gap-1.5 text-[14.5px] font-semibold">
                 <ShieldCheck className="h-3.5 w-3.5 text-mint" aria-hidden="true" />
                 3. Verificare în Google
               </h3>
-              <p id="search-reason" className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground" aria-live="polite">
+              <p id="search-reason" className="mt-1 text-[13px] leading-relaxed text-muted-foreground" aria-live="polite">
                 {checking
                   ? "Google caută contul, numele campaniilor și listelor, locațiile, conversiile de apel și adresele, apoi verifică toată crearea, fără să creeze nimic…"
                   : creating

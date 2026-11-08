@@ -106,22 +106,22 @@ export function InvoicesScreen({
       </ul>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <button type="button" disabled={pending} onClick={prepare} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="button" disabled={pending} onClick={prepare} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
           Pregătește ciornele pentru {monthLabel(month)}
         </button>
-        <button type="button" disabled={pending} onClick={() => setOpen({ kind: "new" })} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="button" disabled={pending} onClick={() => setOpen({ kind: "new" })} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
           <IconPlus size={16} />
           Factură manuală
         </button>
-        <button type="button" disabled={pending || !oblio} onClick={refresh} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="button" disabled={pending || !oblio} onClick={refresh} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
           Actualizează din Oblio
         </button>
         {drive && missingOnDrive > 0 ? (
-          <button type="button" disabled={pending} onClick={uploadMissing} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+          <button type="button" disabled={pending} onClick={uploadMissing} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
             Urcă pe Drive {missingOnDrive === 1 ? "PDF-ul lipsă" : `cele ${missingOnDrive} PDF-uri lipsă`}
           </button>
         ) : null}
-        {pending ? <span className="text-[13px] text-dim">Se lucrează…</span> : null}
+        {pending ? <span className="text-[14.5px] text-dim">Se lucrează…</span> : null}
       </div>
       {notice ? (
         <Notice tone={notice.tone} className="mt-3">
@@ -156,19 +156,19 @@ export function InvoicesScreen({
                       <button type="button" onClick={() => setOpen({ kind: "invoice", id: invoice.id })} className="text-left font-semibold text-bone hover:text-[var(--md-a1)] hover:underline">
                         {invoice.clientNume}
                       </button>
-                      <p className="mt-0.5 max-w-[18rem] truncate text-[12.5px] text-dim">{invoice.randuri[0]?.denumire ?? "fără rânduri"}</p>
+                      <p className="mt-0.5 max-w-[18rem] truncate text-[14px] text-dim">{invoice.randuri[0]?.denumire ?? "fără rânduri"}</p>
                     </td>
                     <td className={cn(tdClass, "whitespace-nowrap")}>
                       {invoiceName(invoice)}
-                      {invoice.felul === "manuala" ? <span className="ml-1.5 text-[12px] text-dim">manuală</span> : null}
+                      {invoice.felul === "manuala" ? <span className="ml-1.5 text-[13.5px] text-dim">manuală</span> : null}
                     </td>
                     <td className={cn(tdClass, "whitespace-nowrap text-right tabular-nums")}>{money(invoice.total, invoice.moneda)}</td>
-                    <td className={cn(tdClass, "whitespace-nowrap text-[13px]")}>{invoice.dataEmiterii ? dayLabel(invoice.dataEmiterii) : <span className="text-dim">planificată {dayLabel(invoice.dataPlanificata)}</span>}</td>
-                    <td className={cn(tdClass, "whitespace-nowrap text-[13px]")}>{dayLabel(due)}</td>
+                    <td className={cn(tdClass, "whitespace-nowrap text-[14.5px]")}>{invoice.dataEmiterii ? dayLabel(invoice.dataEmiterii) : <span className="text-dim">planificată {dayLabel(invoice.dataPlanificata)}</span>}</td>
+                    <td className={cn(tdClass, "whitespace-nowrap text-[14.5px]")}>{dayLabel(due)}</td>
                     <td className={tdClass}>
                       <Tag tone={state.tone}>{state.label}</Tag>
                     </td>
-                    <td className={tdClass}>{invoice.emailStare === "nepregatit" ? <span className="text-[13px] text-dim">—</span> : <Tag tone={EMAIL_LABEL[invoice.emailStare].tone}>{EMAIL_LABEL[invoice.emailStare].label}</Tag>}</td>
+                    <td className={tdClass}>{invoice.emailStare === "nepregatit" ? <span className="text-[14.5px] text-dim">—</span> : <Tag tone={EMAIL_LABEL[invoice.emailStare].tone}>{EMAIL_LABEL[invoice.emailStare].label}</Tag>}</td>
                   </tr>
                 );
               })}
@@ -208,7 +208,7 @@ export function InvoicesScreen({
 function Stat({ label, value, tone }: { label: string; value: string; tone: "warn" | "error" | "muted" }) {
   return (
     <li className="rounded-xl border border-hair bg-char px-4 py-3">
-      <p className="text-[12.5px] font-medium text-dim">{label}</p>
+      <p className="text-[14px] font-medium text-dim">{label}</p>
       <p className={cn("mt-1 text-[1.375rem] font-semibold tabular-nums", tone === "warn" ? "text-[var(--ap-warn)]" : tone === "error" ? "text-[var(--ap-error)]" : "text-bone")}>{value}</p>
     </li>
   );

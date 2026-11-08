@@ -111,7 +111,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
 
       <Card className="flex flex-wrap items-center gap-3 py-3">
         <FolderOpen className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-        <nav aria-label="Folderul" className="flex min-w-0 flex-wrap items-center gap-x-1 font-mono text-[11.5px] text-foreground/75">
+        <nav aria-label="Folderul" className="flex min-w-0 flex-wrap items-center gap-x-1 font-mono text-[13px] text-foreground/75">
           {crumbs.map((crumb, index) => (
             <span key={`${crumb}-${index}`} className="inline-flex items-center gap-1">
               {index > 0 ? (
@@ -139,7 +139,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
             <Pill tone="mint" dot>
               conectat
             </Pill>
-            <a href={folder.data.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+            <a href={folder.data.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12.5px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
               pe Drive <ExternalLink className="h-3 w-3" aria-hidden="true" />
               <span className="sr-only">(filă nouă)</span>
             </a>
@@ -150,7 +150,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
           </Pill>
         )}
         {data ? (
-          <span className="ml-auto text-[11px] text-muted-foreground">
+          <span className="ml-auto text-[12.5px] text-muted-foreground">
             {data.clips.length} {data.clips.length === 1 ? "clip" : "clipuri"}
             {data.subfolders.length > 0 ? ` · ${data.subfolders.length} ${data.subfolders.length === 1 ? "lot" : "loturi"}` : ""}
             {" · "}
@@ -206,7 +206,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
                   <li key={sub.id}>
                     <Link href={childHref(sub.name)} className="flex items-center gap-3 rounded-xl border border-white/[0.07] px-3 py-3 transition-colors hover:border-white/20 hover:bg-white/[0.03]">
                       <FolderOpen className="h-4 w-4 shrink-0 text-lav" aria-hidden="true" />
-                      <span className="min-w-0 flex-1 truncate font-mono text-[12px]">{sub.name}</span>
+                      <span className="min-w-0 flex-1 truncate font-mono text-[13.5px]">{sub.name}</span>
                       <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                     </Link>
                   </li>

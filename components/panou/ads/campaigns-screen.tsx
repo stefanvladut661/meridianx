@@ -265,7 +265,7 @@ export function CampaignsScreen({
           title={hint}
           onClick={() => setSort((current) => (current.key === key ? { key, dir: current.dir === "asc" ? "desc" : "asc" } : { key, dir: key === "name" || key === "status" || key === "cost" ? "asc" : "desc" }))}
           className={cn(
-            "inline-flex items-center gap-1 rounded text-[10px] font-medium uppercase tracking-[0.14em] transition-colors hover:text-foreground",
+            "inline-flex items-center gap-1 rounded text-[11.5px] font-medium uppercase tracking-[0.14em] transition-colors hover:text-foreground",
             active ? "text-foreground" : "text-muted-foreground",
             align === "right" && "flex-row-reverse"
           )}
@@ -305,7 +305,7 @@ export function CampaignsScreen({
       ? `${LEVEL_EMPTY[level]} în ${campaigns.size === 1 ? "campania bifată" : "campaniile bifate"}.`
       : `${LEVEL_EMPTY[level]} în perioada aleasă.`;
 
-  const cell = "whitespace-nowrap px-3 py-3 text-right align-top pu-num text-[12.5px] text-foreground/85";
+  const cell = "whitespace-nowrap px-3 py-3 text-right align-top pu-num text-[14px] text-foreground/85";
 
   return (
     <section aria-label="Campanii, grupuri și reclame" className="space-y-3">
@@ -330,7 +330,7 @@ export function CampaignsScreen({
                 };
               })}
             />
-            <h2 className="text-[13.5px] font-medium">
+            <h2 className="text-[15px] font-medium">
               <span className="sr-only">{LEVEL_TAB[level]}</span>
               <span className="text-muted-foreground">
                 {rows.length} {rows.length === 1 ? "rând" : "rânduri"}
@@ -346,13 +346,13 @@ export function CampaignsScreen({
               value={query}
               onChange={(event) => setQuery(event.currentTarget.value)}
               placeholder={`Caută în ${LEVEL_TAB[level].toLowerCase()}`}
-              className="h-8 w-full rounded-lg border border-white/[0.12] bg-white/[0.03] pl-8 pr-3 text-[12.5px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-lav/50 focus:bg-white/[0.05]"
+              className="h-8 w-full rounded-lg border border-white/[0.12] bg-white/[0.03] pl-8 pr-3 text-[14px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-lav/50 focus:bg-white/[0.05]"
             />
           </label>
         </div>
 
         {(level !== "campaign" && (campaigns.size > 0 || groups.size > 0)) || removedHere > 0 ? (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/[0.06] px-4 py-2 text-[12px] text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/[0.06] px-4 py-2 text-[13.5px] text-muted-foreground">
             {level !== "campaign" && (campaigns.size > 0 || groups.size > 0) ? (
               <p>
                 Doar din {campaigns.size > 0 ? `${campaigns.size === 1 ? "campania bifată" : `${campaigns.size} campanii bifate`}` : ""}
@@ -380,7 +380,7 @@ export function CampaignsScreen({
         ) : null}
 
         {selectedRows.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-3 border-b border-lav/20 bg-lav/[0.06] px-4 py-2.5 text-[12.5px]">
+          <div className="flex flex-wrap items-center gap-3 border-b border-lav/20 bg-lav/[0.06] px-4 py-2.5 text-[14px]">
             <span className="font-medium">{selectedRows.length === 1 ? "Un rând bifat" : `${selectedRows.length} rânduri bifate`}</span>
             {level !== "ad" ? (
               <button type="button" onClick={() => setLevel(level === "campaign" ? "group" : "ad")} className="font-medium text-lav underline underline-offset-4">
@@ -465,12 +465,12 @@ export function CampaignsScreen({
                                 data-open
                                 type="button"
                                 onClick={(event) => openRow(entity, event.currentTarget)}
-                                className="block max-w-full truncate text-left text-[13px] font-medium transition-colors group-hover:text-lav"
+                                className="block max-w-full truncate text-left text-[14.5px] font-medium transition-colors group-hover:text-lav"
                               >
                                 <span className="sr-only">{PLATFORM_LABEL[entity.platform]}: </span>
                                 {entity.name}
                               </button>
-                              {parent ? <p className="truncate text-[11.5px] text-muted-foreground">în {parent}</p> : null}
+                              {parent ? <p className="truncate text-[13px] text-muted-foreground">în {parent}</p> : null}
                               {entity.portalCampaignId ? <Stamp className="mt-1">Creată pe pauză</Stamp> : null}
                             </div>
                           </div>
@@ -507,9 +507,9 @@ export function CampaignsScreen({
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-[#0f0f13] text-[12.5px]">
+                  <tr className="bg-[#0f0f13] text-[14px]">
                     <td className="sticky left-0 z-[1] bg-[#0f0f13] py-3 pl-4 pr-1" />
-                    <th scope="row" className="sticky left-9 z-[1] bg-[#0f0f13] px-3 py-3 text-left text-[12px] font-medium">
+                    <th scope="row" className="sticky left-9 z-[1] bg-[#0f0f13] px-3 py-3 text-left text-[13.5px] font-medium">
                       Total · {rows.length} {rows.length === 1 ? "rând" : "rânduri"}
                     </th>
                     <td className="px-3 py-3" />
@@ -546,15 +546,15 @@ export function CampaignsScreen({
                     <div className="flex items-start gap-2">
                       <ChannelMark platform={entity.platform} size="sm" label={false} className="mt-0.5 shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <button type="button" onClick={(event) => openRow(entity, event.currentTarget)} className="block w-full text-left text-[13px] font-medium leading-snug">
+                        <button type="button" onClick={(event) => openRow(entity, event.currentTarget)} className="block w-full text-left text-[14.5px] font-medium leading-snug">
                           <span className="sr-only">{PLATFORM_LABEL[entity.platform]}: </span>
                           {entity.name}
                         </button>
-                        {parent ? <p className="truncate text-[11.5px] text-muted-foreground">în {parent}</p> : null}
+                        {parent ? <p className="truncate text-[13px] text-muted-foreground">în {parent}</p> : null}
                       </div>
                       <StatusPill status={entity.status} detail={entity.statusDetail} />
                     </div>
-                    <dl className="mt-2.5 grid grid-cols-3 gap-2 text-[12px]">
+                    <dl className="mt-2.5 grid grid-cols-3 gap-2 text-[13.5px]">
                       <div>
                         <dt className="text-muted-foreground">Cheltuit</dt>
                         <dd className="pu-num font-medium">{formatAmount(f.spend, entity.currency ?? "")}</dd>
@@ -569,7 +569,7 @@ export function CampaignsScreen({
                       </div>
                     </dl>
                     {showCalls && calls[entity.id]?.total ? (
-                      <p className="mt-1.5 text-[12px] text-foreground/85">
+                      <p className="mt-1.5 text-[13.5px] text-foreground/85">
                         <span className="text-muted-foreground">Apeluri notate:</span> {calls[entity.id].total} · {callBreakdown(calls[entity.id])}
                       </p>
                     ) : null}

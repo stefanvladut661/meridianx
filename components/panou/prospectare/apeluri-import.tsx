@@ -103,8 +103,8 @@ function optiuni(grupe: GrupaRezervaUi[], f: Filtre, dim: Dimensiune): { value: 
 }
 
 const CAMP_ALEGERE =
-  "h-11 w-full rounded-lg border border-white/[0.1] bg-white/[0.04] text-base text-foreground outline-none transition-colors hover:bg-white/[0.07] focus:border-lav/50 sm:h-8 sm:text-[12.5px]";
-const ETICHETA = "mb-1 block text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground";
+  "h-11 w-full rounded-lg border border-white/[0.1] bg-white/[0.04] text-base text-foreground outline-none transition-colors hover:bg-white/[0.07] focus:border-lav/50 sm:h-8 sm:text-[14px]";
+const ETICHETA = "mb-1 block text-[12px] uppercase tracking-[0.14em] text-muted-foreground";
 
 /** SoftSelect din kit, cu ținta de 44 px și textul de 16 px pe telefon. */
 function Alegere({
@@ -254,11 +254,11 @@ export function PanouRezerva({
           className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-[22px] px-4 py-3 text-left"
         >
           <div className="min-w-0">
-            <p className="flex items-center gap-2 text-[14px] font-semibold sm:text-[13px]">
+            <p className="flex items-center gap-2 text-[15px] font-semibold sm:text-[14.5px]">
               <CloudDownload className="h-4 w-4 shrink-0 text-lav" aria-hidden="true" />
               Importă pentru azi
             </p>
-            <p className="mt-0.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">{subtitlu}</p>
+            <p className="mt-0.5 text-[14px] text-muted-foreground sm:text-[13px]">{subtitlu}</p>
           </div>
           <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", deschis && "rotate-180")} aria-hidden="true" />
         </button>
@@ -285,7 +285,7 @@ export function PanouRezerva({
             ) : null}
 
             <div>
-              <p id={`${regiune}-cate`} className="mb-1.5 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+              <p id={`${regiune}-cate`} className="mb-1.5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
                 Câte firme
               </p>
               <div role="group" aria-labelledby={`${regiune}-cate`} className="flex flex-wrap items-center gap-1.5">
@@ -300,7 +300,7 @@ export function PanouRezerva({
                       setLiber("");
                     }}
                     className={cn(
-                      "pu-num h-11 min-w-[52px] rounded-lg border px-2.5 text-[14px] transition-colors sm:h-auto sm:min-w-[46px] sm:py-1 sm:text-[12.5px]",
+                      "pu-num h-11 min-w-[52px] rounded-lg border px-2.5 text-[15px] transition-colors sm:h-auto sm:min-w-[46px] sm:py-1 sm:text-[14px]",
                       !liber && cantitate === c ? "border-lav bg-lav/10 text-lav" : "border-white/[0.1] text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -313,10 +313,10 @@ export function PanouRezerva({
                   placeholder="alt număr"
                   inputMode="numeric"
                   aria-label="Număr liber de firme"
-                  className="h-11 w-28 text-base sm:h-8 sm:w-24 sm:text-[12.5px]"
+                  className="h-11 w-28 text-base sm:h-8 sm:w-24 sm:text-[14px]"
                 />
               </div>
-              {preaMulte ? <p className="mt-1.5 text-[12px] text-[#FFB0C0]">Cel mult 500 de firme odată.</p> : null}
+              {preaMulte ? <p className="mt-1.5 text-[13.5px] text-[#FFB0C0]">Cel mult 500 de firme odată.</p> : null}
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -349,7 +349,7 @@ export function PanouRezerva({
             </div>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-0">
-              <label className="flex min-h-11 items-center gap-2 text-[13px] sm:min-h-0 sm:text-[12px]">
+              <label className="flex min-h-11 items-center gap-2 text-[14.5px] sm:min-h-0 sm:text-[13.5px]">
                 <input
                   type="checkbox"
                   checked={filtre.doarMobil}
@@ -358,12 +358,12 @@ export function PanouRezerva({
                 />
                 doar mobil
               </label>
-              <label className="flex min-h-11 items-center gap-2 text-[13px] text-muted-foreground sm:min-h-0 sm:text-[12px]" title="Importul ia doar firme cu site gata și link demo verificat">
+              <label className="flex min-h-11 items-center gap-2 text-[14.5px] text-muted-foreground sm:min-h-0 sm:text-[13.5px]" title="Importul ia doar firme cu site gata și link demo verificat">
                 <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
                 doar cu site gata și publicat
               </label>
               <label
-                className="flex min-h-11 items-center gap-2 text-[13px] text-muted-foreground sm:min-h-0 sm:text-[12px]"
+                className="flex min-h-11 items-center gap-2 text-[14.5px] text-muted-foreground sm:min-h-0 sm:text-[13.5px]"
                 title="Cele care au primit email sau WhatsApp nu intră, decât cu apel permis din fișă; nici cele programate pe alt canal, până la 00:00"
               >
                 <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
@@ -373,7 +373,7 @@ export function PanouRezerva({
                 <button
                   type="button"
                   onClick={() => setFiltre(FARA_FILTRE)}
-                  className="min-h-11 rounded-sm text-[13px] text-muted-foreground underline underline-offset-2 hover:text-foreground sm:min-h-0 sm:text-[12px]"
+                  className="min-h-11 rounded-sm text-[14.5px] text-muted-foreground underline underline-offset-2 hover:text-foreground sm:min-h-0 sm:text-[13.5px]"
                 >
                   Șterge filtrele
                 </button>
@@ -381,7 +381,7 @@ export function PanouRezerva({
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
-              <p className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]" aria-live="polite">
+              <p className="flex items-center gap-1.5 text-[14px] text-muted-foreground sm:text-[13px]" aria-live="polite">
                 <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 {seNumara
                   ? "Număr firmele din rezervă…"
@@ -409,7 +409,7 @@ export function PanouRezerva({
                 )}
               </Btn>
             </div>
-            <div className="space-y-1 text-[12px] leading-relaxed text-muted-foreground sm:text-[11px]">
+            <div className="space-y-1 text-[13.5px] leading-relaxed text-muted-foreground sm:text-[12.5px]">
               <p>
                 Intră firmele cu site gata și publicat, fără niciun contact și neprogramate azi pe email sau WhatsApp, plus cele cu apel permis din fișă. Cele mai vechi
                 site-uri primele, nu scorul. Rămân pe telefon până la 00:00; atunci cele nesunate se întorc în distribuție.

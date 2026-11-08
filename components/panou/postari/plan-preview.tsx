@@ -44,13 +44,13 @@ function PostCard({ post, fus }: { post: PreviewPost; fus: string }) {
         <ClipTile platform={platform} durationMs={post.clip?.durationMs ?? null} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className="pu-num text-[15px]">{post.ora ? zonedParts(new Date(post.ora), fus).time : "fără oră"}</span>
-            <span className="text-[10.5px] text-muted-foreground">
+            <span className="pu-num text-[16px]">{post.ora ? zonedParts(new Date(post.ora), fus).time : "fără oră"}</span>
+            <span className="text-[12px] text-muted-foreground">
               {post.sursaOra === "slot" ? "slot" : post.sursaOra === "fixa" ? "oră fixă" : ""} · postarea {post.index + 1}
             </span>
           </div>
-          <p className="mt-0.5 break-all font-mono text-[11.5px]">{post.fisier}</p>
-          <p className="text-[10.5px] text-muted-foreground">{post.clip?.summary ?? (post.fileId ? "necitit încă" : "nu e în folder")}</p>
+          <p className="mt-0.5 break-all font-mono text-[13px]">{post.fisier}</p>
+          <p className="text-[12px] text-muted-foreground">{post.clip?.summary ?? (post.fileId ? "necitit încă" : "nu e în folder")}</p>
           <div className="mt-2">
             <PlatformPills post={post} />
           </div>
@@ -59,16 +59,16 @@ function PostCard({ post, fus }: { post: PreviewPost; fus: string }) {
 
       {post.caption ? (
         <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
-          <HashtagText text={post.caption} className="text-[13px] leading-relaxed" />
+          <HashtagText text={post.caption} className="text-[14.5px] leading-relaxed" />
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <ProgressBar value={(post.stats.chars / CAPTION_LIMIT) * 100} tone={post.stats.chars > CAPTION_LIMIT ? "rose" : "lav"} className="max-w-[160px]" />
-            <span className="text-[10.5px] text-muted-foreground">
+            <span className="text-[12px] text-muted-foreground">
               {post.stats.chars} / {CAPTION_LIMIT} caractere · {post.stats.hashtags} {post.stats.hashtags === 1 ? "hashtag" : "hashtag-uri"}
             </span>
           </div>
         </div>
       ) : (
-        <p className="mt-3 text-[11.5px] text-muted-foreground">Fără descriere în plan.</p>
+        <p className="mt-3 text-[13px] text-muted-foreground">Fără descriere în plan.</p>
       )}
 
       <IssueList issues={post.issues} className="mt-2.5" />
@@ -99,12 +99,12 @@ export function PlanPreview({ plan, action }: { plan: VerifiedPlan; action: Reac
       <Card className="py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[13px] font-medium">{plan.nume ? `„${plan.nume}”` : "Plan fără nume"}</p>
-            <p className="mt-1 text-[11.5px] text-muted-foreground">
+            <p className="text-[14.5px] font-medium">{plan.nume ? `„${plan.nume}”` : "Plan fără nume"}</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
               {summary.posts} {summary.posts === 1 ? "postare" : "postări"} · {summary.instagram} pe Instagram · {summary.tiktok} pe TikTok
               {summary.first ? ` · ${momentLabel(summary.first, plan.fus)}${summary.last && summary.last !== summary.first ? ` – ${momentLabel(summary.last, plan.fus)}` : ""}` : ""}
             </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
+            <p className="mt-0.5 text-[12.5px] text-muted-foreground">
               {plan.folder ? (
                 <a href={plan.folder.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline-offset-2 hover:text-foreground hover:underline">
                   {plan.folder.path} <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -136,7 +136,7 @@ export function PlanPreview({ plan, action }: { plan: VerifiedPlan; action: Reac
 
       {[...groups.entries()].map(([day, posts]) => (
         <section key={day} aria-label={day === "fără oră" ? "Fără oră" : dayLabel(day, true)}>
-          <h3 className="flex items-center gap-2 text-[12.5px] font-medium">
+          <h3 className="flex items-center gap-2 text-[14px] font-medium">
             {day === "fără oră" ? "Fără oră" : dayLabel(day, true)}
             <Pill tone="neutral">{posts.length}</Pill>
           </h3>

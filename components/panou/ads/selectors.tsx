@@ -89,7 +89,7 @@ export function AdsSelectors({
               value={client?.id ?? ""}
               disabled={pending}
               onChange={(event) => choose({ clientId: event.target.value })}
-              className="h-8 w-full appearance-none truncate rounded-lg border border-white/[0.1] bg-white/[0.04] pl-2.5 pr-7 text-[12.5px] text-foreground outline-none transition-colors hover:bg-white/[0.07] focus:border-lav/50 disabled:opacity-50"
+              className="h-8 w-full appearance-none truncate rounded-lg border border-white/[0.1] bg-white/[0.04] pl-2.5 pr-7 text-[14px] text-foreground outline-none transition-colors hover:bg-white/[0.07] focus:border-lav/50 disabled:opacity-50"
             >
               {(["clienti", "agentie"] as const).map((owner) => {
                 const group = clients.filter((item) => item.owner === owner);
@@ -109,7 +109,7 @@ export function AdsSelectors({
           </div>
         </div>
       ) : (
-        <Link href="/admin/ads/clienti" className="whitespace-nowrap text-[12.5px] font-medium text-lav underline underline-offset-4">
+        <Link href="/admin/ads/clienti" className="whitespace-nowrap text-[14px] font-medium text-lav underline underline-offset-4">
           Adaugă primul client
         </Link>
       )}
@@ -135,7 +135,7 @@ export function AdsSelectors({
         options={PERIODS.map((period) => ({ value: period, label: PERIOD_SHORT[period] }))}
       />
       {failure ? (
-        <span role="alert" className={cn("max-w-[14rem] truncate text-[11.5px] text-rose")} title={failure}>
+        <span role="alert" className={cn("max-w-[14rem] truncate text-[13px] text-rose")} title={failure}>
           {failure}
         </span>
       ) : null}

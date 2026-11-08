@@ -180,7 +180,7 @@ export function ActivitateFeed({
   gol?: string;
 }) {
   if (!activitate.length) {
-    return <p className="py-4 text-[12.5px] text-muted-foreground">{gol}</p>;
+    return <p className="py-4 text-[14px] text-muted-foreground">{gol}</p>;
   }
 
   return (
@@ -196,14 +196,14 @@ export function ActivitateFeed({
               <Icon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="break-words text-[12.5px] leading-snug">
+              <p className="break-words text-[14px] leading-snug">
                 <Link href={linkFirma(a.firma.id)} className="rounded-sm font-medium underline-offset-2 hover:underline">
                   <span className="pu-num text-muted-foreground">#{a.firma.nr}</span> {a.firma.nume}
                 </Link>
                 <span className="text-foreground/80"> — {ce}</span>
               </p>
-              {amanunt ? <p className="mt-0.5 line-clamp-2 break-words text-[11.5px] leading-relaxed text-muted-foreground">{amanunt}</p> : null}
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+              {amanunt ? <p className="mt-0.5 line-clamp-2 break-words text-[13px] leading-relaxed text-muted-foreground">{amanunt}</p> : null}
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12.5px] text-muted-foreground">
                 <span className="font-medium text-foreground/70">{a.autor}</span>
                 <span aria-hidden="true">·</span>
                 <time dateTime={a.la} title={dateTimeRo(a.la)}>

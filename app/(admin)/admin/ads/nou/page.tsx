@@ -41,7 +41,7 @@ export default async function NewPlanPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link href="/admin/ads/planuri" className="text-[11.5px] text-muted-foreground hover:text-foreground">
+        <Link href="/admin/ads/planuri" className="text-[13px] text-muted-foreground hover:text-foreground">
           ← Planuri
         </Link>
         <h1 className={`mt-2 ${PAGE_TITLE}`}>Plan nou</h1>

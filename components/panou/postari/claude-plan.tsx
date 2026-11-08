@@ -19,7 +19,7 @@ type WriteInput = { folder: string; fisiere: string[]; indicatii: string; deja: 
 /** Câte clipuri scrie Claude într-o cerere (aceeași valoare ca pe server: `CLAUDE_BATCH`). */
 const BATCH = 5;
 
-const labelClass = "text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground";
+const labelClass = "text-[12px] uppercase tracking-[0.12em] text-muted-foreground";
 
 function hasDraft(): boolean {
   try {
@@ -158,11 +158,11 @@ export function ClaudePlan({
           <fieldset className="space-y-2">
             <legend className={labelClass}>Platformele</legend>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
-              <label className="inline-flex min-h-8 items-center gap-2 text-[12.5px]">
+              <label className="inline-flex min-h-8 items-center gap-2 text-[14px]">
                 <input type="checkbox" checked={instagram} onChange={(event) => setInstagram(event.currentTarget.checked)} className="h-4 w-4 accent-[#C6B5FF]" />
                 Instagram
               </label>
-              <label className="inline-flex min-h-8 items-center gap-2 text-[12.5px]">
+              <label className="inline-flex min-h-8 items-center gap-2 text-[14px]">
                 <input type="checkbox" checked={tiktok} onChange={(event) => setTiktok(event.currentTarget.checked)} className="h-4 w-4 accent-[#C6B5FF]" />
                 TikTok, în ciorne
               </label>
@@ -198,12 +198,12 @@ export function ClaudePlan({
             <label className="block">
               <span className={labelClass}>Sloturile încep din</span>
               <TextInput type="date" className="mt-1" value={start} aria-invalid={startOk ? undefined : true} onChange={(event) => setStart(event.target.value)} />
-              {startOk ? null : <span className="mt-1 block text-[11px] text-[#FFC2CE]">Alege o zi.</span>}
+              {startOk ? null : <span className="mt-1 block text-[12.5px] text-[#FFC2CE]">Alege o zi.</span>}
             </label>
             <label className="block">
               <span className={labelClass}>Orele sloturilor</span>
               <TextInput className="mt-1" value={ore} aria-invalid={hoursOk ? undefined : true} onChange={(event) => setOre(event.target.value)} />
-              <span className={cn("mt-1 block text-[10.5px]", hoursOk ? "text-muted-foreground" : "text-[#FFC2CE]")}>
+              <span className={cn("mt-1 block text-[12px]", hoursOk ? "text-muted-foreground" : "text-[#FFC2CE]")}>
                 {hoursOk ? `În fusul ${defaults.fus}. Postările iau sloturile pe rând, în ordinea din manifest.` : "Scrie orele ca „12:30, 19:00”."}
               </span>
             </label>
@@ -218,7 +218,7 @@ export function ClaudePlan({
               maxLength={2000}
               className={inputClass("mt-1 h-auto py-2 leading-relaxed")}
             />
-            <span className="mt-1 block text-[10.5px] text-muted-foreground">De exemplu: oferta lunii, orașul, publicul, un cuvânt de evitat. Claude nu inventează prețuri, cifre sau clienți.</span>
+            <span className="mt-1 block text-[12px] text-muted-foreground">De exemplu: oferta lunii, orașul, publicul, un cuvânt de evitat. Claude nu inventează prețuri, cifre sau clienți.</span>
           </label>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -234,11 +234,11 @@ export function ClaudePlan({
                 Deschide în editor ce s-a scris
               </Btn>
             ) : null}
-            <p role="status" aria-live="polite" className={cn("text-[11.5px]", error ? "text-[#FFC2CE]" : "text-muted-foreground")}>
+            <p role="status" aria-live="polite" className={cn("text-[13px]", error ? "text-[#FFC2CE]" : "text-muted-foreground")}>
               {running ? `Descrieri scrise: ${written.length} din ${clips.length}.` : error ? error : platforms.length === 0 ? "Alege cel puțin o platformă." : null}
             </p>
           </div>
-          {draftExists && !running ? <p className="text-[11px] text-muted-foreground">În editorul de la „Plan nou” e deja o ciornă. Planul scris aici o înlocuiește.</p> : null}
+          {draftExists && !running ? <p className="text-[12.5px] text-muted-foreground">În editorul de la „Plan nou” e deja o ciornă. Planul scris aici o înlocuiește.</p> : null}
         </div>
       )}
     </Card>

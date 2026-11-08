@@ -199,7 +199,7 @@ export function AccountView({
               {step ? "Se schimbă…" : "Schimbă parola"}
             </Btn>
           </form>
-          <p className="mt-2 text-[10.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
             {email ? `${email} · ` : ""}Din parola master ies cheile tale; datele și codul de recuperare rămân aceleași. Nu se resetează prin email: dacă o uiți, singura cale e codul de recuperare.
           </p>
         </Card>
@@ -217,15 +217,15 @@ export function AccountView({
             }
           />
           <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3" aria-busy={!status}>
-            <div className="flex items-center justify-between text-[12px]">
+            <div className="flex items-center justify-between text-[13.5px]">
               <span className="text-muted-foreground">Cheia activă</span>
               <span className="font-mono">{status ? (status.current ? `cheia ${rotations + 1}` : "cheia originală") : "…"}</span>
             </div>
-            <div className="mt-1.5 flex items-center justify-between gap-3 text-[12px]">
+            <div className="mt-1.5 flex items-center justify-between gap-3 text-[13.5px]">
               <span className="shrink-0 text-muted-foreground">Rotită</span>
               <span className="truncate font-mono">{status ? (status.current ? `${dateRo(status.current.createdAt)} · ${emailOf(status.current.createdBy)}` : "nicio rotație") : "…"}</span>
             </div>
-            <div className="mt-1.5 flex items-center justify-between text-[12px]">
+            <div className="mt-1.5 flex items-center justify-between text-[13.5px]">
               <span className="text-muted-foreground">Rânduri criptate cu chei vechi</span>
               <span className="pu-num">{stale === null ? "…" : stale}</span>
             </div>
@@ -241,8 +241,8 @@ export function AccountView({
             <ul className="mt-3 divide-y divide-white/[0.05] rounded-xl border border-white/[0.07]">
               {status.missing.map(({ member, dekIds }) => (
                 <li key={member.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-                  <span className="min-w-0 truncate text-[12px]">{member.email}</span>
-                  <span className="text-[10.5px] text-muted-foreground">{countNoun(dekIds.length, "cheie lipsă", "chei lipsă")}</span>
+                  <span className="min-w-0 truncate text-[13.5px]">{member.email}</span>
+                  <span className="text-[12px] text-muted-foreground">{countNoun(dekIds.length, "cheie lipsă", "chei lipsă")}</span>
                 </li>
               ))}
             </ul>
@@ -265,13 +265,13 @@ export function AccountView({
           {reencrypt.state === "running" ? (
             <div className="mt-3" role="status">
               <ProgressBar value={(reencrypt.done / (reencrypt.total || 1)) * 100} tone="mint" />
-              <p className="pu-num mt-1.5 text-[10.5px] text-muted-foreground">
+              <p className="pu-num mt-1.5 text-[12px] text-muted-foreground">
                 {reencrypt.done} din {reencrypt.total} rânduri re-criptate
               </p>
             </div>
           ) : null}
           {reencrypt.state === "done" ? (
-            <p className="mt-3 flex items-start gap-1.5 text-[10.5px] text-muted-foreground" role="status">
+            <p className="mt-3 flex items-start gap-1.5 text-[12px] text-muted-foreground" role="status">
               <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" />
               {countNoun(reencrypt.done, "rând re-criptat", "rânduri re-criptate")}
               {reencrypt.skipped ? ` · ${countNoun(reencrypt.skipped, "rând sărit", "rânduri sărite")} (modificate între timp sau ilizibile): reia re-criptarea` : " · totul e pe cheia nouă"}.
@@ -286,7 +286,7 @@ export function AccountView({
         <Card className="lg:col-span-2">
           <SectionTitle title="Sesiune" hint="cheia stă doar în memoria acestui tab" />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[11.5px] leading-relaxed text-muted-foreground">Blocare automată după 15 minute fără activitate. La blocare, cheia dispare, iar clipboardul este golit.</p>
+            <p className="text-[13px] leading-relaxed text-muted-foreground">Blocare automată după 15 minute fără activitate. La blocare, cheia dispare, iar clipboardul este golit.</p>
             <Btn size="sm" variant="danger" icon={Lock} onClick={onLock}>
               Blochează acum
             </Btn>

@@ -99,7 +99,7 @@ export function EmailGrafic({ zile }: { zile: ZiCasute[] }) {
 
   if (gol) {
     return (
-      <p className="rounded-xl border border-dashed border-white/[0.09] px-4 py-10 text-center text-[12.5px] leading-relaxed text-muted-foreground">
+      <p className="rounded-xl border border-dashed border-white/[0.09] px-4 py-10 text-center text-[14px] leading-relaxed text-muted-foreground">
         Niciun email trimis în ultimele 14 zile. Graficul se umple după primele trimiteri ale roboților.
       </p>
     );
@@ -156,7 +156,7 @@ export function EmailGrafic({ zile }: { zile: ZiCasute[] }) {
 
   return (
     <figure className="min-w-0">
-      <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-muted-foreground">
+      <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
         <span id={`${gid}-t`} className="sr-only">
           Emailuri trimise și răspunsuri, pe zile, ultimele 14 zile
         </span>
@@ -240,15 +240,15 @@ export function EmailGrafic({ zile }: { zile: ZiCasute[] }) {
             className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/[0.1] bg-[#08080B] px-3 py-2 shadow-[0_16px_40px_-16px_rgba(0,0,0,0.9)]"
             style={{ left: Math.min(Math.max(xOf(active), 80), width - 80) }}
           >
-            <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">{ziLunga(shown.zi)}</p>
+            <p className="mb-1 font-mono text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">{ziLunga(shown.zi)}</p>
             {SERII.map((s) => (
-              <p key={s.key} className="pu-num flex items-center gap-2 text-[12.5px] text-foreground">
+              <p key={s.key} className="pu-num flex items-center gap-2 text-[14px] text-foreground">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.color }} aria-hidden="true" />
                 <span className="text-muted-foreground">{s.name}</span>
                 <span className="ml-auto pl-3 font-medium">{num(shown[s.key])}</span>
               </p>
             ))}
-            <p className="pu-num flex items-center gap-2 text-[12.5px] text-foreground">
+            <p className="pu-num flex items-center gap-2 text-[14px] text-foreground">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: BOUNCE }} aria-hidden="true" />
               <span className="text-muted-foreground">Bounce</span>
               <span className="ml-auto pl-3 font-medium">{num(shown.bounce)}</span>

@@ -34,7 +34,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
       <div className="space-y-4">
         <div>
           <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Apeluri</h1>
-          <p className="mt-2 max-w-2xl text-[12.5px] text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
             Apelurile venite de pe reclame, notate de mână. Platformele știu doar că cineva a apăsat „Sună”; ce a ieșit din apel știi tu.
           </p>
         </div>

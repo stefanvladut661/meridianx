@@ -38,13 +38,13 @@ export function UnfinishedJobs({ jobs, continueJob }: { jobs: UnfinishedJob[]; c
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <ChannelMark platform={view.platform} size="sm" />
-                    <h3 className="truncate text-[14px] font-medium">{planName}</h3>
+                    <h3 className="truncate text-[15px] font-medium">{planName}</h3>
                   </div>
-                  <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                  <p className="mt-1.5 text-[13px] text-muted-foreground">
                     {view.stepsDone} din {view.stepsTotal} pași · pornită {dateTimeRo(createdAt)}
                     {createdByEmail ? ` · ${createdByEmail}` : ""}
                   </p>
-                  <p className={view.status === "failed" ? "mt-1 text-[12px] text-rose" : "mt-1 text-[12px] text-foreground/80"}>
+                  <p className={view.status === "failed" ? "mt-1 text-[13.5px] text-rose" : "mt-1 text-[13.5px] text-foreground/80"}>
                     {view.status === "failed" ? `Oprită: ${view.message ?? "eroare"}` : (view.message ?? "Neterminată — fereastra s-a închis în timpul creării.")}
                   </p>
                 </div>
@@ -71,7 +71,7 @@ export function UnfinishedJobs({ jobs, continueJob }: { jobs: UnfinishedJob[]; c
                 />
               ) : null}
               {result ? (
-                <p role="status" className={result.ok ? "mt-2 text-[12.5px] text-mint" : "mt-2 text-[12.5px] text-rose"}>
+                <p role="status" className={result.ok ? "mt-2 text-[14px] text-mint" : "mt-2 text-[14px] text-rose"}>
                   {result.ok ? "Creată, pe pauză. O găsești în Campanii după următoarea actualizare." : result.message}
                 </p>
               ) : null}

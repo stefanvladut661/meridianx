@@ -53,7 +53,7 @@ export function CautariCampaniiLista({ items, period }: { items: CautariCampanie
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-[14px] font-medium [overflow-wrap:anywhere]">{campaign.name}</h2>
+                  <h2 className="text-[15px] font-medium [overflow-wrap:anywhere]">{campaign.name}</h2>
                   <span title={campaign.statusDetail ?? undefined}>
                     <Pill tone={TONE[campaign.status]} dot>
                       {STATUS_LABEL[campaign.status]}
@@ -61,7 +61,7 @@ export function CautariCampaniiLista({ items, period }: { items: CautariCampanie
                   </span>
                   {campaign.fromPortal && campaign.status === "paused" ? <Stamp /> : null}
                 </div>
-                <p className="mt-1 text-[11.5px] text-muted-foreground">
+                <p className="mt-1 text-[13px] text-muted-foreground">
                   {[
                     campaign.client,
                     campaign.bidding ? `Căutare · ${campaign.bidding}` : "Căutare",
@@ -71,7 +71,7 @@ export function CautariCampaniiLista({ items, period }: { items: CautariCampanie
                     .filter(Boolean)
                     .join(" · ")}
                 </p>
-                <p className="pu-num mt-1 text-[11.5px] text-muted-foreground/80">
+                <p className="pu-num mt-1 text-[13px] text-muted-foreground/80">
                   {campaign.spend !== null
                     ? `${campaign.spend} cheltuiți · ${num(campaign.clicks)} clicuri · ${period}`
                     : `fără livrare ${period}`}

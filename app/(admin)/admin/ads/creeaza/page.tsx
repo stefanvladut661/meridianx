@@ -36,7 +36,7 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
   const header = (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <Link href="/admin/ads/planuri" className="text-[11.5px] text-muted-foreground hover:text-foreground">
+        <Link href="/admin/ads/planuri" className="text-[13px] text-muted-foreground hover:text-foreground">
           ← Planuri
         </Link>
         <h1 className={`mt-2 ${PAGE_TITLE}`}>Creează ghidat</h1>
@@ -65,7 +65,7 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
               }
             />
           ) : (
-            <p role="alert" className="px-6 py-10 text-center text-[13px] text-rose">
+            <p role="alert" className="px-6 py-10 text-center text-[14.5px] text-rose">
               {clients.message}
             </p>
           )}
@@ -80,7 +80,7 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
     <div className="space-y-4">
       {header}
       {!materials.ok ? (
-        <p role="alert" className="rounded-xl border border-rose/25 bg-rose/[0.07] px-3.5 py-3 text-[12.5px] leading-relaxed text-[#FFC2CE]">
+        <p role="alert" className="rounded-xl border border-rose/25 bg-rose/[0.07] px-3.5 py-3 text-[14px] leading-relaxed text-[#FFC2CE]">
           Materialele nu se pot citi: {materials.message}
         </p>
       ) : null}

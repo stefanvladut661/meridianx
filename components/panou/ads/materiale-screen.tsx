@@ -37,7 +37,7 @@ export interface MaterialeActions {
 }
 
 const UNREACHABLE = "Serverul n-a răspuns. Încearcă din nou.";
-const LABEL = "text-[11px] uppercase tracking-[0.12em] text-muted-foreground";
+const LABEL = "text-[12.5px] uppercase tracking-[0.12em] text-muted-foreground";
 const ACCOUNT_PILL = "border-white/[0.09] bg-white/[0.04] text-foreground/60";
 
 export const megabytes = (bytes: number): string => new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 1 }).format(bytes / 1024 / 1024);
@@ -148,8 +148,8 @@ function UploadModalBody({
         onStart({ file: draft.file, name: name.trim(), clientId: clientId || null, info: info ?? { duration: null, width: null, height: null }, prepared: null, uploaded: false, replaces: draft.replaces });
       }}
     >
-      <h2 className="text-[16px] font-semibold">{draft.replaces ? "Reia urcarea" : "Urcă un video"}</h2>
-      <p className="text-[12px] text-muted-foreground">
+      <h2 className="text-[17px] font-semibold">{draft.replaces ? "Reia urcarea" : "Urcă un video"}</h2>
+      <p className="text-[13.5px] text-muted-foreground">
         MP4 sau MOV, cel mult {megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Îl urci o dată; ajunge în contul de reclame abia când îl alegi într-o campanie.
       </p>
 
@@ -159,8 +159,8 @@ function UploadModalBody({
             <Film className="h-4 w-4 text-lav" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-medium">{draft.file.name}</p>
-            <p className="text-[11px] text-muted-foreground">{facts ? facts.join(" · ") || "Browserul n-a putut citi durata și formatul; se urcă oricum." : "Se citește durata și formatul…"}</p>
+            <p className="truncate text-[14.5px] font-medium">{draft.file.name}</p>
+            <p className="text-[12.5px] text-muted-foreground">{facts ? facts.join(" · ") || "Browserul n-a putut citi durata și formatul; se urcă oricum." : "Se citește durata și formatul…"}</p>
           </div>
         </div>
         <label className="block">
@@ -218,7 +218,7 @@ function MaterialRowItem({
   const thumb = (
     <>
       <Play className="h-3.5 w-3.5 text-white/40" aria-hidden="true" />
-      {material.durationSeconds ? <span className="absolute bottom-0.5 right-1 font-mono text-[8.5px] text-white/60">{durationLabel(material.durationSeconds)}</span> : null}
+      {material.durationSeconds ? <span className="absolute bottom-0.5 right-1 font-mono text-[10px] text-white/60">{durationLabel(material.durationSeconds)}</span> : null}
     </>
   );
   const thumbClass = cn(
@@ -238,8 +238,8 @@ function MaterialRowItem({
         </span>
       )}
       <div className="min-w-0 flex-1 basis-[12rem]">
-        <p className="truncate text-[13px]">{material.name}</p>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="truncate text-[14.5px]">{material.name}</p>
+        <p className="text-[12.5px] text-muted-foreground">
           {facts.length ? `${facts.join(" · ")} · ` : ""}
           {clientName ?? "al agenției"} · {dateTimeRo(material.createdAt)}
         </p>
@@ -249,12 +249,12 @@ function MaterialRowItem({
               const pill = uploadPill(upload);
               return (
                 <Pill key={`${upload.platform}|${upload.adAccount}`} tone="neutral" className={pill.tone}>
-                  {PLATFORM_LABEL[upload.platform]} · <span className="font-mono text-[10.5px]">{upload.adAccount}</span> · {pill.state}
+                  {PLATFORM_LABEL[upload.platform]} · <span className="font-mono text-[12px]">{upload.adAccount}</span> · {pill.state}
                 </Pill>
               );
             })
           ) : unfinished ? null : (
-            <span className="text-[10.5px] text-muted-foreground/70">netrimis încă în niciun cont</span>
+            <span className="text-[12px] text-muted-foreground/70">netrimis încă în niciun cont</span>
           )}
         </div>
       </div>
@@ -433,7 +433,7 @@ export function MaterialeScreen({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Materiale</h1>
-          <p className="mt-2 max-w-2xl text-[12.5px] text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
             Biblioteca de video a conturilor. Ce urci aici e ce poți trimite în campanii: le urci o dată și le folosești pe orice canal.
           </p>
         </div>
@@ -480,22 +480,22 @@ export function MaterialeScreen({
               <Film className="h-4 w-4 text-lav" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-medium">{current.name}</p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="truncate text-[14.5px] font-medium">{current.name}</p>
+              <p className="text-[12.5px] text-muted-foreground">
                 {phase.step === "uploading"
                   ? `${megabytes(phase.loaded)} din ${megabytes(phase.total)} MB · ${Math.round(percent)}% urcat`
                   : `${megabytes(current.file.size)} MB · urcare întreruptă`}
               </p>
             </div>
             {phase.step === "uploading" ? (
-              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground" role="status">
+              <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground" role="status">
                 <RefreshCw className="h-3 w-3 animate-spin" aria-hidden="true" /> se urcă
               </span>
             ) : null}
           </div>
           <ProgressBar value={phase.step === "uploading" ? percent : 0} tone={phase.step === "failed" ? "rose" : "lav"} className="mt-3" />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] text-muted-foreground">Nu închide fila. Dacă urcarea se întrerupe, o poți relua cu același fișier.</p>
+            <p className="text-[12.5px] text-muted-foreground">Nu închide fila. Dacă urcarea se întrerupe, o poți relua cu același fișier.</p>
             <div className="flex gap-1.5">
               {phase.step === "uploading" ? (
                 <Btn
@@ -562,7 +562,7 @@ export function MaterialeScreen({
               ))}
             </ul>
           ) : null}
-          <div className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-2.5 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-2.5 text-[12.5px] text-muted-foreground">
             <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
             Un video poate fi folosit în oricâte campanii. „Scoate din listă” îl ascunde de aici; din conturile de reclame se șterge doar în platformă.
           </div>
@@ -572,8 +572,8 @@ export function MaterialeScreen({
       {!missing && visible.length === 0 ? (
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-white/[0.12] px-6 py-10 text-center">
           <CheckCircle2 className="mb-3 h-5 w-5 text-mint" aria-hidden="true" />
-          <p className="text-[13px] font-medium">Biblioteca e goală</p>
-          <p className="mt-1 max-w-sm text-[12px] text-muted-foreground">Încarcă primul MP4 vertical. După urcare, îl alegi într-o campanie, în „Creează”, la pasul Reclame.</p>
+          <p className="text-[14.5px] font-medium">Biblioteca e goală</p>
+          <p className="mt-1 max-w-sm text-[13.5px] text-muted-foreground">Încarcă primul MP4 vertical. După urcare, îl alegi într-o campanie, în „Creează”, la pasul Reclame.</p>
         </div>
       ) : null}
 
@@ -596,8 +596,8 @@ export function MaterialeScreen({
       <Modal open={Boolean(preview)} onOpenChange={(open) => !open && setPreview(null)} label={preview ? `Previzualizare: ${preview.name}` : undefined} className="w-[min(44rem,calc(100vw-2rem))]">
         {preview?.previewUrl ? (
           <div>
-            <h2 className="truncate text-[16px] font-semibold">{preview.name}</h2>
-            <p className="text-[12px] text-muted-foreground">Fără sunet și fără pornire singură; primul cadru, cu controale.</p>
+            <h2 className="truncate text-[17px] font-semibold">{preview.name}</h2>
+            <p className="text-[13.5px] text-muted-foreground">Fără sunet și fără pornire singură; primul cadru, cu controale.</p>
             {/* Previzualizare fără sunet, fără pornire singură: primul cadru, cu controale. */}
             <video src={`${preview.previewUrl}#t=0.1`} preload="metadata" muted playsInline controls className="mt-4 max-h-[65dvh] w-full rounded-xl bg-black object-contain" aria-label={`Previzualizare: ${preview.name}`} />
             <div className="mt-4 flex justify-end">
@@ -664,8 +664,8 @@ function RenameBody({ material, rename, onClose, onDone }: { material: MaterialR
         onDone();
       }}
     >
-      <h2 className="text-[16px] font-semibold">Redenumește materialul</h2>
-      <p className="text-[12px] text-muted-foreground">Numele după care îl recunoști în listă. Fișierul din platforme nu se schimbă.</p>
+      <h2 className="text-[17px] font-semibold">Redenumește materialul</h2>
+      <p className="text-[13.5px] text-muted-foreground">Numele după care îl recunoști în listă. Fișierul din platforme nu se schimbă.</p>
       <label className="mt-4 block">
         <span className={LABEL}>Nume</span>
         <input value={name} maxLength={MATERIAL_NAME_MAX} onChange={(event) => setName(event.currentTarget.value)} className={inputClass("mt-1.5")} autoFocus />

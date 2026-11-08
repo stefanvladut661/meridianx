@@ -56,10 +56,10 @@ function StopForm({ busy, onCancel, onConfirm }: { busy: boolean; onCancel: () =
         onConfirm(reason);
       }}
     >
-      <h2 className="text-[16px] font-semibold">Oprești coada?</h2>
-      <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">Postările programate rămân pe loc, dar nu mai pleacă nicio rulare. Bannerul apare pe toate ecranele modulului.</p>
+      <h2 className="text-[17px] font-semibold">Oprești coada?</h2>
+      <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">Postările programate rămân pe loc, dar nu mai pleacă nicio rulare. Bannerul apare pe toate ecranele modulului.</p>
       <label className="mt-4 block">
-        <span className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Motiv (opțional)</span>
+        <span className="text-[12.5px] uppercase tracking-[0.12em] text-muted-foreground">Motiv (opțional)</span>
         <TextInput className="mt-1.5" placeholder="ex. verificăm descrierile înainte de plecare" value={reason} maxLength={300} autoFocus onChange={(event) => setReason(event.target.value)} />
       </label>
       <div className="mt-5 flex justify-end gap-2">
@@ -129,8 +129,8 @@ export function QueueBanner({ reason, by, at, setQueue }: { reason: string | nul
     <div role="alert" className="mb-5 flex flex-col gap-3 rounded-2xl border border-rose/25 bg-rose/[0.08] px-4 py-3.5 sm:flex-row sm:items-center">
       <PauseCircle className="hidden h-4 w-4 shrink-0 text-rose sm:block" aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium text-[#FFD6DE]">Coada de postări este oprită</p>
-        <p className="text-[11.5px] text-[#FFC2CE]/80">
+        <p className="text-[14.5px] font-medium text-[#FFD6DE]">Coada de postări este oprită</p>
+        <p className="text-[13px] text-[#FFC2CE]/80">
           {reason || "Fără motiv notat"}
           {by ? ` · oprită de ${by}` : ""}
           {at ? `, ${at}` : ""}. Nimic nu pleacă până nu o pornești.

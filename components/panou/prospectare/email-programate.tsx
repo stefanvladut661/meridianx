@@ -74,11 +74,11 @@ export function randuriProgramate(
 
 /** Limita zilei, cu sursa ei: „plafon” (fără limită proprie) sau „oprită”. */
 function Limita({ r }: { r: RandProgramate }) {
-  if (!r.activa) return <span className="text-[11.5px] text-muted-foreground">oprită · 0</span>;
+  if (!r.activa) return <span className="text-[13px] text-muted-foreground">oprită · 0</span>;
   return (
-    <span className="pu-num text-[12.5px]">
+    <span className="pu-num text-[14px]">
       {r.limita === null ? "—" : num(r.limita)}
-      {r.proprie === null ? <span className="ml-1 text-[11px] text-muted-foreground">plafon</span> : null}
+      {r.proprie === null ? <span className="ml-1 text-[12.5px] text-muted-foreground">plafon</span> : null}
     </span>
   );
 }
@@ -95,12 +95,12 @@ function Bara({ r }: { r: RandProgramate }) {
 }
 
 const TH = "py-2 pr-3 font-medium";
-const TD_NUM = "pu-num py-2.5 pr-3 text-[12.5px]";
+const TD_NUM = "pu-num py-2.5 pr-3 text-[14px]";
 
 export function EmailProgramate({ randuri, total }: { randuri: RandProgramate[]; total: TotalProgramate }) {
   if (randuri.length === 0) {
     return (
-      <p className="py-6 text-center text-[12.5px] text-muted-foreground">
+      <p className="py-6 text-center text-[14px] text-muted-foreground">
         Nicio căsuță conectată, deci nimic programat. O căsuță apare după primul email trimis de pe ea; apoi distribuția îi pune firme la 00:00.
       </p>
     );
@@ -112,7 +112,7 @@ export function EmailProgramate({ randuri, total }: { randuri: RandProgramate[];
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">Emailuri programate azi și mâine, pe fiecare căsuță</caption>
           <thead>
-            <tr className="border-b border-border text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+            <tr className="border-b border-border text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
               <th scope="col" className={TH}>
                 Căsuță
               </th>
@@ -137,8 +137,8 @@ export function EmailProgramate({ randuri, total }: { randuri: RandProgramate[];
             {randuri.map((r) => (
               <tr key={r.adresa} className="border-b border-border/70">
                 <th scope="row" className="py-2.5 pr-3 text-left font-normal">
-                  <p className="break-all text-[12.5px] font-medium">{r.adresa}</p>
-                  <p className="text-[11px] text-muted-foreground">{r.domeniu}</p>
+                  <p className="break-all text-[14px] font-medium">{r.adresa}</p>
+                  <p className="text-[12.5px] text-muted-foreground">{r.domeniu}</p>
                 </th>
                 <td className="py-2.5 pr-3">
                   <Limita r={r} />
@@ -149,12 +149,12 @@ export function EmailProgramate({ randuri, total }: { randuri: RandProgramate[];
                 </td>
                 <td className={cn(TD_NUM, r.trimise > 0 ? "text-mint" : "text-muted-foreground")}>{num(r.trimise)}</td>
                 <td className={cn(TD_NUM, r.ramase > 0 ? undefined : "text-muted-foreground")}>{num(r.ramase)}</td>
-                <td className={cn("pu-num py-2.5 text-[12.5px]", r.maine > 0 ? undefined : "text-muted-foreground")}>{num(r.maine)}</td>
+                <td className={cn("pu-num py-2.5 text-[14px]", r.maine > 0 ? undefined : "text-muted-foreground")}>{num(r.maine)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="text-[12.5px]">
+            <tr className="text-[14px]">
               <th scope="row" className="pt-2.5 pr-3 text-left font-medium">
                 Total
               </th>
@@ -173,13 +173,13 @@ export function EmailProgramate({ randuri, total }: { randuri: RandProgramate[];
           <li key={r.adresa} className="rounded-xl border border-border p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="flex items-center gap-1.5 text-[12.5px] font-medium">
+                <p className="flex items-center gap-1.5 text-[14px] font-medium">
                   <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span className="min-w-0 break-all">{r.adresa}</span>
                 </p>
-                <p className="text-[11px] text-muted-foreground">{r.domeniu}</p>
+                <p className="text-[12.5px] text-muted-foreground">{r.domeniu}</p>
               </div>
-              <p className="shrink-0 text-right text-[11px] text-muted-foreground">
+              <p className="shrink-0 text-right text-[12.5px] text-muted-foreground">
                 limita <Limita r={r} />
               </p>
             </div>
@@ -191,14 +191,14 @@ export function EmailProgramate({ randuri, total }: { randuri: RandProgramate[];
                 { label: "Mâine", n: r.maine },
               ].map((c) => (
                 <div key={c.label} className="min-w-0 rounded-lg bg-white/[0.03] px-1 py-1.5">
-                  <dt className="truncate text-[10.5px] text-muted-foreground">{c.label}</dt>
-                  <dd className="pu-num text-[14px] font-medium">{num(c.n)}</dd>
+                  <dt className="truncate text-[12px] text-muted-foreground">{c.label}</dt>
+                  <dd className="pu-num text-[15px] font-medium">{num(c.n)}</dd>
                 </div>
               ))}
             </dl>
           </li>
         ))}
-        <li className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-xl border border-border bg-white/[0.03] p-3 text-[12px]">
+        <li className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-xl border border-border bg-white/[0.03] p-3 text-[13.5px]">
           <span className="font-medium">Total</span>
           <span className="pu-num text-muted-foreground">
             azi <span className="font-medium text-foreground">{num(total.azi)}</span> din {total.capacitate === null ? "—" : num(total.capacitate)} · trimise{" "}

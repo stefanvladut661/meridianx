@@ -83,7 +83,7 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
   return (
     <Card>
       <SectionTitle title="Export pentru Google Tag Manager" hint="fișier de import + pașii" />
-      <ol className="mt-3 space-y-2 text-[11.5px] leading-relaxed text-muted-foreground">
+      <ol className="mt-3 space-y-2 text-[13px] leading-relaxed text-muted-foreground">
         <li>1. Alege ce trimit clicul pe telefon și formularul trimis.</li>
         <li>2. Descarcă fișierul JSON de mai jos.</li>
         <li>3. Importă-l în Tag Manager și publică (pașii exacți, mai jos pe pagină).</li>
@@ -107,7 +107,7 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
               onChange={setPhoneId}
               options={[{ value: "", label: "nimic — fără conversie pe telefon" }, ...phoneChoices.map((action) => ({ value: action.id, label: choice(action) }))]}
             />
-            {errorOf("phone") ? <p className="mt-1.5 text-[11.5px] leading-snug text-rose">{errorOf("phone")}</p> : null}
+            {errorOf("phone") ? <p className="mt-1.5 text-[13px] leading-snug text-rose">{errorOf("phone")}</p> : null}
           </div>
           <div>
             <SoftSelect
@@ -116,18 +116,18 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
               onChange={setFormActionId}
               options={[{ value: "", label: "nimic — fără conversie pe formular" }, ...formChoices.map((action) => ({ value: action.id, label: choice(action) }))]}
             />
-            {errorOf("form") ? <p className="mt-1.5 text-[11.5px] leading-snug text-rose">{errorOf("form")}</p> : null}
+            {errorOf("form") ? <p className="mt-1.5 text-[13px] leading-snug text-rose">{errorOf("form")}</p> : null}
           </div>
 
           {form ? (
             <fieldset>
-              <legend className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Cum se recunoaște formularul trimis</legend>
+              <legend className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Cum se recunoaște formularul trimis</legend>
               <div className="mt-2 grid gap-1.5">
                 {(Object.keys(FORM_TRIGGER_LABEL) as Array<FormTrigger["kind"]>).map((kind) => (
                   <label
                     key={kind}
                     className={cn(
-                      "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-[12.5px] transition-colors",
+                      "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-[14px] transition-colors",
                       triggerKind === kind ? "border-lav/30 bg-lav/[0.07] text-foreground" : "border-white/[0.07] text-foreground/80 hover:bg-white/[0.04]"
                     )}
                   >
@@ -187,11 +187,11 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
             </fieldset>
           ) : null}
 
-          <label className="flex items-start gap-2.5 text-[12.5px] leading-snug text-foreground/85">
+          <label className="flex items-start gap-2.5 text-[14px] leading-snug text-foreground/85">
             <input type="checkbox" checked={hasGoogleTag} onChange={(change) => setHasGoogleTag(change.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-lav" />
             <span>
               Site-ul are deja tag-ul Google cu {input.conversionId ? `AW-${input.conversionId}` : "id-ul contului"}
-              <span className="mt-0.5 block text-[11.5px] text-muted-foreground">
+              <span className="mt-0.5 block text-[13px] text-muted-foreground">
                 În cod (gtag.js) sau într-o etichetă GTM. Dacă nu ești sigur, lasă nebifat: importul îl adaugă.
               </span>
             </span>
@@ -199,11 +199,11 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
 
           {built ? (
             <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-3.5 py-3">
-              <p className="text-[12px] font-medium text-[#A7EFC3]">Ce intră în container</p>
+              <p className="text-[13.5px] font-medium text-[#A7EFC3]">Ce intră în container</p>
               <ul className="mt-2.5 space-y-2.5">
                 {built.items.map((item) => (
-                  <li key={`${item.kind}-${item.name}`} className="text-[12px] leading-snug">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{ITEM_KIND_LABEL[item.kind]}</span>
+                  <li key={`${item.kind}-${item.name}`} className="text-[13.5px] leading-snug">
+                    <span className="font-mono text-[11.5px] uppercase tracking-[0.14em] text-muted-foreground">{ITEM_KIND_LABEL[item.kind]}</span>
                     <span className="block [overflow-wrap:anywhere]">{item.name}</span>
                     <span className="block text-muted-foreground">{item.what}</span>
                   </li>
@@ -211,12 +211,12 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
               </ul>
             </div>
           ) : (
-            <p className="text-[12px] leading-snug text-muted-foreground">{check.errors.find((error) => error.field !== "path" || path)?.message ?? "Scrie calea paginii de mulțumire."}</p>
+            <p className="text-[13.5px] leading-snug text-muted-foreground">{check.errors.find((error) => error.field !== "path" || path)?.message ?? "Scrie calea paginii de mulțumire."}</p>
           )}
 
           {check.warnings.length > 0 ? (
             <InlineNote tone="apricot">
-              <ul className="space-y-1.5 text-[12px] leading-snug">
+              <ul className="space-y-1.5 text-[13.5px] leading-snug">
                 {check.warnings.map((warning) => (
                   <li key={warning}>{warning}</li>
                 ))}
@@ -232,16 +232,16 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
               Copiază JSON-ul
             </Btn>
           </div>
-          <p className="text-[10.5px] text-muted-foreground">Conține doar etichetele alese. Nicio cheie de acces.</p>
+          <p className="text-[12px] text-muted-foreground">Conține doar etichetele alese. Nicio cheie de acces.</p>
 
           {ready ? (
             <details onToggle={(toggle) => setShowJson((toggle.target as HTMLDetailsElement).open)} className="rounded-xl border border-white/[0.07]">
-              <summary className="cursor-pointer rounded-xl px-3.5 py-2.5 text-[12px] text-muted-foreground hover:text-foreground">Vezi JSON-ul</summary>
-              {showJson ? <pre className="max-h-72 overflow-auto border-t border-white/[0.06] px-3.5 py-3 font-mono text-[11px] leading-relaxed text-foreground/85">{fileText()}</pre> : null}
+              <summary className="cursor-pointer rounded-xl px-3.5 py-2.5 text-[13.5px] text-muted-foreground hover:text-foreground">Vezi JSON-ul</summary>
+              {showJson ? <pre className="max-h-72 overflow-auto border-t border-white/[0.06] px-3.5 py-3 font-mono text-[12.5px] leading-relaxed text-foreground/85">{fileText()}</pre> : null}
             </details>
           ) : null}
           {phone?.sendTo || form?.sendTo ? (
-            <p className="text-[11.5px] leading-snug text-muted-foreground">
+            <p className="text-[13px] leading-snug text-muted-foreground">
               Etichetele: {[phone?.sendTo ? `telefon ${sendToText(phone.sendTo)}` : null, form?.sendTo ? `formular ${sendToText(form.sendTo)}` : null].filter(Boolean).join(" · ")}
             </p>
           ) : null}

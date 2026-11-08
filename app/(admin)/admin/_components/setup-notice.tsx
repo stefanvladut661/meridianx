@@ -41,7 +41,7 @@ export function SetupNotice() {
     <main className="mx-auto max-w-2xl px-5 py-16 sm:px-8 sm:py-20">
       <div className="flex items-center gap-2.5 text-bone">
         <Mark size={22} />
-        <span className="font-md-display text-[14px] font-semibold tracking-[0.2em]">
+        <span className="font-md-display text-[15px] font-semibold tracking-[0.2em]">
           MERIDIAN
         </span>
       </div>
@@ -50,7 +50,7 @@ export function SetupNotice() {
       <h1 className="display mt-3 text-[2rem] text-bone sm:text-[2.5rem]">
         Panoul e gata. Baza de date, încă nu.
       </h1>
-      <p className="mt-4 text-pretty text-[15px] leading-relaxed text-dim">
+      <p className="mt-4 text-pretty text-[16px] leading-relaxed text-dim">
         Lipsesc variabilele de mediu pentru Supabase, deci nu avem de unde
         citi lead-uri. Cinci pași, o singură dată. La final,
         <code className="mx-1 font-md-mono text-[0.9em] text-bone">/api/health</code>
@@ -63,18 +63,18 @@ export function SetupNotice() {
             key={step.title}
             className="grid grid-cols-[2.75rem_1fr] gap-4 border-b border-hair px-5 py-5 last:border-b-0 sm:px-6"
           >
-            <span className="font-md-mono text-[11px] tabular-nums leading-6 tracking-[0.18em] text-bone/60">
+            <span className="font-md-mono text-[12.5px] tabular-nums leading-6 tracking-[0.18em] text-bone/60">
               {String(index + 1).padStart(2, "0")}
             </span>
             <div className="min-w-0">
-              <h2 className="text-[16px] font-semibold leading-6 tracking-tight text-bone">
+              <h2 className="text-[17px] font-semibold leading-6 tracking-tight text-bone">
                 {step.title}
               </h2>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-dim">
+              <p className="mt-1.5 text-[15px] leading-relaxed text-dim">
                 {step.body}
               </p>
               {step.code ? (
-                <p className="mt-3 overflow-x-auto whitespace-pre-line rounded-panel-sm border border-hair bg-glass px-3 py-2 font-md-mono text-[11.5px] leading-relaxed text-bone/85">
+                <p className="mt-3 overflow-x-auto whitespace-pre-line rounded-panel-sm border border-hair bg-glass px-3 py-2 font-md-mono text-[13px] leading-relaxed text-bone/85">
                   {step.code}
                 </p>
               ) : null}
@@ -83,7 +83,7 @@ export function SetupNotice() {
         ))}
       </ol>
 
-      <p className="mt-8 text-[14px] leading-relaxed text-dim">
+      <p className="mt-8 text-[15px] leading-relaxed text-dim">
         După ce ai completat fișierul, repornește serverul — variabilele de
         mediu se citesc la pornire, nu la fiecare cerere.
       </p>

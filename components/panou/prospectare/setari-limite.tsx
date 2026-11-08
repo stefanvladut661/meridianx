@@ -43,7 +43,7 @@ function campDinMesaj(message: string): string | null {
 function Eroare({ id, text }: { id: string; text: string | undefined }) {
   if (!text) return null;
   return (
-    <span id={id} role="alert" className="mt-1 block text-[11.5px] text-rose">
+    <span id={id} role="alert" className="mt-1 block text-[13px] text-rose">
       {text}
     </span>
   );
@@ -70,7 +70,7 @@ function Camp({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+      <label htmlFor={id} className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
         {label}
       </label>
       <input
@@ -89,7 +89,7 @@ function Camp({
       {eroare ? (
         <Eroare id={`${id}-e`} text={eroare} />
       ) : hint ? (
-        <span id={`${id}-h`} className="mt-1 block text-[11.5px] text-muted-foreground/80">
+        <span id={`${id}-h`} className="mt-1 block text-[13px] text-muted-foreground/80">
           {hint}
         </span>
       ) : null}
@@ -200,7 +200,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
       <form onSubmit={salveaza} noValidate aria-busy={pending}>
         <div className="mt-4 grid gap-6 lg:grid-cols-2 lg:gap-4">
           <fieldset className="min-w-0 space-y-3">
-            <legend className="flex items-center gap-1.5 text-[12.5px] font-medium">
+            <legend className="flex items-center gap-1.5 text-[14px] font-medium">
               <Bot className="h-3.5 w-3.5 text-lav" aria-hidden="true" />
               Roboți și apeluri
             </legend>
@@ -232,7 +232,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
               max={500}
               eroare={erori.apeluri}
             />
-            <p className="text-[11.5px] leading-relaxed text-muted-foreground">
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
               „Nu răspunde” nu scoate firma după un număr de încercări: nu e contact, firma se întoarce în distribuție, iar încercările doar se numără în fișa ei.
             </p>
 
@@ -267,7 +267,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
           </fieldset>
 
           <fieldset className="min-w-0 space-y-2">
-            <legend className="flex items-center gap-1.5 text-[12.5px] font-medium">
+            <legend className="flex items-center gap-1.5 text-[14px] font-medium">
               <Mail className="h-3.5 w-3.5 text-mint" aria-hidden="true" />
               Plafon email pe căsuță
             </legend>
@@ -287,7 +287,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
             {casute === null ? (
               <EroareCitire title="Căsuțele nu s-au putut citi" message={eroareCasute ?? "Căsuțele nu s-au putut citi."} className="py-6" />
             ) : casute.length === 0 ? (
-              <p className="pt-1 text-[12px] leading-relaxed text-muted-foreground">Nicio căsuță încă. O căsuță apare aici după primul email trimis de pe ea; apoi îi poți pune plafonul.</p>
+              <p className="pt-1 text-[13.5px] leading-relaxed text-muted-foreground">Nicio căsuță încă. O căsuță apare aici după primul email trimis de pe ea; apoi îi poți pune plafonul.</p>
             ) : (
               <ul className="space-y-2 pt-1">
                 {casute.map((c, i) => {
@@ -299,11 +299,11 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
                   return (
                     <li key={c.adresa}>
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-                        <label htmlFor={id} className={cn("col-span-2 min-w-0 truncate text-[11.5px] sm:col-span-1", activa ? "text-muted-foreground" : "text-muted-foreground/60 line-through")} title={c.adresa}>
+                        <label htmlFor={id} className={cn("col-span-2 min-w-0 truncate text-[13px] sm:col-span-1", activa ? "text-muted-foreground" : "text-muted-foreground/60 line-through")} title={c.adresa}>
                           {c.adresa}
                           <span className="sr-only">: plafon pe zi</span>
                         </label>
-                        <label className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                        <label className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
                           <input
                             type="checkbox"
                             checked={activa}
@@ -342,14 +342,14 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
                 })}
               </ul>
             )}
-            <p id="casute-h" className="pt-1 text-[11px] leading-relaxed text-muted-foreground">
+            <p id="casute-h" className="pt-1 text-[12.5px] leading-relaxed text-muted-foreground">
               Limita căsuței: câte emailuri i se programează pe zi. Gol = plafonul de încălzire; 0 = nu trimite. Fără bifa „trimite”, căsuța e oprită din admin și nu primește programări.
             </p>
           </fieldset>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-border pt-3">
-          <p aria-live="polite" className={cn("text-[11.5px]", stare?.ton === "eroare" ? "text-rose" : "text-muted-foreground")}>
+          <p aria-live="polite" className={cn("text-[13px]", stare?.ton === "eroare" ? "text-rose" : "text-muted-foreground")}>
             {pending ? "Se salvează…" : (stare?.text ?? (schimbat ? "Modificări nesalvate." : ""))}
           </p>
           <Btn type="submit" size="sm" variant="primary" icon={pending ? Loader2 : Save} disabled={!schimbat || pending}>

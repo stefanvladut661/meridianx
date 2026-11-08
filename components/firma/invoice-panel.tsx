@@ -30,7 +30,7 @@ export interface InvoiceClient {
   email: string | null;
 }
 
-const sectionTitle = "text-[13px] font-semibold uppercase tracking-[0.08em] text-dim";
+const sectionTitle = "text-[14.5px] font-semibold uppercase tracking-[0.08em] text-dim";
 
 // ------------------------------------------------------------ rândurile facturii
 
@@ -65,7 +65,7 @@ function RowsEditor({ rows, setRows, currency, error }: { rows: RowDraft[]; setR
   const parsed = parseRows(rows);
   return (
     <fieldset className="grid gap-2">
-      <legend className="text-[13px] font-medium text-bone">Rândurile facturii</legend>
+      <legend className="text-[14.5px] font-medium text-bone">Rândurile facturii</legend>
       {rows.map((row, index) => (
         <div key={row.key} className="grid gap-2 rounded-lg bg-[var(--ap-side)] p-2.5 sm:grid-cols-[1fr_5rem_5rem_7rem]">
           <Field id={`r-${row.key}-den`} label="Denumirea" error={fieldError(`randuri.${index}.denumire`)} className="sm:col-span-4">
@@ -81,8 +81,8 @@ function RowsEditor({ rows, setRows, currency, error }: { rows: RowDraft[]; setR
             <input id={`r-${row.key}-pret`} inputMode="decimal" value={row.pretUnitar} onChange={(e) => set(row.key, { pretUnitar: e.currentTarget.value })} className={inputClass} />
           </Field>
           <div className="flex items-end justify-between gap-2 sm:col-span-1">
-            <span className="pb-2 text-[13px] tabular-nums text-dim">{"rows" in parsed ? money(lineTotal(parsed.rows[index]), currency) : ""}</span>
-            <button type="button" disabled={rows.length === 1} onClick={() => setRows(rows.filter((item) => item.key !== row.key))} className="h-10 text-[13px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)] disabled:opacity-40">
+            <span className="pb-2 text-[14.5px] tabular-nums text-dim">{"rows" in parsed ? money(lineTotal(parsed.rows[index]), currency) : ""}</span>
+            <button type="button" disabled={rows.length === 1} onClick={() => setRows(rows.filter((item) => item.key !== row.key))} className="h-10 text-[14.5px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)] disabled:opacity-40">
               Scoate
             </button>
           </div>
@@ -92,14 +92,14 @@ function RowsEditor({ rows, setRows, currency, error }: { rows: RowDraft[]; setR
         <button
           type="button"
           onClick={() => setRows([...rows, { key: Math.max(...rows.map((row) => row.key)) + 1, denumire: "", descriere: "", cantitate: "1", um: "buc", pretUnitar: "" }])}
-          className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-[var(--md-a1)]"
+          className="inline-flex items-center gap-1.5 text-[15px] font-medium text-[var(--md-a1)]"
         >
           <IconPlus size={15} />
           Adaugă un rând
         </button>
-        <p className="text-[14px] font-semibold tabular-nums text-bone">Total: {"rows" in parsed ? money(invoiceTotal(parsed.rows), currency) : "—"}</p>
+        <p className="text-[15px] font-semibold tabular-nums text-bone">Total: {"rows" in parsed ? money(invoiceTotal(parsed.rows), currency) : "—"}</p>
       </div>
-      <p className="text-[12.5px] text-dim">Firma nu e plătitoare de TVA: prețul e final.</p>
+      <p className="text-[14px] text-dim">Firma nu e plătitoare de TVA: prețul e final.</p>
     </fieldset>
   );
 }
@@ -179,7 +179,7 @@ export function ManualInvoicePanel({
         </Field>
         {error && !error.field ? <Notice tone="error">{error.message}</Notice> : null}
         {error?.field && error.field.startsWith("randuri") && !error.field.includes(".") ? <Notice tone="error">{error.message}</Notice> : null}
-        <button type="submit" disabled={pending} className="btn btn-light !min-h-10 justify-self-start !px-4 !py-2 !text-[14px]">
+        <button type="submit" disabled={pending} className="btn btn-light !min-h-10 justify-self-start !px-4 !py-2 !text-[15px]">
           {pending ? "Se salvează…" : "Salvează ciorna"}
         </button>
       </form>
@@ -213,7 +213,7 @@ export function InvoicePanel({
   if (!invoice) {
     return (
       <SidePanel title="Factura" onClose={onClose}>
-        <p className="text-[14px] text-dim">Se încarcă factura… Dacă nu apare, nu mai e în luna aleasă.</p>
+        <p className="text-[15px] text-dim">Se încarcă factura… Dacă nu apare, nu mai e în luna aleasă.</p>
       </SidePanel>
     );
   }
@@ -334,7 +334,7 @@ function DraftEditor({
           Oblio a refuzat emiterea: {invoice.pasi.emitere.mesaj} Repară ce spune (aici sau la client) și aprobă din nou — nu se emite de două ori.
         </Notice>
       ) : null}
-      <p className="text-[13.5px] text-dim">
+      <p className="text-[15px] text-dim">
         Ciornă {invoice.felul === "contract" ? "din contract" : "manuală"}. Nu există încă în Oblio. La aprobare se emite cu data de azi și scadența în {fields.zileScadenta || "0"} zile (planificat: {dayLabel(fields.dataPlanificata)}, scadentă {dayLabel(due)}).
       </p>
       {client && !client.ready ? (
@@ -367,17 +367,17 @@ function DraftEditor({
         </Notice>
       ) : null}
       <div className="flex flex-wrap items-center gap-2 border-t border-hair pt-4">
-        <button type="button" disabled={pending || !oblio} onClick={approve} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="button" disabled={pending || !oblio} onClick={approve} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
           {pending ? "Se lucrează…" : "Aprobă și emite"}
         </button>
-        <button type="button" disabled={pending} onClick={save} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="button" disabled={pending} onClick={save} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
           Salvează ciorna
         </button>
-        <button type="button" disabled={pending} onClick={discard} className="ml-auto text-[13px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]">
+        <button type="button" disabled={pending} onClick={discard} className="ml-auto text-[14.5px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]">
           Renunță la ciornă
         </button>
       </div>
-      <p className="text-[12.5px] text-dim">„Aprobă și emite” emite factura în Oblio, o trimite în e-Factura, îi pune PDF-ul pe Drive și pregătește emailul. Emailul pleacă abia la „Trimite”.</p>
+      <p className="text-[14px] text-dim">„Aprobă și emite” emite factura în Oblio, o trimite în e-Factura, îi pune PDF-ul pe Drive și pregătește emailul. Emailul pleacă abia la „Trimite”.</p>
     </div>
   );
 }
@@ -399,7 +399,7 @@ function IssuedView({ invoice, oblio, email, actions, onChanged }: { invoice: Fa
 
   return (
     <div className="grid gap-5">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13.5px]">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[15px]">
         <dt className="text-dim">Emisă</dt>
         <dd className="text-bone">{invoice.dataEmiterii ? dayLabel(invoice.dataEmiterii) : "—"}</dd>
         <dt className="text-dim">Scadentă</dt>
@@ -412,7 +412,7 @@ function IssuedView({ invoice, oblio, email, actions, onChanged }: { invoice: Fa
         <dt className="text-dim">e-Factura</dt>
         <dd className="text-bone">
           {einvoiceLabel(invoice.efacturaCod)}
-          {invoice.efacturaText ? <span className="block text-[12.5px] text-dim">{invoice.efacturaText}</span> : null}
+          {invoice.efacturaText ? <span className="block text-[14px] text-dim">{invoice.efacturaText}</span> : null}
         </dd>
         <dt className="text-dim">Aprobată</dt>
         <dd className="text-bone">{invoice.aprobataLa ? `${dateTimeLabel(invoice.aprobataLa)}${invoice.aprobataDe ? `, ${invoice.aprobataDe}` : ""}` : "—"}</dd>
@@ -420,13 +420,13 @@ function IssuedView({ invoice, oblio, email, actions, onChanged }: { invoice: Fa
 
       <div className="flex flex-wrap gap-2">
         {invoice.linkOblio ? (
-          <a href={invoice.linkOblio} target="_blank" rel="noreferrer" className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]">
+          <a href={invoice.linkOblio} target="_blank" rel="noreferrer" className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[15px]">
             <IconExternal size={15} />
             PDF-ul din Oblio
           </a>
         ) : null}
         {invoice.driveLink ? (
-          <a href={invoice.driveLink} target="_blank" rel="noreferrer" className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]">
+          <a href={invoice.driveLink} target="_blank" rel="noreferrer" className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[15px]">
             <IconExternal size={15} />
             Pe Drive
           </a>
@@ -441,20 +441,20 @@ function IssuedView({ invoice, oblio, email, actions, onChanged }: { invoice: Fa
           {PAS_ORDER.map((name) => {
             const pas = invoice.pasi[name];
             return (
-              <li key={name} className="flex items-start gap-2 text-[13.5px]">
+              <li key={name} className="flex items-start gap-2 text-[15px]">
                 <Tag tone={!pas ? "muted" : pas.stare === "ok" ? "ok" : pas.stare === "eroare" ? "error" : "muted"} className="mt-0.5 shrink-0">
                   {!pas ? "în așteptare" : pas.stare === "ok" ? "făcut" : pas.stare === "eroare" ? "n-a mers" : "sărit"}
                 </Tag>
                 <span>
                   <span className="font-medium text-bone">{PAS_LABEL[name]}</span>
-                  {pas?.mesaj ? <span className="block text-[12.5px] text-dim">{pas.mesaj}</span> : null}
+                  {pas?.mesaj ? <span className="block text-[14px] text-dim">{pas.mesaj}</span> : null}
                 </span>
               </li>
             );
           })}
         </ol>
         {failedStep ? (
-          <button type="button" disabled={pending || !oblio} onClick={retry} className="btn btn-ghost mt-3 !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]">
+          <button type="button" disabled={pending || !oblio} onClick={retry} className="btn btn-ghost mt-3 !min-h-9 !px-3.5 !py-1.5 !text-[15px]">
             {pending ? "Se lucrează…" : "Reia pașii rămași"}
           </button>
         ) : null}
@@ -468,7 +468,7 @@ function IssuedView({ invoice, oblio, email, actions, onChanged }: { invoice: Fa
 
       {invoice.emailStare !== "nepregatit" ? <EmailSection invoice={invoice} email={email} sendEmail={actions.sendEmail} onChanged={onChanged} /> : null}
 
-      <p className="text-[12.5px] text-dim">Factura emisă nu se mai corectează aici. Anularea sau stornarea se fac în Oblio, de tine.</p>
+      <p className="text-[14px] text-dim">Factura emisă nu se mai corectează aici. Anularea sau stornarea se fac în Oblio, de tine.</p>
     </div>
   );
 }
@@ -485,7 +485,7 @@ function EmailSection({ invoice, email, sendEmail, onChanged }: { invoice: Factu
         <h3 id="email-factura" className={sectionTitle}>
           Emailul către client
         </h3>
-        <p className="mt-2 text-[13.5px] text-bone">
+        <p className="mt-2 text-[15px] text-bone">
           Trimis {dateTimeLabel(invoice.emailTrimisLa)} către {invoice.emailCatre}, cu PDF-ul atașat.
         </p>
       </section>
@@ -497,7 +497,7 @@ function EmailSection({ invoice, email, sendEmail, onChanged }: { invoice: Factu
       <h3 id="email-factura" className={sectionTitle}>
         Emailul către client — pleacă doar la „Trimite”
       </h3>
-      {invoice.emailStare === "esuat" ? <p className="mt-2 text-[13px] text-[var(--ap-error)]">Încercarea de dinainte n-a plecat. Verifică adresa și trimite din nou.</p> : null}
+      {invoice.emailStare === "esuat" ? <p className="mt-2 text-[14.5px] text-[var(--ap-error)]">Încercarea de dinainte n-a plecat. Verifică adresa și trimite din nou.</p> : null}
       <form
         noValidate
         onSubmit={(event) => {
@@ -530,10 +530,10 @@ function EmailSection({ invoice, email, sendEmail, onChanged }: { invoice: Factu
             <span role="status">{sent}</span>
           </Notice>
         ) : null}
-        <button type="submit" disabled={pending || !email} className={cn("btn btn-light justify-self-start !min-h-10 !px-4 !py-2 !text-[14px]")}>
+        <button type="submit" disabled={pending || !email} className={cn("btn btn-light justify-self-start !min-h-10 !px-4 !py-2 !text-[15px]")}>
           {pending ? "Se trimite…" : "Trimite emailul"}
         </button>
-        {!email ? <p className="text-[12.5px] text-dim">Emailul nu e configurat (RESEND_API_KEY lipsește în Vercel).</p> : null}
+        {!email ? <p className="text-[14px] text-dim">Emailul nu e configurat (RESEND_API_KEY lipsește în Vercel).</p> : null}
       </form>
     </section>
   );

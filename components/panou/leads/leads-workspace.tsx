@@ -254,7 +254,7 @@ export function LeadsWorkspace({ now, items, total, page, perPage, listFailed, s
               {listBody}
             </Card>
 
-            <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground/60">
+            <p className="flex items-center gap-1.5 px-1 text-[12.5px] text-muted-foreground/60">
               <Download className="h-3 w-3 shrink-0" aria-hidden="true" />
               Exportul CSV conține exact rândurile filtrate, nu toată baza.
               {total > EXPORT_CAP ? ` La peste 5.000 de rânduri se exportă cele mai noi 5.000.` : ""}

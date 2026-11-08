@@ -38,7 +38,7 @@ const STARI: Record<StareRobot, { label: string; title: string; punct: string; t
 export function RobotStare({ stare, className }: { stare: StareRobot; className?: string }) {
   const meta = STARI[stare];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap text-[11.5px]", meta.text, className)} title={meta.title}>
+    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap text-[13px]", meta.text, className)} title={meta.title}>
       <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", meta.punct)} aria-hidden="true" />
       {meta.label}
     </span>

@@ -201,14 +201,14 @@ export function ConversiiCreare({
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <label htmlFor={id("on")} className="cursor-pointer text-[13.5px] font-medium">
+                      <label htmlFor={id("on")} className="cursor-pointer text-[15px] font-medium">
                         {spec.title}
                       </label>
-                      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{spec.type}</span>
+                      <span className="font-mono text-[11.5px] uppercase tracking-[0.14em] text-muted-foreground">{spec.type}</span>
                     </div>
-                    <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{spec.what}</p>
+                    <p className="mt-1 text-[13.5px] leading-snug text-muted-foreground">{spec.what}</p>
                     {existing[kind] ? (
-                      <p className="mt-1.5 text-[11.5px] leading-snug text-[#FFC79C]">
+                      <p className="mt-1.5 text-[13px] leading-snug text-[#FFC79C]">
                         Contul are deja „{existing[kind]}”. O a doua acțiune principală pentru același lucru ar număra de două ori.
                       </p>
                     ) : null}
@@ -293,7 +293,7 @@ export function ConversiiCreare({
                         {...descriere(id("value"), field(kind, "value"), true)}
                       />
                     </Camp>
-                    <label className="flex items-center gap-2.5 self-end pb-1.5 text-[12.5px] text-foreground/85 sm:col-span-2">
+                    <label className="flex items-center gap-2.5 self-end pb-1.5 text-[14px] text-foreground/85 sm:col-span-2">
                       <input type="checkbox" checked={draft.primary} onChange={(event) => update(kind, { primary: event.target.checked })} className="h-4 w-4 accent-lav" />
                       Principală (contează la licitare)
                     </label>
@@ -314,7 +314,7 @@ export function ConversiiCreare({
               {creating ? "Se creează…" : `Creează ${chosen.length === 1 ? "acțiunea" : "acțiunile"}`}
             </Btn>
           </div>
-          <p className="text-[12px] leading-snug text-muted-foreground" aria-live="polite">
+          <p className="text-[13.5px] leading-snug text-muted-foreground" aria-live="polite">
             {chosen.length === 0
               ? "Bifează o acțiune ca s-o creezi."
               : preview && !fresh
@@ -324,14 +324,14 @@ export function ConversiiCreare({
                   : "Întâi verificarea: regulile Google, numele din cont, apoi validateOnly."}
           </p>
           {general.length > 0 ? (
-            <ul role="alert" className="space-y-1 text-[12.5px] leading-snug text-rose">
+            <ul role="alert" className="space-y-1 text-[14px] leading-snug text-rose">
               {general.map((message) => (
                 <li key={message}>{message}</li>
               ))}
             </ul>
           ) : null}
           {problem ? (
-            <p role="alert" className="text-[12.5px] leading-snug text-rose">
+            <p role="alert" className="text-[14px] leading-snug text-rose">
               {problem}
             </p>
           ) : null}
@@ -351,19 +351,19 @@ function Verificare({ preview }: { preview: ConversionsPreview }) {
         <Pill tone={preview.ok ? "mint" : "rose"} dot>
           {preview.ok ? "Google acceptă tot" : "Nu se poate crea așa"}
         </Pill>
-        <span className="text-[11.5px] text-muted-foreground">{preview.ok ? "Nimic creat încă." : "Vezi problemele."}</span>
+        <span className="text-[13px] text-muted-foreground">{preview.ok ? "Nimic creat încă." : "Vezi problemele."}</span>
       </p>
       <ul className="mt-3 space-y-3">
         {preview.rows.map((row) => (
           <li key={row.kind}>
-            <p className="text-[12.5px] [overflow-wrap:anywhere]">{row.name}</p>
-            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{row.facts.join(" · ")}</p>
-            {row.similar ? <p className="mt-1 text-[11px] leading-snug text-[#FFC79C]">{row.similar}</p> : null}
+            <p className="text-[14px] [overflow-wrap:anywhere]">{row.name}</p>
+            <p className="mt-0.5 text-[12.5px] leading-snug text-muted-foreground">{row.facts.join(" · ")}</p>
+            {row.similar ? <p className="mt-1 text-[12.5px] leading-snug text-[#FFC79C]">{row.similar}</p> : null}
           </li>
         ))}
       </ul>
       {preview.warnings.length > 0 ? (
-        <ul className="mt-3 space-y-1 border-t border-white/[0.06] pt-3 text-[11.5px] leading-snug text-[#FFC79C]">
+        <ul className="mt-3 space-y-1 border-t border-white/[0.06] pt-3 text-[13px] leading-snug text-[#FFC79C]">
           {preview.warnings.map((warning) => (
             <li key={warning}>{warning}</li>
           ))}
@@ -388,15 +388,15 @@ function Creata({ result }: { result: ConversionsCreateResponse }) {
         <p className="font-medium">{result.created.length === 1 ? "Acțiune creată." : `${result.created.length} acțiuni create.`}</p>
         <ul className="mt-2.5 space-y-2.5">
           {result.created.map((item) => (
-            <li key={item.id || item.name} className="text-[12px]">
+            <li key={item.id || item.name} className="text-[13.5px]">
               <span>{item.name}</span> <span className="opacity-70">· {CONVERSION_TYPE_LABEL[item.type] ?? item.type} · id {item.id || "—"}</span>
               {item.sendTo ? (
                 <span className="mt-1 flex flex-wrap items-center gap-2">
-                  <code className="font-mono text-[11.5px] [overflow-wrap:anywhere]">{sendToText(item.sendTo)}</code>
+                  <code className="font-mono text-[13px] [overflow-wrap:anywhere]">{sendToText(item.sendTo)}</code>
                   <CopyButton value={sendToText(item.sendTo)} label="Copiază eticheta" size="xs" variant="ghost" />
                 </span>
               ) : (
-                <span className="mt-0.5 block text-[11.5px] opacity-70">
+                <span className="mt-0.5 block text-[13px] opacity-70">
                   {item.type === "AD_CALL"
                     ? "Fără etichetă: se leagă de butonul de apel (planul de căutare, assets.call.conversion_action_id)."
                     : "Eticheta n-a apărut încă: reîncarcă pagina peste un minut."}
@@ -405,7 +405,7 @@ function Creata({ result }: { result: ConversionsCreateResponse }) {
             </li>
           ))}
         </ul>
-        {result.journalWarning ? <p className="mt-3 text-[11.5px] text-[#FFC79C]">{result.journalWarning}</p> : null}
+        {result.journalWarning ? <p className="mt-3 text-[13px] text-[#FFC79C]">{result.journalWarning}</p> : null}
       </div>
     </InlineNote>
   );

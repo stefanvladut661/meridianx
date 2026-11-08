@@ -11,13 +11,13 @@ import { cn } from "@/lib/utils";
  * cititorul de ecran aude „mai bine” sau „mai rău”.
  */
 export function DeltaChip({ delta, className }: { delta: Delta; className?: string }) {
-  if (delta.percent === null) return <span className="text-xs text-muted-foreground">—</span>;
+  if (delta.percent === null) return <span className="text-[13.5px] text-muted-foreground">—</span>;
   const rounded = Math.round(delta.percent);
   const Icon = rounded === 0 ? Minus : rounded > 0 ? ArrowUpRight : ArrowDownRight;
   return (
     <span
       className={cn(
-        "pu-num inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11.5px] font-medium",
+        "pu-num inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[13px] font-medium",
         delta.tone === "good" ? "bg-mint/12 text-mint" : delta.tone === "bad" ? "bg-rose/12 text-rose" : "bg-white/[0.06] text-muted-foreground",
         className
       )}

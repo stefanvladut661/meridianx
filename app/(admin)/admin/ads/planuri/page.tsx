@@ -137,13 +137,13 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
           ] as const
         ).map(([label, value, tone]) => (
           <Card key={label} className="flex items-center justify-between py-3.5">
-            <span className="text-[12px] text-muted-foreground">{label}</span>
+            <span className="text-[13.5px] text-muted-foreground">{label}</span>
             <span className={cn("pu-num text-[20px]", tone === "mint" ? "text-mint" : tone === "sky" ? "text-sky" : "text-rose")}>{value}</span>
           </Card>
         ))}
       </div>
 
-      <div className="flex items-start gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-[11.5px] leading-relaxed text-muted-foreground">
+      <div className="flex items-start gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-[13px] leading-relaxed text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" />
         <p>
           Plafonul zilnic al spațiului de lucru:{" "}
@@ -170,7 +170,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
           <UnfinishedJobs jobs={unfinished} continueJob={continueJobAction} />
         </section>
       ) : null}
-      {!jobs.ok && jobs.message === JOBS_MIGRATION_MISSING ? <p className="text-[12px] text-muted-foreground">{jobs.message}</p> : null}
+      {!jobs.ok && jobs.message === JOBS_MIGRATION_MISSING ? <p className="text-[13.5px] text-muted-foreground">{jobs.message}</p> : null}
 
       <section aria-labelledby="create" className="space-y-3">
         <div id="create">
@@ -181,7 +181,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
               client ? (
                 <Link
                   href={all ? "/admin/ads/planuri" : "/admin/ads/planuri?toate=1"}
-                  className="text-[12px] font-medium text-lav underline underline-offset-4"
+                  className="text-[13.5px] font-medium text-lav underline underline-offset-4"
                 >
                   {all ? `Doar ${client.name}` : "Arată toate planurile"}
                 </Link>
@@ -226,7 +226,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="min-w-0 text-[14px] font-medium">
+                          <h2 className="min-w-0 text-[15px] font-medium">
                             <Link href={`/admin/ads/${first.id}`} className="hover:text-lav hover:underline">
                               {group.length > 1 ? `Plan de căutare · ${group.length} campanii (${first.name}, …)` : first.name}
                             </Link>
@@ -242,7 +242,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
                           )}
                           {paused ? <Stamp /> : <Pill tone="apricot">{statusLabel(first.status)} în platformă</Pill>}
                         </div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-muted-foreground">
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
                           <ChannelMark platform={first.platform} size="sm" />
                           <span>{workspace ? workspaceName(workspace) : first.workspace}</span>
                           <span aria-hidden="true">·</span>
@@ -266,7 +266,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
 
                     {isPartial ? (
                       <ul className="mt-3 space-y-1.5 border-t border-white/[0.06] pt-3">
-                        <li className="flex items-start gap-2 text-[11.5px] leading-relaxed">
+                        <li className="flex items-start gap-2 text-[13px] leading-relaxed">
                           <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-apricot" aria-hidden="true" />
                           <span className="text-[#FFD0AC]">
                             <span className="text-muted-foreground">Creat parțial:</span> {first.creationError ?? "o parte din reclame lipsește."}
@@ -284,8 +284,8 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
 
       <Card className="flex flex-wrap items-center justify-between gap-3 border-lav/20 bg-lav/[0.05]">
         <div>
-          <p className="text-[12.5px] font-medium text-[#D8CCFF]">Scrii planurile cu Claude?</p>
-          <p className="mt-0.5 text-[11.5px] text-[#D8CCFF]/70">Ia instrucțiunile și contextul conturilor de pe pagina „Pentru Claude”.</p>
+          <p className="text-[14px] font-medium text-[#D8CCFF]">Scrii planurile cu Claude?</p>
+          <p className="mt-0.5 text-[13px] text-[#D8CCFF]/70">Ia instrucțiunile și contextul conturilor de pe pagina „Pentru Claude”.</p>
         </div>
         <Link href="/admin/ads/claude" className={btnClass({ variant: "outline", size: "sm" })}>
           Deschide instrucțiunile

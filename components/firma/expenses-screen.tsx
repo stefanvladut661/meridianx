@@ -138,23 +138,23 @@ export function ExpensesScreen({
 
       <div className="mt-5 rounded-xl border border-dashed border-hair-strong bg-[var(--ap-side)] p-4 sm:p-5">
         <input ref={input} id="urca-cheltuiala" type="file" accept="image/*,application/pdf" multiple className="sr-only" onChange={(event) => upload(event.currentTarget.files)} />
-        <label htmlFor="urca-cheltuiala" className="btn btn-light w-full cursor-pointer justify-center !min-h-12 !text-[15px] sm:w-auto sm:!px-5">
+        <label htmlFor="urca-cheltuiala" className="btn btn-light w-full cursor-pointer justify-center !min-h-12 !text-[16px] sm:w-auto sm:!px-5">
           <IconUpload size={18} />
           Urcă un bon sau o factură
         </label>
-        <p className="mt-2 text-[13px] text-dim">Pe telefon poți face poza direct. Merg și mai multe odată. Poză (JPEG, PNG) sau PDF, până la 20 MB.</p>
+        <p className="mt-2 text-[14.5px] text-dim">Pe telefon poți face poza direct. Merg și mai multe odată. Poză (JPEG, PNG) sau PDF, până la 20 MB.</p>
         {uploads.length > 0 ? (
           <ul className="mt-3 grid gap-1.5" aria-live="polite">
             {uploads.map((item) => (
-              <li key={item.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-char px-3 py-2 text-[13.5px]">
+              <li key={item.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-char px-3 py-2 text-[15px]">
                 <span className="min-w-0 flex-1 truncate font-medium text-bone">{item.name}</span>
                 <Tag tone={item.stage === "gata" ? "ok" : item.stage === "eroare" ? "error" : "accent"}>
                   {STAGE_LABEL[item.stage]}
                   {item.stage === "urc" ? ` ${Math.round(item.progress * 100)}%` : ""}
                 </Tag>
-                {item.message ? <span className={cn("w-full text-[12.5px]", item.stage === "eroare" ? "text-[var(--ap-error)]" : "text-dim")}>{item.message}</span> : null}
+                {item.message ? <span className={cn("w-full text-[14px]", item.stage === "eroare" ? "text-[var(--ap-error)]" : "text-dim")}>{item.message}</span> : null}
                 {item.id ? (
-                  <button type="button" onClick={() => setOpen(item.id)} className="text-[12.5px] font-medium text-[var(--md-a1)] underline underline-offset-4">
+                  <button type="button" onClick={() => setOpen(item.id)} className="text-[14px] font-medium text-[var(--md-a1)] underline underline-offset-4">
                     Verifică
                   </button>
                 ) : null}
@@ -165,17 +165,17 @@ export function ExpensesScreen({
       </div>
 
       <div className="mt-5 flex flex-wrap items-baseline gap-x-6 gap-y-1">
-        <p className="text-[14px] text-bone">
+        <p className="text-[15px] text-bone">
           <span className="font-semibold">Total în {monthLabel(month)}:</span> {[...totals.entries()].map(([currency, sum]) => money(sum, currency)).join(" + ") || "—"}
         </p>
-        {toCheck > 0 ? <p className="text-[13.5px] text-[var(--ap-warn)]">{toCheck === 1 ? "O cheltuială" : `${toCheck} cheltuieli`} de verificat</p> : null}
+        {toCheck > 0 ? <p className="text-[15px] text-[var(--ap-warn)]">{toCheck === 1 ? "O cheltuială" : `${toCheck} cheltuieli`} de verificat</p> : null}
       </div>
       {expenses.length > 0 ? (
         <ul className="mt-2 flex flex-wrap gap-2">
           {byCategory
             .filter((item) => item.sum > 0)
             .map((item) => (
-              <li key={item.key} className="rounded-lg border border-hair bg-char px-3 py-1.5 text-[13px]">
+              <li key={item.key} className="rounded-lg border border-hair bg-char px-3 py-1.5 text-[14.5px]">
                 {CATEGORIE_LABEL[item.key as keyof typeof CATEGORIE_LABEL]}: <span className="font-semibold tabular-nums">{money(item.sum, "RON")}</span>
               </li>
             ))}
@@ -206,15 +206,15 @@ export function ExpensesScreen({
                       <button type="button" onClick={() => setOpen(expense.id)} className="text-left font-semibold text-bone hover:text-[var(--md-a1)] hover:underline">
                         {expense.furnizor ?? <span className="text-dim">necitit — {expense.fisierNume}</span>}
                       </button>
-                      <p className="mt-0.5 max-w-[16rem] truncate text-[12.5px] text-dim">{[expense.nrDocument, expense.descriere].filter(Boolean).join(" · ") || "—"}</p>
+                      <p className="mt-0.5 max-w-[16rem] truncate text-[14px] text-dim">{[expense.nrDocument, expense.descriere].filter(Boolean).join(" · ") || "—"}</p>
                     </td>
-                    <td className={cn(tdClass, "whitespace-nowrap text-[13px]")}>{dayLabel(expense.dataDoc)}</td>
-                    <td className={cn(tdClass, "text-[13px]")}>{CATEGORIE_LABEL[expense.categoria]}</td>
+                    <td className={cn(tdClass, "whitespace-nowrap text-[14.5px]")}>{dayLabel(expense.dataDoc)}</td>
+                    <td className={cn(tdClass, "text-[14.5px]")}>{CATEGORIE_LABEL[expense.categoria]}</td>
                     <td className={cn(tdClass, "whitespace-nowrap text-right tabular-nums")}>{money(expense.suma, expense.moneda === "altele" ? "" : expense.moneda)}</td>
                     <td className={tdClass}>
                       <Tag tone={state.tone}>{state.label}</Tag>
                     </td>
-                    <td className={cn(tdClass, "text-[13px]")}>
+                    <td className={cn(tdClass, "text-[14.5px]")}>
                       {expense.driveLink ? <Tag tone="ok">Pe Drive</Tag> : expense.driveMesaj ? <span className="text-[var(--ap-warn)]" title={expense.driveMesaj}>nu încă</span> : <span className="text-dim">—</span>}
                     </td>
                   </tr>
@@ -284,7 +284,7 @@ function ExpensePanel({
   if (!expense) {
     return (
       <SidePanel title="Cheltuiala" onClose={onClose}>
-        <p className="text-[14px] text-dim">Se încarcă… Dacă nu apare, cheltuiala e în altă lună.</p>
+        <p className="text-[15px] text-dim">Se încarcă… Dacă nu apare, cheltuiala e în altă lună.</p>
       </SidePanel>
     );
   }
@@ -296,7 +296,7 @@ function ExpensePanel({
       <div className="grid gap-4">
         {preview ? (
           preview.type === "application/pdf" ? (
-            <a href={preview.url} target="_blank" rel="noreferrer" className="btn btn-ghost justify-self-start !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]">
+            <a href={preview.url} target="_blank" rel="noreferrer" className="btn btn-ghost justify-self-start !min-h-9 !px-3.5 !py-1.5 !text-[15px]">
               <IconExternal size={15} />
               Deschide PDF-ul
             </a>
@@ -305,10 +305,10 @@ function ExpensePanel({
             <img src={preview.url} alt={`Documentul încărcat: ${expense.fisierNume}`} className="max-h-72 w-full rounded-lg border border-hair bg-[var(--ap-side)] object-contain" />
           )
         ) : (
-          <p className="text-[13px] text-dim">Se încarcă documentul…</p>
+          <p className="text-[14.5px] text-dim">Se încarcă documentul…</p>
         )}
         {expense.citireMesaj ? <Notice tone={expense.citireStare === "eroare" ? "warn" : "neutral"}>{expense.citireMesaj}</Notice> : null}
-        {expense.citireStare === "ok" && !expense.confirmata ? <p className="text-[13px] text-dim">Datele de mai jos sunt citite automat. Verifică-le și apasă „Salvează”.</p> : null}
+        {expense.citireStare === "ok" && !expense.confirmata ? <p className="text-[14.5px] text-dim">Datele de mai jos sunt citite automat. Verifică-le și apasă „Salvează”.</p> : null}
 
         <form
           noValidate
@@ -380,7 +380,7 @@ function ExpensePanel({
             </Notice>
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
-            <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+            <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
               {pending ? "Se lucrează…" : "Salvează"}
             </button>
             <button
@@ -394,7 +394,7 @@ function ExpensePanel({
                   onChanged();
                 })
               }
-              className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]"
+              className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]"
             >
               Citește din nou
             </button>
@@ -411,13 +411,13 @@ function ExpensePanel({
                   }
                 })
               }
-              className="ml-auto text-[13px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]"
+              className="ml-auto text-[14.5px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]"
             >
               Scoate din listă
             </button>
           </div>
         </form>
-        <p className="text-[12.5px] text-dim">
+        <p className="text-[14px] text-dim">
           {expense.driveLink ? (
             <a href={expense.driveLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline underline-offset-4">
               Fișierul pe Drive <IconExternal size={13} />

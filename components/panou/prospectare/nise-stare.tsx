@@ -65,8 +65,8 @@ export function NisaRobot({ n, acum }: { n: Nisa; acum: number }) {
 
   if (n.status === "libera") {
     return (
-      <span className="block text-[11.5px] text-muted-foreground">
-        <span className="block text-[12px] text-foreground/80">Nerezervată</span>
+      <span className="block text-[13px] text-muted-foreground">
+        <span className="block text-[13.5px] text-foreground/80">Nerezervată</span>
         <Cand la={n.creat_la} acum={acum} prefix="adăugată" />
         {n.creat_de ? `, de ${n.creat_de}` : null}
       </span>
@@ -75,16 +75,16 @@ export function NisaRobot({ n, acum }: { n: Nisa; acum: number }) {
 
   if (n.status === "terminata") {
     return (
-      <span className="block text-[11.5px] text-muted-foreground">
-        <span className="block truncate text-[12px] font-medium text-foreground">{robot ?? "—"}</span>
+      <span className="block text-[13px] text-muted-foreground">
+        <span className="block truncate text-[13.5px] font-medium text-foreground">{robot ?? "—"}</span>
         {n.terminata_la ? <Cand la={n.terminata_la} acum={acum} prefix="terminată" /> : "terminată"}
       </span>
     );
   }
 
   return (
-    <span className="block text-[11.5px] text-muted-foreground">
-      <span className="block truncate text-[12px] font-medium text-foreground">{robot ?? "robot necunoscut"}</span>
+    <span className="block text-[13px] text-muted-foreground">
+      <span className="block truncate text-[13.5px] font-medium text-foreground">{robot ?? "robot necunoscut"}</span>
       {n.rezervata_la ? <Cand la={n.rezervata_la} acum={acum} prefix="rezervată" /> : "rezervată"}
       {" · "}
       {semn ? (
@@ -107,8 +107,8 @@ export function NisaRezultate({ n, className }: { n: Pick<Nisa, "gasite" | "elig
   const baza = Math.max(n.gasite, evaluate);
   const neevaluate = Math.max(n.gasite - evaluate, 0);
   return (
-    <div className={cn("min-w-0 text-[11.5px]", className)}>
-      <p className="text-[12px] text-foreground/80">
+    <div className={cn("min-w-0 text-[13px]", className)}>
+      <p className="text-[13.5px] text-foreground/80">
         <span className="pu-num font-medium text-foreground">{num(n.gasite)}</span> găsite
         {neevaluate > 0 ? <span className="text-muted-foreground"> · {num(neevaluate)} neevaluate</span> : null}
       </p>

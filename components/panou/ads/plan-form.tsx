@@ -118,14 +118,14 @@ function Section({
   return (
     <section aria-labelledby={headingId} className="py-5 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-        <h3 id={headingId} className="text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/85">
+        <h3 id={headingId} className="text-[12.5px] font-medium uppercase tracking-[0.14em] text-foreground/85">
           {title}
         </h3>
         <Pill tone={state.tone} dot>
           {state.label}
         </Pill>
       </div>
-      {aside ? <div className="mt-1.5 text-[11.5px] leading-snug text-muted-foreground">{aside}</div> : null}
+      {aside ? <div className="mt-1.5 text-[13px] leading-snug text-muted-foreground">{aside}</div> : null}
       <div className="mt-3 min-w-0 space-y-4">{children}</div>
     </section>
   );
@@ -191,7 +191,7 @@ function LocationsEditor({ platform }: { platform: Platform }) {
           return (
             <li key={index} className={INNER}>
               <fieldset>
-                <legend className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Locația {index + 1}</legend>
+                <legend className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Locația {index + 1}</legend>
                 <div className="@container mt-3">
                   <div className="grid gap-x-3 gap-y-4 @lg:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]">
                     <div>
@@ -302,7 +302,7 @@ function NamedListEditor({
     <div>
       <p className={LABEL}>{label}</p>
       <PathMessages path={path} />
-      {items.length === 0 ? <p className="mt-2 text-[12.5px] text-muted-foreground">{emptyText}</p> : null}
+      {items.length === 0 ? <p className="mt-2 text-[14px] text-muted-foreground">{emptyText}</p> : null}
       <ol className="mt-2 space-y-3">
         {items.map((_, index) => (
           <li key={index} className="@container">
@@ -363,7 +363,7 @@ function LanguagesField() {
           const codes = event.target.value.split(/[\s,]+/).filter(Boolean);
           update("audience.languages", codes.length > 0 ? codes : undefined);
         }}
-        className={cn(FIELD, "mt-1.5 h-9 font-mono text-[12.5px]", problems.length > 0 && "!border-rose/60 bg-rose/[0.06]")}
+        className={cn(FIELD, "mt-1.5 h-9 font-mono text-[14px]", problems.length > 0 && "!border-rose/60 bg-rose/[0.06]")}
       />
       <FieldMessages id={`${id}-msg`} errors={problems} warnings={[]} />
     </div>
@@ -397,7 +397,7 @@ function RadioRow({
           <label
             key={option}
             className={cn(
-              "flex min-h-9 cursor-pointer items-center gap-2 rounded-xl border px-3 text-[12.5px] transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav",
+              "flex min-h-9 cursor-pointer items-center gap-2 rounded-xl border px-3 text-[14px] transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav",
               value === option ? "border-lav/40 bg-lav/[0.08] text-foreground" : "border-white/[0.09] text-foreground/70 hover:border-white/20"
             )}
           >
@@ -440,7 +440,7 @@ function CheckboxGrid({
             <label
               key={value}
               className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-[12.5px] transition-colors",
+                "flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-[14px] transition-colors",
                 on ? "border-lav/40 bg-lav/[0.08] text-foreground" : "border-white/[0.09] text-foreground/75 hover:border-white/20"
               )}
             >
@@ -513,7 +513,7 @@ function VideoEntry({
               }
             />
             {uploaded && uploaded.id === asString(getIn(draft, `${path}.video_id`)) ? (
-              <p className={cn("flex items-center gap-2 text-[12.5px]", OK_TEXT)}>
+              <p className={cn("flex items-center gap-2 text-[14px]", OK_TEXT)}>
                 <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-mint" />
                 Urcat acum: {uploaded.fileName} — {PLATFORM_LABEL[platform]} l-a procesat, e în biblioteca contului.
               </p>
@@ -579,7 +579,7 @@ function VideosEditor({
         >
           încă un video
         </AddButton>
-        <p className="text-[11.5px] leading-snug text-muted-foreground">
+        <p className="text-[13px] leading-snug text-muted-foreground">
           Cu mai multe video-uri, se face câte o reclamă pentru fiecare video × text, în același set.
         </p>
       </div>
@@ -654,7 +654,7 @@ export function AudienceFields({ platform }: { platform: Platform }) {
         addLabel="comportament"
         emptyText="Fără comportamente."
       />
-      <p className="text-[11.5px] leading-snug text-muted-foreground">
+      <p className="text-[13px] leading-snug text-muted-foreground">
         Interesele, comportamentele, orașele și limbile fără id se caută după nume la verificarea pe
         platformă, iar portalul îți arată ce a găsit înainte să creeze ceva.
       </p>
@@ -697,7 +697,7 @@ export function DestinationFields({ summary }: { summary: PlanSummary }) {
       </div>
       <div>
         <p className={LABEL}>Unde ajunge omul după clic</p>
-        <p className="mt-1.5 break-all rounded-lg border border-white/[0.1] bg-[#0A0A0E] px-3 py-2 font-mono text-[11.5px] leading-relaxed text-foreground/85">
+        <p className="mt-1.5 break-all rounded-lg border border-white/[0.1] bg-[#0A0A0E] px-3 py-2 font-mono text-[13px] leading-relaxed text-foreground/85">
           {summary.finalUrl ?? "—"}
         </p>
       </div>
@@ -724,7 +724,7 @@ export function CreativeTextFields({ platform }: { platform: Platform }) {
           onChange={(value) => update("creative.thumbnail", value === "auto" ? "auto" : { url: "" })}
         />
       ) : (
-        <p className="text-[12.5px] leading-snug text-muted-foreground">Copertă: cea propusă de platformă, pentru fiecare video.</p>
+        <p className="text-[14px] leading-snug text-muted-foreground">Copertă: cea propusă de platformă, pentru fiecare video.</p>
       )}
       <PathMessages path="creative.thumbnail" />
       {asRecord(thumbnail) ? <TextField path="creative.thumbnail.url" label="Adresa imaginii" mono placeholder="https://…" /> : null}
@@ -1044,7 +1044,7 @@ export function PlanForm({
             <button
               type="button"
               onClick={() => update("conversion", undefined)}
-              className="text-[12px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
+              className="text-[13.5px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
             >
               Scoate secțiunea — obiectivul nu o folosește
             </button>

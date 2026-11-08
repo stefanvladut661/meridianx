@@ -55,26 +55,26 @@ export function AccountantScreen({ check, accountant, email, actions }: { check:
     <div className="mt-5 grid max-w-4xl gap-6">
       <section aria-labelledby="verificare" className="rounded-xl border border-hair bg-char p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="verificare" className="text-[15px] font-semibold text-bone">
+          <h2 id="verificare" className="text-[16px] font-semibold text-bone">
             {monthLabel(month)}: {complete ? "luna e completă" : `lipsesc ${blocking.length === 1 ? "un lucru" : `${blocking.length} lucruri`}`}
           </h2>
           <Tag tone={complete ? "ok" : "warn"}>{pachet?.stare === "trimis" ? "Trimis" : pachet?.stare === "zip_gata" ? "Zip gata" : complete ? "Complet" : "Incomplet"}</Tag>
         </div>
-        <p className="mt-1 text-[13px] text-dim">
+        <p className="mt-1 text-[14.5px] text-dim">
           {counts.facturi} facturi emise · {counts.cheltuieli} cheltuieli · {counts.plati} plăți din extras · {counts.extrase} {counts.extrase === 1 ? "extras importat" : "extrase importate"}
           {pachet?.verificatLa ? ` · verificat ${dateTimeLabel(pachet.verificatLa)}` : ""}
         </p>
-        {items.length === 0 ? <p className="mt-3 text-[14px] text-[var(--ap-ok)]">Totul e la locul lui: facturile pe Drive, cheltuielile cu documente, plățile acoperite, extrasul importat.</p> : null}
+        {items.length === 0 ? <p className="mt-3 text-[15px] text-[var(--ap-ok)]">Totul e la locul lui: facturile pe Drive, cheltuielile cu documente, plățile acoperite, extrasul importat.</p> : null}
         {blocking.length > 0 ? (
           <ul className="mt-3 grid gap-1.5">
             {blocking.map((item, index) => (
-              <li key={index} className="flex flex-wrap items-start gap-2 text-[13.5px]">
+              <li key={index} className="flex flex-wrap items-start gap-2 text-[15px]">
                 <Tag tone="warn" className="shrink-0">
                   lipsește
                 </Tag>
                 <span className="min-w-0 flex-1">{item.text}</span>
                 {FIX_LINK[item.fel] ? (
-                  <Link href={FIX_LINK[item.fel]!.href(month)} className="text-[13px] font-medium text-[var(--md-a1)] underline underline-offset-4">
+                  <Link href={FIX_LINK[item.fel]!.href(month)} className="text-[14.5px] font-medium text-[var(--md-a1)] underline underline-offset-4">
                     {FIX_LINK[item.fel]!.label}
                   </Link>
                 ) : null}
@@ -85,13 +85,13 @@ export function AccountantScreen({ check, accountant, email, actions }: { check:
         {warnings.length > 0 ? (
           <ul className="mt-3 grid gap-1.5">
             {warnings.map((item, index) => (
-              <li key={index} className="flex flex-wrap items-start gap-2 text-[13.5px] text-bone/85">
+              <li key={index} className="flex flex-wrap items-start gap-2 text-[15px] text-bone/85">
                 <Tag tone="neutral" className="shrink-0">
                   de verificat
                 </Tag>
                 <span className="min-w-0 flex-1">{item.text}</span>
                 {FIX_LINK[item.fel] ? (
-                  <Link href={FIX_LINK[item.fel]!.href(month)} className="text-[13px] font-medium text-[var(--md-a1)] underline underline-offset-4">
+                  <Link href={FIX_LINK[item.fel]!.href(month)} className="text-[14.5px] font-medium text-[var(--md-a1)] underline underline-offset-4">
                     {FIX_LINK[item.fel]!.label}
                   </Link>
                 ) : null}
@@ -111,24 +111,24 @@ export function AccountantScreen({ check, accountant, email, actions }: { check:
                   router.refresh();
                 })
               }
-              className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]"
+              className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]"
             >
               Urcă pe Drive PDF-urile facturilor
             </button>
           ) : null}
-          <button type="button" disabled={pending} onClick={() => router.refresh()} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+          <button type="button" disabled={pending} onClick={() => router.refresh()} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
             Verifică din nou
           </button>
         </div>
       </section>
 
       <section aria-labelledby="zip" className="rounded-xl border border-hair bg-char p-4">
-        <h2 id="zip" className="text-[15px] font-semibold text-bone">
+        <h2 id="zip" className="text-[16px] font-semibold text-bone">
           Zip-ul lunii
         </h2>
-        <p className="mt-1 text-[13px] text-dim">Tot ce e în folderul lunii de pe Drive (facturile emise, cheltuielile, extrasul), într-o arhivă pusă și ea în folder.</p>
+        <p className="mt-1 text-[14.5px] text-dim">Tot ce e în folderul lunii de pe Drive (facturile emise, cheltuielile, extrasul), într-o arhivă pusă și ea în folder.</p>
         {pachet?.zipFacutLa ? (
-          <p className="mt-2 text-[13.5px] text-bone">
+          <p className="mt-2 text-[15px] text-bone">
             Ultimul zip: {dateTimeLabel(pachet.zipFacutLa)} · {pachet.zipFisiere} fișiere · {((pachet.zipMarime ?? 0) / 1024 / 1024).toLocaleString("ro-RO", { maximumFractionDigits: 1 })} MB{" "}
             {pachet.zipLink ? (
               <a href={pachet.zipLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[var(--md-a1)] underline underline-offset-4">
@@ -151,11 +151,11 @@ export function AccountantScreen({ check, accountant, email, actions }: { check:
           </p>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" disabled={pending || !complete} onClick={() => build(false)} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+          <button type="button" disabled={pending || !complete} onClick={() => build(false)} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
             {pending ? "Se lucrează…" : pachet?.zipFacutLa ? "Fă zip-ul din nou" : "Fă zip-ul"}
           </button>
           {!complete ? (
-            <button type="button" disabled={pending} onClick={() => build(true)} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+            <button type="button" disabled={pending} onClick={() => build(true)} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
               Fă zip-ul oricum
             </button>
           ) : null}
@@ -194,16 +194,16 @@ function EmailToAccountant({
   const large = (pachet.zipMarime ?? 0) > 10 * 1024 * 1024;
   return (
     <section aria-labelledby="email-contabil" className="rounded-xl border border-hair bg-char p-4">
-      <h2 id="email-contabil" className="text-[15px] font-semibold text-bone">
+      <h2 id="email-contabil" className="text-[16px] font-semibold text-bone">
         Emailul către contabil — pleacă doar la „Trimite”
       </h2>
       {pachet.emailStare === "trimis" ? (
-        <p className="mt-2 text-[13.5px] text-[var(--ap-ok)]">
+        <p className="mt-2 text-[15px] text-[var(--ap-ok)]">
           Trimis {dateTimeLabel(pachet.emailTrimisLa)} către {pachet.emailCatre}. Poți trimite din nou dacă ai refăcut zip-ul.
         </p>
       ) : null}
       {!accountant ? (
-        <p className="mt-2 text-[13px] text-dim">
+        <p className="mt-2 text-[14.5px] text-dim">
           Emailul contabilului nu e setat.{" "}
           <Link href="/admin/firma/setari" className="text-[var(--md-a1)] underline underline-offset-4">
             Pune-l în Setări
@@ -243,10 +243,10 @@ function EmailToAccountant({
             <span role="status">{sent}</span>
           </Notice>
         ) : null}
-        <button type="submit" disabled={pending || !email} className={cn("btn btn-light justify-self-start !min-h-10 !px-4 !py-2 !text-[14px]")}>
+        <button type="submit" disabled={pending || !email} className={cn("btn btn-light justify-self-start !min-h-10 !px-4 !py-2 !text-[15px]")}>
           {pending ? "Se trimite…" : "Trimite"}
         </button>
-        {!email ? <p className="text-[12.5px] text-dim">Emailul nu e configurat (RESEND_API_KEY lipsește în Vercel).</p> : null}
+        {!email ? <p className="text-[14px] text-dim">Emailul nu e configurat (RESEND_API_KEY lipsește în Vercel).</p> : null}
       </form>
     </section>
   );

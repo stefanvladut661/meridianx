@@ -23,7 +23,7 @@ export function SoftSelect({
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      {label ? <span className="mb-1 block text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">{label}</span> : null}
+      {label ? <span className="mb-1 block text-[12px] uppercase tracking-[0.14em] text-muted-foreground">{label}</span> : null}
       <div className="relative">
         <select
           id={id}
@@ -31,7 +31,7 @@ export function SoftSelect({
           value={value}
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          className="h-8 w-full appearance-none truncate rounded-lg border border-white/[0.1] bg-white/[0.04] pl-2.5 pr-7 text-[12.5px] text-foreground outline-none transition-colors hover:bg-white/[0.07] focus:border-lav/50 disabled:opacity-50"
+          className="h-8 w-full appearance-none truncate rounded-lg border border-white/[0.1] bg-white/[0.04] pl-2.5 pr-7 text-[14px] text-foreground outline-none transition-colors hover:bg-white/[0.07] focus:border-lav/50 disabled:opacity-50"
         >
           {options.map((option) => (
             <option key={option.value} value={option.value} className="bg-[#14141A] text-foreground">
@@ -49,7 +49,7 @@ export function TextInput({ className, ...rest }: InputHTMLAttributes<HTMLInputE
   return (
     <input
       className={cn(
-        "h-9 w-full rounded-lg border border-white/[0.12] bg-white/[0.03] px-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-lav/50 focus:bg-white/[0.05]",
+        "h-9 w-full rounded-lg border border-white/[0.12] bg-white/[0.03] px-3 text-[14.5px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-lav/50 focus:bg-white/[0.05]",
         className
       )}
       {...rest}

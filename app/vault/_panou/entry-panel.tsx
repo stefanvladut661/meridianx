@@ -66,12 +66,12 @@ export function EntryPanel({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 id={`panel-${entry.id}`} ref={headingRef} tabIndex={-1} className="break-words text-[16px] font-semibold outline-none">
+              <h2 id={`panel-${entry.id}`} ref={headingRef} tabIndex={-1} className="break-words text-[17px] font-semibold outline-none">
                 {title}
               </h2>
               {ok ? <Pill tone="neutral">{KIND_LABEL[ok.payload.kind]}</Pill> : <Pill tone="apricot">ilizibil</Pill>}
             </div>
-            <p className="mt-1 text-[11.5px] text-muted-foreground">
+            <p className="mt-1 text-[13px] text-muted-foreground">
               {clientName} · actualizat {relativeRo(entry.updatedAt)} · <span className="pu-num font-mono">v{entry.version}</span>
               {entry.updatedBy ? <> · de {emailOf(entry.updatedBy)}</> : null}
             </p>
@@ -112,14 +112,14 @@ export function EntryPanel({
       </div>
 
       {error ? (
-        <p className="border-b border-rose/20 bg-rose/[0.07] px-4 py-2.5 text-[12px] text-[#FFC2CE]" role="alert">
+        <p className="border-b border-rose/20 bg-rose/[0.07] px-4 py-2.5 text-[13.5px] text-[#FFC2CE]" role="alert">
           {error}
         </p>
       ) : null}
 
       {!ok && entry.status === "unreadable" ? (
         <div className="px-4 py-6">
-          <div className="flex items-start gap-2.5 rounded-xl border border-apricot/25 bg-apricot/[0.06] px-3.5 py-3 text-[12px] leading-relaxed text-[#FFD0AC]">
+          <div className="flex items-start gap-2.5 rounded-xl border border-apricot/25 bg-apricot/[0.06] px-3.5 py-3 text-[13.5px] leading-relaxed text-[#FFD0AC]">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <div>
               <p className="font-medium">Intrarea e ilizibilă</p>
@@ -127,20 +127,20 @@ export function EntryPanel({
                 {entry.reason} Rândul există pe server, dar nu se poate decripta cu cheia seifului: a fost alterat sau scris cu altă cheie. Nu se editează. Spune-i echipei înainte
                 să o muți în coș.
               </p>
-              <p className="mt-2 font-mono text-[10.5px] text-[#FFD0AC]/70">id {entry.id}</p>
+              <p className="mt-2 font-mono text-[12px] text-[#FFD0AC]/70">id {entry.id}</p>
             </div>
           </div>
         </div>
       ) : ok ? (
         <div className="px-4 py-2">
-          {ok.payload.fields.length === 0 ? <p className="py-6 text-center text-[12px] text-muted-foreground">Intrarea nu are câmpuri. Adaugă unul din editare.</p> : null}
+          {ok.payload.fields.length === 0 ? <p className="py-6 text-center text-[13.5px] text-muted-foreground">Intrarea nu are câmpuri. Adaugă unul din editare.</p> : null}
           {ok.payload.fields.map((field, index) => (
             <VaultField key={`${entry.id}:${entry.version}:${index}`} field={field} />
           ))}
           {ok.payload.notes.trim() ? (
             <div className="border-t border-white/[0.06] py-3">
-              <p className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Notițe</p>
-              <p className="mt-1 whitespace-pre-wrap break-words text-[12px] leading-relaxed text-foreground/80">{ok.payload.notes}</p>
+              <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Notițe</p>
+              <p className="mt-1 whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-foreground/80">{ok.payload.notes}</p>
             </div>
           ) : null}
         </div>
@@ -150,7 +150,7 @@ export function EntryPanel({
 
       <div className="flex items-center gap-2 border-t border-white/[0.06] bg-white/[0.015] px-4 py-2.5">
         <Lock className="h-3 w-3 text-mint" aria-hidden="true" />
-        <p className="text-[10.5px] leading-tight text-muted-foreground">Criptat local. Serverul vede doar text cifrat.</p>
+        <p className="text-[12px] leading-tight text-muted-foreground">Criptat local. Serverul vede doar text cifrat.</p>
         <Btn size="xs" variant="ghost" className="ml-auto" icon={Lock} onClick={onLock}>
           Blochează
         </Btn>

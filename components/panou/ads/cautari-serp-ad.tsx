@@ -69,14 +69,14 @@ export function CautariSerpAd({
     <div className="min-w-0">
       <figure className="overflow-hidden rounded-xl border border-white/[0.08]">
         <div className="bg-[#ffffff] px-4 py-4 text-[#202124] sm:px-5" lang="ro">
-          <p className="text-[13px] font-bold leading-none">Sponsorizat</p>
+          <p className="text-[14.5px] font-bold leading-none">Sponsorizat</p>
           <div className="mt-3 flex items-center gap-3">
-            <span aria-hidden className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#dadce0] bg-[#f1f3f4] text-[12px] font-semibold text-[#4d5156]">
+            <span aria-hidden className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[#dadce0] bg-[#f1f3f4] text-[13.5px] font-semibold text-[#4d5156]">
               {host ? host.charAt(0).toUpperCase() : "?"}
             </span>
             <div className="min-w-0 leading-tight">
-              <p className="truncate text-[14px] text-[#202124]">{host ?? "adresă lipsă"}</p>
-              <p className="truncate text-[12px] text-[#4d5156]">
+              <p className="truncate text-[15px] text-[#202124]">{host ?? "adresă lipsă"}</p>
+              <p className="truncate text-[13.5px] text-[#4d5156]">
                 {ad.origin ? [ad.origin, ad.path1, ad.path1 ? ad.path2 : null].filter(Boolean).join(" › ") : "—"}
               </p>
             </div>
@@ -84,21 +84,21 @@ export function CautariSerpAd({
           <p className="mt-2 text-[19px] leading-snug text-[#1a0dab] [overflow-wrap:anywhere]">
             {headlines.length > 0 ? headlines.join(" | ") : <span className="text-[#5f6368]">Fără titluri</span>}
           </p>
-          <p className="mt-1 text-[14px] leading-relaxed text-[#4d5156] [overflow-wrap:anywhere]">
+          <p className="mt-1 text-[15px] leading-relaxed text-[#4d5156] [overflow-wrap:anywhere]">
             {descriptions.length > 0 ? descriptions.join(" ") : "Fără descrieri"}
           </p>
-          {extras && extras.callouts.length > 0 ? <p className="mt-1 text-[14px] leading-relaxed text-[#4d5156]">{extras.callouts.slice(0, 4).join(" · ")}</p> : null}
+          {extras && extras.callouts.length > 0 ? <p className="mt-1 text-[15px] leading-relaxed text-[#4d5156]">{extras.callouts.slice(0, 4).join(" · ")}</p> : null}
           {extras && extras.sitelinks.length > 0 ? (
-            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[14px] text-[#1a0dab]">
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[15px] text-[#1a0dab]">
               {extras.sitelinks.slice(0, 4).map((text) => (
                 <li key={text}>{text}</li>
               ))}
             </ul>
           ) : null}
-          {extras?.phone ? <p className="mt-2 text-[14px] text-[#202124]">Sună la {extras.phone}</p> : null}
+          {extras?.phone ? <p className="mt-2 text-[15px] text-[#202124]">Sună la {extras.phone}</p> : null}
         </div>
         <figcaption className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] bg-white/[0.025] px-3.5 py-2">
-          <span className="font-mono text-[10.5px] text-muted-foreground">
+          <span className="font-mono text-[12px] text-muted-foreground">
             Anunțul {index + 1} · o combinație posibilă
             {pinnedHeadlines > 0 ? ` · ${pinnedHeadlines === 1 ? "un titlu fixat" : `${pinnedHeadlines} titluri fixate`}` : ""}
           </span>
@@ -119,18 +119,18 @@ export function CautariSerpAd({
 function TextList({ title, items, max }: { title: string; items: Array<{ text: string; pin: number | null }>; max: number }) {
   return (
     <div className="min-w-0">
-      <h6 className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">{title}</h6>
+      <h6 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">{title}</h6>
       <ol className="mt-2 space-y-1">
         {items.map((item, index) => {
           const length = googleLength(item.text.trim());
           return (
-            <li key={index} className="flex min-w-0 items-baseline gap-2 text-[12px] leading-snug">
-              <span className="pu-num w-5 shrink-0 text-right font-mono text-[10.5px] text-muted-foreground">{index + 1}</span>
+            <li key={index} className="flex min-w-0 items-baseline gap-2 text-[13.5px] leading-snug">
+              <span className="pu-num w-5 shrink-0 text-right font-mono text-[12px] text-muted-foreground">{index + 1}</span>
               <span className="min-w-0 flex-1 text-foreground/90 [overflow-wrap:anywhere]">{item.text}</span>
               {item.pin !== null ? (
-                <span className="shrink-0 rounded-md border border-white/[0.09] bg-white/[0.05] px-1.5 font-mono text-[10px] text-foreground/75">fixat {item.pin}</span>
+                <span className="shrink-0 rounded-md border border-white/[0.09] bg-white/[0.05] px-1.5 font-mono text-[11.5px] text-foreground/75">fixat {item.pin}</span>
               ) : null}
-              <span className={cn("pu-num shrink-0 font-mono text-[10.5px]", length > max ? "text-rose" : "text-muted-foreground")}>
+              <span className={cn("pu-num shrink-0 font-mono text-[12px]", length > max ? "text-rose" : "text-muted-foreground")}>
                 {length}/{max}
               </span>
             </li>

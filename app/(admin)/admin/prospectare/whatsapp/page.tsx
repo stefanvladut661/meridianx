@@ -65,7 +65,7 @@ export default async function WhatsAppPage() {
             optiuni={optiuni.ok ? optiuni.data : null}
             conturi={toateConturile}
             utilizator={utilizator}
-            className="h-10 px-3.5 text-[13px] sm:h-8 sm:px-3 sm:text-[12.5px]"
+            className="h-10 px-3.5 text-[14.5px] sm:h-8 sm:px-3 sm:text-[14px]"
           />
         }
       />

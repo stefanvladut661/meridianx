@@ -11,7 +11,7 @@ import { useToast } from "../ui/toast";
 import { UNREACHABLE, type ActionResult } from "./shared";
 
 /** Butoanele de pe telefon sunt mai înalte (44 px); de la `sm` în sus au mărimea din prototip. */
-const TOUCH = "h-11 px-4 text-[14px] sm:h-8 sm:px-3 sm:text-[12.5px]";
+const TOUCH = "h-11 px-4 text-[15px] sm:h-8 sm:px-3 sm:text-[14px]";
 
 /** Copiază în clipboard; pe un browser care nu lasă, selectează textul ca să-l copiezi tu. */
 async function copyText(text: string, fallback: HTMLElement | null): Promise<"copiat" | "selectat"> {
@@ -52,9 +52,9 @@ function DraftCard({ post, fus, now, busy, onPublished }: { post: PostView; fus:
             <Pill tone="sky" dot>
               în ciorne
             </Pill>
-            <span className="break-all font-mono text-[10.5px] text-muted-foreground">{post.fisier}</span>
+            <span className="break-all font-mono text-[12px] text-muted-foreground">{post.fisier}</span>
           </div>
-          <span className="inline-flex items-center gap-1 text-[10.5px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
             <Clock className="h-3 w-3" aria-hidden="true" />
             {momentLabel(post.programataLa, fus)}
           </span>
@@ -62,13 +62,13 @@ function DraftCard({ post, fus, now, busy, onPublished }: { post: PostView; fus:
         <div className="px-4 py-3">
           {hasText ? (
             <div ref={block} className="select-all">
-              {body ? <p className="whitespace-pre-wrap break-words text-[15px] leading-snug text-foreground">{body}</p> : null}
-              {tags ? <p className={`break-words text-[12.5px] text-lav/85 ${body ? "mt-1.5" : ""}`}>{tags}</p> : null}
+              {body ? <p className="whitespace-pre-wrap break-words text-[16px] leading-snug text-foreground">{body}</p> : null}
+              {tags ? <p className={`break-words text-[14px] text-lav/85 ${body ? "mt-1.5" : ""}`}>{tags}</p> : null}
             </div>
           ) : (
-            <p className="rounded-xl border border-dashed border-white/[0.14] px-3 py-2.5 text-[13px] text-muted-foreground">Clipul n-are descriere în plan: scrie una direct în TikTok.</p>
+            <p className="rounded-xl border border-dashed border-white/[0.14] px-3 py-2.5 text-[14.5px] text-muted-foreground">Clipul n-are descriere în plan: scrie una direct în TikTok.</p>
           )}
-          {post.avertisment ? <p className="mt-2 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2 py-1 text-[10.5px] text-[#FFD0AC]">{post.avertisment}</p> : null}
+          {post.avertisment ? <p className="mt-2 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2 py-1 text-[12px] text-[#FFD0AC]">{post.avertisment}</p> : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {hasText ? (
@@ -84,7 +84,7 @@ function DraftCard({ post, fus, now, busy, onPublished }: { post: PostView; fus:
               {busy ? "Se marchează…" : "Publicat"}
             </Btn>
           </div>
-          <p className="mt-2.5 flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
+          <p className="mt-2.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
             <Smartphone className="h-3 w-3 shrink-0" aria-hidden="true" />
             {post.trimisaLa ? `trimis ${relativeRo(post.trimisaLa, now)}` : "trimis de curând"} · se marchează singur în cel mult 30 de minute de la confirmarea TikTok
           </p>

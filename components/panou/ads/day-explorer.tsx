@@ -47,7 +47,7 @@ export function DayExplorer({
           }}
         >
           <Btn size="xs" variant="outline" icon={ChevronLeft} onClick={() => setIndex(safe - 1)} disabled={safe <= 0} aria-label="Ziua anterioară" />
-          <span className="pu-num px-2 text-[11.5px] text-muted-foreground" aria-live="polite">
+          <span className="pu-num px-2 text-[13px] text-muted-foreground" aria-live="polite">
             {days.length === 0 ? 0 : safe + 1} / {days.length}
           </span>
           <Btn size="xs" variant="outline" icon={ChevronRight} onClick={() => setIndex(safe + 1)} disabled={safe >= days.length - 1} aria-label="Ziua următoare" />

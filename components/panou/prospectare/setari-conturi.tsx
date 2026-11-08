@@ -55,16 +55,16 @@ function CampCont({
   const descriere = eroare ? `${id}-e` : hint ? `${id}-h` : undefined;
   return (
     <div>
-      <label htmlFor={id} className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+      <label htmlFor={id} className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
         {label}
       </label>
       {children(descriere)}
       {eroare ? (
-        <span id={`${id}-e`} role="alert" className="mt-1 block text-[12px] text-rose sm:text-[11.5px]">
+        <span id={`${id}-e`} role="alert" className="mt-1 block text-[13.5px] text-rose sm:text-[13px]">
           {eroare}
         </span>
       ) : hint ? (
-        <span id={`${id}-h`} className="mt-1 block text-[12px] text-muted-foreground/80 sm:text-[11.5px]">
+        <span id={`${id}-h`} className="mt-1 block text-[13.5px] text-muted-foreground/80 sm:text-[13px]">
           {hint}
         </span>
       ) : null}
@@ -131,8 +131,8 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
 
   return (
     <form onSubmit={salveaza} noValidate aria-busy={pending}>
-      <h2 className="text-[17px] font-semibold">{cont ? `Editează ${cont.nume}` : "Adaugă un cont WhatsApp"}</h2>
-      <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+      <h2 className="text-[18px] font-semibold">{cont ? `Editează ${cont.nume}` : "Adaugă un cont WhatsApp"}</h2>
+      <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted-foreground">
         {cont
           ? "Numele și numărul se schimbă și pe telefoanele care l-au ales. Firmele trimise deja de pe el rămân pe el."
           : "Contul apare imediat în „WhatsApp azi”, ca buton de ales."}
@@ -224,7 +224,7 @@ function RandCont({ cont, lucreaza, onEditeaza, onComuta }: { cont: ContWhatsapp
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className={cn("min-w-0 break-words text-[14px] font-medium sm:text-[13px]", !cont.activ && "text-muted-foreground")}>{cont.nume}</p>
+          <p className={cn("min-w-0 break-words text-[15px] font-medium sm:text-[14.5px]", !cont.activ && "text-muted-foreground")}>{cont.nume}</p>
           {cont.activ ? (
             <Pill tone="mint" dot>
               Activ
@@ -233,7 +233,7 @@ function RandCont({ cont, lucreaza, onEditeaza, onComuta }: { cont: ContWhatsapp
             <Pill tone="neutral">Dezactivat</Pill>
           )}
         </div>
-        <p className="pu-num mt-0.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">
+        <p className="pu-num mt-0.5 text-[14px] text-muted-foreground sm:text-[13px]">
           {telefonCont(cont.telefon)} · {num(cont.limita_zi)} pe zi
         </p>
       </div>
@@ -299,7 +299,7 @@ export function SetariConturi({ conturi, eroare }: { conturi: ContWhatsapp[] | n
         <EroareCitire title="Conturile nu s-au putut citi" message={eroare ?? "Citirea a căzut."} className="py-8" />
       ) : conturi.length === 0 ? (
         <div className="mt-4 flex flex-col items-start gap-3 rounded-xl border border-dashed border-white/[0.1] px-4 py-5">
-          <p className="flex items-start gap-2 text-[13px] leading-relaxed text-muted-foreground">
+          <p className="flex items-start gap-2 text-[14.5px] leading-relaxed text-muted-foreground">
             <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-lav" aria-hidden="true" />
             Niciun cont încă. Adaugă primul număr de pe care trimiteți WhatsApp: fără cont, nicio firmă nu se poate marca în „WhatsApp azi”.
           </p>
@@ -309,7 +309,7 @@ export function SetariConturi({ conturi, eroare }: { conturi: ContWhatsapp[] | n
         </div>
       ) : (
         <>
-          <p className="mt-3 text-[12px] text-muted-foreground sm:text-[11.5px]">
+          <p className="mt-3 text-[13.5px] text-muted-foreground sm:text-[13px]">
             {active === toate.length ? `${num(active)} ${active === 1 ? "cont activ" : "conturi active"}.` : `${num(active)} active din ${num(toate.length)}.`}{" "}
             Limita pe zi e doar un avertisment. Un cont dezactivat dispare din „WhatsApp azi”; nu se șterge, ca firmele trimise de pe el să-și păstreze contul.
           </p>

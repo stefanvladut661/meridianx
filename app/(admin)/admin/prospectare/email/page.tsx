@@ -87,7 +87,7 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
           title="Căsuțe de email azi"
           hint="Trimise azi, limita fiecărei adrese și starea încălzirii"
           action={
-            <Link href="/admin/prospectare/setari" className="rounded-sm text-[11.5px] text-muted-foreground hover:text-foreground">
+            <Link href="/admin/prospectare/setari" className="rounded-sm text-[13px] text-muted-foreground hover:text-foreground">
               Plafoane în Setări →
             </Link>
           }
@@ -113,7 +113,7 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
             <EroareCitire title="Fără căsuțe, programările nu se pot împărți" message={casute.ok ? "" : casute.message} className="py-8" />
           )}
         </div>
-        <p className="mt-3 border-t border-border pt-3 text-[11.5px] leading-relaxed text-muted-foreground">
+        <p className="mt-3 border-t border-border pt-3 text-[13px] leading-relaxed text-muted-foreground">
           {ciclu.ok ? `Distribuția de azi a rulat la ${timeRo(ciclu.data.rulat_la)}. ` : null}
           Trimise = cerute azi de robot de pe căsuță; ce rămâne netrimis se întoarce în distribuție la 00:00. Mâine apar doar programările manuale: restul le pune distribuția la
           00:00, de la cele mai vechi site-uri, până la limita fiecărei căsuțe
@@ -171,7 +171,7 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
             <EroareCitire title="Lista emailurilor nu s-a încărcat" message={emailuri.message} />
           )}
           {emailuri.ok && peZile.ok && !aleasa && emailuri.data.length !== peZile.data.total ? (
-            <p className="border-t border-border px-4 py-2.5 text-[10.5px] text-muted-foreground">
+            <p className="border-t border-border px-4 py-2.5 text-[12px] text-muted-foreground">
               Lista are {cate(emailuri.data.length, "mesaj", "mesaje")}, contoarele căsuțelor {num(peZile.data.total)}: contoarele vin de la căsuțe, lista din activitatea firmelor.
             </p>
           ) : null}
@@ -197,7 +197,7 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
             ) : (
               <EroareCitire title="Răspunsurile nu s-au putut citi" message={raspunsuri.message} />
             )}
-            <p className="border-t border-border px-4 py-2.5 text-[10.5px] text-muted-foreground">
+            <p className="border-t border-border px-4 py-2.5 text-[12px] text-muted-foreground">
               Răspunsurile le raportează roboții din căsuțe. Un „NU” mută firma singur la „Nu contacta” și o oprește pe toate canalele. Ultima actualizare: {dateTimeRo(acum)}.
             </p>
           </Card>

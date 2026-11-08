@@ -55,7 +55,7 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
           <Pill tone="apricot">doar pe pauză</Pill>
         </div>
         <p className={PAGE_LEAD}>Portalul creează campanii oprite. Pornirea, bugetul și licitarea se ating doar în platformă, de mână.</p>
-        {subtitle ? <p className="mt-1.5 text-[11.5px] text-muted-foreground">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1.5 text-[13px] text-muted-foreground">{subtitle}</p> : null}
       </div>
       {actions}
     </div>

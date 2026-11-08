@@ -41,7 +41,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
   return (
     <div className="sticky top-0 z-30 border-b border-hair bg-char/95 backdrop-blur">
       <div className="flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:px-6">
-        <p className="text-[14px] font-semibold text-bone">{item?.label ?? "Firmă"}</p>
+        <p className="text-[15px] font-semibold text-bone">{item?.label ?? "Firmă"}</p>
         {item?.month ? (
           <div className="flex items-center gap-1">
             <button
@@ -59,7 +59,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
                 value={month}
                 disabled={pending}
                 onChange={(event) => go({ luna: event.currentTarget.value })}
-                className="h-9 rounded-lg border border-hair-strong bg-char px-2.5 text-[14px] font-semibold text-bone"
+                className="h-9 rounded-lg border border-hair-strong bg-char px-2.5 text-[15px] font-semibold text-bone"
               >
                 {months.sort().reverse().map((value) => (
                   <option key={value} value={value}>
@@ -86,7 +86,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
               value={clientId}
               disabled={pending}
               onChange={(event) => go({ client: event.currentTarget.value })}
-              className="h-9 max-w-[14rem] min-w-0 truncate rounded-lg border border-hair-strong bg-char px-2.5 text-[14px] text-bone"
+              className="h-9 max-w-[14rem] min-w-0 truncate rounded-lg border border-hair-strong bg-char px-2.5 text-[15px] text-bone"
             >
               <option value="">Toți clienții</option>
               {clients.map((client) => (
@@ -97,7 +97,7 @@ export function FirmaTopBar({ clients }: { clients: TopBarClient[] }) {
             </select>
           </label>
         ) : null}
-        {pending ? <span className="text-[12.5px] text-dim">Se încarcă…</span> : null}
+        {pending ? <span className="text-[14px] text-dim">Se încarcă…</span> : null}
       </div>
     </div>
   );

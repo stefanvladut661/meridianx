@@ -25,11 +25,11 @@ import type { Dispozitiv, Etapa, RezumatDistributie } from "@/lib/prospectare/ty
 export const metadata: Metadata = { title: "Prezentare — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-const EYEBROW = "text-[11px] uppercase tracking-[0.14em] text-muted-foreground";
+const EYEBROW = "text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground";
 /** Etapele din care firma nu mai e contactată: în pâlnie stau separat, sub o linie. */
 const IESITE: Etapa[] = ["nu_contacta", "respins"];
 
-const linkMic = "rounded-sm text-[11.5px] text-muted-foreground hover:text-foreground";
+const linkMic = "rounded-sm text-[13px] text-muted-foreground hover:text-foreground";
 
 /**
  * Câte firme au primit fiecare canal. Din migrarea 36, firmele cu email și
@@ -48,11 +48,11 @@ function Canale({ canale }: { canale: Rezumat["canale"] }) {
     <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
       {randuri.map((c) => (
         <div key={c.cheie} className="flex items-baseline gap-1.5">
-          <dt className="flex items-center gap-1.5 text-[12.5px] text-foreground/80">
+          <dt className="flex items-center gap-1.5 text-[14px] text-foreground/80">
             {c.punct ? <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${c.punct}`} aria-hidden="true" /> : null}
             {c.label}
           </dt>
-          <dd className="pu-num text-[12.5px] font-medium">{num(c.n)}</dd>
+          <dd className="pu-num text-[14px] font-medium">{num(c.n)}</dd>
         </div>
       ))}
     </dl>
@@ -67,8 +67,8 @@ function Palnie({ rezumat }: { rezumat: Rezumat }) {
     return (
       <li key={etapa}>
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[12.5px] text-foreground/80">{ETAPE[etapa].label}</span>
-          <span className="pu-num text-[12.5px] font-medium">
+          <span className="text-[14px] text-foreground/80">{ETAPE[etapa].label}</span>
+          <span className="pu-num text-[14px] font-medium">
             {num(n)}
             <span className="sr-only">, {procent}% din total</span>
           </span>
@@ -87,7 +87,7 @@ function Palnie({ rezumat }: { rezumat: Rezumat }) {
       <ul className="mt-3 space-y-3">{ETAPE_ORDINE.filter((e) => IESITE.includes(e)).map(rand)}</ul>
       <p className={`${EYEBROW} mt-4 border-t border-border pt-3`}>Canale folosite</p>
       <Canale canale={rezumat.canale} />
-      <p className="mt-4 border-t border-border pt-3 text-[11.5px] text-muted-foreground">
+      <p className="mt-4 border-t border-border pt-3 text-[13px] text-muted-foreground">
         Roboții construiesc, oamenii contactează. Firmele cu email și mobil primesc și email, și WhatsApp: câte o dată, niciodată în aceeași zi, și doar dacă n-au
         răspuns între timp. Telefonul rămâne separat: alt canal lângă el se permite doar din fișa firmei, cu motiv.
         {rezumat.de_refacut > 0 ? ` ${cate(rezumat.de_refacut, "site e marcat", "site-uri sunt marcate")} de refăcut.` : null}
@@ -99,7 +99,7 @@ function Palnie({ rezumat }: { rezumat: Rezumat }) {
 function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number }) {
   if (dispozitive.length === 0) {
     return (
-      <p className="py-4 text-[12.5px] text-muted-foreground">
+      <p className="py-4 text-[14px] text-muted-foreground">
         Niciun robot conectat.{" "}
         <Link href="/admin/prospectare/roboti" className="rounded-sm font-medium text-foreground underline underline-offset-2">
           Adaugă unul din Roboți
@@ -113,13 +113,13 @@ function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number
       {dispozitive.map((d) => (
         <li key={d.id} className="min-w-0 rounded-xl border border-border p-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] font-medium">
+            <span className="flex min-w-0 items-center gap-1.5 text-[14px] font-medium">
               <Cpu className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
               <span className="truncate">{d.nume}</span>
             </span>
             <RobotStare stare={stareRobot(d, acum)} />
           </div>
-          <p className="mt-1.5 truncate text-[11.5px] text-muted-foreground">
+          <p className="mt-1.5 truncate text-[13px] text-muted-foreground">
             {d.firma_curenta ? (
               <>
                 {d.firma_curenta.tip_lucru === "refacere" ? "reface" : "construiește"}:{" "}
@@ -131,7 +131,7 @@ function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number
               "fără firmă în lucru"
             )}
           </p>
-          <p className="mt-1 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
+          <p className="mt-1 flex flex-wrap gap-x-2 text-[12.5px] text-muted-foreground">
             <span title={d.ultima_activitate ? dateTimeRo(d.ultima_activitate) : undefined}>{d.ultima_activitate ? relativeRo(d.ultima_activitate, acum) : "niciodată activ"}</span>
             <span aria-hidden="true">·</span>
             <span>{cate(d.site_uri_azi, "site azi", "site-uri azi")}</span>
@@ -228,7 +228,7 @@ function Distributie({ d }: { d: RezumatDistributie }) {
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">Programate azi și mâine, rezerva și ce s-a întors la 00:00, pe fiecare canal</caption>
           <thead>
-            <tr className="border-b border-border text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+            <tr className="border-b border-border text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
               <th scope="col" className="py-2 pr-3 font-medium">
                 Canal
               </th>
@@ -250,25 +250,25 @@ function Distributie({ d }: { d: RezumatDistributie }) {
             {randuri.map((r) => (
               <tr key={r.cheie} className="border-b border-border/70 align-top last:border-0">
                 <th scope="row" className="py-2.5 pr-3 text-left font-normal">
-                  <Link href={r.href} className="inline-flex items-center gap-1.5 rounded-sm text-[12.5px] font-medium hover:underline">
+                  <Link href={r.href} className="inline-flex items-center gap-1.5 rounded-sm text-[14px] font-medium hover:underline">
                     <r.Icon className={`h-3.5 w-3.5 shrink-0 ${r.ton}`} aria-hidden="true" />
                     {r.label}
                   </Link>
                 </th>
                 <td className="py-2.5 pr-3">
-                  <p className="pu-num text-[18px] font-medium leading-none">{num(r.azi)}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{r.aziDetaliu}</p>
+                  <p className="pu-num text-[19px] font-medium leading-none">{num(r.azi)}</p>
+                  <p className="mt-1 text-[12.5px] text-muted-foreground">{r.aziDetaliu}</p>
                 </td>
                 <td className="py-2.5 pr-3">
-                  <p className="pu-num text-[18px] font-medium leading-none">{num(r.maine)}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{r.maineDetaliu}</p>
+                  <p className="pu-num text-[19px] font-medium leading-none">{num(r.maine)}</p>
+                  <p className="mt-1 text-[12.5px] text-muted-foreground">{r.maineDetaliu}</p>
                 </td>
                 <td className="py-2.5 pr-3">
-                  <p className="pu-num text-[18px] font-medium leading-none">{num(r.rezerva)}</p>
+                  <p className="pu-num text-[19px] font-medium leading-none">{num(r.rezerva)}</p>
                 </td>
                 <td className="py-2.5">
-                  <p className="pu-num text-[18px] font-medium leading-none">{num(r.intoarse)}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{r.intoarseDetaliu}</p>
+                  <p className="pu-num text-[19px] font-medium leading-none">{num(r.intoarse)}</p>
+                  <p className="mt-1 text-[12.5px] text-muted-foreground">{r.intoarseDetaliu}</p>
                 </td>
               </tr>
             ))}
@@ -279,7 +279,7 @@ function Distributie({ d }: { d: RezumatDistributie }) {
       <ul className="mt-3 space-y-2.5 md:hidden">
         {randuri.map((r) => (
           <li key={r.cheie} className="rounded-xl border border-border p-3">
-            <Link href={r.href} className="inline-flex items-center gap-1.5 rounded-sm text-[12.5px] font-medium hover:underline">
+            <Link href={r.href} className="inline-flex items-center gap-1.5 rounded-sm text-[14px] font-medium hover:underline">
               <r.Icon className={`h-3.5 w-3.5 shrink-0 ${r.ton}`} aria-hidden="true" />
               {r.label}
             </Link>
@@ -291,9 +291,9 @@ function Distributie({ d }: { d: RezumatDistributie }) {
                 { label: "Întoarse la 00:00", n: r.intoarse, detaliu: r.intoarseDetaliu },
               ].map((x) => (
                 <div key={x.label} className="min-w-0">
-                  <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">{x.label}</dt>
-                  <dd className="pu-num mt-0.5 text-[16px] font-medium leading-tight">{num(x.n)}</dd>
-                  {x.detaliu ? <dd className="text-[11px] leading-snug text-muted-foreground">{x.detaliu}</dd> : null}
+                  <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{x.label}</dt>
+                  <dd className="pu-num mt-0.5 text-[17px] font-medium leading-tight">{num(x.n)}</dd>
+                  {x.detaliu ? <dd className="text-[12.5px] leading-snug text-muted-foreground">{x.detaliu}</dd> : null}
                 </div>
               ))}
             </dl>
@@ -301,7 +301,7 @@ function Distributie({ d }: { d: RezumatDistributie }) {
         ))}
       </ul>
 
-      <p className="mt-3 border-t border-border pt-3 text-[11.5px] leading-relaxed text-muted-foreground">
+      <p className="mt-3 border-t border-border pt-3 text-[13px] leading-relaxed text-muted-foreground">
         La 00:00, firmele cu site gata și publicat se programează de la cele mai vechi site-uri: întâi pe email (pe căsuța domeniului din linkul demo), apoi
         pe WhatsApp, cât permit căsuțele și conturile; cele care au primit unul dintre ele într-o zi de dinainte intră și pe celălalt. Ziua se completează și peste zi,
         când crește o limită sau apar site-uri noi. Apelurile nu se programează singure: rezerva lor se importă în „Apeluri azi” sau se programează manual. O firmă poate
@@ -395,8 +395,8 @@ export default async function PrezentarePage() {
         <Card className="p-4">
           <p className={EYEBROW}>Firme cercetate</p>
           <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.total)}</p>
-          <p className="mt-1.5 text-[11.5px] text-muted-foreground">{num(r.in_lucru)} în lucru la roboți acum</p>
-          <p className="mt-1 text-[11.5px] text-muted-foreground">
+          <p className="mt-1.5 text-[13px] text-muted-foreground">{num(r.in_lucru)} în lucru la roboți acum</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
             Evaluate: {num(evaluate.eligibile)} eligibile · {num(evaluate.respinse)} respinse
             {(r.azi.evaluate ?? 0) > 0 ? ` · ${num(r.azi.evaluate)} azi` : ""}
           </p>
@@ -410,12 +410,12 @@ export default async function PrezentarePage() {
                 <LayoutTemplate className="h-4 w-4 self-center text-muted-foreground" aria-hidden="true" />
                 {num(construite.data.total)}
               </p>
-              <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+              <p className="mt-1.5 text-[13px] text-muted-foreground">
                 <span className="pu-num font-medium text-foreground/85">{num(construite.data.gata)}</span> gata, necontactate ·{" "}
                 <span className="pu-num font-medium text-foreground/85">{num(construite.data.contactate)}</span> trimise
               </p>
               {construite.data.de_refacut > 0 || construite.data.oprite > 0 ? (
-                <p className="mt-1 text-[11.5px] text-muted-foreground">
+                <p className="mt-1 text-[13px] text-muted-foreground">
                   {construite.data.de_refacut > 0 ? (
                     <>
                       <span className="pu-num font-medium text-foreground/85">{num(construite.data.de_refacut)}</span> de refăcut
@@ -431,7 +431,7 @@ export default async function PrezentarePage() {
               ) : null}
             </>
           ) : (
-            <p className="mt-2 text-[11.5px] text-muted-foreground">Nu am putut număra site-urile: {construite.message}</p>
+            <p className="mt-2 text-[13px] text-muted-foreground">Nu am putut număra site-urile: {construite.message}</p>
           )}
         </Card>
 
@@ -444,18 +444,18 @@ export default async function PrezentarePage() {
               { cheie: "telefon", label: "prin apel", n: r.canale.telefon, azi: r.azi.apeluri_facute, Icon: Phone, ton: "text-sky" },
             ].map(({ cheie, label, n, azi: nAzi, Icon, ton }) => (
               <div key={cheie} className="flex items-baseline justify-between gap-2">
-                <dt className="flex items-center gap-1.5 text-[12.5px] text-foreground/80">
+                <dt className="flex items-center gap-1.5 text-[14px] text-foreground/80">
                   <Icon className={`h-3.5 w-3.5 shrink-0 ${ton}`} aria-hidden="true" />
                   {label}
                 </dt>
                 <dd className="text-right">
-                  <span className="pu-num text-[18px] font-medium leading-none">{num(n)}</span>
-                  {nAzi > 0 ? <span className="pu-num ml-1.5 text-[11px] text-muted-foreground">+{num(nAzi)} azi</span> : null}
+                  <span className="pu-num text-[19px] font-medium leading-none">{num(n)}</span>
+                  {nAzi > 0 ? <span className="pu-num ml-1.5 text-[12.5px] text-muted-foreground">+{num(nAzi)} azi</span> : null}
                 </dd>
               </div>
             ))}
           </dl>
-          {peConturi ? <p className="mt-1.5 text-[11.5px] text-muted-foreground">WhatsApp azi pe conturi: {peConturi}</p> : null}
+          {peConturi ? <p className="mt-1.5 text-[13px] text-muted-foreground">WhatsApp azi pe conturi: {peConturi}</p> : null}
         </Card>
 
         <Card className="p-4">
@@ -463,7 +463,7 @@ export default async function PrezentarePage() {
           {distributie.ok ? (
             <>
               <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(distributie.data.rezerva.total)}</p>
-              <p className="mt-1.5 text-[11.5px] text-muted-foreground">în rezervă: site gata și publicat, niciun contact, neprogramate</p>
+              <p className="mt-1.5 text-[13px] text-muted-foreground">în rezervă: site gata și publicat, niciun contact, neprogramate</p>
               <Link href="/admin/prospectare/email" className={`${linkMic} mt-1.5 flex items-start gap-1.5`}>
                 <Mail className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" />
                 <span>
@@ -481,7 +481,7 @@ export default async function PrezentarePage() {
           ) : (
             <>
               <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.rezerva_telefon)}</p>
-              <p className="mt-1.5 text-[11.5px] text-muted-foreground">pot merge la apeluri: site gata și publicat, niciun contact, neprogramate</p>
+              <p className="mt-1.5 text-[13px] text-muted-foreground">pot merge la apeluri: site gata și publicat, niciun contact, neprogramate</p>
               <Link href="/admin/prospectare/whatsapp" className={`${linkMic} mt-1.5 flex items-start gap-1.5`}>
                 <MessageCircle className="mt-0.5 h-3 w-3 shrink-0 text-lav" aria-hidden="true" />
                 <span>
@@ -491,7 +491,7 @@ export default async function PrezentarePage() {
             </>
           )}
           {(r.recontactari_permise ?? 0) > 0 ? (
-            <p className="mt-1 flex items-start gap-1.5 text-[11.5px] text-muted-foreground">
+            <p className="mt-1 flex items-start gap-1.5 text-[13px] text-muted-foreground">
               <LockOpen className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
               <span>
                 {cate(r.recontactari_permise, "recontactare permisă", "recontactări permise")} din fișă, {r.recontactari_permise === 1 ? "încă nefolosită" : "încă nefolosite"}
@@ -503,7 +503,7 @@ export default async function PrezentarePage() {
         <Card className="p-4 sm:col-span-2 xl:col-span-1">
           <p className={EYEBROW}>Interesați</p>
           <p className="pu-num mt-2 text-[28px] font-medium leading-none">{num(r.etape.interesat ?? 0)}</p>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+          <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
             <Users className="h-3 w-3" aria-hidden="true" /> {num(r.azi.interesati)} noi azi · {cate(clienti, "client", "clienți")}
           </p>
         </Card>
@@ -546,7 +546,7 @@ export default async function PrezentarePage() {
           }
         />
         <div className="mt-3">{dispozitive.ok ? <Roboti dispozitive={dispozitive.data} acum={acum} /> : <EroareCitire title="Roboții nu s-au putut citi" message={dispozitive.message} className="py-8" />}</div>
-        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 text-[11.5px] text-muted-foreground">
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-3 text-[13px] text-muted-foreground">
           <MapPinned className="h-3 w-3 shrink-0" aria-hidden="true" />
           <span>
             Nișe: <span className="pu-num font-medium text-foreground/85">{num(nise.rezervate)}</span> rezervate ·{" "}
@@ -572,7 +572,7 @@ export default async function PrezentarePage() {
         <div className="mt-4">{activitate.ok ? <ActivitateFeed activitate={activitate.data} acum={acum} /> : <EroareCitire title="Activitatea nu s-a putut citi" message={activitate.message} className="py-8" />}</div>
       </Card>
 
-      <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
         <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
         Etapele se colorează la fel în tot modulul:{" "}
         {ETAPE_ORDINE.slice(0, 3)

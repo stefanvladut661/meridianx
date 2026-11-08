@@ -40,7 +40,7 @@ export function AccountsScreen({ accounts, today, actions }: { accounts: ContFir
         </Notice>
       ) : null}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[13.5px] text-dim">
+        <p className="text-[15px] text-dim">
           {accounts.length} conturi
           {monthly.size > 0 ? ` · abonamente ≈ ${[...monthly.entries()].map(([currency, sum]) => money(sum, currency)).join(" + ")} pe lună` : ""}
           {noTwoFa.length > 0 ? <span className="text-[var(--ap-warn)]"> · {noTwoFa.length} fără 2FA</span> : null}
@@ -56,11 +56,11 @@ export function AccountsScreen({ accounts, today, actions }: { accounts: ContFir
                 router.refresh();
               })
             }
-            className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]"
+            className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]"
           >
             Adaugă lista de bază
           </button>
-          <button type="button" onClick={() => setOpen("nou")} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+          <button type="button" onClick={() => setOpen("nou")} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
             <IconPlus size={16} />
             Cont nou
           </button>
@@ -97,18 +97,18 @@ export function AccountsScreen({ accounts, today, actions }: { accounts: ContFir
                       <button type="button" onClick={() => setOpen(account.id)} className="text-left font-semibold text-bone hover:text-[var(--md-a1)] hover:underline">
                         {account.nume}
                       </button>
-                      <p className="mt-0.5 text-[12.5px] text-dim">
+                      <p className="mt-0.5 text-[14px] text-dim">
                         {CATEGORIE_CONT[account.categoria]}
                         {account.cont ? ` · ${account.cont}` : ""}
                       </p>
                     </td>
-                    <td className={cn(tdClass, "text-[13px]")}>{account.cineAreAcces ?? <span className="text-dim">—</span>}</td>
+                    <td className={cn(tdClass, "text-[14.5px]")}>{account.cineAreAcces ?? <span className="text-dim">—</span>}</td>
                     <td className={tdClass}>{account.doiFa === "da" ? <Tag tone="ok">Da</Tag> : account.doiFa === "nu" ? <Tag tone="warn">Nu</Tag> : <Tag tone="muted">Nu știu</Tag>}</td>
-                    <td className={cn(tdClass, "text-[13px]")}>{account.undeEParola ?? <span className="text-[var(--ap-warn)]">nescris</span>}</td>
-                    <td className={cn(tdClass, "whitespace-nowrap text-right tabular-nums text-[13px]")}>
+                    <td className={cn(tdClass, "text-[14.5px]")}>{account.undeEParola ?? <span className="text-[var(--ap-warn)]">nescris</span>}</td>
+                    <td className={cn(tdClass, "whitespace-nowrap text-right tabular-nums text-[14.5px]")}>
                       {account.abonament !== null ? `${money(account.abonament, account.moneda)}${account.ciclu ? ` / ${account.ciclu === "lunar" ? "lună" : "an"}` : ""}` : "—"}
                     </td>
-                    <td className={cn(tdClass, "whitespace-nowrap text-[13px]")}>
+                    <td className={cn(tdClass, "whitespace-nowrap text-[14.5px]")}>
                       {next ? (
                         <>
                           {dayLabel(next)}
@@ -203,7 +203,7 @@ function AccountPanel({
                 else onRemoved();
               })
             }
-            className="text-[13px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]"
+            className="text-[14.5px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]"
           >
             Scoate contul din listă
           </button>
@@ -295,16 +295,16 @@ function AccountPanel({
         </Field>
         {error && !error.field ? <Notice tone="error">{error.message}</Notice> : null}
         <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+          <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
             {pending ? "Se salvează…" : account ? "Salvează" : "Adaugă contul"}
           </button>
           {saved ? (
-            <p role="status" className="text-[13px] text-[var(--ap-ok)]">
+            <p role="status" className="text-[14.5px] text-[var(--ap-ok)]">
               Salvat.
             </p>
           ) : null}
           {account?.adresa ? (
-            <a href={account.adresa} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[13px] text-[var(--md-a1)] underline underline-offset-4">
+            <a href={account.adresa} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-[14.5px] text-[var(--md-a1)] underline underline-offset-4">
               Deschide <IconExternal size={13} />
             </a>
           ) : null}

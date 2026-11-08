@@ -22,7 +22,7 @@ export function ScreenHead({ title, badge, text, actions, className }: { title: 
           <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">{title}</h1>
           {badge}
         </div>
-        {text ? <p className="mt-2 max-w-2xl text-[12.5px] leading-relaxed text-muted-foreground">{text}</p> : null}
+        {text ? <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">{text}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
@@ -65,7 +65,7 @@ export function ClipTile({ platform, durationMs, className }: { platform: Platfo
   return (
     <span aria-hidden="true" className={cn("relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-br", gradient, className)}>
       <Play className="h-4 w-4 text-white/40" />
-      {durationMs ? <span className="absolute bottom-0.5 right-1 font-mono text-[8.5px] text-white/60">{Math.round(durationMs / 1000)}s</span> : null}
+      {durationMs ? <span className="absolute bottom-0.5 right-1 font-mono text-[10px] text-white/60">{Math.round(durationMs / 1000)}s</span> : null}
     </span>
   );
 }
@@ -91,7 +91,7 @@ export function IssueList({ issues, prefix, className }: { issues: Issue[]; pref
   return (
     <ul className={cn("space-y-1", className)}>
       {issues.map((issue, index) => (
-        <li key={`${issue.mesaj}-${index}`} className={cn("flex gap-2 text-[11.5px] leading-snug", issue.nivel === "eroare" ? "text-[#FFC2CE]" : "text-[#FFD0AC]")}>
+        <li key={`${issue.mesaj}-${index}`} className={cn("flex gap-2 text-[13px] leading-snug", issue.nivel === "eroare" ? "text-[#FFC2CE]" : "text-[#FFD0AC]")}>
           <span aria-hidden="true" className={cn("mt-[0.45em] h-1.5 w-1.5 shrink-0 rounded-full", issue.nivel === "eroare" ? "bg-rose" : "bg-apricot")} />
           <span>
             <span className="sr-only">{issue.nivel === "eroare" ? "Eroare: " : "Atenție: "}</span>

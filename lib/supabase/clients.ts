@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
@@ -192,8 +193,14 @@ function openedWithOAuth(accessToken: string): boolean {
  * Poarta e AICI, nu în pagina de login: rutele API și acțiunile de
  * server trec toate prin funcția asta, deci un cont scos din listă pierde
  * accesul la următoarea cerere, nu la următoarea autentificare.
+ *
+ * O singură verificare pe randare: layout-ul comun, layout-ul modulului și
+ * pagina o cer toate, iar `cache` le dă același rezultat. În acțiuni și în
+ * rute nu memorează nimic: fiecare apel verifică din nou.
  */
-export async function getAdminUser(): Promise<{ id: string; email: string | null } | null> {
+export const getAdminUser = cache(readAdminUser);
+
+async function readAdminUser(): Promise<{ id: string; email: string | null } | null> {
   const supabase = await createReadOnlySessionClient();
   if (!supabase) return null;
 

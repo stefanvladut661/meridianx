@@ -20,11 +20,11 @@ import { cn } from "@/lib/utils";
  */
 
 /** Pentru `Btn size="sm"` și `btnClass({ size: "sm" })`. */
-export const TAP_SM = "h-11 px-4 text-[14px] sm:h-8 sm:px-3 sm:text-[12.5px]";
+export const TAP_SM = "h-11 px-4 text-[15px] sm:h-8 sm:px-3 sm:text-[14px]";
 /** Pentru `Btn size="md"`. */
-export const TAP_MD = "h-11 text-[14px] sm:h-10 sm:text-[13.5px]";
+export const TAP_MD = "h-11 text-[15px] sm:h-10 sm:text-[15px]";
 /** Câmpuri de formular: 16 px pe telefon. */
-export const CAMP = "h-11 text-base sm:h-9 sm:text-[13px]";
+export const CAMP = "h-11 text-base sm:h-9 sm:text-[14.5px]";
 /** Comutatorul Ștefan / Vlăduț din fundație (SegmentedControl), cu ținta de 44 px pe telefon. */
 export const COMUTATOR_TAP = "[&_button]:min-h-11 [&_button]:px-4 sm:[&_button]:min-h-0 sm:[&_button]:px-3";
 
@@ -68,12 +68,12 @@ export function Taburi<T extends string>({
             aria-controls={controls}
             onClick={() => onChange(option.value)}
             className={cn(
-              "flex min-h-11 min-w-0 flex-col items-center justify-center rounded-[14px] px-2 py-1 text-[13px] font-medium leading-tight transition-colors sm:min-h-0 sm:flex-row sm:rounded-full sm:px-3 sm:py-1.5 sm:text-[12.5px]",
+              "flex min-h-11 min-w-0 flex-col items-center justify-center rounded-[14px] px-2 py-1 text-[14.5px] font-medium leading-tight transition-colors sm:min-h-0 sm:flex-row sm:rounded-full sm:px-3 sm:py-1.5 sm:text-[14px]",
               active ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground"
             )}
           >
             <span className="max-w-full truncate">{option.label}</span>
-            <span className={cn("pu-num text-[12px] sm:text-[12.5px]", active ? "text-foreground/80" : "text-muted-foreground")}>
+            <span className={cn("pu-num text-[13.5px] sm:text-[14px]", active ? "text-foreground/80" : "text-muted-foreground")}>
               <span className="hidden sm:inline" aria-hidden="true">
                 {" · "}
               </span>
@@ -98,7 +98,7 @@ export function Dezvaluire({ titlu, children, className }: { titlu: ReactNode; c
         onClick={() => setDeschis((v) => !v)}
         aria-expanded={deschis}
         aria-controls={id}
-        className="inline-flex min-h-11 items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground sm:min-h-0 sm:text-[11.5px]"
+        className="inline-flex min-h-11 items-center gap-1.5 text-[14.5px] text-muted-foreground hover:text-foreground sm:min-h-0 sm:text-[13px]"
       >
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform sm:h-3 sm:w-3", deschis && "rotate-180")} aria-hidden="true" />
         {titlu}
@@ -149,7 +149,7 @@ export function TextPregatit({ children, className }: { children: ReactNode; cla
   return (
     <p
       className={cn(
-        "whitespace-pre-wrap break-words rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[14px] leading-relaxed text-foreground/85 sm:text-[12px]",
+        "whitespace-pre-wrap break-words rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[15px] leading-relaxed text-foreground/85 sm:text-[13.5px]",
         className
       )}
     >

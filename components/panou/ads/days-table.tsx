@@ -29,7 +29,7 @@ export function DaysTable({
 }) {
   const rows = [...days].reverse();
   const total = totalsOf(days);
-  const head = "px-2 py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
+  const head = "px-2 py-2 text-[11.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
 
   return (
     <div className={cn("overflow-auto", maxHeight)}>
@@ -64,7 +64,7 @@ export function DaysTable({
                 key={day.date}
                 onMouseEnter={onSelect ? () => onSelect(day.date) : undefined}
                 aria-selected={onSelect ? isSelected : undefined}
-                className={cn("border-b border-white/[0.03] text-[12px] last:border-0", isSelected ? "bg-white/[0.06]" : "hover:bg-white/[0.03]")}
+                className={cn("border-b border-white/[0.03] text-[13.5px] last:border-0", isSelected ? "bg-white/[0.06]" : "hover:bg-white/[0.03]")}
               >
                 <th scope="row" className="pu-num whitespace-nowrap py-1.5 pl-4 pr-2 text-left font-normal text-foreground/70">
                   {formatDay(day.date, true)}
@@ -94,7 +94,7 @@ export function DaysTable({
           })}
         </tbody>
         <tfoot className="sticky bottom-0 bg-card">
-          <tr className="border-t border-white/[0.09] text-[12px] font-medium">
+          <tr className="border-t border-white/[0.09] text-[13.5px] font-medium">
             <th scope="row" className="py-2 pl-4 pr-2 text-left">Total</th>
             <td className="pu-num px-2 py-2 text-right">{formatAmount(total.spend, currency)}</td>
             <td className="pu-num px-2 py-2 text-right text-foreground/85">{formatCount(total.impressions)}</td>

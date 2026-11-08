@@ -230,8 +230,8 @@ export function DayChart({
             className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/[0.1] bg-[#08080B] px-3 py-2 shadow-[0_16px_40px_-16px_rgba(0,0,0,0.9)]"
             style={{ left: Math.min(Math.max(xOf(active ?? 0), 72), width - 72) }}
           >
-            <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">{formatDay(shown.date, true)}</p>
-            <p className="pu-num flex items-center gap-2 text-[12.5px] text-foreground">
+            <p className="mb-1 font-mono text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">{formatDay(shown.date, true)}</p>
+            <p className="pu-num flex items-center gap-2 text-[14px] text-foreground">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} aria-hidden="true" />
               <span className="text-muted-foreground">{name ?? title}</span>
               <span className="ml-auto font-medium">{format(shown.value)}</span>

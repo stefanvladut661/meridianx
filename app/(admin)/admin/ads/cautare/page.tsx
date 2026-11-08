@@ -85,7 +85,7 @@ export default async function SearchPlanPage({ searchParams }: { searchParams: P
       <CautariHeader active="campanii" cont={cont} workspaces={workspaces} currentWorkspaceId={currentId} />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-[13.5px] text-muted-foreground">
           {client && view?.ok && hasGoogleAccount
             ? `${items.length === 1 ? "O campanie de căutare" : `${items.length} campanii de căutare`} · ${client.name} · portalul le creează pe pauză`
             : "Campaniile de căutare ale clientului ales sus · portalul le creează pe pauză"}
@@ -152,7 +152,7 @@ export default async function SearchPlanPage({ searchParams }: { searchParams: P
         <>
           <CautariCampaniiLista items={items.slice(0, SHOWN)} period={period} />
           {items.length > SHOWN ? (
-            <p className="px-1 text-[11.5px] text-muted-foreground">
+            <p className="px-1 text-[13px] text-muted-foreground">
               Se văd primele {SHOWN} din {items.length}.{" "}
               <Link href={`/admin/ads?client=${client.id}&canal=google`} className="underline underline-offset-4 hover:text-foreground">
                 Toate, în Campanii

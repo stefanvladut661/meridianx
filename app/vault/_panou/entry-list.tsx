@@ -60,8 +60,8 @@ export function EntryList({
               <RenameForm name={group.client.name} onRename={(next) => onRenameClient(group.clientId, next)} onDone={() => setRenamingId(null)} />
             ) : (
               <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
-                <h3 className="min-w-0 truncate text-[12px] font-medium">{name}</h3>
-                <span className="flex shrink-0 items-center gap-3 text-[10.5px] text-muted-foreground">
+                <h3 className="min-w-0 truncate text-[13.5px] font-medium">{name}</h3>
+                <span className="flex shrink-0 items-center gap-3 text-[12px] text-muted-foreground">
                   <span>{countNoun(group.entries.length, "intrare", "intrări")}</span>
                   {group.client ? (
                     <>
@@ -121,10 +121,10 @@ function EntryRow({ entry, selected, onSelect }: { entry: VaultEntry; selected: 
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className={cn("truncate text-[12.5px]", !ok && "text-[#FFC79C]")}>{ok ? ok.payload.title : "Intrare ilizibilă"}</span>
+          <span className={cn("truncate text-[14px]", !ok && "text-[#FFC79C]")}>{ok ? ok.payload.title : "Intrare ilizibilă"}</span>
           {!ok ? <Pill tone="apricot">ilizibil</Pill> : null}
         </span>
-        <span className="block truncate text-[10.5px] text-muted-foreground">
+        <span className="block truncate text-[12px] text-muted-foreground">
           {ok ? (
             <>
               {KIND_LABEL[ok.payload.kind]} · {countNoun(ok.payload.fields.length, "câmp", "câmpuri")}
@@ -136,7 +136,7 @@ function EntryRow({ entry, selected, onSelect }: { entry: VaultEntry; selected: 
           )}
         </span>
       </span>
-      <span className="shrink-0 text-[10px] text-muted-foreground">{relativeRo(entry.updatedAt)}</span>
+      <span className="shrink-0 text-[11.5px] text-muted-foreground">{relativeRo(entry.updatedAt)}</span>
     </button>
   );
 }
@@ -196,7 +196,7 @@ function RenameForm({ name, onRename, onDone }: { name: string; onRename: (name:
       <Btn size="xs" variant="ghost" disabled={saving} onClick={onDone}>
         Anulează
       </Btn>
-      {error ? <p className="basis-full text-[11px] text-rose">{error}</p> : null}
+      {error ? <p className="basis-full text-[12.5px] text-rose">{error}</p> : null}
     </form>
   );
 }

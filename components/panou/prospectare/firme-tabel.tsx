@@ -30,7 +30,7 @@ const GRUPE: Record<number, string> = {
   3: "Fără site publicat",
 };
 
-const TH = "sticky top-0 z-10 whitespace-nowrap border-b border-r border-white/[0.12] bg-[#22242F] px-2.5 py-2 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-foreground/90";
+const TH = "sticky top-0 z-10 whitespace-nowrap border-b border-r border-white/[0.12] bg-[#22242F] px-2.5 py-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/90";
 const TD = "border-b border-r border-white/[0.08] px-2.5 py-2 align-middle";
 
 export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: FirmaRand[]; acum: number; selectatId: string | null; grupe?: boolean }) {
@@ -71,7 +71,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
       {/* Derularea e în tabel, cu antetul fix; regiunea se poate focaliza ca să se deruleze și de la tastatură.
           `relative`: textele pentru cititoarele de ecran (absolute) rămân în regiune și nu lărgesc pagina. */}
       <div className="relative hidden max-h-[calc(100dvh-13rem)] min-h-[240px] overflow-auto lg:block" tabIndex={0} role="region" aria-label="Tabelul firmelor, cu derulare în interior">
-        <table className="w-full min-w-[1180px] border-separate border-spacing-0 text-left text-[12px]">
+        <table className="w-full min-w-[1180px] border-separate border-spacing-0 text-left text-[13.5px]">
           <caption className="sr-only">Firmele din filtrele curente. Numele firmei deschide fișa cu detalii și cronologie.</caption>
           <thead>
             <tr>
@@ -119,7 +119,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                 <Fragment key={f.id}>
                   {grupaNoua ? (
                     <tr>
-                      <th scope="colgroup" colSpan={11} className="border-b border-l border-r border-white/[0.12] bg-[#1A1C26] px-3 py-1.5 text-left text-[11px] font-semibold text-lav">
+                      <th scope="colgroup" colSpan={11} className="border-b border-l border-r border-white/[0.12] bg-[#1A1C26] px-3 py-1.5 text-left text-[12.5px] font-semibold text-lav">
                         {GRUPE[f.grupa_tabel]}
                       </th>
                     </tr>
@@ -135,7 +135,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                           —
                         </span>
                       ) : (
-                        <span className="pu-num text-[12.5px] font-semibold">{f.nr_site}</span>
+                        <span className="pu-num text-[14px] font-semibold">{f.nr_site}</span>
                       )}
                     </td>
                     <td className={cn(TD, "max-w-[240px]")}>
@@ -145,7 +145,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                         scroll={false}
                         onClick={(event) => peLink(event, f.id)}
                         aria-current={activ ? "true" : undefined}
-                        className="flex min-w-0 items-center gap-1.5 rounded-sm text-[12.5px] font-medium hover:text-lav"
+                        className="flex min-w-0 items-center gap-1.5 rounded-sm text-[14px] font-medium hover:text-lav"
                       >
                         <span className="truncate">{f.nume}</span>
                         {seDeschide(f.id) ? (
@@ -155,7 +155,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                           </>
                         ) : null}
                       </Link>
-                      <p className="truncate text-[10.5px] text-muted-foreground">
+                      <p className="truncate text-[12px] text-muted-foreground">
                         <span className="pu-num" title="Numărul de cercetare">
                           #{f.nr}
                         </span>
@@ -169,7 +169,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                       {f.judet ? <span className="text-muted-foreground"> · {f.judet}</span> : null}
                     </td>
                     <td className={cn(TD, "text-center")}>
-                      <span className={cn("pu-num text-[12.5px] font-medium", clasaScor(f.scor))}>{f.scor === null ? "—" : num(f.scor)}</span>
+                      <span className={cn("pu-num text-[14px] font-medium", clasaScor(f.scor))}>{f.scor === null ? "—" : num(f.scor)}</span>
                     </td>
                     <td className={cn(TD, "text-center")}>
                       <StageBadge etapa={f.etapa} />
@@ -223,10 +223,10 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-medium">{f.nume}</p>
-                    {loc ? <p className="truncate text-[11px] text-muted-foreground">{loc}</p> : null}
+                    <p className="truncate text-[14.5px] font-medium">{f.nume}</p>
+                    {loc ? <p className="truncate text-[12.5px] text-muted-foreground">{loc}</p> : null}
                   </div>
-                  <span className="flex shrink-0 flex-col items-end gap-0.5 text-[11px] text-muted-foreground">
+                  <span className="flex shrink-0 flex-col items-end gap-0.5 text-[12.5px] text-muted-foreground">
                     <span className="flex items-center gap-1">
                       {seDeschide(f.id) ? (
                         <>
@@ -235,7 +235,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                         </>
                       ) : null}
                       {f.nr_site === null ? null : (
-                        <span className="pu-num rounded-md border border-white/[0.12] bg-white/[0.06] px-1.5 text-[11.5px] font-semibold text-foreground">Site {f.nr_site}</span>
+                        <span className="pu-num rounded-md border border-white/[0.12] bg-white/[0.06] px-1.5 text-[13px] font-semibold text-foreground">Site {f.nr_site}</span>
                       )}
                     </span>
                     <span className="pu-num" title="Numărul de cercetare">
@@ -248,7 +248,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                   <CanaleBadge firma={f} />
                 </div>
                 {contact.length ? (
-                  <p className="mt-1.5 flex min-w-0 flex-wrap gap-x-2 text-[11px] text-muted-foreground">
+                  <p className="mt-1.5 flex min-w-0 flex-wrap gap-x-2 text-[12.5px] text-muted-foreground">
                     {contact.map((c, i) => (
                       <span key={c} className="flex min-w-0 gap-x-2">
                         {i > 0 ? <span aria-hidden="true">·</span> : null}

@@ -15,7 +15,7 @@ export function LeadHistory({ entries }: { entries: HistoryEntry[] | null }) {
     return <Spinner label="Se încarcă istoricul…" />;
   }
   if (entries.length === 0) {
-    return <p className="text-[12.5px] text-muted-foreground">Încă nu s-a întâmplat nimic în afară de sosirea lead-ului.</p>;
+    return <p className="text-[14px] text-muted-foreground">Încă nu s-a întâmplat nimic în afară de sosirea lead-ului.</p>;
   }
 
   return (
@@ -24,18 +24,18 @@ export function LeadHistory({ entries }: { entries: HistoryEntry[] | null }) {
         <li key={entry.id} className="flex gap-2.5">
           <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", entry.alert ? "bg-rose" : index === 0 ? "bg-lav" : "bg-white/20")} aria-hidden="true" />
           <div className="min-w-0">
-            <p className="text-[12.5px] text-foreground/85">{entry.what}</p>
+            <p className="text-[14px] text-foreground/85">{entry.what}</p>
             {entry.mails && entry.mails.length > 0 ? (
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {entry.mails.map((mail) => (
-                  <Pill key={mail.label} tone={mail.tone} className="text-[10.5px]">
+                  <Pill key={mail.label} tone={mail.tone} className="text-[12px]">
                     {mail.label}: {mail.outcome}
                   </Pill>
                 ))}
               </div>
             ) : null}
-            {entry.detail ? <p className="mt-0.5 break-words font-mono text-[10.5px] text-muted-foreground">{entry.detail}</p> : null}
-            <p className="text-[10.5px] text-muted-foreground">
+            {entry.detail ? <p className="mt-0.5 break-words font-mono text-[12px] text-muted-foreground">{entry.detail}</p> : null}
+            <p className="text-[12px] text-muted-foreground">
               {entry.who} · {dateTimeRo(entry.at)}
             </p>
           </div>

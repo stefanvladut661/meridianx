@@ -141,7 +141,7 @@ function CheckSummary({ check }: { check: PlatformCheck }) {
     check.video ? `Video: ${check.video.title ?? check.video.id}${check.video.ready ? "" : " (încă se procesează)"}` : null,
   ].filter(Boolean);
   return (
-    <div className="space-y-2 text-[12px] leading-snug text-foreground/80">
+    <div className="space-y-2 text-[13.5px] leading-snug text-foreground/80">
       <ul className="space-y-1">
         {facts.map((fact) => (
           <li key={fact}>{fact}</li>
@@ -389,11 +389,11 @@ export function BatchEditor({
             aria-invalid={syntax ? true : undefined}
             placeholder={'{\n  "plans": [\n    { "workspace": "meta-meridian", … },\n    { "workspace": "tiktok-meridian", … }\n  ]\n}'}
             className={cn(
-              "mt-3 min-h-[16rem] w-full flex-1 resize-y whitespace-pre rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[11.5px] leading-relaxed text-foreground/85 outline-none placeholder:text-muted-foreground/50 focus:border-lav/50",
+              "mt-3 min-h-[16rem] w-full flex-1 resize-y whitespace-pre rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[13px] leading-relaxed text-foreground/85 outline-none placeholder:text-muted-foreground/50 focus:border-lav/50",
               syntax && "!border-rose/60"
             )}
           />
-          <div id="batch-status" className="mt-3 text-[12.5px] leading-snug">
+          <div id="batch-status" className="mt-3 text-[14px] leading-snug">
             {syntax ? (
               <InlineNote tone="rose">
                 <p>{syntax.message}</p>
@@ -432,9 +432,9 @@ export function BatchEditor({
             >
               Golește
             </Btn>
-            <span className="text-[11px] text-muted-foreground">maxim {BATCH_MAX}, un proprietar</span>
+            <span className="text-[12.5px] text-muted-foreground">maxim {BATCH_MAX}, un proprietar</span>
           </div>
-          <p className="mt-4 text-[11.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-4 text-[13px] leading-relaxed text-muted-foreground">
             Formatul și contextul conturilor, gata de dat conversației care scrie lotul:{" "}
             <Link href="/admin/ads/claude" className="text-foreground/85 underline underline-offset-4 hover:text-lav">
               Pentru Claude
@@ -471,7 +471,7 @@ export function BatchEditor({
           <>
             <Card className="p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px]">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13.5px]">
                   <Pill tone={owner === "clienti" ? "apricot" : "neutral"}>{owner === "clienti" ? "Banii clienților" : "Reclamele agenției"}</Pill>
                   <span className="text-muted-foreground">{items.length === 1 ? "Un plan" : countOf(items.length, "planuri")}</span>
                   <span className="text-muted-foreground">·</span>
@@ -536,7 +536,7 @@ export function BatchEditor({
                   <ProgressBar value={(run.done / run.total) * 100} tone="lav" />
                 </div>
               ) : null}
-              <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground" aria-live="polite">
+              <p className="mt-3 flex items-center gap-1.5 text-[12.5px] text-muted-foreground" aria-live="polite">
                 {run ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" /> : null}
                 {reason}
               </p>
@@ -562,26 +562,26 @@ export function BatchEditor({
                   return (
                     <li key={`${row.item.index}-${row.item.key.length}`}>
                       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-                        <span className="pu-num w-6 shrink-0 text-[11px] text-muted-foreground">{String(row.item.index + 1).padStart(2, "0")}</span>
+                        <span className="pu-num w-6 shrink-0 text-[12.5px] text-muted-foreground">{String(row.item.index + 1).padStart(2, "0")}</span>
                         <div className="min-w-0 flex-1">
-                          <p className="break-words text-[13px]">{row.item.name}</p>
-                          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                          <p className="break-words text-[14.5px]">{row.item.name}</p>
+                          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
                             {workspace ? (
                               <span
                                 className={cn(
-                                  "rounded-full border px-2 py-0.5 font-mono text-[10.5px]",
+                                  "rounded-full border px-2 py-0.5 font-mono text-[12px]",
                                   workspace.owner === "clienti" ? "border-apricot/35 text-apricot" : "border-white/[0.12] text-foreground/80"
                                 )}
                               >
                                 {workspace.name}
                               </span>
                             ) : (
-                              <span className="font-mono text-[10.5px] text-rose">spațiu necunoscut</span>
+                              <span className="font-mono text-[12px] text-rose">spațiu necunoscut</span>
                             )}
                             {facts.length > 0 ? <span>{facts.join(" · ")}</span> : null}
                           </p>
                           {status.detail && status.detail !== status.label ? (
-                            <p className={cn("mt-1 text-[11px] leading-snug", status.tone === "error" ? "text-rose" : status.tone === "warning" ? "text-apricot" : "text-muted-foreground")}>
+                            <p className={cn("mt-1 text-[12.5px] leading-snug", status.tone === "error" ? "text-rose" : status.tone === "warning" ? "text-apricot" : "text-muted-foreground")}>
                               {status.detail}
                             </p>
                           ) : null}
@@ -592,7 +592,7 @@ export function BatchEditor({
                               href={status.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11.5px] text-foreground/80 underline underline-offset-4 hover:text-lav"
+                              className="inline-flex items-center gap-1 text-[13px] text-foreground/80 underline underline-offset-4 hover:text-lav"
                             >
                               {managerName(row.item.workspace.platform)}
                               <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -607,7 +607,7 @@ export function BatchEditor({
 
                       {hasDetails ? (
                         <details className="group border-t border-white/[0.05]">
-                          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-4 py-2 text-[11.5px] text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+                          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-4 py-2 text-[13px] text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
                             <ChevronRight className="h-3 w-3 transition-transform duration-150 group-open:rotate-90" aria-hidden="true" />
                             Detalii
                             {problems.length > 0 ? ` · ${problems.length === 1 ? "o problemă" : countOf(problems.length, "probleme")}` : ""}
@@ -617,10 +617,10 @@ export function BatchEditor({
                           </summary>
                           <div className="space-y-3 px-4 pb-4">
                             {row.create?.state === "failed" ? (
-                              <p className={cn("text-[12.5px] leading-snug", row.create.result.duplicate ? "text-apricot" : "text-rose")}>{row.create.result.message}</p>
+                              <p className={cn("text-[14px] leading-snug", row.create.result.duplicate ? "text-apricot" : "text-rose")}>{row.create.result.message}</p>
                             ) : null}
                             {row.create?.state === "done" && row.create.result.storeWarning ? (
-                              <p className="text-[12.5px] leading-snug text-apricot">{row.create.result.storeWarning}</p>
+                              <p className="text-[14px] leading-snug text-apricot">{row.create.result.storeWarning}</p>
                             ) : null}
                             {row.check?.state === "done" ? <CheckSummary check={row.check.check} /> : null}
                             <ProblemList title={problems.length === 1 ? "De corectat" : `De corectat (${problems.length})`} problems={problems} tone="error" linked={false} />
@@ -640,7 +640,7 @@ export function BatchEditor({
             </Card>
 
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <p className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
                 <ShieldCheck className="h-3.5 w-3.5 text-mint" aria-hidden="true" /> toate campaniile se creează oprite
               </p>
               <Btn size="sm" variant="outline" icon={Copy} disabled={problemRows.length === 0} onClick={() => copy("problems")}>
@@ -650,8 +650,8 @@ export function BatchEditor({
 
             {createdOnce && !busy ? (
               <Card className="border-mint/20 bg-mint/[0.05]">
-                <p className="text-[13px] font-medium text-[#C4F5D8]">Lot terminat</p>
-                <p className="mt-1 text-[12px] leading-relaxed text-[#C4F5D8]/75">
+                <p className="text-[14.5px] font-medium text-[#C4F5D8]">Lot terminat</p>
+                <p className="mt-1 text-[13.5px] leading-relaxed text-[#C4F5D8]/75">
                   {created.length} create pe pauză, {skipped.length} sărite pentru că existau deja, {failedCreates} cu probleme, {creatable.length} oprite înainte de creare.
                 </p>
               </Card>

@@ -66,7 +66,7 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
       <ImportCard actions={actions} onImported={() => router.refresh()} />
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[14px] text-bone">
+        <p className="text-[15px] text-bone">
           <span className="font-semibold">{monthLabel(month)}:</span> încasat {money(incoming, "RON")} · plătit {money(Math.abs(outgoing), "RON")}
         </p>
         <button
@@ -79,7 +79,7 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
               router.refresh();
             })
           }
-          className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]"
+          className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[15px]"
         >
           Potrivește din nou
         </button>
@@ -92,10 +92,10 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
 
       {pendingLines.length > 0 ? (
         <section aria-labelledby="de-confirmat" className="mt-5">
-          <h2 id="de-confirmat" className="text-[15px] font-semibold text-bone">
+          <h2 id="de-confirmat" className="text-[16px] font-semibold text-bone">
             De confirmat ({pendingLines.length})
           </h2>
-          <p className="mt-0.5 text-[13px] text-dim">
+          <p className="mt-0.5 text-[14.5px] text-dim">
             Încasări fără factură sigură — alege factura (încasarea se marchează în Oblio) — și plăți fără document — alege cheltuiala urcată. Ce nu ține de o factură sau un bon (dobânzi, comisioane, taxe) ignoră.
           </p>
           <ul className="mt-3 grid gap-2">
@@ -117,7 +117,7 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
       ) : null}
 
       <section aria-labelledby="randuri" className="mt-7">
-        <h2 id="randuri" className="text-[15px] font-semibold text-bone">
+        <h2 id="randuri" className="text-[16px] font-semibold text-bone">
           Rândurile din {monthLabel(month)}
         </h2>
         {data.lines.length === 0 ? (
@@ -137,22 +137,22 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
               <tbody className="divide-y divide-hair">
                 {data.lines.map((line) => (
                   <tr key={line.id}>
-                    <td className={cn(tdClass, "whitespace-nowrap text-[13px]")}>{dayLabel(line.data)}</td>
+                    <td className={cn(tdClass, "whitespace-nowrap text-[14.5px]")}>{dayLabel(line.data)}</td>
                     <td className={cn(tdClass, "whitespace-nowrap text-right tabular-nums", line.suma > 0 ? "text-[var(--ap-ok)]" : "text-bone")}>
                       {line.suma > 0 ? "+" : "−"}
                       {money(Math.abs(line.suma), line.moneda)}
                     </td>
                     <td className={cn(tdClass, "min-w-[14rem]")}>
                       <p className="font-medium">{line.contrapartida ?? "—"}</p>
-                      <p className="max-w-[22rem] truncate text-[12.5px] text-dim" title={line.detalii ?? undefined}>
+                      <p className="max-w-[22rem] truncate text-[14px] text-dim" title={line.detalii ?? undefined}>
                         {line.detalii ?? ""}
                       </p>
                     </td>
                     <td className={tdClass}>
                       <Tag tone={POTRIVIRE[line.potrivire].tone}>{POTRIVIRE[line.potrivire].label}</Tag>
-                      {OBLIO[line.oblioIncasare] ? <p className={cn("mt-1 text-[12px]", line.oblioIncasare === "eroare" ? "text-[var(--ap-error)]" : "text-dim")} title={line.oblioMesaj ?? undefined}>{OBLIO[line.oblioIncasare]}</p> : null}
+                      {OBLIO[line.oblioIncasare] ? <p className={cn("mt-1 text-[13.5px]", line.oblioIncasare === "eroare" ? "text-[var(--ap-error)]" : "text-dim")} title={line.oblioMesaj ?? undefined}>{OBLIO[line.oblioIncasare]}</p> : null}
                     </td>
-                    <td className={cn(tdClass, "text-[13px]")}>{line.facturaNume ?? line.cheltuialaNume ?? <span className="text-dim">{line.motiv ?? "—"}</span>}</td>
+                    <td className={cn(tdClass, "text-[14.5px]")}>{line.facturaNume ?? line.cheltuialaNume ?? <span className="text-dim">{line.motiv ?? "—"}</span>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -163,12 +163,12 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
 
       {data.imports.length > 0 ? (
         <section aria-labelledby="importuri" className="mt-7">
-          <h2 id="importuri" className="text-[15px] font-semibold text-bone">
+          <h2 id="importuri" className="text-[16px] font-semibold text-bone">
             Importurile
           </h2>
           <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-char">
             {data.imports.map((item) => (
-              <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-[13.5px]">
+              <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-[15px]">
                 <span>
                   <span className="font-medium text-bone">{item.fisierNume}</span>
                   <span className="text-dim">
@@ -177,11 +177,11 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
                   </span>
                 </span>
                 {item.driveLink ? (
-                  <a href={item.driveLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[13px] text-[var(--md-a1)] underline underline-offset-4">
+                  <a href={item.driveLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[14.5px] text-[var(--md-a1)] underline underline-offset-4">
                     Pe Drive <IconExternal size={13} />
                   </a>
                 ) : item.driveMesaj ? (
-                  <span className="text-[12.5px] text-dim" title={item.driveMesaj}>
+                  <span className="text-[14px] text-dim" title={item.driveMesaj}>
                     nu e pe Drive
                   </span>
                 ) : null}
@@ -211,24 +211,24 @@ function ConfirmRow({
   const others = options.filter((option) => !line.candidati.some((candidate) => candidate.id === option.id));
   const incoming = line.directie === "in";
   return (
-    <li className="rounded-xl border border-hair bg-char p-3 text-[13.5px]">
+    <li className="rounded-xl border border-hair bg-char p-3 text-[15px]">
       <p>
         <span className={cn("font-semibold tabular-nums", incoming ? "text-[var(--ap-ok)]" : "text-bone")}>
           {incoming ? "+" : "−"}
           {money(Math.abs(line.suma), line.moneda)}
         </span>{" "}
         · {dayLabel(line.data)} · <span className="font-medium">{line.contrapartida ?? "fără nume"}</span>
-        <span className="ml-2 text-[12px] text-dim">{incoming ? "încasare" : "plată"}</span>
+        <span className="ml-2 text-[13.5px] text-dim">{incoming ? "încasare" : "plată"}</span>
       </p>
       <p className="mt-0.5 text-dim">{line.detalii ?? ""}</p>
-      <p className="mt-1 text-[12.5px] text-dim">De ce: {line.motiv}</p>
+      <p className="mt-1 text-[14px] text-dim">De ce: {line.motiv}</p>
       <fieldset className="mt-2 grid gap-1">
         <legend className="sr-only">{incoming ? "Factura plătită" : "Cheltuiala plătită"}</legend>
         {line.candidati.map((candidate) => (
           <label key={candidate.id} className="flex items-start gap-2">
             <input type="radio" name={`c-${line.id}`} value={candidate.id} checked={choice === candidate.id} onChange={() => setChoice(candidate.id)} className="mt-1" />
             <span>
-              {candidate.nume} <span className="text-[12px] text-dim">({candidate.motiv})</span>
+              {candidate.nume} <span className="text-[13.5px] text-dim">({candidate.motiv})</span>
             </span>
           </label>
         ))}
@@ -263,7 +263,7 @@ function ConfirmRow({
               onDone({ tone: warn ? "warn" : "ok", text: `${money(Math.abs(line.suma), line.moneda)} ${incoming ? "de la" : "către"} ${line.contrapartida ?? (incoming ? "plătitor" : "beneficiar")}: ${done.message ?? "legat."}` });
             })
           }
-          className="btn btn-light !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]"
+          className="btn btn-light !min-h-9 !px-3.5 !py-1.5 !text-[15px]"
         >
           Confirmă
         </button>
@@ -277,12 +277,12 @@ function ConfirmRow({
               onDone();
             })
           }
-          className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]"
+          className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[15px]"
         >
           {incoming ? "Ignoră (nu e o factură)" : "Ignoră (n-are document)"}
         </button>
         {message ? (
-          <span role="status" className={cn("text-[13px]", message.tone === "ok" ? "text-[var(--ap-ok)]" : "text-[var(--ap-error)]")}>
+          <span role="status" className={cn("text-[14.5px]", message.tone === "ok" ? "text-[var(--ap-ok)]" : "text-[var(--ap-error)]")}>
             {message.text}
           </span>
         ) : null}
@@ -369,12 +369,12 @@ function ImportCard({ actions, onImported }: { actions: BankActions; onImported:
   const header = preview?.rows[headerRow] ?? [];
   return (
     <section aria-labelledby="import" className="mt-5 rounded-xl border border-dashed border-hair-strong bg-[var(--ap-side)] p-4">
-      <h2 id="import" className="text-[15px] font-semibold text-bone">
+      <h2 id="import" className="text-[16px] font-semibold text-bone">
         Importă exportul din BT Go
       </h2>
-      <p className="mt-0.5 text-[13px] text-dim">În BT Go: Conturi → Tranzacții → Export, format CSV. Aceleași rânduri importate de două ori nu se dublează.</p>
+      <p className="mt-0.5 text-[14.5px] text-dim">În BT Go: Conturi → Tranzacții → Export, format CSV. Aceleași rânduri importate de două ori nu se dublează.</p>
       <input ref={input} id="urca-extras" type="file" accept=".csv,text/csv,text/plain" className="sr-only" onChange={(event) => pick(event.currentTarget.files)} />
-      <label htmlFor="urca-extras" className="btn btn-light mt-3 cursor-pointer !min-h-10 !px-4 !py-2 !text-[14px]">
+      <label htmlFor="urca-extras" className="btn btn-light mt-3 cursor-pointer !min-h-10 !px-4 !py-2 !text-[15px]">
         <IconUpload size={16} />
         {pending && !preview ? "Se citește…" : "Alege fișierul CSV"}
       </label>
@@ -390,7 +390,7 @@ function ImportCard({ actions, onImported }: { actions: BankActions; onImported:
             </Notice>
           ) : (
             <>
-              <p className="text-[13.5px] text-bone">
+              <p className="text-[15px] text-bone">
                 Prima dată alegi tu ce e în fiecare coloană (am propus după numele din antet — verifică). Alegerea se ține minte pentru exporturile cu același antet.
               </p>
               <div className="grid gap-3 sm:grid-cols-3">
@@ -400,7 +400,7 @@ function ImportCard({ actions, onImported }: { actions: BankActions; onImported:
                 <Field id="imp-nume" label="Numele formatului">
                   <input id="imp-nume" value={formatName} onChange={(e) => setFormatName(e.currentTarget.value)} className={inputClass} maxLength={120} />
                 </Field>
-                <p className="self-end pb-2 text-[12.5px] text-dim">
+                <p className="self-end pb-2 text-[14px] text-dim">
                   Separator „{preview.delimiter === "tab" ? "tab" : preview.delimiter}”, codare {preview.encoding}, {preview.totalRows} rânduri.
                 </p>
               </div>
@@ -426,7 +426,7 @@ function ImportCard({ actions, onImported }: { actions: BankActions; onImported:
             </>
           )}
           <div className="overflow-x-auto rounded-lg border border-hair bg-char">
-            <table className="min-w-full border-collapse text-[12.5px]">
+            <table className="min-w-full border-collapse text-[14px]">
               <tbody>
                 {preview.rows.slice(0, Math.min(preview.rows.length, headerRow + 6)).map((row, index) => (
                   <tr key={index} className={cn("border-b border-hair", index === headerRow && "bg-[var(--ap-accent-soft)] font-semibold")}>
@@ -442,10 +442,10 @@ function ImportCard({ actions, onImported }: { actions: BankActions; onImported:
             </table>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={pending} onClick={run} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+            <button type="button" disabled={pending} onClick={run} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
               {pending ? "Se importă…" : `Importă ${file?.name ?? ""}`}
             </button>
-            <button type="button" disabled={pending} onClick={() => setPreview(null)} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+            <button type="button" disabled={pending} onClick={() => setPreview(null)} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
               Renunță
             </button>
           </div>

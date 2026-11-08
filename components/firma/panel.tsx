@@ -72,10 +72,10 @@ export function SidePanel({
       >
         <div className="flex items-start gap-3 border-b border-hair px-5 py-4">
           <div className="min-w-0 flex-1">
-            <h2 ref={heading} id={titleId} tabIndex={-1} className="truncate text-[17px] font-semibold text-bone">
+            <h2 ref={heading} id={titleId} tabIndex={-1} className="truncate text-[18px] font-semibold text-bone">
               {title}
             </h2>
-            {subtitle ? <div className="mt-0.5 text-[13px] text-dim">{subtitle}</div> : null}
+            {subtitle ? <div className="mt-0.5 text-[14.5px] text-dim">{subtitle}</div> : null}
           </div>
           <button type="button" onClick={() => close.current()} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-dim hover:bg-[var(--ap-hover)]">
             <IconClose />

@@ -17,14 +17,14 @@ export function AdsPreview({
   className?: string;
 }) {
   if (summary.ads.length === 0) {
-    return <p className={cn("text-[12.5px] text-muted-foreground", className)}>Nicio reclamă încă: planul nu are niciun text principal.</p>;
+    return <p className={cn("text-[14px] text-muted-foreground", className)}>Nicio reclamă încă: planul nu are niciun text principal.</p>;
   }
 
   return (
     <ol className={cn("space-y-3", className)}>
       {summary.ads.map((ad, index) => (
         <li key={index} className="rounded-xl border border-white/[0.08] bg-white/[0.02]">
-          <p className="border-b border-white/[0.06] px-4 py-2.5 font-mono text-[11px] tracking-wide text-muted-foreground">
+          <p className="border-b border-white/[0.06] px-4 py-2.5 font-mono text-[12.5px] tracking-wide text-muted-foreground">
             <span className="text-foreground/85">Reclama {index + 1}</span> · {ad.name}
             {summary.videos.length > 1 ? (
               <span className="block text-muted-foreground">
@@ -36,26 +36,26 @@ export function AdsPreview({
           </p>
           <div className="space-y-3 px-4 py-4">
             {ad.primaryTexts.map((text, textIndex) => (
-              <p key={textIndex} className="whitespace-pre-line text-[13px] leading-relaxed text-foreground/90">
-                {rotating && ad.primaryTexts.length > 1 ? <span className="mr-2 font-mono text-[10.5px] text-muted-foreground">T{textIndex + 1}</span> : null}
+              <p key={textIndex} className="whitespace-pre-line text-[14.5px] leading-relaxed text-foreground/90">
+                {rotating && ad.primaryTexts.length > 1 ? <span className="mr-2 font-mono text-[12px] text-muted-foreground">T{textIndex + 1}</span> : null}
                 {text}
               </p>
             ))}
             <div className="flex flex-wrap items-end justify-between gap-3 border-t border-white/[0.06] pt-3">
               <div className="min-w-0">
                 {ad.headlines.map((headline, headlineIndex) => (
-                  <p key={headlineIndex} className="text-[13px] font-semibold text-foreground">
+                  <p key={headlineIndex} className="text-[14.5px] font-semibold text-foreground">
                     {headline}
                   </p>
                 ))}
                 {ad.descriptions.map((description, descriptionIndex) => (
-                  <p key={descriptionIndex} className="text-[12px] text-muted-foreground">
+                  <p key={descriptionIndex} className="text-[13.5px] text-muted-foreground">
                     {description}
                   </p>
                 ))}
-                {ad.headlines.length === 0 && ad.descriptions.length === 0 ? <p className="text-[12px] text-muted-foreground">Fără titlu și descriere.</p> : null}
+                {ad.headlines.length === 0 && ad.descriptions.length === 0 ? <p className="text-[13.5px] text-muted-foreground">Fără titlu și descriere.</p> : null}
               </div>
-              <span className="rounded-md bg-lav px-2 py-1 text-[11px] font-semibold text-[#171222]">{summary.cta ?? "buton neales"}</span>
+              <span className="rounded-md bg-lav px-2 py-1 text-[12.5px] font-semibold text-[#171222]">{summary.cta ?? "buton neales"}</span>
             </div>
           </div>
         </li>

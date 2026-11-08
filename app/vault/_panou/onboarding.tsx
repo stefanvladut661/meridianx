@@ -27,12 +27,12 @@ function PageIntro({ title, text, back }: { title: string; text: string; back: b
   return (
     <div>
       {back ? (
-        <Link href="/vault" className="text-[11.5px] text-muted-foreground hover:text-foreground">
+        <Link href="/vault" className="text-[13px] text-muted-foreground hover:text-foreground">
           ← Vault
         </Link>
       ) : null}
       <h1 className={cn("text-[22px] font-semibold leading-none sm:text-[26px]", back && "mt-2")}>{title}</h1>
-      <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">{text}</p>
+      <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{text}</p>
     </div>
   );
 }
@@ -77,9 +77,9 @@ export function ActivateFlow() {
           <li
             key={label}
             aria-current={i === step ? "step" : undefined}
-            className="flex items-center gap-1.5 rounded-full border border-white/[0.07] px-2.5 py-1 text-[11.5px] text-muted-foreground"
+            className="flex items-center gap-1.5 rounded-full border border-white/[0.07] px-2.5 py-1 text-[13px] text-muted-foreground"
           >
-            <span className={cn("pu-num flex h-4 w-4 items-center justify-center rounded-full text-[9px]", i === step ? "bg-lav text-[#171222]" : "bg-white/[0.08]")}>{i < step ? "✓" : i + 1}</span>
+            <span className={cn("pu-num flex h-4 w-4 items-center justify-center rounded-full text-[10.5px]", i === step ? "bg-lav text-[#171222]" : "bg-white/[0.08]")}>{i < step ? "✓" : i + 1}</span>
             {label}
           </li>
         ))}
@@ -120,7 +120,7 @@ function ActivateForm({ email, onEmail }: { email: string; onEmail: (value: stri
     <Card className="pu-sealed">
       <div className="flex items-center gap-2">
         <ShieldCheck className="h-4 w-4 text-mint" aria-hidden="true" />
-        <p className="text-[13px] font-medium">Parola master nu se poate reseta</p>
+        <p className="text-[14.5px] font-medium">Parola master nu se poate reseta</p>
       </div>
       <InlineNote tone="rose" className="mt-3">
         Dacă o uiți și pierzi și codul de recuperare, datele din seif nu mai pot fi deschise de nimeni. Nici noi nu le putem recupera.
@@ -155,7 +155,7 @@ function ActivateForm({ email, onEmail }: { email: string; onEmail: (value: stri
           autoComplete="new-password"
           error={confirm && pass !== confirm ? "parolele nu se potrivesc" : null}
         />
-        <p className="text-[10.5px] leading-relaxed text-muted-foreground">
+        <p className="text-[12px] leading-relaxed text-muted-foreground">
           Contul devine dedicat seifului: după activare intră doar prin parola master. Dacă aceeași adresă intră și în /admin, folosește altă adresă aici.
         </p>
         <Btn type="submit" variant="primary" className="w-full justify-center" disabled={!canContinue} icon={KeyRound}>
@@ -171,12 +171,12 @@ function KeysMissingCard({ replacing }: { replacing: boolean }) {
   return (
     <Card className="pu-sealed">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[13px] font-medium">{replacing ? "Cheile se refac" : "Sesiune deschisă. Cheile lipsesc."}</p>
-        <Pill tone="neutral" className="font-mono text-[10px]">
+        <p className="text-[14.5px] font-medium">{replacing ? "Cheile se refac" : "Sesiune deschisă. Cheile lipsesc."}</p>
+        <Pill tone="neutral" className="font-mono text-[11.5px]">
           {vault.member?.email}
         </Pill>
       </div>
-      <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+      <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
         {replacing
           ? "Cererea ta era în așteptare cu chei împachetate cu parola veche. Se generează altele, cu parola de acum; cererea rămâne în așteptare."
           : "Se generează acum perechea ta de chei. Dacă seiful e gol, îl inițializezi tu și primești codul de recuperare. Dacă există deja, cererea ta ajunge la un membru activ."}
@@ -198,15 +198,15 @@ function RecoveryCodeCard({ code }: { code: string }) {
   return (
     <Card className="pu-sealed">
       <div className="flex items-center justify-between">
-        <p className="text-[13px] font-medium">Codul tău de recuperare</p>
+        <p className="text-[14.5px] font-medium">Codul tău de recuperare</p>
         <Pill tone="apricot">o singură afișare</Pill>
       </div>
-      <p className="mt-1 text-[11.5px] text-muted-foreground">Seiful a fost inițializat. Notează codul pe hârtie, nu într-o captură de ecran: e singura cale înapoi dacă parola master se pierde.</p>
+      <p className="mt-1 text-[13px] text-muted-foreground">Seiful a fost inițializat. Notează codul pe hârtie, nu într-o captură de ecran: e singura cale înapoi dacă parola master se pierde.</p>
       <div className="mt-3">
         <RecoveryCodeBox code={code} />
       </div>
       <RecoveryWarning />
-      <label className="mt-3 flex items-start gap-2 text-[11.5px] text-muted-foreground">
+      <label className="mt-3 flex items-start gap-2 text-[13px] text-muted-foreground">
         <input type="checkbox" checked={saved} onChange={(event) => setSaved(event.target.checked)} className="mt-0.5 accent-[#8FE3B0]" />
         L-am salvat într-un loc sigur, în afara seifului. Știu că nu se mai afișează.
       </label>
@@ -224,16 +224,16 @@ function PendingCard() {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-apricot" aria-hidden="true" />
-          <p className="text-[14px] font-medium">În așteptare</p>
+          <p className="text-[15px] font-medium">În așteptare</p>
         </div>
         <Pill tone="apricot" dot>
           cererea a ajuns la echipă
         </Pill>
       </div>
-      <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+      <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
         Un membru activ trebuie să-ți aprobe accesul din lista de membri, ca să primești cheia. Nu se întâmplă automat. Până atunci nu vezi nimic, nici măcar numele clienților. Poți lăsa fila deschisă și verifica din nou.
       </p>
-      <p className="mt-2 font-mono text-[11px] text-muted-foreground">{vault.member?.email}</p>
+      <p className="mt-2 font-mono text-[12.5px] text-muted-foreground">{vault.member?.email}</p>
       <div aria-live="polite">{vault.error ? <InlineNote tone="rose" className="mt-3">{vault.error}</InlineNote> : null}</div>
       <div className="mt-3 flex flex-wrap justify-between gap-2">
         <LeaveButton />
@@ -276,15 +276,15 @@ function RecoverSteps() {
     <Card className="pu-sealed">
       <div className="flex items-center gap-2">
         <KeyRound className="h-4 w-4 text-mint" aria-hidden="true" />
-        <p className="text-[13px] font-medium">Ai pierdut parola master?</p>
+        <p className="text-[14.5px] font-medium">Ai pierdut parola master?</p>
       </div>
       <ol className="mt-3 space-y-3">
         {items.map((item, index) => (
           <li key={index} className="flex gap-3">
-            <span className="pu-num mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[10px]">{index + 1}</span>
+            <span className="pu-num mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[11.5px]">{index + 1}</span>
             <div>
-              <p className="text-[12.5px] font-medium">{item.title}</p>
-              <p className="mt-0.5 text-[11.5px] leading-relaxed text-muted-foreground">{item.text}</p>
+              <p className="text-[14px] font-medium">{item.title}</p>
+              <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">{item.text}</p>
             </div>
           </li>
         ))}
@@ -292,7 +292,7 @@ function RecoverSteps() {
       <InlineNote tone="neutral" className="mt-4">
         Fără codul de pe hârtie nu se poate: un membru activ te elimină din Membri și te reinvită, iar primești chei noi.
       </InlineNote>
-      <Link href="/vault/activare" className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-lav px-4 text-[13.5px] font-medium text-[#171222] transition-colors hover:bg-[#D4C7FF]">
+      <Link href="/vault/activare" className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-lav px-4 text-[15px] font-medium text-[#171222] transition-colors hover:bg-[#D4C7FF]">
         <KeyRound className="h-4 w-4" aria-hidden="true" />
         Activează cu parola temporară
       </Link>
@@ -320,14 +320,14 @@ function CodeEntry() {
       <Card className="pu-sealed">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-rose" aria-hidden="true" />
-          <p className="text-[14px] font-medium">Cheile lipsesc</p>
+          <p className="text-[15px] font-medium">Cheile lipsesc</p>
         </div>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+        <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
           Fără codul de recuperare, cheile tale nu se mai pot deschide: sunt împachetate cu parola veche. Datele rămân criptate pe server, dar contul ăsta nu le mai poate citi.
         </p>
         <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
-          <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Ce poți face</p>
-          <ul className="mt-1.5 space-y-1.5 text-[12px] text-foreground/80">
+          <p className="text-[12.5px] uppercase tracking-[0.12em] text-muted-foreground">Ce poți face</p>
+          <ul className="mt-1.5 space-y-1.5 text-[13.5px] text-foreground/80">
             <li className="flex items-start gap-1.5">
               <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" /> Un membru activ te elimină din Membri și te reinvită: primești chei noi și vezi din nou tot.
             </li>
@@ -348,11 +348,11 @@ function CodeEntry() {
 
   return (
     <Card className="pu-sealed">
-      <p className="text-[13px] font-medium">Cheile nu se deschid cu parola asta</p>
-      <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
+      <p className="text-[14.5px] font-medium">Cheile nu se deschid cu parola asta</p>
+      <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">
         Parola master pe care tocmai ai ales-o e nouă, dar cheile tale din seif sunt împachetate cu cea veche. Codul de recuperare deschide seiful și îți reface cheile cu parola de acum. Datele nu se ating.
       </p>
-      <p className="mt-2 font-mono text-[11px] text-muted-foreground">{vault.member?.email}</p>
+      <p className="mt-2 font-mono text-[12.5px] text-muted-foreground">{vault.member?.email}</p>
       <div aria-live="polite">{vault.error ? <InlineNote tone="rose" className="mt-3">{vault.error}</InlineNote> : null}</div>
       <form
         className="mt-3"
@@ -376,7 +376,7 @@ function CodeEntry() {
           spellCheck={false}
           autoFocus
         />
-        <p className="mt-1.5 text-[10.5px] text-muted-foreground">8 grupuri de 5. Liniuțele, spațiile și literele mici nu contează.</p>
+        <p className="mt-1.5 text-[12px] text-muted-foreground">8 grupuri de 5. Liniuțele, spațiile și literele mici nu contează.</p>
         <Btn type="submit" variant="primary" className="mt-4 w-full justify-center" icon={KeyRound} disabled={code.trim().length < 8}>
           Recuperează accesul
         </Btn>
@@ -384,7 +384,7 @@ function CodeEntry() {
       <InlineNote tone="neutral" className="mt-3">
         Codul deschide cheia de date singur, fără parola veche: de asta se ține pe hârtie, offline. Cheile tale se refac cu parola master de acum.
       </InlineNote>
-      <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-white/[0.07] pt-3 text-[11.5px]">
+      <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-white/[0.07] pt-3 text-[13px]">
         <button type="button" onClick={() => setMissing(true)} className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
           Nu am codul
         </button>

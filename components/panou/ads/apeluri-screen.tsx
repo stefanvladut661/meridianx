@@ -65,14 +65,14 @@ const RESULT_HINT: Record<CallResult, string> = {
   semnat: "contract sau comandă",
 };
 
-const LABEL = "text-[11px] uppercase tracking-[0.12em] text-muted-foreground";
+const LABEL = "text-[12.5px] uppercase tracking-[0.12em] text-muted-foreground";
 const TEXTAREA =
-  "mt-1.5 w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-3 text-[12.5px] outline-none placeholder:text-muted-foreground/60 focus:border-lav/50";
+  "mt-1.5 w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-3 text-[14px] outline-none placeholder:text-muted-foreground/60 focus:border-lav/50";
 
 /** Chip-ul radio: culoarea spune care e ales, bordura roz spune că lipsește. */
 const chip = (selected: boolean, invalid: boolean) =>
   cn(
-    "flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-3 text-[12.5px] font-medium transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav",
+    "flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-3 text-[14px] font-medium transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav",
     selected ? "border-lav/40 bg-lav/12 text-[#D8CCFF]" : "border-white/[0.12] bg-white/[0.03] text-foreground/80 hover:bg-white/[0.06]",
     invalid && !selected && "border-rose/50"
   );
@@ -152,17 +152,17 @@ function NoteForm({
 
   const fieldError = (field: Field) =>
     errors[field] ? (
-      <p id={`${id}-${field}-eroare`} className="mt-1 text-[11.5px] text-rose">
+      <p id={`${id}-${field}-eroare`} className="mt-1 text-[13px] text-rose">
         {errors[field]}
       </p>
     ) : null;
 
   return (
     <form ref={form} onSubmit={submit} noValidate aria-labelledby={`${id}-titlu`}>
-      <h2 id={`${id}-titlu`} className="text-[16px] font-semibold">
+      <h2 id={`${id}-titlu`} className="text-[17px] font-semibold">
         Notează un apel
       </h2>
-      <p className="text-[12px] text-muted-foreground">Cineva a sunat de pe o reclamă. Zece secunde, și din telefon.</p>
+      <p className="text-[13.5px] text-muted-foreground">Cineva a sunat de pe o reclamă. Zece secunde, și din telefon.</p>
 
       <div className="mt-4 space-y-3">
         <div className="grid items-end gap-3 sm:grid-cols-2">
@@ -231,7 +231,7 @@ function NoteForm({
               })),
             ]}
           />
-          {choices.length === 0 ? <p className="mt-1 text-[11px] text-muted-foreground">Clientul n-are campanii citite pe canalul ăsta. Apelul se notează și fără.</p> : null}
+          {choices.length === 0 ? <p className="mt-1 text-[12.5px] text-muted-foreground">Clientul n-are campanii citite pe canalul ăsta. Apelul se notează și fără.</p> : null}
           {fieldError("entityId")}
         </div>
 
@@ -250,7 +250,7 @@ function NoteForm({
                   className="sr-only"
                 />
                 <span>{CALL_RESULT_LABEL[option]}</span>
-                <span className="text-[11px] font-normal text-muted-foreground">{RESULT_HINT[option]}</span>
+                <span className="text-[12.5px] font-normal text-muted-foreground">{RESULT_HINT[option]}</span>
               </label>
             ))}
           </div>
@@ -272,12 +272,12 @@ function NoteForm({
             aria-describedby={errors.note ? `${id}-note-eroare` : undefined}
             className={cn(TEXTAREA, errors.note && "border-rose/50")}
           />
-          <span className="mt-0.5 block text-right text-[11px] text-muted-foreground">{note.length > NOTE_MAX - 200 ? `${NOTE_MAX - note.length} caractere rămase` : ""}</span>
+          <span className="mt-0.5 block text-right text-[12.5px] text-muted-foreground">{note.length > NOTE_MAX - 200 ? `${NOTE_MAX - note.length} caractere rămase` : ""}</span>
           {fieldError("note")}
         </label>
       </div>
 
-      <p role="status" aria-live="polite" className={cn("mt-3 min-h-4 text-[12px]", status?.tone === "error" ? "text-rose" : "text-mint")}>
+      <p role="status" aria-live="polite" className={cn("mt-3 min-h-4 text-[13.5px]", status?.tone === "error" ? "text-rose" : "text-mint")}>
         {status?.text ?? ""}
       </p>
 
@@ -303,9 +303,9 @@ function CallCard({ call, onDelete }: { call: CallRow; onDelete: (call: CallRow)
             <Pill tone={RESULT_TONE[call.result]} dot>
               {CALL_RESULT_LABEL[call.result]}
             </Pill>
-            {call.platform ? <CanalMark platform={call.platform} size="sm" /> : <span className="text-[11.5px] text-muted-foreground">canal necunoscut</span>}
+            {call.platform ? <CanalMark platform={call.platform} size="sm" /> : <span className="text-[13px] text-muted-foreground">canal necunoscut</span>}
           </div>
-          <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[11.5px] text-muted-foreground">
+          <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
             <Megaphone className="h-3 w-3" aria-hidden="true" />
             {campaignHref ? (
               <Link href={campaignHref} className="text-foreground/80 underline-offset-2 hover:text-lav hover:underline">
@@ -319,7 +319,7 @@ function CallCard({ call, onDelete }: { call: CallRow; onDelete: (call: CallRow)
           </p>
           {call.note ? (
             <div className="mt-2 rounded-lg border border-white/[0.06] bg-white/[0.025] px-3 py-2">
-              <p className="whitespace-pre-line text-[12px] leading-relaxed text-foreground/80">{call.note}</p>
+              <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-foreground/80">{call.note}</p>
             </div>
           ) : null}
         </div>
@@ -368,7 +368,7 @@ export function ApeluriScreen({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Apeluri</h1>
-          <p className="mt-2 max-w-2xl text-[12.5px] text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
             Apelurile venite de pe reclame, notate de mână. Platformele știu doar că cineva a apăsat „Sună”; ce a ieșit din apel știi tu.
           </p>
         </div>
@@ -412,7 +412,7 @@ export function ApeluriScreen({
               total.byResult[result] > 0 ? <span key={result} className={RESULT_BAR[result]} style={{ width: `${(total.byResult[result] / total.total) * 100}%` }} /> : null
             )}
           </div>
-          <p className="mt-2 text-[11.5px] text-muted-foreground">
+          <p className="mt-2 text-[13px] text-muted-foreground">
             {callBreakdown(total)}
             {unlinked > 0
               ? ` · ${unlinked === total.total ? "niciunul nu e legat de o campanie" : `${unlinked} din ${total.total} nu sunt legate de o campanie`}; în Campanii, coloana „Apeluri notate” le numără doar pe cele legate`
@@ -449,7 +449,7 @@ export function ApeluriScreen({
         <div className="space-y-4">
           {[...byDay.entries()].map(([day, items]) => (
             <section key={day} aria-label={formatDay(day, true)}>
-              <h2 className="mb-2 px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              <h2 className="mb-2 px-1 text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">
                 <Phone className="mr-1.5 inline h-3 w-3 align-[-1px]" aria-hidden="true" />
                 {formatDay(day, true)} · {resultUnit(items.length, "call")}
               </h2>

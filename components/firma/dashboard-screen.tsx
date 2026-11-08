@@ -15,9 +15,9 @@ function sums(value: SumaPeMoneda | null): string {
 function Tile({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "error" | "ok" }) {
   return (
     <li className="rounded-xl border border-hair bg-char px-4 py-3">
-      <p className="text-[12.5px] font-medium text-dim">{label}</p>
+      <p className="text-[14px] font-medium text-dim">{label}</p>
       <p className={cn("mt-1 text-[1.375rem] font-semibold tabular-nums", tone === "error" && value !== "—" ? "text-[var(--ap-error)]" : "text-bone")}>{value}</p>
-      {hint ? <p className="mt-0.5 text-[12px] text-dim">{hint}</p> : null}
+      {hint ? <p className="mt-0.5 text-[13.5px] text-dim">{hint}</p> : null}
     </li>
   );
 }
@@ -35,7 +35,7 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
       </ul>
 
       <section aria-labelledby="alerte">
-        <h2 id="alerte" className="text-[15px] font-semibold text-bone">
+        <h2 id="alerte" className="text-[16px] font-semibold text-bone">
           Alerte {data.alerte.length > 0 ? `(${data.alerte.length})` : ""}
         </h2>
         {data.alerte.length === 0 ? (
@@ -43,17 +43,17 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
         ) : (
           <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-char">
             {data.alerte.map((alert, index) => (
-              <li key={index} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[14px]">
+              <li key={index} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[15px]">
                 <Tag tone={alert.tone}>{alert.tone === "error" ? "acum" : "de făcut"}</Tag>
                 <span className="min-w-0 flex-1">{alert.text}</span>
-                <Link href={alert.href} className="text-[13px] font-medium text-[var(--md-a1)] underline underline-offset-4">
+                <Link href={alert.href} className="text-[14.5px] font-medium text-[var(--md-a1)] underline underline-offset-4">
                   Deschide
                 </Link>
               </li>
             ))}
           </ul>
         )}
-        <p className="mt-2 text-[12.5px] text-dim">
+        <p className="mt-2 text-[14px] text-dim">
           {lastDigest
             ? lastDigest.trimis
               ? `Ultimul rezumat pe email: ${dayLabel(lastDigest.zi)}, ${lastDigest.alerte} ${lastDigest.alerte === 1 ? "alertă" : "alerte"}, către ${lastDigest.catre}.`
@@ -63,10 +63,10 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
       </section>
 
       <section aria-labelledby="reclame">
-        <h2 id="reclame" className="text-[15px] font-semibold text-bone">
+        <h2 id="reclame" className="text-[16px] font-semibold text-bone">
           Banii pe reclame, pe client — {label}
         </h2>
-        <p className="mt-0.5 text-[13px] text-dim">Din portalul de reclame, ce au cheltuit platformele pentru fiecare client legat. Îi plătește clientul direct; nu se facturează.</p>
+        <p className="mt-0.5 text-[14.5px] text-dim">Din portalul de reclame, ce au cheltuit platformele pentru fiecare client legat. Îi plătește clientul direct; nu se facturează.</p>
         {data.reclame && data.reclame.length > 0 ? (
           <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-char">
             <table className="ads-table min-w-full border-collapse">
@@ -82,23 +82,23 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
                   <tr key={row.client}>
                     <td className={cn(tdClass, "font-medium")}>{row.client}</td>
                     <td className={cn(tdClass, "whitespace-nowrap text-right tabular-nums")}>{sums(row.sume)}</td>
-                    <td className={cn(tdClass, "text-[13px] text-dim")}>{row.nota ?? ""}</td>
+                    <td className={cn(tdClass, "text-[14.5px] text-dim")}>{row.nota ?? ""}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="mt-3 rounded-xl border border-dashed border-hair-strong px-4 py-3 text-[14px] text-dim">{data.reclameNota ?? "Niciun client legat de portalul de reclame."}</p>
+          <p className="mt-3 rounded-xl border border-dashed border-hair-strong px-4 py-3 text-[15px] text-dim">{data.reclameNota ?? "Niciun client legat de portalul de reclame."}</p>
         )}
       </section>
 
       {data.deFacut.length > 0 ? (
         <section aria-labelledby="de-facut">
-          <h2 id="de-facut" className="text-[15px] font-semibold text-bone">
+          <h2 id="de-facut" className="text-[16px] font-semibold text-bone">
             Ca să apară toate cifrele
           </h2>
-          <ul className="mt-2 grid gap-1 text-[14px] text-bone/85">
+          <ul className="mt-2 grid gap-1 text-[15px] text-bone/85">
             {data.deFacut.map((item, index) => (
               <li key={index}>• {item}</li>
             ))}

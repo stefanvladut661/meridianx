@@ -42,14 +42,14 @@ export function ClientsScreen({
   return (
     <>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[13.5px] text-dim">
+        <p className="text-[15px] text-dim">
           {clients.length === 0 ? "Niciun client încă." : `${clients.length} ${clients.length === 1 ? "client" : "clienți"}`} · abonamentele din {monthLabel(month)}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={showArchived ? "?" : "?arhiva=1"} className="text-[13.5px] font-medium text-[var(--md-a1)] underline underline-offset-4">
+          <Link href={showArchived ? "?" : "?arhiva=1"} className="text-[15px] font-medium text-[var(--md-a1)] underline underline-offset-4">
             {showArchived ? "Ascunde arhiva" : "Arată și arhiva"}
           </Link>
-          <button type="button" onClick={() => setOpen({ kind: "new" })} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+          <button type="button" onClick={() => setOpen({ kind: "new" })} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
             <IconPlus size={16} />
             Client nou
           </button>
@@ -88,7 +88,7 @@ export function ClientsScreen({
                       <button type="button" onClick={() => setOpen({ kind: "client", id: client.id })} className="text-left font-semibold text-bone hover:text-[var(--md-a1)] hover:underline">
                         {client.nume}
                       </button>
-                      <p className="mt-0.5 text-[12.5px] text-dim">
+                      <p className="mt-0.5 text-[14px] text-dim">
                         {client.cui ? `CUI ${client.cui}` : "fără CUI"}
                         {client.arhivatLa ? " · arhivat" : ""}
                       </p>
@@ -97,7 +97,7 @@ export function ClientsScreen({
                       {contract ? (
                         <>
                           <Tag tone="ok">{STARE_CONTRACT_LABEL[contract.starea]}</Tag>
-                          <p className="mt-1 text-[12.5px] text-dim">
+                          <p className="mt-1 text-[14px] text-dim">
                             din {dayLabel(contract.incepe)}
                             {contract.seTermina ? ` până la ${dayLabel(contract.seTermina)}` : ", fără sfârșit"}
                           </p>
@@ -105,15 +105,15 @@ export function ClientsScreen({
                       ) : client.contracte.length > 0 ? (
                         <Tag tone="muted">Fără contract activ în {monthLabel(month)}</Tag>
                       ) : (
-                        <span className="text-[13px] text-dim">—</span>
+                        <span className="text-[14.5px] text-dim">—</span>
                       )}
                     </td>
                     <td className={cn(tdClass, "whitespace-nowrap text-right tabular-nums")}>
-                      {contract ? (price ? money(price.suma, contract.moneda) : <span className="text-[13px] text-[var(--ap-warn)]">fără preț pe luna asta</span>) : "—"}
+                      {contract ? (price ? money(price.suma, contract.moneda) : <span className="text-[14.5px] text-[var(--ap-warn)]">fără preț pe luna asta</span>) : "—"}
                     </td>
-                    <td className={cn(tdClass, "whitespace-nowrap text-[13px]")}>{contract ? `ziua ${contract.ziEmitere} · scadent în ${contract.zileScadenta} ${contract.zileScadenta === 1 ? "zi" : "zile"}` : "—"}</td>
-                    <td className={cn(tdClass, "text-[13px]")}>{client.adsClientId ? (adsName.get(client.adsClientId) ?? "legat (client negăsit)") : <span className="text-dim">—</span>}</td>
-                    <td className={cn(tdClass, "text-[13px]")}>{client.emailFacturare ?? <span className="text-dim">—</span>}</td>
+                    <td className={cn(tdClass, "whitespace-nowrap text-[14.5px]")}>{contract ? `ziua ${contract.ziEmitere} · scadent în ${contract.zileScadenta} ${contract.zileScadenta === 1 ? "zi" : "zile"}` : "—"}</td>
+                    <td className={cn(tdClass, "text-[14.5px]")}>{client.adsClientId ? (adsName.get(client.adsClientId) ?? "legat (client negăsit)") : <span className="text-dim">—</span>}</td>
+                    <td className={cn(tdClass, "text-[14.5px]")}>{client.emailFacturare ?? <span className="text-dim">—</span>}</td>
                   </tr>
                 );
               })}

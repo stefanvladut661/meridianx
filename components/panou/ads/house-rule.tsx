@@ -14,8 +14,8 @@ export function HouseRule({ title = "Regula casei", children, className }: { tit
       <div className="flex items-start gap-2.5">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-mint" aria-hidden="true" />
         <div>
-          <p className="text-[12.5px] font-medium text-[#C4F5D8]">{title}</p>
-          <p className="mt-1 text-[11.5px] leading-relaxed text-[#C4F5D8]/75">
+          <p className="text-[14px] font-medium text-[#C4F5D8]">{title}</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[#C4F5D8]/75">
             {children ?? "Portalul creează campanii oprite. Pornirea, bugetul și licitarea se ating doar în platformă, de mână."}
           </p>
         </div>

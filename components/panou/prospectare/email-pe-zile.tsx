@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
  */
 export function EmailPeZile({ zile, casute, total, azi, casutaAleasa }: { zile: string[]; casute: CasutaPeZile[]; total: number; azi: string; casutaAleasa?: string }) {
   if (casute.length === 0 || zile.length === 0) {
-    return <p className="py-6 text-center text-[12.5px] text-muted-foreground">Niciun email trimis încă. Primul mesaj al unui robot deschide aici rândul căsuței lui.</p>;
+    return <p className="py-6 text-center text-[14px] text-muted-foreground">Niciun email trimis încă. Primul mesaj al unui robot deschide aici rândul căsuței lui.</p>;
   }
   const peZiToate = Object.fromEntries(zile.map((z) => [z, casute.reduce((s, c) => s + (c.peZi[z] ?? 0), 0)]));
   const zi = (z: string) => new Date(`${z}T12:00:00Z`);
-  const celula = "pu-num whitespace-nowrap px-3 py-2.5 text-right text-[12.5px]";
+  const celula = "pu-num whitespace-nowrap px-3 py-2.5 text-right text-[14px]";
   const fix = "sticky left-0 z-[1] bg-card";
 
   return (
@@ -22,7 +22,7 @@ export function EmailPeZile({ zile, casute, total, azi, casutaAleasa }: { zile: 
       <table className="w-full min-w-max border-collapse text-left">
         <caption className="sr-only">Emailuri trimise de fiecare căsuță: total și pe fiecare zi, de la primul email până azi.</caption>
         <thead>
-          <tr className="border-b border-border text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+          <tr className="border-b border-border text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
             <th scope="col" className={cn(fix, "py-2 pl-3 pr-4 font-medium")}>
               Căsuță
             </th>
@@ -31,8 +31,8 @@ export function EmailPeZile({ zile, casute, total, azi, casutaAleasa }: { zile: 
             </th>
             {zile.map((z) => (
               <th key={z} scope="col" className={cn("whitespace-nowrap px-3 py-2 text-right font-medium normal-case tracking-normal", z === azi && "text-foreground")}>
-                <span className="block text-[10.5px] uppercase tracking-[0.12em]">{z === azi ? "azi" : weekdayRo(zi(z))}</span>
-                <span className="pu-num text-[11.5px]">{dayMonthRo(zi(z))}</span>
+                <span className="block text-[12px] uppercase tracking-[0.12em]">{z === azi ? "azi" : weekdayRo(zi(z))}</span>
+                <span className="pu-num text-[13px]">{dayMonthRo(zi(z))}</span>
               </th>
             ))}
           </tr>
@@ -43,12 +43,12 @@ export function EmailPeZile({ zile, casute, total, azi, casutaAleasa }: { zile: 
               <th scope="row" className={cn(fix, "max-w-[220px] py-2.5 pl-3 pr-4 font-normal")}>
                 <Link
                   href={`/admin/prospectare/email?casuta=${encodeURIComponent(c.adresa)}#trimise`}
-                  className="block break-all rounded-sm text-[12.5px] font-medium underline-offset-2 hover:underline"
+                  className="block break-all rounded-sm text-[14px] font-medium underline-offset-2 hover:underline"
                   aria-label={`${c.adresa}: vezi emailurile trimise de pe ea`}
                 >
                   {c.adresa}
                 </Link>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[12.5px] text-muted-foreground">
                   {c.domeniu}
                   {!c.activa ? " · oprită din admin" : ""}
                 </span>
@@ -67,7 +67,7 @@ export function EmailPeZile({ zile, casute, total, azi, casutaAleasa }: { zile: 
         </tbody>
         <tfoot>
           <tr className="text-foreground">
-            <th scope="row" className={cn(fix, "py-2.5 pl-3 pr-4 text-[12.5px] font-medium")}>
+            <th scope="row" className={cn(fix, "py-2.5 pl-3 pr-4 text-[14px] font-medium")}>
               Toate căsuțele
             </th>
             <td className={cn(celula, "font-semibold")}>{num(total)}</td>

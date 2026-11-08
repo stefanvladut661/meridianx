@@ -50,7 +50,7 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
                 <h3 className="text-[19px] font-semibold">{single ? "Campanie creată pe pauză" : "Campanii create pe pauză"}</h3>
                 <Stamp />
               </div>
-              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+              <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">
                 {single ? "O campanie" : countOf(result.campaigns.length, "campanii")}, {counted(result.counts.adGroups, "grup", "grupuri")},{" "}
                 {counted(result.counts.keywords, "cuvânt cheie", "cuvinte cheie")} și {counted(result.counts.ads, "anunț", "anunțuri")} — toate oprite. Nu livrează nimic până nu le
                 pornești tu, în Google Ads.
@@ -73,7 +73,7 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
             </InlineNote>
           ) : null}
 
-          <ul className="mt-4 space-y-1 font-mono text-[11px] leading-relaxed text-muted-foreground">
+          <ul className="mt-4 space-y-1 font-mono text-[12.5px] leading-relaxed text-muted-foreground">
             {result.campaigns.map((campaign) => (
               <li key={campaign.id} className="flex min-w-0 flex-wrap gap-x-2">
                 <span>Campania</span>
@@ -85,7 +85,7 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
               </li>
             ))}
           </ul>
-          <p className="mt-3 border-t border-white/[0.06] pt-3 font-mono text-[10.5px] text-muted-foreground">
+          <p className="mt-3 border-t border-white/[0.06] pt-3 font-mono text-[12px] text-muted-foreground">
             {counted(result.counts.operations, "operație", "operații")} într-o singură cerere · {counted(result.counts.negatives, "negativ", "negative")} ·{" "}
             {counted(result.counts.assets, "material", "materiale")}
           </p>
@@ -98,11 +98,11 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
     return (
       <div ref={ref} tabIndex={-1} role="alert" className="outline-none">
         <Card className="border-apricot/25 bg-apricot/[0.035]">
-          <p className="flex items-center gap-2 text-[14px] font-semibold text-[#FFD0AC]">
+          <p className="flex items-center gap-2 text-[15px] font-semibold text-[#FFD0AC]">
             <AlertTriangle className="h-4 w-4" aria-hidden="true" />
             Planul ăsta a fost deja creat.
           </p>
-          <p className="mt-2 text-[12.5px] leading-relaxed text-foreground/80">{result.message}</p>
+          <p className="mt-2 text-[14px] leading-relaxed text-foreground/80">{result.message}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <ExternalButton href={result.duplicate.adsManagerUrl}>Deschide campaniile existente</ExternalButton>
             <Link href={`/admin/ads/${result.duplicate.recordId}`} className={btnClass({ variant: "outline", size: "sm" })}>
@@ -117,7 +117,7 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
   return (
     <div ref={ref} tabIndex={-1} role="alert" className="space-y-2 outline-none">
       <InlineNote tone="rose">
-        <p className="flex items-center gap-2 text-[13px] font-semibold">
+        <p className="flex items-center gap-2 text-[14.5px] font-semibold">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
           Nu s-a creat nimic.
         </p>

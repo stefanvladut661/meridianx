@@ -66,7 +66,7 @@ const ANULARE_MS = 2 * 60 * 1000 - 5000;
 /** O stare locală pe care baza n-o confirmă nici după atâta timp (a schimbat-o altcineva) cedează în fața bazei. */
 const EXPIRA_MS = 20 * 1000;
 const CONEXIUNE = "Conexiunea a căzut și nu știm dacă firma s-a marcat. Lista se reîncarcă: dacă firma e tot de trimis, încearcă din nou.";
-const BTN_SUS = "h-10 px-3.5 text-[13px] sm:h-8 sm:px-3 sm:text-[12.5px]";
+const BTN_SUS = "h-10 px-3.5 text-[14.5px] sm:h-8 sm:px-3 sm:text-[14px]";
 
 /** Mesajul unei erori, ca propoziție încheiată (ca textul care urmează să înceapă curat). */
 const fraza = (text: string): string => (/[.!?…]$/.test(text.trim()) ? text.trim() : `${text.trim()}.`);
@@ -138,10 +138,10 @@ function ConturiAzi({
     const continut = (
       <>
         <span className="flex items-center gap-1.5" aria-hidden="true">
-          <span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-5">{c.nume}</span>
+          <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium leading-5">{c.nume}</span>
           {laLimita ? <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-apricot" /> : null}
         </span>
-        <span className="pu-num text-[12px] leading-4 text-muted-foreground" aria-hidden="true">
+        <span className="pu-num text-[13.5px] leading-4 text-muted-foreground" aria-hidden="true">
           <span className={laLimita ? "text-[#FFC79C]" : "text-foreground/90"}>
             {num(trimise)}
             {c.limita !== null ? ` / ${num(c.limita)}` : ""}
@@ -177,8 +177,8 @@ function ConturiAzi({
     >
       {filtrabil ? (
         <button type="button" aria-pressed={filtru === "toate"} onClick={() => onAlege("toate")} className={clasa(filtru === "toate")}>
-          <span className="truncate text-[13px] font-medium leading-5">Toate conturile</span>
-          <span className="pu-num text-[12px] leading-4 text-muted-foreground">
+          <span className="truncate text-[14.5px] font-medium leading-5">Toate conturile</span>
+          <span className="pu-num text-[13.5px] leading-4 text-muted-foreground">
             <span className="text-foreground/90">{num(totalDeTrimis)}</span> de trimis
           </span>
           <span aria-hidden="true" className="mt-1.5 block h-1" />
@@ -569,7 +569,7 @@ export function WhatsAppScreen({
               setInlocuiri((m) => (v ? cu(m, c.id, v) : fara(m, c.id)));
             }}
             aria-label={`Contul de pe care pleacă firmele lui „${c.nume}”`}
-            className="h-10 rounded-lg border border-white/[0.14] bg-[#141418] px-2.5 text-[13px] text-foreground sm:h-8 sm:text-[12.5px]"
+            className="h-10 rounded-lg border border-white/[0.14] bg-[#141418] px-2.5 text-[14.5px] text-foreground sm:h-8 sm:text-[14px]"
           >
             <option value="">Alege contul</option>
             {active.map((a) => (
@@ -691,14 +691,14 @@ export function WhatsAppScreen({
       <Card as="section" padded={false} aria-labelledby="whatsapp-de-trimis" className="overflow-hidden">
         <div className="space-y-2.5 border-b border-white/[0.06] px-3 py-3 sm:px-4">
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <h2 id="whatsapp-de-trimis" ref={titluLista} tabIndex={-1} className="text-[15px] font-semibold tracking-[-0.01em]">
+            <h2 id="whatsapp-de-trimis" ref={titluLista} tabIndex={-1} className="text-[16px] font-semibold tracking-[-0.01em]">
               De trimis azi
               {programari ? <span className="pu-num font-normal text-muted-foreground"> · {num(deTrimis.length)}</span> : null}
               {contFiltru ? <span className="font-normal text-muted-foreground"> pe {contFiltru}</span> : null}
             </h2>
             <Link
               href={SETARI_CONTURI}
-              className="-my-2 inline-flex min-h-10 items-center rounded-sm text-[12px] text-muted-foreground hover:text-foreground sm:min-h-0 sm:text-[11.5px]"
+              className="-my-2 inline-flex min-h-10 items-center rounded-sm text-[13.5px] text-muted-foreground hover:text-foreground sm:min-h-0 sm:text-[13px]"
             >
               Conturi și limite, în Setări →
             </Link>
@@ -729,18 +729,18 @@ export function WhatsAppScreen({
               className="flex min-h-12 w-full items-center gap-2 rounded-[22px] px-3 py-2.5 text-left hover:bg-white/[0.03] sm:px-4"
             >
               <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200", trimiseDeschis && "rotate-180")} aria-hidden="true" />
-              <span className="text-[15px] font-semibold tracking-[-0.01em]">Trimise azi</span>
-              <span className="pu-num text-[13px] text-muted-foreground">
+              <span className="text-[16px] font-semibold tracking-[-0.01em]">Trimise azi</span>
+              <span className="pu-num text-[14.5px] text-muted-foreground">
                 · {num(trimise.length)}
                 {contFiltru ? ` pe ${contFiltru}` : ""}
               </span>
-              <span className="ml-auto text-[12px] text-muted-foreground" aria-hidden="true">
+              <span className="ml-auto text-[13.5px] text-muted-foreground" aria-hidden="true">
                 {trimiseDeschis ? "Ascunde" : "Arată"}
               </span>
             </button>
           </h2>
           <div id="whatsapp-trimise" hidden={!trimiseDeschis}>
-            <p className="border-t border-white/[0.06] px-3 py-2 text-[12px] leading-snug text-muted-foreground sm:px-4">
+            <p className="border-t border-white/[0.06] px-3 py-2 text-[13.5px] leading-snug text-muted-foreground sm:px-4">
               „Anulează” merge în primele 2 minute de la trimitere. Conversația se redeschide fără mesaj, ca să nu-l trimiți de două ori.
             </p>
             {trimise.length ? (
@@ -758,7 +758,7 @@ export function WhatsAppScreen({
                 ))}
               </ul>
             ) : (
-              <p className="border-t border-white/[0.06] px-3 py-4 text-[12.5px] text-muted-foreground sm:px-4">
+              <p className="border-t border-white/[0.06] px-3 py-4 text-[14px] text-muted-foreground sm:px-4">
                 Nimic trimis azi{contFiltru ? ` pe ${contFiltru}` : ""}. Ce trimiți apare aici, cu ora și contul.
               </p>
             )}

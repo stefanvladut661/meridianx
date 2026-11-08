@@ -34,7 +34,7 @@ export function LeadsPagination({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.06] px-4 py-3">
-      <p className="pu-num text-[11.5px] text-muted-foreground">
+      <p className="pu-num text-[13px] text-muted-foreground">
         {total === 0 ? "0" : `${num(first)}-${num(last)}`} din {num(total)}
         {totalAll !== null && total !== totalAll ? <span className="text-muted-foreground/60"> (filtrat din {num(totalAll)})</span> : null}
       </p>
@@ -48,19 +48,19 @@ export function LeadsPagination({
               Înapoi
             </Btn>
           )}
-          {pages[0] > 1 ? <span className="px-1 text-[11px] text-muted-foreground">1 …</span> : null}
+          {pages[0] > 1 ? <span className="px-1 text-[12.5px] text-muted-foreground">1 …</span> : null}
           {pages.map((n) => (
             <NavLink
               key={n}
               href={hrefFor(n)}
               aria-current={n === page ? "page" : undefined}
               aria-label={`Pagina ${n}`}
-              className={cn("pu-num flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-[11.5px]", n === page ? "bg-white/[0.11] text-foreground" : "text-muted-foreground hover:bg-white/[0.05]")}
+              className={cn("pu-num flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-[13px]", n === page ? "bg-white/[0.11] text-foreground" : "text-muted-foreground hover:bg-white/[0.05]")}
             >
               {n}
             </NavLink>
           ))}
-          {pages[pages.length - 1] < pageCount ? <span className="px-1 text-[11px] text-muted-foreground">… {pageCount}</span> : null}
+          {pages[pages.length - 1] < pageCount ? <span className="px-1 text-[12.5px] text-muted-foreground">… {pageCount}</span> : null}
           {page < pageCount ? (
             <NavLink href={hrefFor(page + 1)} className={btnClass({ variant: "outline", size: "xs" })}>
               Înainte

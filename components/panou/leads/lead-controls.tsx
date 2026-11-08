@@ -22,7 +22,7 @@ const initial: PanelState = { error: null, ok: null };
 function Feedback({ error }: { error: string | null }) {
   if (!error) return null;
   return (
-    <p role="alert" className="mt-2 text-[12px] leading-snug text-rose">
+    <p role="alert" className="mt-2 text-[13.5px] leading-snug text-rose">
       {error}
     </p>
   );
@@ -64,7 +64,7 @@ export function StatusControl({ leadId, current }: { leadId: string; current: Le
                 if (chosenRef.current) chosenRef.current.value = status;
               }}
               className={cn(
-                "rounded-lg border px-2 py-2 text-[11.5px] transition-colors disabled:opacity-50",
+                "rounded-lg border px-2 py-2 text-[13px] transition-colors disabled:opacity-50",
                 active ? "border-lav/40 bg-lav/15 text-[#D8CCFF]" : "border-white/[0.09] text-foreground/60 hover:border-white/20 hover:text-foreground"
               )}
             >
@@ -116,10 +116,10 @@ export function NotesControl({ leadId, notes }: { leadId: string; notes: string 
         onChange={(event) => setDraft(event.target.value)}
         rows={4}
         placeholder="Ce a spus la telefon, ce urmează, cine sună."
-        className="w-full resize-y rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-[12.5px] leading-relaxed outline-none placeholder:text-muted-foreground/60 focus:border-lav/50"
+        className="w-full resize-y rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-[14px] leading-relaxed outline-none placeholder:text-muted-foreground/60 focus:border-lav/50"
       />
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[10.5px] text-muted-foreground">
+        <span className="text-[12px] text-muted-foreground">
           {draft.length.toLocaleString("ro-RO")} / 10.000 caractere
           {dirty ? (
             <Pill tone="apricot" className="ml-2">
@@ -179,7 +179,7 @@ export function DeleteControl({
         <input ref={confirmRef} type="hidden" name="confirm" defaultValue="" />
         <Feedback error={state.error} />
         {pending ? (
-          <p role="status" className="mt-2 text-[12px] text-muted-foreground">
+          <p role="status" className="mt-2 text-[13.5px] text-muted-foreground">
             Se șterge…
           </p>
         ) : null}

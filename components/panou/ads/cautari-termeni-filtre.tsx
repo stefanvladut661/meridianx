@@ -28,7 +28,7 @@ export function CautariTermeniFiltre({
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div>
-        <span className="mb-1 block text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">Perioada</span>
+        <span className="mb-1 block text-[12px] uppercase tracking-[0.14em] text-muted-foreground">Perioada</span>
         <SegmentedControl
           size="sm"
           ariaLabel="Perioada termenilor"

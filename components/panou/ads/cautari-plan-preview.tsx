@@ -63,7 +63,7 @@ function KeywordChips({
   negative?: boolean;
   volumes?: Volumes | null;
 }) {
-  if (keywords.length === 0) return <p className="text-[12px] text-muted-foreground">niciunul</p>;
+  if (keywords.length === 0) return <p className="text-[13.5px] text-muted-foreground">niciunul</p>;
   const shown = keywords.slice(0, limit);
   const rest = keywords.slice(limit);
   const chip = (keyword: SummaryKeyword, index: number) => {
@@ -73,7 +73,7 @@ function KeywordChips({
         key={`${keyword.match}-${keyword.text}-${index}`}
         title={volume ? `${MATCH_HINT[keyword.match]} · ${volumeSentence(volume, volumes?.currency ?? null)}` : MATCH_HINT[keyword.match]}
         className={cn(
-          "rounded-md border px-2 py-0.5 font-mono text-[11.5px] leading-5",
+          "rounded-md border px-2 py-0.5 font-mono text-[13px] leading-5",
           negative ? "border-white/[0.06] text-muted-foreground line-through decoration-foreground/25" : "border-white/[0.09] bg-white/[0.04] text-foreground/90"
         )}
       >
@@ -94,7 +94,7 @@ function KeywordChips({
       <ul className="flex flex-wrap gap-1.5">{shown.map(chip)}</ul>
       {rest.length > 0 ? (
         <details className="mt-2">
-          <summary className="cursor-pointer text-[11.5px] text-muted-foreground hover:text-foreground">încă {rest.length}</summary>
+          <summary className="cursor-pointer text-[13px] text-muted-foreground hover:text-foreground">încă {rest.length}</summary>
           <ul className="mt-2 flex flex-wrap gap-1.5">{rest.map((keyword, index) => chip(keyword, index + limit))}</ul>
         </details>
       ) : null}
@@ -105,8 +105,8 @@ function KeywordChips({
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid grid-cols-[104px_minmax(0,1fr)] items-start gap-3 py-2 sm:grid-cols-[120px_minmax(0,1fr)]">
-      <dt className="pt-0.5 text-[11px] uppercase tracking-[0.1em] text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words text-[12.5px] leading-relaxed text-foreground/85">{children}</dd>
+      <dt className="pt-0.5 text-[12.5px] uppercase tracking-[0.1em] text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 break-words text-[14px] leading-relaxed text-foreground/85">{children}</dd>
     </div>
   );
 }
@@ -120,11 +120,11 @@ function CampaignBlock({ campaign, errorPaths, volumes }: { campaign: SummaryCam
   return (
     <Card as="section" padded={false} id={fieldId(campaign.path)} aria-labelledby={`${fieldId(campaign.path)}-titlu`}>
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-white/[0.06] px-4 py-3">
-        <h3 id={`${fieldId(campaign.path)}-titlu`} className="min-w-0 text-[14px] font-medium [overflow-wrap:anywhere]">
+        <h3 id={`${fieldId(campaign.path)}-titlu`} className="min-w-0 text-[15px] font-medium [overflow-wrap:anywhere]">
           {campaign.name}
-          {hasErrorUnder(errorPaths, campaign.path) ? <span className="ml-2 text-[11.5px] font-normal text-rose">· de corectat</span> : null}
+          {hasErrorUnder(errorPaths, campaign.path) ? <span className="ml-2 text-[13px] font-normal text-rose">· de corectat</span> : null}
         </h3>
-        <p className="font-mono text-[11px] text-muted-foreground">
+        <p className="font-mono text-[12.5px] text-muted-foreground">
           {campaign.budget ?? "fără buget"} · {counted(campaign.adGroups.length, "grup", "grupuri")} · {counted(keywords, "cuvânt cheie", "cuvinte cheie")}
         </p>
       </header>
@@ -132,13 +132,13 @@ function CampaignBlock({ campaign, errorPaths, volumes }: { campaign: SummaryCam
       <dl className="divide-y divide-white/[0.05] px-4">
         <Row label="Buget">
           {campaign.budget ?? MISSING}
-          {campaign.monthly ? <span className="ml-2 text-[11.5px] text-muted-foreground">{campaign.monthly}</span> : null}
+          {campaign.monthly ? <span className="ml-2 text-[13px] text-muted-foreground">{campaign.monthly}</span> : null}
         </Row>
         <Row label="Licitare">{campaign.bidding ?? MISSING}</Row>
         <Row label="Zone">
           {campaign.places.length > 0 ? joinRo(campaign.places) : MISSING}
           {campaign.excluded.length > 0 ? <span className="block text-foreground/70">fără {joinRo(campaign.excluded)}</span> : null}
-          {campaign.locationMode ? <span className="block text-[11.5px] text-muted-foreground">{campaign.locationMode}</span> : null}
+          {campaign.locationMode ? <span className="block text-[13px] text-muted-foreground">{campaign.locationMode}</span> : null}
         </Row>
         <Row label="Limbi">{campaign.languages ?? <span className="text-apricot">toate limbile</span>}</Row>
         <Row label="Program">
@@ -159,7 +159,7 @@ function CampaignBlock({ campaign, errorPaths, volumes }: { campaign: SummaryCam
               {campaign.lists.map((list) => (
                 <li key={list.key}>
                   {list.name ? `„${list.name}”` : <span className="text-rose">lista „{list.key}” nu există în plan</span>}
-                  {list.name ? <span className="ml-2 font-mono text-[11px] text-muted-foreground">{counted(list.count, "cuvânt", "cuvinte")}</span> : null}
+                  {list.name ? <span className="ml-2 font-mono text-[12.5px] text-muted-foreground">{counted(list.count, "cuvânt", "cuvinte")}</span> : null}
                 </li>
               ))}
             </ul>
@@ -194,7 +194,7 @@ function CampaignBlock({ campaign, errorPaths, volumes }: { campaign: SummaryCam
             {campaign.call ? (
               <p>
                 <span className="text-muted-foreground">Apel:</span> {campaign.call.phone}
-                {campaign.call.tracked ? null : <span className="ml-2 text-[11.5px] text-apricot">fără acțiune de conversie proprie</span>}
+                {campaign.call.tracked ? null : <span className="ml-2 text-[13px] text-apricot">fără acțiune de conversie proprie</span>}
               </p>
             ) : null}
           </div>
@@ -217,11 +217,11 @@ function CampaignBlock({ campaign, errorPaths, volumes }: { campaign: SummaryCam
                   ›
                 </span>
                 {broken ? <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-rose" /> : null}
-                <span className="min-w-0 flex-1 text-[13px] font-medium [overflow-wrap:anywhere]">
+                <span className="min-w-0 flex-1 text-[14.5px] font-medium [overflow-wrap:anywhere]">
                   {group.name}
                   {broken ? <span className="sr-only"> (de corectat)</span> : null}
                 </span>
-                <span className="font-mono text-[10.5px] text-muted-foreground">
+                <span className="font-mono text-[12px] text-muted-foreground">
                   {counted(group.keywords.length, "cuvânt", "cuvinte")} · {counted(group.ads.length, "anunț", "anunțuri")}
                   {group.maxCpc ? ` · ${group.maxCpc}` : ""}
                   {searches ? ` · ≈ ${searches.toLocaleString("ro-RO")} căutări/lună` : ""}
@@ -229,23 +229,23 @@ function CampaignBlock({ campaign, errorPaths, volumes }: { campaign: SummaryCam
               </summary>
               <div className="space-y-5 border-t border-white/[0.06] px-3 py-4">
                 <div>
-                  <h4 className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">Cuvinte cheie · {group.keywords.length}</h4>
+                  <h4 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">Cuvinte cheie · {group.keywords.length}</h4>
                   <div className="mt-2">
                     <KeywordChips keywords={group.keywords} volumes={volumes} />
                   </div>
-                  <p className="mt-2 font-mono text-[10.5px] text-muted-foreground">
+                  <p className="mt-2 font-mono text-[12px] text-muted-foreground">
                     [exactă] · &quot;frază&quot; · amplă{volumes ? " · cifra = căutări pe lună (Keyword Planner)" : ""}
                   </p>
                 </div>
                 {group.negatives.length > 0 ? (
                   <div>
-                    <h4 className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">Negative ale grupului · {group.negatives.length}</h4>
+                    <h4 className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">Negative ale grupului · {group.negatives.length}</h4>
                     <div className="mt-2">
                       <KeywordChips keywords={group.negatives} negative />
                     </div>
                   </div>
                 ) : null}
-                <p className="text-[11.5px] leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+                <p className="text-[13px] leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                   Pagina: <span className="text-foreground/80">{group.finalUrl ?? "lipsă"}</span>
                 </p>
                 <div className="space-y-5">
@@ -311,7 +311,7 @@ export function CautariPlanPreview({
 
         {summary.cap ? (
           <div className="mt-5 border-t border-white/[0.06] pt-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-2 text-[12px]">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 text-[13.5px]">
               <span className={summary.overCap ? "text-rose" : "text-foreground/80"}>
                 {summary.dailyBudget ?? "0"} din plafonul spațiului ({summary.cap})
               </span>
@@ -322,7 +322,7 @@ export function CautariPlanPreview({
         ) : null}
 
         {operations !== null ? (
-          <p className={cn("mt-4 text-[11.5px] leading-relaxed", operations > MUTATE_OPERATIONS_MAX ? "text-rose" : "text-muted-foreground")}>
+          <p className={cn("mt-4 text-[13px] leading-relaxed", operations > MUTATE_OPERATIONS_MAX ? "text-rose" : "text-muted-foreground")}>
             Totul pleacă într-o singură cerere: {countOf(operations, "operații")}, create împreună sau deloc
             {operations > MUTATE_OPERATIONS_MAX ? ` — peste limita Google de ${MUTATE_OPERATIONS_MAX.toLocaleString("ro-RO")} pe cerere` : ""}. Verificarea și crearea consumă fiecare{" "}
             {operations} din cele {EXPLORER_DAILY_OPERATIONS.toLocaleString("ro-RO")} de operații pe zi ale proiectului Google Cloud la nivelul Explorer.
@@ -332,16 +332,16 @@ export function CautariPlanPreview({
 
       {summary.lists.length > 0 ? (
         <Card as="section" aria-labelledby="liste-comune">
-          <h3 id="liste-comune" className="text-[15px] font-semibold tracking-[-0.01em]">
+          <h3 id="liste-comune" className="text-[16px] font-semibold tracking-[-0.01em]">
             Liste comune de negative · {summary.lists.length}
           </h3>
           <ul className="mt-2 divide-y divide-white/[0.05]">
             {summary.lists.map((list, index) => (
               <li key={list.key} id={fieldId(`shared_negative_lists.${index}`)} className="grid gap-x-6 gap-y-1 py-2.5 sm:grid-cols-[minmax(0,1fr)_auto]">
-                <span className="min-w-0 text-[12.5px] [overflow-wrap:anywhere]">
-                  „{list.name}” <span className="ml-1 font-mono text-[11px] text-muted-foreground">{counted(list.count, "cuvânt", "cuvinte")}</span>
+                <span className="min-w-0 text-[14px] [overflow-wrap:anywhere]">
+                  „{list.name}” <span className="ml-1 font-mono text-[12.5px] text-muted-foreground">{counted(list.count, "cuvânt", "cuvinte")}</span>
                 </span>
-                <span className={cn("text-[11.5px]", list.usedBy.length === 0 ? "text-apricot" : "text-muted-foreground")}>
+                <span className={cn("text-[13px]", list.usedBy.length === 0 ? "text-apricot" : "text-muted-foreground")}>
                   {list.usedBy.length === 0 ? "nelegată de nicio campanie" : `pe ${list.usedBy.length === 1 ? "o campanie" : countOf(list.usedBy.length, "campanii")}`}
                 </span>
               </li>
@@ -350,8 +350,8 @@ export function CautariPlanPreview({
         </Card>
       ) : null}
 
-      {volumes && "error" in volumes ? <p className="text-[12px] text-apricot">{volumes.error} Volumele de căutare lipsesc din previzualizare; restul verificării e întreg.</p> : null}
-      {volumes && "campaigns" in volumes && volumes.note ? <p className="text-[12px] text-muted-foreground">{volumes.note}</p> : null}
+      {volumes && "error" in volumes ? <p className="text-[13.5px] text-apricot">{volumes.error} Volumele de căutare lipsesc din previzualizare; restul verificării e întreg.</p> : null}
+      {volumes && "campaigns" in volumes && volumes.note ? <p className="text-[13.5px] text-muted-foreground">{volumes.note}</p> : null}
 
       {summary.campaigns.map((campaign, index) => (
         <CampaignBlock

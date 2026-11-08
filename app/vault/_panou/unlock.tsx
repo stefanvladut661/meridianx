@@ -23,7 +23,7 @@ export const STEP_LABEL: Record<BusyStep, string> = {
 export const argonDetail = `Argon2id · ${KDF.memlimit / (1024 * 1024)} MiB · ${KDF.opslimit} pași`;
 
 const INPUT =
-  "mt-1.5 h-10 w-full rounded-xl border border-white/[0.12] bg-white/[0.03] px-3 font-mono text-[13px] outline-none focus:border-mint/50 disabled:opacity-50";
+  "mt-1.5 h-10 w-full rounded-xl border border-white/[0.12] bg-white/[0.03] px-3 font-mono text-[14.5px] outline-none focus:border-mint/50 disabled:opacity-50";
 
 /**
  * Poarta de deblocare (UnlockScreen din prototip). Parola master deschide
@@ -61,12 +61,12 @@ export function UnlockScreen() {
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-mint/25 bg-mint/10">
             <Lock className="h-5 w-5 text-mint" aria-hidden="true" />
           </span>
-          <Pill tone="neutral" className="font-mono text-[10px]">
+          <Pill tone="neutral" className="font-mono text-[11.5px]">
             zero-knowledge
           </Pill>
         </div>
         <h1 className="mt-5 text-[20px] font-semibold">Seiful e încuiat</h1>
-        <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">
+        <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
           Parola master deschide cheia în browser. Serverul nu o vede niciodată și nu o poate recupera.
         </p>
 
@@ -106,7 +106,7 @@ export function UnlockScreen() {
           </form>
         )}
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] pt-4 text-[11.5px]">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] pt-4 text-[13px]">
           <Link href="/vault/recuperare" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
             Recuperează cu codul
           </Link>

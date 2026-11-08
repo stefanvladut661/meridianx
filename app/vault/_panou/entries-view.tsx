@@ -298,11 +298,11 @@ export function EntriesView({
                   aria-label="Caută în seif"
                   autoComplete="off"
                   spellCheck={false}
-                  className="h-9 w-full rounded-lg border border-white/[0.1] bg-white/[0.03] pl-9 pr-9 text-[13px] outline-none placeholder:text-muted-foreground/60 focus:border-mint/40"
+                  className="h-9 w-full rounded-lg border border-white/[0.1] bg-white/[0.03] pl-9 pr-9 text-[14.5px] outline-none placeholder:text-muted-foreground/60 focus:border-mint/40"
                 />
                 <kbd
                   aria-hidden="true"
-                  className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-white/[0.1] bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:block"
+                  className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-white/[0.1] bg-white/[0.04] px-1.5 py-0.5 font-mono text-[11.5px] text-muted-foreground sm:block"
                 >
                   /
                 </kbd>
@@ -316,7 +316,7 @@ export function EntriesView({
                   className="w-[150px]"
                 />
                 <SoftSelect ariaLabel="Client" value={clientFilter} onChange={setClientFilter} options={clientOptions} className="w-[168px]" />
-                <span className="pu-num ml-auto text-[11px] text-muted-foreground" aria-live="polite">
+                <span className="pu-num ml-auto text-[12.5px] text-muted-foreground" aria-live="polite">
                   {shown} din {entries.length}
                 </span>
               </div>
@@ -331,7 +331,7 @@ export function EntriesView({
                         aria-pressed={active}
                         onClick={() => setQuery(active ? "" : `#${tag}`)}
                         className={cn(
-                          "rounded-full border px-2 py-0.5 text-[10.5px]",
+                          "rounded-full border px-2 py-0.5 text-[12px]",
                           active ? "border-lav/40 bg-lav/12 text-[#D8CCFF]" : "border-white/[0.09] text-muted-foreground hover:text-foreground"
                         )}
                       >
@@ -389,7 +389,7 @@ export function EntriesView({
               />
             )}
 
-            <p className="px-1 text-[11px] leading-relaxed text-muted-foreground/60">
+            <p className="px-1 text-[12.5px] leading-relaxed text-muted-foreground/60">
               Niciun secret nu apare în listă sau în căutare. Lista arată doar metadate.{" "}
               <span className="hidden sm:inline">
                 <kbd className="font-mono">/</kbd> caută · <kbd className="font-mono">↑ ↓</kbd> umblă prin listă · <kbd className="font-mono">Enter</kbd> deschide fișa · <kbd className="font-mono">Esc</kbd> închide
@@ -400,7 +400,7 @@ export function EntriesView({
 
           {selectedId && selected ? (
             <div className="min-w-0 lg:sticky lg:top-[5.5rem]">
-              <button type="button" onClick={() => onSelect(null)} className="mb-2 inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground lg:hidden">
+              <button type="button" onClick={() => onSelect(null)} className="mb-2 inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground lg:hidden">
                 ← Toate intrările
               </button>
               <EntryPanel
@@ -509,7 +509,7 @@ function TrashView({
       <div className="border-b border-white/[0.06] px-4 py-3">
         <SectionTitle title="Coș" hint="ștergerea e temporară; nimic nu se pierde definitiv" />
       </div>
-      {error ? <p className="border-b border-rose/20 bg-rose/[0.07] px-4 py-2.5 text-[12px] text-[#FFC2CE]" role="alert">{error}</p> : null}
+      {error ? <p className="border-b border-rose/20 bg-rose/[0.07] px-4 py-2.5 text-[13.5px] text-[#FFC2CE]" role="alert">{error}</p> : null}
       {items === null ? (
         error ? null : (
           <div className="px-4 py-6">
@@ -525,12 +525,12 @@ function TrashView({
             return (
               <li key={item.entry.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className={cn("truncate text-[12.5px]", !ok && "text-[#FFC79C]")}>{ok ? ok.payload.title : "Intrare ilizibilă"}</p>
-                  <p className="truncate text-[10.5px] text-muted-foreground">
+                  <p className={cn("truncate text-[14px]", !ok && "text-[#FFC79C]")}>{ok ? ok.payload.title : "Intrare ilizibilă"}</p>
+                  <p className="truncate text-[12px] text-muted-foreground">
                     {item.clientName}
                     {item.clientDeleted ? " (client șters)" : ""} · {ok ? KIND_LABEL[ok.payload.kind] : "ilizibilă"} · ștearsă {dateRo(item.deletedAt)} de {emailOf(item.entry.updatedBy)}
                   </p>
-                  {item.clientDeleted ? <p className="mt-0.5 text-[10.5px] text-muted-foreground/80">Restaurarea aduce înapoi și clientul „{item.clientName}”.</p> : null}
+                  {item.clientDeleted ? <p className="mt-0.5 text-[12px] text-muted-foreground/80">Restaurarea aduce înapoi și clientul „{item.clientName}”.</p> : null}
                 </div>
                 <Btn size="xs" variant="outline" icon={RotateCcw} disabled={busyId === item.entry.id} onClick={() => void restore(item)}>
                   {busyId === item.entry.id ? "Se restaurează…" : "Restaurează"}
@@ -540,7 +540,7 @@ function TrashView({
           })}
         </ul>
       )}
-      <p className="border-t border-white/[0.06] px-4 py-2.5 text-[10.5px] leading-relaxed text-muted-foreground">
+      <p className="border-t border-white/[0.06] px-4 py-2.5 text-[12px] leading-relaxed text-muted-foreground">
         Ștergerea definitivă nu se face din aplicație, doar din SQL, de un om.
       </p>
     </Card>

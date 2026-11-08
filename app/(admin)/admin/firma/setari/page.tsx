@@ -39,14 +39,14 @@ export default async function SetariPage() {
     <main className="px-4 pb-16 pt-6 sm:px-6">
       <PageHead title="Setări" subtitle="Ce se alege din admin. Cheile (Oblio, Google, emailul) stau doar în Vercel; aici vezi doar dacă sunt puse." />
       <section aria-labelledby="legaturi" className="mt-5 max-w-3xl">
-        <h2 id="legaturi" className="text-[15px] font-semibold text-bone">
+        <h2 id="legaturi" className="text-[16px] font-semibold text-bone">
           Legăturile
         </h2>
         <ul className="mt-2 divide-y divide-hair rounded-xl border border-hair bg-char">
           {links.map((link) => (
-            <li key={link.name} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[14px]">
+            <li key={link.name} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[15px]">
               <span className="font-medium text-bone">{link.name}</span>
-              {link.ok ? <Tag tone="ok">Legat</Tag> : <span className="text-[13px] text-dim">Lipsește în Vercel: {link.missing}</span>}
+              {link.ok ? <Tag tone="ok">Legat</Tag> : <span className="text-[14.5px] text-dim">Lipsește în Vercel: {link.missing}</span>}
             </li>
           ))}
         </ul>

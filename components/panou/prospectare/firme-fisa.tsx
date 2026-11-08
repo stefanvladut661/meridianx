@@ -93,7 +93,7 @@ function ButonInchide({ onClick }: { onClick: () => void }) {
 function Detaliu({ eticheta, icon: Icon, children }: { eticheta: string; icon?: LucideIcon; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">{eticheta}</dt>
+      <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{eticheta}</dt>
       <dd className="mt-0.5 flex min-w-0 items-center gap-1.5">
         {Icon ? <Icon className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
         <span className="min-w-0 break-words">{children}</span>
@@ -122,13 +122,13 @@ function Contact({
     <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-white/[0.03] px-3.5 py-2.5">
       <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <p className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+        <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
           {eticheta}
           {detaliu ? <span className="normal-case tracking-normal"> · {detaliu}</span> : null}
         </p>
-        <p className="pu-num mt-0.5 select-all break-all text-[14px] font-medium leading-snug">{valoare}</p>
+        <p className="pu-num mt-0.5 select-all break-all text-[15px] font-medium leading-snug">{valoare}</p>
       </div>
-      <CopyButton value={copie} label={labelCopie} size="xs" className="h-9 shrink-0 px-2.5 text-[12px] sm:h-8" />
+      <CopyButton value={copie} label={labelCopie} size="xs" className="h-9 shrink-0 px-2.5 text-[13.5px] sm:h-8" />
     </div>
   );
 }
@@ -245,8 +245,8 @@ function Distributie({ firma, programari, acum }: { firma: Firma; programari: Fi
   const gata = firma.site_gata_la;
 
   return (
-    <div className="space-y-2.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px] leading-relaxed">
-      <h3 className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+    <div className="space-y-2.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[13.5px] leading-relaxed">
+      <h3 className="flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
         <CalendarClock className="h-3 w-3" aria-hidden="true" />
         Distribuție
       </h3>
@@ -254,14 +254,14 @@ function Distributie({ firma, programari, acum }: { firma: Firma; programari: Fi
       {activa && pagina ? (
         <div className="rounded-lg border border-lav/25 bg-lav/[0.07] px-3 py-2.5 text-[#D8CCFF]">
           <p className="font-medium">{programareText(activa, azi)}.</p>
-          <p className="mt-1 text-[11.5px] text-foreground/70">
+          <p className="mt-1 text-[13px] text-foreground/70">
             {activa.sursa === "automat" ? "Din distribuția de la 00:00." : `Programată manual de ${activa.creat_de}.`}
             {activa.zi_ceruta ? ` Cerută pe ${ddll(activa.zi_ceruta)}: ziua era plină.` : ""}{" "}
             {activa.zi <= azi
               ? "Celelalte canale sunt blocate azi; dacă nu pleacă până la 00:00, se întoarce în distribuție."
               : `Celelalte canale sunt blocate până atunci. Se anulează din pagina ${pagina.label}, până în ziua ei.`}
           </p>
-          <Link href={pagina.href} className="mt-1 inline-block rounded-sm text-[11.5px] text-foreground/80 underline underline-offset-2 hover:text-foreground">
+          <Link href={pagina.href} className="mt-1 inline-block rounded-sm text-[13px] text-foreground/80 underline underline-offset-2 hover:text-foreground">
             Deschide {pagina.label}
           </Link>
         </div>
@@ -397,8 +397,8 @@ function Canale({ firma }: { firma: Firma }) {
 
   return (
     <>
-      <div className="space-y-2.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px] leading-relaxed">
-        <h3 className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+      <div className="space-y-2.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[13.5px] leading-relaxed">
+        <h3 className="flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
           <Lock className="h-3 w-3" aria-hidden="true" />
           Canale
         </h3>
@@ -423,7 +423,7 @@ function Canale({ firma }: { firma: Firma }) {
               {firma.link_demo ? "" : " după ce site-ul demo e gata"}.
             </p>
             {firma.canal_permis_motiv ? <p className="mt-1 break-words border-l-2 border-lav/30 pl-2 italic text-foreground/80">„{firma.canal_permis_motiv}”</p> : null}
-            <p className="mt-1 text-[11px] text-foreground/65">
+            <p className="mt-1 text-[12.5px] text-foreground/65">
               {firma.canal_permis_de ?? "Un admin"}
               {firma.canal_permis_la ? (
                 <>
@@ -462,7 +462,7 @@ function Canale({ firma }: { firma: Firma }) {
               Permite recontactare pe alt canal
             </Btn>
             {/* Toast-ul stă sub fișă: confirmarea se vede (și se anunță) și aici. */}
-            <span className="text-[11.5px] text-[#B4F2CD]" aria-live="polite">
+            <span className="text-[13px] text-[#B4F2CD]" aria-live="polite">
               {raspuns}
             </span>
           </div>
@@ -510,20 +510,20 @@ function DialogRecontactare({ firma, folosite, onGata, onRenunta }: { firma: Fir
   return (
     <form onSubmit={trimite} className="space-y-4 text-left">
       <div className="space-y-1.5">
-        <h2 className="text-[17px] font-semibold leading-tight">Permite recontactare pe alt canal</h2>
-        <p className="text-[13px] leading-relaxed text-muted-foreground">
+        <h2 className="text-[18px] font-semibold leading-tight">Permite recontactare pe alt canal</h2>
+        <p className="text-[14.5px] leading-relaxed text-muted-foreground">
           {firma.nume} a primit deja {listaCanale(folosite)}. Alege pe ce canal o mai contactăm o dată și scrie de ce. Motivul rămâne în cronologie.
         </p>
       </div>
 
       {permisAcum ? (
-        <InlineNote tone="neutral" className="text-[12px]">
+        <InlineNote tone="neutral" className="text-[13.5px]">
           Firma are deja recontactare permisă pe {CANALE[permisAcum].label}, încă nefolosită. Dacă alegi alt canal, permisiunea veche se înlocuiește.
         </InlineNote>
       ) : null}
 
       <fieldset className="space-y-2" disabled={trimit}>
-        <legend className="mb-1.5 text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Canalul</legend>
+        <legend className="mb-1.5 text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Canalul</legend>
         {CANALE_IDS.map((c) => {
           const Icon = ICON_CANAL[c];
           const folosit = laCanal(firma, c);
@@ -559,11 +559,11 @@ function DialogRecontactare({ firma, folosite, onGata, onRenunta }: { firma: Fir
                 className="mt-1 h-4 w-4 shrink-0 accent-[#C6B5FF]"
               />
               <span className="min-w-0">
-                <span className="flex items-center gap-1.5 text-[13px] font-medium">
+                <span className="flex items-center gap-1.5 text-[14.5px] font-medium">
                   <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                   {CANALE[c].label}
                 </span>
-                <span className="mt-0.5 block text-[11.5px] leading-snug text-muted-foreground">{nota}</span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-muted-foreground">{nota}</span>
               </span>
             </label>
           );
@@ -571,7 +571,7 @@ function DialogRecontactare({ firma, folosite, onGata, onRenunta }: { firma: Fir
       </fieldset>
 
       <div>
-        <label htmlFor={`${id}-motiv`} className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+        <label htmlFor={`${id}-motiv`} className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
           Motivul
         </label>
         <textarea
@@ -590,14 +590,14 @@ function DialogRecontactare({ firma, folosite, onGata, onRenunta }: { firma: Fir
           placeholder="ex. a cerut la telefon să-i trimitem și pe email linkul"
           className={inputClass("mt-1.5 h-auto resize-y py-2 leading-relaxed read-only:opacity-60")}
         />
-        <p id={`${id}-motiv-ajutor`} className="mt-1 flex justify-between gap-3 text-[11.5px] text-muted-foreground">
+        <p id={`${id}-motiv-ajutor`} className="mt-1 flex justify-between gap-3 text-[13px] text-muted-foreground">
           <span>{lungime < 5 ? `Cel puțin 5 caractere${lungime ? `: mai scrie ${5 - lungime}` : ""}.` : "Se vede în cronologia firmei."}</span>
           <span className="pu-num shrink-0">{motiv.length}/500</span>
         </p>
       </div>
 
       {eroare ? (
-        <p className="rounded-xl border border-rose/25 bg-rose/[0.07] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[#FFC2CE]" role="alert">
+        <p className="rounded-xl border border-rose/25 bg-rose/[0.07] px-3.5 py-2.5 text-[14px] leading-relaxed text-[#FFC2CE]" role="alert">
           {eroare}
         </p>
       ) : null}
@@ -668,7 +668,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
       <div className="sticky top-0 z-10 border-b border-border bg-[#121216]/95 px-5 py-4 backdrop-blur">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1 text-left">
-            <div className="flex min-w-0 items-center gap-2 text-[11px] text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-2 text-[12.5px] text-muted-foreground">
               {firma.nr_site === null ? null : (
                 <>
                   <span className="pu-num shrink-0 font-semibold text-foreground" title="Numărul site-ului: dat când site-ul a fost publicat și verificat">
@@ -715,10 +715,10 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
               />
             ) : null}
             {firma.email ? <Contact icon={Mail} eticheta="Email" valoare={firma.email} copie={firma.email} labelCopie="Copiază emailul" /> : null}
-            <p className="text-[11px] leading-relaxed text-muted-foreground">Suni doar din „Apeluri azi”. Emailul îl trimite robotul și WhatsApp-ul pleacă din lista zilei, doar în ziua în care firma e programată.</p>
+            <p className="text-[12.5px] leading-relaxed text-muted-foreground">Suni doar din „Apeluri azi”. Emailul îl trimite robotul și WhatsApp-ul pleacă din lista zilei, doar în ziua în care firma e programată.</p>
           </div>
         ) : (
-          <p className="text-[12.5px] text-muted-foreground">Fișa nu are telefon sau email. Robotul le adaugă când le găsește pe site-ul vechi sau pe hartă.</p>
+          <p className="text-[14px] text-muted-foreground">Fișa nu are telefon sau email. Robotul le adaugă când le găsește pe site-ul vechi sau pe hartă.</p>
         )}
 
         {demo ? (
@@ -731,7 +731,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
 
         <Captura firma={firma} demo={demo} />
 
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12.5px]">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[14px]">
           <Detaliu eticheta="Nișă" icon={Building2}>
             {firma.nisa ?? "—"}
           </Detaliu>
@@ -742,7 +742,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
             {firma.persoana_contact ?? "—"}
           </Detaliu>
           <div className="min-w-0">
-            <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Scor</dt>
+            <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Scor</dt>
             <dd className="mt-0.5 flex items-center gap-2">
               <span className="pu-num font-medium">{firma.scor === null ? "—" : num(firma.scor)}</span>
               {firma.scor !== null ? (
@@ -758,7 +758,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
           </Detaliu>
           {firma.evaluare ? (
             <div className="col-span-2 min-w-0">
-              <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Evaluarea robotului</dt>
+              <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Evaluarea robotului</dt>
               <dd className="mt-1 space-y-1">
                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Pill tone={firma.evaluare === "eligibila" ? "mint" : "rose"}>{firma.evaluare === "eligibila" ? "eligibilă" : "respinsă"}</Pill>
@@ -777,7 +777,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
           ) : null}
         </dl>
 
-        <div className="space-y-1.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[12px]">
+        <div className="space-y-1.5 rounded-xl border border-border bg-white/[0.03] px-3.5 py-3 text-[13.5px]">
           <p className="flex items-center justify-between gap-2">
             <span className="shrink-0 text-muted-foreground">Site vechi</span>
             {siteVechi ? (
@@ -805,7 +805,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
         <Distributie firma={firma} programari={programari} acum={acum} />
 
         {rezervare || statusRobot || firma.de_refacut ? (
-          <div className="flex gap-2.5 rounded-xl border border-lav/20 bg-lav/[0.06] px-3.5 py-3 text-[12px] leading-relaxed text-[#D8CCFF]">
+          <div className="flex gap-2.5 rounded-xl border border-lav/20 bg-lav/[0.06] px-3.5 py-3 text-[13.5px] leading-relaxed text-[#D8CCFF]">
             <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <div className="space-y-1">
               {rezervare ? (
@@ -845,7 +845,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
             />
           </Field>
           <div className="mt-2 flex items-center justify-between gap-2">
-            <span className={cn("text-[11px]", raspunsNota && !raspunsNota.ok ? "text-rose" : "text-muted-foreground")} aria-live="polite">
+            <span className={cn("text-[12.5px]", raspunsNota && !raspunsNota.ok ? "text-rose" : "text-muted-foreground")} aria-live="polite">
               {salvez ? "Se salvează…" : raspunsNota && (!raspunsNota.ok || !modificata) ? raspunsNota.text : modificata ? "Modificări nesalvate" : "Nicio modificare"}
             </span>
             <Btn size="sm" variant="primary" icon={salvez ? Loader2 : StickyNote} disabled={!modificata || salvez} onClick={salveaza}>
@@ -856,8 +856,8 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
 
         {liste.length ? (
           <div>
-            <h3 className="mb-2.5 text-[13px] font-semibold">În listele de apeluri</h3>
-            <ul className="divide-y divide-white/[0.05] rounded-xl border border-border text-[12px]">
+            <h3 className="mb-2.5 text-[14.5px] font-semibold">În listele de apeluri</h3>
+            <ul className="divide-y divide-white/[0.05] rounded-xl border border-border text-[13.5px]">
               {liste.map((l) => {
                 const rez = rezultatLista(l.rezultat);
                 return (
@@ -868,7 +868,7 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
                     <span className="ml-auto flex items-center gap-2">
                       {l.incercari ? <span className="pu-num text-muted-foreground">{l.incercari === 1 ? "1 încercare" : `${l.incercari} încercări`}</span> : null}
                       {rez ? (
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${rez.badge}`}>{rez.label}</span>
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[12.5px] font-medium ${rez.badge}`}>{rez.label}</span>
                       ) : (
                         <span className="text-muted-foreground">fără rezultat</span>
                       )}
@@ -881,9 +881,9 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
         ) : null}
 
         <div>
-          <h3 className="mb-2.5 text-[13px] font-semibold">Cronologie</h3>
+          <h3 className="mb-2.5 text-[14.5px] font-semibold">Cronologie</h3>
           <ActivitateFirma activitate={activitate} acum={acum} />
-          {activitate.length >= 200 ? <p className="mt-3 text-[11px] text-muted-foreground">Ultimele 200 de întâmplări.</p> : null}
+          {activitate.length >= 200 ? <p className="mt-3 text-[12.5px] text-muted-foreground">Ultimele 200 de întâmplări.</p> : null}
         </div>
 
         <div className="border-t border-border pt-4">
@@ -894,11 +894,11 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
             {blocata ? "Firma e deja marcată „Nu contacta”" : "Nu contacta firma"}
           </Btn>
           {eroareEtapa ? (
-            <p className="mt-2 text-[11.5px] leading-relaxed text-rose" role="alert">
+            <p className="mt-2 text-[13px] leading-relaxed text-rose" role="alert">
               {eroareEtapa}
             </p>
           ) : null}
-          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
             Firma iese din listele de apeluri, programările ei se anulează și nu mai primește niciun mesaj. Rămâne în tabel, cu filtrul „Nu contacta”.
           </p>
         </div>
@@ -962,7 +962,7 @@ function Captura({ firma, demo }: { firma: Firma; demo: string | null }) {
           <span className="h-2 w-2 rounded-full bg-white/20" />
           <span className="h-2 w-2 rounded-full bg-white/20" />
         </span>
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border border-border bg-white/[0.03] px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border border-border bg-white/[0.03] px-2 py-0.5 font-mono text-[11.5px] text-muted-foreground">
           <Lock className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
           <span className="truncate">{demo ? faraProtocol(demo) : `${firma.domeniu} — fără demo`}</span>
         </span>
@@ -973,7 +973,7 @@ function Captura({ firma, demo }: { firma: Firma; demo: string | null }) {
           <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04]">
             <ImageIcon className="h-4 w-4 text-lav" aria-hidden="true" />
           </span>
-          <p className="text-[12.5px] text-muted-foreground">Captura site-ului demo e în Drive.</p>
+          <p className="text-[14px] text-muted-foreground">Captura site-ului demo e în Drive.</p>
           <a href={captura} target="_blank" rel="noreferrer" className={btnClass({ variant: "outline", size: "sm" })}>
             Deschide captura
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -985,8 +985,8 @@ function Captura({ firma, demo }: { firma: Firma; demo: string | null }) {
           <div className="absolute inset-0 bg-gradient-to-br from-lav/[0.10] via-transparent to-mint/[0.06]" aria-hidden="true" />
           <div className="relative p-4" aria-hidden="true">
             <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] pb-2">
-              <span className="pu-display truncate text-[13px] tracking-[0.1em]">{firma.nume}</span>
-              <span className="hidden gap-2 text-[9px] uppercase tracking-[0.14em] text-muted-foreground sm:flex">
+              <span className="pu-display truncate text-[14.5px] tracking-[0.1em]">{firma.nume}</span>
+              <span className="hidden gap-2 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground sm:flex">
                 <span>Servicii</span>
                 <span>Despre</span>
                 <span>Contact</span>
@@ -996,21 +996,21 @@ function Captura({ firma, demo }: { firma: Firma; demo: string | null }) {
               {firma.nisa ?? "Servicii"}
               {firma.oras ? ` în ${firma.oras}` : ""}
             </p>
-            <p className="mt-1.5 text-[10.5px] leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
               Programați o discuție, primiți oferta în aceeași zi.{firma.telefon ? ` Telefon: ${firma.telefon}` : ""}
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <span className="rounded-full bg-foreground px-2.5 py-1 text-[9.5px] font-medium text-[#0C0C10]">Cere ofertă</span>
-              <span className="rounded-full border border-white/[0.16] px-2.5 py-1 text-[9.5px] text-foreground/75">Vezi serviciile</span>
+              <span className="rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-[#0C0C10]">Cere ofertă</span>
+              <span className="rounded-full border border-white/[0.16] px-2.5 py-1 text-[11px] text-foreground/75">Vezi serviciile</span>
             </div>
-            <div className="mt-4 flex items-center gap-1 text-[9.5px] text-muted-foreground">
+            <div className="mt-4 flex items-center gap-1 text-[11px] text-muted-foreground">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="h-2.5 w-2.5 fill-apricot text-apricot" />
               ))}
               <span className="ml-1">recenzii inventate pentru demonstrație</span>
             </div>
           </div>
-          <p className="relative border-t border-white/[0.06] px-4 py-2 text-[11px] text-muted-foreground">Schiță: captura apare aici după ce robotul o urcă în Drive.</p>
+          <p className="relative border-t border-white/[0.06] px-4 py-2 text-[12.5px] text-muted-foreground">Schiță: captura apare aici după ce robotul o urcă în Drive.</p>
         </div>
       )}
     </div>

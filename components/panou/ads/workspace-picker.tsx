@@ -59,11 +59,11 @@ export function WorkspacePicker({
           />
         </div>
         <div className="text-right">
-          <p className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Plafon zilnic</p>
-          <p className="pu-num text-[13px]">{caps || "—"}</p>
+          <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Plafon zilnic</p>
+          <p className="pu-num text-[14.5px]">{caps || "—"}</p>
         </div>
       </div>
-      <p className="mt-2 text-[11.5px] leading-snug text-muted-foreground" aria-live="polite">
+      <p className="mt-2 text-[13px] leading-snug text-muted-foreground" aria-live="polite">
         <span className={cn("font-medium", current.owner === "clienti" ? "text-apricot" : "text-foreground/80")}>
           {current.owner === "clienti" ? "Banii clienților" : "Reclamele agenției"}
         </span>

@@ -12,7 +12,7 @@ export function LeadsHeader({ refreshing, onRefresh }: { refreshing: boolean; on
             formular site
           </Pill>
         </div>
-        <p className="mt-2 text-[12.5px] text-muted-foreground">Cererile din divizia Video și Software, în ordinea în care au intrat.</p>
+        <p className="mt-2 text-[14px] text-muted-foreground">Cererile din divizia Video și Software, în ordinea în care au intrat.</p>
       </div>
       <div className="flex items-center gap-3">
         <LiveDot active={refreshing} label={refreshing ? "Se reîncarcă" : "Live · la 20s"} />

@@ -12,7 +12,7 @@ import { NavLink } from "./nav-link";
 
 function DivisionMark({ division }: { division: Division }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[12px] text-foreground/70">
+    <span className="inline-flex items-center gap-1.5 text-[13.5px] text-foreground/70">
       <span className={cn("h-1.5 w-1.5 rounded-full", DIVISION_DOT[division])} aria-hidden="true" />
       {DIVISION_LABEL[division]}
     </span>
@@ -63,7 +63,7 @@ export function LeadsTable({
         <table className="w-full border-collapse text-left">
           <caption className="sr-only">Lead-uri, cele mai recente primele. Fiecare rând deschide fișa lead-ului.</caption>
           <thead>
-            <tr className="border-b border-white/[0.07] text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            <tr className="border-b border-white/[0.07] text-[11.5px] uppercase tracking-[0.14em] text-muted-foreground">
               <th scope="col" className="py-2.5 pl-4 pr-3 font-medium">
                 Lead
               </th>
@@ -108,19 +108,19 @@ export function LeadsTable({
                       onClick={(event) => linkClick(event, lead)}
                       className="flex min-w-0 items-center gap-2.5 outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.05] text-[10.5px] font-semibold text-foreground/70">
+                      <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.05] text-[12px] font-semibold text-foreground/70">
                         {initials(lead.name)}
                         {fresh ? <span className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-dotpulse rounded-full bg-lav ring-2 ring-[#12161a]" /> : null}
                       </span>
                       <span className="min-w-0">
                         <span className="flex items-center gap-2">
-                          <span className="truncate text-[13px] font-medium group-hover:text-lav">{lead.name}</span>
+                          <span className="truncate text-[14.5px] font-medium group-hover:text-lav">{lead.name}</span>
                           {fresh ? <Pill tone="lav">nou</Pill> : null}
                         </span>
-                        <span className="block truncate text-[11.5px] text-muted-foreground">{lead.company ?? "fără firmă"}</span>
+                        <span className="block truncate text-[13px] text-muted-foreground">{lead.company ?? "fără firmă"}</span>
                         {lead.isFunded ? (
                           // Coloana „Tip proiect” poartă marcajul; unde ea nu încape, marcajul trece sub nume.
-                          <span className={cn("mt-0.5 inline-flex items-center gap-1 text-[10.5px] text-apricot", !compact && "lg:hidden")}>
+                          <span className={cn("mt-0.5 inline-flex items-center gap-1 text-[12px] text-apricot", !compact && "lg:hidden")}>
                             <Banknote className="h-3 w-3" aria-hidden="true" /> cere fonduri
                           </span>
                         ) : null}
@@ -135,24 +135,24 @@ export function LeadsTable({
                       {statusLabel(lead.status)}
                     </Pill>
                   </td>
-                  <td className="pu-num whitespace-nowrap px-3 py-3 text-[12px] text-foreground/70">
+                  <td className="pu-num whitespace-nowrap px-3 py-3 text-[13.5px] text-foreground/70">
                     <span className="block">{dateRo(lead.createdAt)}</span>
-                    <span className="block text-[10.5px] text-muted-foreground">{timeRo(lead.createdAt)}</span>
+                    <span className="block text-[12px] text-muted-foreground">{timeRo(lead.createdAt)}</span>
                   </td>
-                  <td className={cn("max-w-[190px] px-3 py-3 text-[12.5px] text-foreground/80 max-lg:hidden", compact && "hidden")}>
+                  <td className={cn("max-w-[190px] px-3 py-3 text-[14px] text-foreground/80 max-lg:hidden", compact && "hidden")}>
                     <span className="block truncate">{lead.projectType ?? <span className="text-muted-foreground">—</span>}</span>
                     {lead.isFunded ? (
-                      <span className="mt-1 inline-flex items-center gap-1 text-[10.5px] text-apricot">
+                      <span className="mt-1 inline-flex items-center gap-1 text-[12px] text-apricot">
                         <Banknote className="h-3 w-3" aria-hidden="true" /> cere fonduri
                       </span>
                     ) : null}
                   </td>
-                  <td className={cn("px-3 py-3 text-[12px] text-muted-foreground max-xl:hidden", compact && "hidden")}>
+                  <td className={cn("px-3 py-3 text-[13.5px] text-muted-foreground max-xl:hidden", compact && "hidden")}>
                     <span className="block">{lead.source}</span>
-                    {lead.utm.source ? <span className="block text-[10.5px] text-muted-foreground/70">via {lead.utm.source}</span> : null}
+                    {lead.utm.source ? <span className="block text-[12px] text-muted-foreground/70">via {lead.utm.source}</span> : null}
                   </td>
                   <td className="py-3 pl-3 pr-4 text-right">
-                    <span className="pu-num text-[12.5px] text-foreground/80">{lead.budgetRange ?? <span className="text-muted-foreground">—</span>}</span>
+                    <span className="pu-num text-[14px] text-foreground/80">{lead.budgetRange ?? <span className="text-muted-foreground">—</span>}</span>
                     <ChevronRight className="ml-auto mt-0.5 h-3 w-3 text-foreground/20 group-hover:text-foreground/50" aria-hidden="true" />
                   </td>
                 </tr>
@@ -173,12 +173,12 @@ export function LeadsTable({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-[13.5px] font-medium">{lead.name}</p>
-                  <p className="truncate text-[11.5px] text-muted-foreground">{lead.company ?? "fără firmă"}</p>
+                  <p className="truncate text-[15px] font-medium">{lead.name}</p>
+                  <p className="truncate text-[13px] text-muted-foreground">{lead.company ?? "fără firmă"}</p>
                 </div>
                 <Pill tone={STATUS_TONE[lead.status]}>{statusLabel(lead.status)}</Pill>
               </div>
-              <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
+              <div className="mt-2 flex items-center gap-3 text-[12.5px] text-muted-foreground">
                 <DivisionMark division={lead.division} />
                 <span>{relativeRo(lead.createdAt, now)}</span>
                 {lead.isFunded ? <span className="text-apricot">fonduri</span> : null}

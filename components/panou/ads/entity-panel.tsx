@@ -134,11 +134,11 @@ export function EntityPanel({
     const delta: Delta | null = change ? deltaOf(change.current, change.previous, change.direction) : null;
     return (
       <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
-        <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">{label}</dt>
+        <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{label}</dt>
         {/* „289 de lead-uri” încape întreg, pe două rânduri dacă trebuie — nu tăiat. */}
-        <dd className={cn("pu-num mt-1 font-medium leading-snug", value.length > 11 ? "text-[14px]" : "text-[17px]")}>{value}</dd>
+        <dd className={cn("pu-num mt-1 font-medium leading-snug", value.length > 11 ? "text-[15px]" : "text-[18px]")}>{value}</dd>
         {delta && delta.percent !== null ? (
-          <dd className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+          <dd className="mt-1 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground">
             <DeltaChip delta={delta} /> față de înainte
           </dd>
         ) : null}
@@ -150,7 +150,7 @@ export function EntityPanel({
     ...(entity.dailyBudget ? [["Buget pe zi", formatAmount(entity.dailyBudget, currency)] as [string, string]] : []),
     ...(entity.lifetimeBudget ? [["Buget total", formatAmount(entity.lifetimeBudget, currency)] as [string, string]] : []),
     ...entity.settings.facts,
-    ["Id pe platformă", <span key="id" className="font-mono text-[11.5px]">{entity.platformId}</span>],
+    ["Id pe platformă", <span key="id" className="font-mono text-[13px]">{entity.platformId}</span>],
     ...(account ? [["Contul", `${account.name ?? account.adAccount} (${account.adAccount})`] as [string, string]] : []),
   ];
 
@@ -166,16 +166,16 @@ export function EntityPanel({
       <div className="sticky top-0 z-10 border-b border-white/[0.07] bg-[#121216] px-5 py-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-2 text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="flex items-center gap-2 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
               <ChannelMark platform={entity.platform} size="sm" label={false} />
               {LEVEL_LABEL[entity.level]} · {PLATFORM_LABEL[entity.platform]}
             </p>
-            <h2 id="panou-titlu" ref={heading} tabIndex={-1} className="mt-2 text-[17px] font-semibold leading-snug outline-none">
+            <h2 id="panou-titlu" ref={heading} tabIndex={-1} className="mt-2 text-[18px] font-semibold leading-snug outline-none">
               {entity.name}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <StatusPill status={entity.status} />
-              {entity.statusDetail ? <span className="font-mono text-[10.5px] text-muted-foreground">{entity.statusDetail}</span> : null}
+              {entity.statusDetail ? <span className="font-mono text-[12px] text-muted-foreground">{entity.statusDetail}</span> : null}
             </div>
           </div>
           <button
@@ -194,7 +194,7 @@ export function EntityPanel({
                 Pune pe pauză
               </Btn>
             ) : (
-              <p className="text-[11.5px] text-muted-foreground">Pauza pe {PLATFORM_LABEL[entity.platform]} din portal vine într-o fază următoare.</p>
+              <p className="text-[13px] text-muted-foreground">Pauza pe {PLATFORM_LABEL[entity.platform]} din portal vine într-o fază următoare.</p>
             )
           ) : null}
           {manager ? (
@@ -220,8 +220,8 @@ export function EntityPanel({
         </section>
 
         <section aria-label="Pe zile" className="grid gap-5">
-          {daysError ? <p className="text-[12.5px] text-rose">{daysError}</p> : null}
-          {days === null && !daysError ? <p className="text-[12.5px] text-muted-foreground">Se citesc zilele…</p> : null}
+          {daysError ? <p className="text-[14px] text-rose">{daysError}</p> : null}
+          {days === null && !daysError ? <p className="text-[14px] text-muted-foreground">Se citesc zilele…</p> : null}
           {days ? (
             <>
               <DayChart title="Cheltuit pe zi" name="Cheltuit" days={series((day) => day.figures.spend)} unit={{ type: "money", currency }} withTable={false} />
@@ -243,7 +243,7 @@ export function EntityPanel({
           <section aria-labelledby="rezultat-titlu">
             <SectionTitle title={<span id="rezultat-titlu">Ce se numără ca rezultat</span>} />
             {catalog.length === 0 ? (
-              <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+              <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                 {account?.measured === false
                   ? `Contul n-are nicio conversie configurată, deci rezultatele sunt „nemăsurat”. ${entity.platform === "google" ? "Le poți crea din Căutări → Conversii." : `Configurează-le în ${PLATFORM_LABEL[entity.platform]}.`}`
                   : "Catalogul conversiilor apare după prima actualizare a contului."}
@@ -269,13 +269,13 @@ export function EntityPanel({
                     { value: NO_RESULT, label: "Nemăsurat (nu număra nimic)" },
                   ]}
                 />
-                <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">Grupurile și reclamele campaniei numără același lucru. Implicitul vine din ce optimizează campania.</p>
-                {resultError ? <p role="alert" className="mt-1 text-[12px] text-rose">{resultError}</p> : null}
+                <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">Grupurile și reclamele campaniei numără același lucru. Implicitul vine din ce optimizează campania.</p>
+                {resultError ? <p role="alert" className="mt-1 text-[13.5px] text-rose">{resultError}</p> : null}
               </>
             )}
           </section>
         ) : parents.campaign ? (
-          <p className="text-[12.5px] text-muted-foreground">
+          <p className="text-[14px] text-muted-foreground">
             Rezultatul se numără ca la campania{" "}
             <button type="button" onClick={() => onOpen(parents.campaign!)} className="font-medium text-lav underline underline-offset-4">
               {parents.campaign.name}
@@ -286,7 +286,7 @@ export function EntityPanel({
 
         <section aria-labelledby="setari-titlu">
           <SectionTitle title={<span id="setari-titlu">Setări <span className="font-normal text-muted-foreground">(doar citire)</span></span>} />
-          <dl className="mt-3 divide-y divide-white/[0.05] rounded-xl border border-white/[0.07] text-[12.5px]">
+          <dl className="mt-3 divide-y divide-white/[0.05] rounded-xl border border-white/[0.07] text-[14px]">
             {settings.map(([label, value]) => (
               <div key={label} className="flex justify-between gap-4 px-3 py-2">
                 <dt className="text-muted-foreground">{label}</dt>
@@ -295,7 +295,7 @@ export function EntityPanel({
             ))}
           </dl>
           {entity.settings.texts?.length ? (
-            <ul className="mt-3 grid gap-1.5 text-[12.5px] text-foreground/85">
+            <ul className="mt-3 grid gap-1.5 text-[14px] text-foreground/85">
               {entity.settings.texts.map((text, index) => (
                 <li key={`${index}-${text}`} className="rounded-lg bg-white/[0.04] px-2.5 py-1.5">
                   {text}
@@ -304,7 +304,7 @@ export function EntityPanel({
             </ul>
           ) : null}
           {entity.settings.url ? (
-            <p className="mt-2 break-all text-[12px] text-muted-foreground">
+            <p className="mt-2 break-all text-[13.5px] text-muted-foreground">
               Duce la: <span className="text-foreground/85">{entity.settings.url}</span>
             </p>
           ) : null}
@@ -321,7 +321,7 @@ export function EntityPanel({
           <section aria-labelledby="copii-titlu">
             <SectionTitle title={<span id="copii-titlu">{CHILD_LABEL[entity.level]} <span className="font-normal text-muted-foreground">({descendants.length})</span></span>} />
             {descendants.length === 0 ? (
-              <p className="mt-2 text-[12.5px] text-muted-foreground">
+              <p className="mt-2 text-[14px] text-muted-foreground">
                 {entity.platform === "google" && entity.kind === "PERFORMANCE_MAX" ? "Performance Max n-are grupuri de reclame: cifrele sunt doar pe campanie." : "Niciunul citit din cont."}
               </p>
             ) : (
@@ -333,9 +333,9 @@ export function EntityPanel({
                   .map((child) => (
                     <li key={child.id}>
                       <button type="button" onClick={() => onOpen(child)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-white/[0.04]">
-                        <span className="min-w-0 truncate text-[12.5px] font-medium">{child.name}</span>
+                        <span className="min-w-0 truncate text-[14px] font-medium">{child.name}</span>
                         <span className="flex shrink-0 items-center gap-2">
-                          <span className="pu-num text-[11.5px] text-muted-foreground">{formatAmount(childFigures.get(child.id)?.spend ?? 0, currency)}</span>
+                          <span className="pu-num text-[13px] text-muted-foreground">{formatAmount(childFigures.get(child.id)?.spend ?? 0, currency)}</span>
                           <StatusPill status={child.status} />
                         </span>
                       </button>
@@ -346,7 +346,7 @@ export function EntityPanel({
           </section>
         ) : null}
 
-        <p className="text-[11.5px] text-muted-foreground">Citit din cont {dateTimeRo(entity.lastSeenAt)}. Portalul nu schimbă nimic aici în afară de pauză.</p>
+        <p className="text-[13px] text-muted-foreground">Citit din cont {dateTimeRo(entity.lastSeenAt)}. Portalul nu schimbă nimic aici în afară de pauză.</p>
       </div>
     </div>
   );

@@ -218,7 +218,7 @@ function Section({ title, aside, children, className }: { title?: ReactNode; asi
     <section className={cn("border-t border-white/[0.06] pt-5 first:border-t-0 first:pt-0", className)}>
       {title ? (
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-[12.5px] font-medium text-foreground">{title}</h3>
+          <h3 className="text-[14px] font-medium text-foreground">{title}</h3>
           {aside}
         </div>
       ) : null}
@@ -594,13 +594,13 @@ export function CreateWizard({
                   onClick={() => goTo(index)}
                   aria-current={current ? "step" : undefined}
                   className={cn(
-                    "flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11.5px] transition-colors disabled:cursor-default",
+                    "flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[13px] transition-colors disabled:cursor-default",
                     current ? "border-lav/40 bg-lav/12 text-[#D8CCFF]" : errorsHere ? "border-rose/30 text-[#FFB0C0]" : index < reached ? "border-white/[0.1] text-foreground/70 hover:text-foreground" : "border-white/[0.07] text-muted-foreground"
                   )}
                 >
                   <span
                     className={cn(
-                      "pu-num flex h-4 w-4 items-center justify-center rounded-full text-[9px]",
+                      "pu-num flex h-4 w-4 items-center justify-center rounded-full text-[10.5px]",
                       current ? "bg-lav text-[#171222]" : errorsHere ? "bg-rose text-[#171222]" : index < reached ? "bg-mint/20 text-mint" : "bg-white/[0.08]"
                     )}
                     aria-hidden="true"
@@ -620,10 +620,10 @@ export function CreateWizard({
         <Card>
           {/* Titlul pasului, ca `SectionTitle` din kit, dar cu ref: focusul ajunge aici la fiecare schimbare de pas. */}
           <div>
-            <h2 ref={heading} tabIndex={-1} className="text-[15px] font-semibold tracking-[-0.01em] outline-none">
+            <h2 ref={heading} tabIndex={-1} className="text-[16px] font-semibold tracking-[-0.01em] outline-none">
               {step + 1}. {STEPS[step].title}
             </h2>
-            <p className="mt-1 text-[12.5px] text-muted-foreground">
+            <p className="mt-1 text-[14px] text-muted-foreground">
               {step === 0 ? `Contul lui ${client.name} în care se creează campania. Clientul îl schimbi din bara de sus.` : STEPS[step].hint}
             </p>
           </div>
@@ -655,11 +655,11 @@ export function CreateWizard({
                               >
                                 <input type="radio" name="cont" className="sr-only" checked={selected} disabled={blocked} onChange={() => chooseAccount(item)} />
                                 <span className="min-w-0">
-                                  <span className="block text-[12.5px] font-medium">{item.name ?? item.adAccount}</span>
-                                  <span className="block font-mono text-[10.5px] text-muted-foreground">
+                                  <span className="block text-[14px] font-medium">{item.name ?? item.adAccount}</span>
+                                  <span className="block font-mono text-[12px] text-muted-foreground">
                                     {item.adAccount} · {item.currency ?? "—"}
                                   </span>
-                                  {blocked ? <span className="mt-1 block text-[11px] text-apricot">Spațiul n-are token: {space?.tokenEnv ?? "tokenul"} lipsește în Vercel.</span> : null}
+                                  {blocked ? <span className="mt-1 block text-[12.5px] text-apricot">Spațiul n-are token: {space?.tokenEnv ?? "tokenul"} lipsește în Vercel.</span> : null}
                                 </span>
                               </label>
                             );
@@ -667,7 +667,7 @@ export function CreateWizard({
                         </div>
                       </fieldset>
                     ))}
-                    <p className="text-[11.5px] leading-relaxed text-muted-foreground">Toate cele trei creează campania oprită. Diferă doar în platforma unde o pornești.</p>
+                    <p className="text-[13px] leading-relaxed text-muted-foreground">Toate cele trei creează campania oprită. Diferă doar în platforma unde o pornești.</p>
                   </div>
                 </Section>
               ) : null}
@@ -684,14 +684,14 @@ export function CreateWizard({
                             <label
                               key={objective}
                               className={cn(
-                                "flex cursor-pointer flex-col rounded-xl border px-3 py-2.5 text-left text-[12.5px] transition-colors",
+                                "flex cursor-pointer flex-col rounded-xl border px-3 py-2.5 text-left text-[14px] transition-colors",
                                 choiceFocus,
                                 selected ? "border-lav/40 bg-lav/[0.08] text-foreground" : "border-white/[0.09] text-foreground/70 hover:border-white/20"
                               )}
                             >
                               <input id={objective === "leads" ? fieldId("campaign.objective") : undefined} type="radio" name="obiectiv" className="sr-only" checked={selected} onChange={() => chooseObjective(objective)} />
                               {OBJECTIVE_LABEL[objective]}
-                              <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{OBJECTIVE_HINT[objective]}</span>
+                              <span className="mt-0.5 block text-[12.5px] leading-snug text-muted-foreground">{OBJECTIVE_HINT[objective]}</span>
                             </label>
                           );
                         })}
@@ -717,9 +717,9 @@ export function CreateWizard({
                   </Section>
                   <Section title="Bugetul">
                     <BudgetFields />
-                    {summary?.monthly ? <p className="mt-2 text-[12px] text-muted-foreground">{summary.monthly}, dacă rulează toată luna.</p> : null}
+                    {summary?.monthly ? <p className="mt-2 text-[13.5px] text-muted-foreground">{summary.monthly}, dacă rulează toată luna.</p> : null}
                     {workspace ? (
-                      <p className="mt-1 text-[11.5px] text-muted-foreground">
+                      <p className="mt-1 text-[13px] text-muted-foreground">
                         Plafonul spațiului {workspace.name}: {capText} pe zi.
                       </p>
                     ) : null}
@@ -736,13 +736,13 @@ export function CreateWizard({
                       </>
                     }
                     aside={
-                      <Link href="/admin/ads/materiale" className="text-[11.5px] text-lav hover:underline">
+                      <Link href="/admin/ads/materiale" className="text-[13px] text-lav hover:underline">
                         Urcă un video nou
                       </Link>
                     }
                   >
                     {listed.length === 0 ? (
-                      <p className="text-[12.5px] leading-relaxed text-muted-foreground">Niciun material pentru {client.name} încă. Urcă video-ul în Materiale, apoi revino: pașii făcuți rămân.</p>
+                      <p className="text-[14px] leading-relaxed text-muted-foreground">Niciun material pentru {client.name} încă. Urcă video-ul în Materiale, apoi revino: pașii făcuți rămân.</p>
                     ) : (
                       <ul className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
                         {listed.map((material) => {
@@ -761,14 +761,14 @@ export function CreateWizard({
                                 <span className="relative flex aspect-video min-h-0 shrink-0 items-center justify-center overflow-hidden bg-[#0A0A0E]">
                                   <Film className="h-5 w-5 text-foreground/25" aria-hidden="true" />
                                   {material.previewUrl ? <video src={`${material.previewUrl}#t=0.1`} preload="metadata" muted playsInline className="absolute inset-0 h-full w-full object-contain" aria-hidden /> : null}
-                                  {selected ? <span className="pu-num absolute left-2 top-2 grid h-5 min-w-5 place-items-center rounded-full bg-lav px-1.5 text-[10.5px] font-semibold text-[#171222]">{order + 1}</span> : null}
+                                  {selected ? <span className="pu-num absolute left-2 top-2 grid h-5 min-w-5 place-items-center rounded-full bg-lav px-1.5 text-[12px] font-semibold text-[#171222]">{order + 1}</span> : null}
                                 </span>
                                 <span className="flex items-start gap-2 p-2.5">
                                   <input type="checkbox" checked={selected} onChange={() => toggleMaterial(material.id)} disabled={!selected && chosen.length >= MAX_VIDEOS} className="mt-0.5 h-4 w-4 shrink-0 accent-lav" />
                                   <span className="min-w-0">
-                                    <span className="block break-words text-[12.5px] font-medium leading-snug">{material.name}</span>
-                                    <span className="block text-[10.5px] text-muted-foreground">{[durationLabel(material.durationSeconds), aspectLabel(material.width, material.height)].filter(Boolean).join(" · ") || "—"}</span>
-                                    <span className={cn("block text-[10.5px]", inAccount ? OK_TEXT : "text-muted-foreground")}>{inAccount ? "deja în contul ăsta" : "se trimite în cont la verificare"}</span>
+                                    <span className="block break-words text-[14px] font-medium leading-snug">{material.name}</span>
+                                    <span className="block text-[12px] text-muted-foreground">{[durationLabel(material.durationSeconds), aspectLabel(material.width, material.height)].filter(Boolean).join(" · ") || "—"}</span>
+                                    <span className={cn("block text-[12px]", inAccount ? OK_TEXT : "text-muted-foreground")}>{inAccount ? "deja în contul ăsta" : "se trimite în cont la verificare"}</span>
                                   </span>
                                 </span>
                               </label>
@@ -777,8 +777,8 @@ export function CreateWizard({
                         })}
                       </ul>
                     )}
-                    {chosen.length === 0 ? <p className="mt-2 text-[11px] text-muted-foreground">Fără video, reclama nu livrează: alege cel puțin unul ca să continui.</p> : null}
-                    {chosen.length > 1 ? <p className="mt-2 text-[11.5px] text-muted-foreground">Cu mai multe video-uri, se face câte o reclamă pentru fiecare video × text, în același grup.</p> : null}
+                    {chosen.length === 0 ? <p className="mt-2 text-[12.5px] text-muted-foreground">Fără video, reclama nu livrează: alege cel puțin unul ca să continui.</p> : null}
+                    {chosen.length > 1 ? <p className="mt-2 text-[13px] text-muted-foreground">Cu mai multe video-uri, se face câte o reclamă pentru fiecare video × text, în același grup.</p> : null}
                   </Section>
                   <Section title="Textele și butonul">
                     <div className="space-y-5">
@@ -792,8 +792,8 @@ export function CreateWizard({
                   </Section>
                   <Section>
                     <details className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-3.5">
-                      <summary className="cursor-pointer text-[12.5px] font-medium">Îmbunătățiri automate · toate oprite</summary>
-                      <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">Un testimonial filmat nu se lasă rescris de platformă. Le pornești doar știind ce fac.</p>
+                      <summary className="cursor-pointer text-[14px] font-medium">Îmbunătățiri automate · toate oprite</summary>
+                      <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">Un testimonial filmat nu se lasă rescris de platformă. Le pornești doar știind ce fac.</p>
                       <div className="mt-3">
                         <EnhancementsFields platform={platform} />
                       </div>
@@ -805,11 +805,11 @@ export function CreateWizard({
               {step === PREVIEW_STEP && platform && summary ? (
                 <>
                   <Section>
-                    <p className="text-[13.5px] font-medium leading-snug">
+                    <p className="text-[15px] font-medium leading-snug">
                       {summary.objective ? `O campanie de ${summary.objective.toLowerCase()}` : "O campanie"} pe {PLATFORM_LABEL[platform]}, în {account?.name ?? account?.adAccount},{" "}
                       {summary.budget ? `cu ${summary.budget}` : "fără buget"}.
                     </p>
-                    <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                    <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                       Pentru oameni de {summary.age}, {summary.gender}, din {summary.places.length > 0 ? joinRo(summary.places) : "—"}. {summary.ads.length === 1 ? "O reclamă" : countOf(summary.ads.length, "reclame")}
                       {summary.cta ? ` cu butonul „${summary.cta}”` : ""}. Totul se creează oprit; o pornești tu, din {PLATFORM_LABEL[platform]}.
                     </p>
@@ -819,7 +819,7 @@ export function CreateWizard({
                       <div className="flex flex-col items-center gap-3">
                         {platform !== "google" ? <SegmentedControl options={PLACEMENTS} value={placement} onChange={setPlacement} ariaLabel="Amplasare" /> : null}
                         <CreativePreview creative={previewCreative} platform={platform} placement={placement} brand={client.name} className="w-full max-w-[300px]" />
-                        <p className="max-w-sm text-center text-[11px] leading-relaxed text-muted-foreground">
+                        <p className="max-w-sm text-center text-[12.5px] leading-relaxed text-muted-foreground">
                           Așa o vede omul. Textul și butonul sunt exact cele din plan{platform === "google" ? "; Google își arată reclama în YouTube, Discover și Gmail, deci macheta e orientativă" : ""}.
                         </p>
                       </div>
@@ -835,8 +835,8 @@ export function CreateWizard({
                 <>
                   <Section>
                     <div className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-3">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Rezumat</p>
-                      <ul className="mt-2 space-y-1 text-[12px] text-foreground/80">
+                      <p className="text-[12.5px] uppercase tracking-[0.12em] text-muted-foreground">Rezumat</p>
+                      <ul className="mt-2 space-y-1 text-[13.5px] text-foreground/80">
                         <li>
                           {planName || "(fără nume)"} · {PLATFORM_LABEL[platform]} · {summary.objective ?? "(fără obiectiv)"}
                         </li>
@@ -852,7 +852,7 @@ export function CreateWizard({
                   </Section>
 
                   <Section title="Video-urile în contul de reclame">
-                    <ul className="space-y-1.5 text-[12.5px]">
+                    <ul className="space-y-1.5 text-[14px]">
                       {picked.map((material) => {
                         const state = readyIds.has(material.id) ? { phase: "ready" as const } : (states[material.id] ?? { phase: "waiting" as const });
                         const text =
@@ -878,7 +878,7 @@ export function CreateWizard({
                   {totalErrors > 0 ? (
                     <Section>
                       <div className="space-y-2">
-                        <p className={cn("text-[13px] font-semibold", ERROR_TEXT)}>{totalErrors === 1 ? "Un lucru" : countOf(totalErrors, "lucruri")} de corectat înainte de verificare</p>
+                        <p className={cn("text-[14.5px] font-semibold", ERROR_TEXT)}>{totalErrors === 1 ? "Un lucru" : countOf(totalErrors, "lucruri")} de corectat înainte de verificare</p>
                         {allErrors
                           .filter((problem) => !/^creative\.videos?(\.\d+)?$/.test(problem.path))
                           .slice(0, 12)
@@ -934,9 +934,9 @@ export function CreateWizard({
 
                   <Section>
                     <details className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-3.5">
-                      <summary className="cursor-pointer text-[12.5px] font-medium">Planul, în JSON</summary>
-                      <p className="mt-2 text-[11.5px] leading-relaxed text-muted-foreground">Același format ca la „Importă JSON”. Îl poți duce acolo ca să-l corectezi de mână sau să-l dai mai departe.</p>
-                      <pre className="mt-3 max-h-80 overflow-auto rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[11px] leading-relaxed text-foreground/80">{JSON.stringify(plan, null, 2)}</pre>
+                      <summary className="cursor-pointer text-[14px] font-medium">Planul, în JSON</summary>
+                      <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">Același format ca la „Importă JSON”. Îl poți duce acolo ca să-l corectezi de mână sau să-l dai mai departe.</p>
+                      <pre className="mt-3 max-h-80 overflow-auto rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[12.5px] leading-relaxed text-foreground/80">{JSON.stringify(plan, null, 2)}</pre>
                       <Btn size="sm" variant="outline" className="mt-3" onClick={openInEditor}>
                         Deschide în „Importă JSON”
                       </Btn>
@@ -974,7 +974,7 @@ export function CreateWizard({
                 </div>
               )}
             </div>
-            <p role="status" aria-live="polite" className={cn("mt-3 text-[12px] leading-snug", notice ? ERROR_TEXT : "text-muted-foreground")}>
+            <p role="status" aria-live="polite" className={cn("mt-3 text-[13.5px] leading-snug", notice ? ERROR_TEXT : "text-muted-foreground")}>
               {stepStatus}
             </p>
           </div>
@@ -984,25 +984,25 @@ export function CreateWizard({
         <aside aria-label="Previzualizare vie" className="space-y-3">
           <Card className="lg:sticky lg:top-[84px]">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Previzualizare vie</p>
+              <p className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">Previzualizare vie</p>
               <Pill tone="apricot">oprită</Pill>
             </div>
             <div className="mt-3">
               {previewCreative && platform ? (
                 <>
                   <CreativePreview creative={previewCreative} platform={platform} placement="Feed" brand={client.name} />
-                  {!previewCreative.headline && !previewCreative.body ? <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">Titlul și textul apar aici pe măsură ce le scrii, la pasul Reclame.</p> : null}
-                  {platform === "google" ? <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">Macheta e orientativă: Google își arată reclama în YouTube, Discover și Gmail.</p> : null}
+                  {!previewCreative.headline && !previewCreative.body ? <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">Titlul și textul apar aici pe măsură ce le scrii, la pasul Reclame.</p> : null}
+                  {platform === "google" ? <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">Macheta e orientativă: Google își arată reclama în YouTube, Discover și Gmail.</p> : null}
                 </>
               ) : (
-                <p className="rounded-xl border border-dashed border-white/[0.1] px-3 py-6 text-center text-[12px] leading-relaxed text-muted-foreground">Alege contul, iar reclama apare aici și se completează pe măsură ce o scrii.</p>
+                <p className="rounded-xl border border-dashed border-white/[0.1] px-3 py-6 text-center text-[13.5px] leading-relaxed text-muted-foreground">Alege contul, iar reclama apare aici și se completează pe măsură ce o scrii.</p>
               )}
             </div>
             <div className="mt-3 flex items-center gap-2 rounded-lg border border-white/[0.07] px-2.5 py-2">
               <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" />
-              <p className="text-[10.5px] leading-tight text-muted-foreground">Se creează oprită. Pornirea e în platformă.</p>
+              <p className="text-[12px] leading-tight text-muted-foreground">Se creează oprită. Pornirea e în platformă.</p>
             </div>
-            <dl className="mt-4 space-y-2 border-t border-white/[0.06] pt-3 text-[12px]">
+            <dl className="mt-4 space-y-2 border-t border-white/[0.06] pt-3 text-[13.5px]">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">Contul</dt>
                 <dd className="flex min-w-0 items-center gap-1.5 text-right">
@@ -1027,7 +1027,7 @@ export function CreateWizard({
                 <dd className="text-right">{adsCount ?? "—"}</dd>
               </div>
             </dl>
-            {attempted.size > 0 && totalErrors > 0 ? <p className={cn("mt-3 text-[11.5px]", ERROR_TEXT)}>{totalErrors === 1 ? "Un lucru" : countOf(totalErrors, "lucruri")} de corectat.</p> : null}
+            {attempted.size > 0 && totalErrors > 0 ? <p className={cn("mt-3 text-[13px]", ERROR_TEXT)}>{totalErrors === 1 ? "Un lucru" : countOf(totalErrors, "lucruri")} de corectat.</p> : null}
           </Card>
         </aside>
       </div>

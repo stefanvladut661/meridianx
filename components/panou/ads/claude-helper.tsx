@@ -145,7 +145,7 @@ export function ClaudeHelper({
         </div>
         <div className="flex flex-col items-start gap-1.5 sm:items-end">
           <CopyButton value={all} label="Copiază tot" copiedLabel="Copiat" variant="primary" size="md" />
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[12.5px] text-muted-foreground">
             {context.status === "done" ? "Instrucțiuni + contextul conturilor." : "Fără context citit: se copiază doar instrucțiunile."}
           </p>
         </div>
@@ -161,7 +161,7 @@ export function ClaudeHelper({
           <pre
             tabIndex={0}
             aria-label="Instrucțiunile pentru Claude"
-            className="mt-3 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-xl border border-white/[0.07] bg-[#0A0A0E] p-3.5 font-mono text-[11px] leading-relaxed text-foreground/80"
+            className="mt-3 max-h-[520px] overflow-auto whitespace-pre-wrap rounded-xl border border-white/[0.07] bg-[#0A0A0E] p-3.5 font-mono text-[12.5px] leading-relaxed text-foreground/80"
           >
             {brief}
           </pre>
@@ -180,7 +180,7 @@ export function ClaudeHelper({
 
             <WorkspacePicker workspaces={workspaces} current={current} action={chooseWorkspace} disabled={pending} className="mt-4" />
 
-            <ul className="mt-3 flex flex-wrap gap-2 text-[11.5px]">
+            <ul className="mt-3 flex flex-wrap gap-2 text-[13px]">
               {own.map((workspace) => (
                 <li
                   key={workspace.id}
@@ -211,7 +211,7 @@ export function ClaudeHelper({
                       onChange={(event) => setTiktok((previous) => ({ ...previous, [workspace.id]: event.target.value }))}
                       placeholder="7000000000000000001, …"
                       spellCheck={false}
-                      className="font-mono text-[12px]"
+                      className="font-mono text-[13.5px]"
                     />
                   </Field>
                 ))}
@@ -227,13 +227,13 @@ export function ClaudeHelper({
 
             <div aria-live="polite" className="mt-3 space-y-3">
               {configured.length === 0 ? (
-                <p className="text-[12px] leading-relaxed text-muted-foreground">
+                <p className="text-[13.5px] leading-relaxed text-muted-foreground">
                   Niciun spațiu al proprietarului ăstuia nu are token încă. Instrucțiunile merg oricum; id-urile i le dai tu lui Claude.
                 </p>
               ) : null}
-              {context.status === "failed" ? <p className="text-[12.5px] leading-snug text-rose">{context.message}</p> : null}
+              {context.status === "failed" ? <p className="text-[14px] leading-snug text-rose">{context.message}</p> : null}
               {context.status === "done" ? (
-                <p className="text-[12.5px] text-mint">
+                <p className="text-[14px] text-mint">
                   Citit la {new Intl.DateTimeFormat("ro-RO", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Bucharest" }).format(new Date(context.at))}.
                 </p>
               ) : null}
@@ -243,10 +243,10 @@ export function ClaudeHelper({
               <ul className="mt-1 divide-y divide-white/[0.05]">
                 {summary.map((item) => (
                   <li key={item.workspaceId} className="py-2.5">
-                    <p className="text-[12.5px] font-medium">{item.name}</p>
-                    <p className="font-mono text-[10.5px] text-muted-foreground/80">{accountsLine(item)}</p>
+                    <p className="text-[14px] font-medium">{item.name}</p>
+                    <p className="font-mono text-[12px] text-muted-foreground/80">{accountsLine(item)}</p>
                     {item.notes.map((note) => (
-                      <p key={note} className="mt-1 text-[11px] leading-snug text-muted-foreground">
+                      <p key={note} className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
                         {note}
                       </p>
                     ))}
@@ -254,7 +254,7 @@ export function ClaudeHelper({
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground/80">
+              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground/80">
                 Conturile, paginile și identitățile apar aici după „Citește conturile”. Claude folosește doar id-urile din context — nu le inventează.
               </p>
             )}
@@ -266,10 +266,10 @@ export function ClaudeHelper({
               <>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="mb-1.5 flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
                       <ListChecks className="h-3 w-3" aria-hidden="true" /> conversii
                     </p>
-                    <ul className="space-y-1 font-mono text-[10.5px] text-foreground/75">
+                    <ul className="space-y-1 font-mono text-[12px] text-foreground/75">
                       {summary.map((item) => (
                         <li key={item.workspaceId}>
                           {item.name}: {conversionsLine(item)}
@@ -278,10 +278,10 @@ export function ClaudeHelper({
                     </ul>
                   </div>
                   <div>
-                    <p className="mb-1.5 flex items-center gap-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
                       <Sparkles className="h-3 w-3" aria-hidden="true" /> video
                     </p>
-                    <ul className="space-y-1 font-mono text-[10.5px] text-foreground/75">
+                    <ul className="space-y-1 font-mono text-[12px] text-foreground/75">
                       {summary.map((item) => (
                         <li key={item.workspaceId}>
                           {item.name}: {plural(item.videos, "video", "video-uri")}
@@ -292,39 +292,39 @@ export function ClaudeHelper({
                 </div>
                 {googleItems.length > 0 ? (
                   <div className="mt-3 border-t border-white/[0.06] pt-3">
-                    <p className="mb-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">deja în conturile Google</p>
-                    <ul className="space-y-1 font-mono text-[10.5px] text-foreground/75">
+                    <p className="mb-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">deja în conturile Google</p>
+                    <ul className="space-y-1 font-mono text-[12px] text-foreground/75">
                       {googleItems.map((item) => (
                         <li key={item.workspaceId}>
                           {item.name}: {plural(item.campaigns, "campanie existentă", "campanii existente")} · {plural(item.negativeLists, "listă de negative", "liste de negative")}
                         </li>
                       ))}
                     </ul>
-                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">Claude nu refolosește numele luate.</p>
+                    <p className="mt-1.5 text-[12.5px] leading-snug text-muted-foreground">Claude nu refolosește numele luate.</p>
                   </div>
                 ) : null}
                 <details className="group mt-3 rounded-xl border border-white/[0.07] bg-[#0A0A0E]">
-                  <summary className="cursor-pointer list-none px-3.5 py-2.5 text-[12px] text-foreground/80 hover:text-foreground [&::-webkit-details-marker]:hidden">
+                  <summary className="cursor-pointer list-none px-3.5 py-2.5 text-[13.5px] text-foreground/80 hover:text-foreground [&::-webkit-details-marker]:hidden">
                     <span aria-hidden="true" className="mr-2 inline-block transition-transform duration-150 group-open:rotate-90">
                       ›
                     </span>
                     Vezi contextul, cum ajunge la Claude
                   </summary>
-                  <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap border-t border-white/[0.06] px-3.5 py-3 font-mono text-[11px] leading-relaxed text-foreground/80">
+                  <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap border-t border-white/[0.06] px-3.5 py-3 font-mono text-[12.5px] leading-relaxed text-foreground/80">
                     {context.text}
                   </pre>
                 </details>
               </>
             ) : (
-              <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+              <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">
                 Pixelii sau conversiile, video-urile din bibliotecă și, pe Google, campaniile care există deja apar după „Citește conturile”.
               </p>
             )}
           </Card>
 
           <Card className="border-lav/20 bg-lav/[0.05]">
-            <p className="text-[12.5px] font-medium text-[#D8CCFF]">După ce primești planurile</p>
-            <ol className="mt-2 space-y-1 text-[11.5px] leading-relaxed text-[#D8CCFF]/75">
+            <p className="text-[14px] font-medium text-[#D8CCFF]">După ce primești planurile</p>
+            <ol className="mt-2 space-y-1 text-[13px] leading-relaxed text-[#D8CCFF]/75">
               <li>
                 <span className="pu-num mr-1.5 text-[#D8CCFF]/55">01</span>Copiază instrucțiunile și contextul, cu un clic, la începutul conversației.
               </li>
@@ -346,7 +346,7 @@ export function ClaudeHelper({
             </div>
           </Card>
 
-          <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground/60">
+          <p className="flex items-center gap-1.5 px-1 text-[12.5px] text-muted-foreground/60">
             <Copy className="h-3 w-3" aria-hidden="true" /> „Copiază tot” include instrucțiunile și contextul, într-un singur mesaj.
           </p>
         </div>

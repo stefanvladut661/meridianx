@@ -27,7 +27,7 @@ function Limita({ casuta }: { casuta: Casuta }) {
   const raport = raportul(casuta);
   return (
     <div className="min-w-[120px]">
-      <p className="pu-num text-[12.5px] font-medium">
+      <p className="pu-num text-[14px] font-medium">
         {num(casuta.trimise_azi)}{" "}
         <span className="text-muted-foreground" title={casuta.limita_azi === null ? "Limita de azi nu e încă stabilită" : !casuta.activa ? "Căsuța e oprită din admin" : casuta.limita_zi !== null ? "Limită pusă pe căsuță, în Setări" : "Plafonul de încălzire din Setări"}>
           / {casuta.limita_azi === null ? "—" : num(casuta.limita_azi)}
@@ -43,7 +43,7 @@ function Limita({ casuta }: { casuta: Casuta }) {
 
 function Oprita() {
   return (
-    <span className="mt-1 inline-flex items-center rounded-full border border-rose/25 bg-rose/10 px-2 py-0.5 text-[10.5px] font-medium text-[#FFB0C0]">
+    <span className="mt-1 inline-flex items-center rounded-full border border-rose/25 bg-rose/10 px-2 py-0.5 text-[12px] font-medium text-[#FFB0C0]">
       oprită din admin
     </span>
   );
@@ -52,7 +52,7 @@ function Oprita() {
 export function MailboxTable({ casute, compact = false }: { casute: Casuta[]; compact?: boolean }) {
   if (casute.length === 0) {
     return (
-      <p className={cn("text-center text-[12.5px] text-muted-foreground", compact ? "py-4" : "py-6")}>
+      <p className={cn("text-center text-[14px] text-muted-foreground", compact ? "py-4" : "py-6")}>
         Nicio căsuță conectată. O căsuță apare aici după primul email trimis de pe ea.
       </p>
     );
@@ -63,7 +63,7 @@ export function MailboxTable({ casute, compact = false }: { casute: Casuta[]; co
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-border text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+            <tr className="border-b border-border text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
               <th scope="col" className="py-2 pr-3 font-medium">
                 Căsuță
               </th>
@@ -93,8 +93,8 @@ export function MailboxTable({ casute, compact = false }: { casute: Casuta[]; co
             {casute.map((c) => (
               <tr key={c.adresa} className="border-b border-border/70 last:border-0">
                 <td className="py-2.5 pr-3">
-                  <p className="break-all text-[12.5px] font-medium">{c.adresa}</p>
-                  <p className="text-[11px] text-muted-foreground">{c.domeniu}</p>
+                  <p className="break-all text-[14px] font-medium">{c.adresa}</p>
+                  <p className="text-[12.5px] text-muted-foreground">{c.domeniu}</p>
                   {!c.activa ? <Oprita /> : null}
                 </td>
                 <td className="py-2.5 pr-3">
@@ -102,18 +102,18 @@ export function MailboxTable({ casute, compact = false }: { casute: Casuta[]; co
                 </td>
                 {compact ? null : (
                   <>
-                    <td className="pu-num py-2.5 pr-3 text-[12px] text-muted-foreground">{c.limita_atinsa_la ? timeRo(c.limita_atinsa_la) : "—"}</td>
-                    <td className={cn("pu-num py-2.5 pr-3 text-[12px]", c.bounce_azi > 0 ? "text-apricot" : "text-muted-foreground")}>{num(c.bounce_azi)}</td>
+                    <td className="pu-num py-2.5 pr-3 text-[13.5px] text-muted-foreground">{c.limita_atinsa_la ? timeRo(c.limita_atinsa_la) : "—"}</td>
+                    <td className={cn("pu-num py-2.5 pr-3 text-[13.5px]", c.bounce_azi > 0 ? "text-apricot" : "text-muted-foreground")}>{num(c.bounce_azi)}</td>
                   </>
                 )}
-                <td className="pu-num py-2.5 pr-3 text-[12px]">{num(c.raspunsuri_azi)}</td>
+                <td className="pu-num py-2.5 pr-3 text-[13.5px]">{num(c.raspunsuri_azi)}</td>
                 <td className="py-2.5">
                   {c.incalzire_activa ? (
-                    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-mint/25 bg-mint/10 px-2 py-0.5 text-[11px] text-mint">
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-mint/25 bg-mint/10 px-2 py-0.5 text-[12.5px] text-mint">
                       <Flame className="h-3 w-3" aria-hidden="true" /> activă
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11.5px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[13px] text-muted-foreground">
                       <TrendingDown className="h-3 w-3" aria-hidden="true" /> oprită
                     </span>
                   )}
@@ -129,19 +129,19 @@ export function MailboxTable({ casute, compact = false }: { casute: Casuta[]; co
           <li key={c.adresa} className="rounded-xl border border-border p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="flex items-center gap-1.5 text-[12.5px] font-medium">
+                <p className="flex items-center gap-1.5 text-[14px] font-medium">
                   <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span className="min-w-0 break-all">{c.adresa}</span>
                 </p>
-                <p className="text-[11px] text-muted-foreground">{c.domeniu}</p>
+                <p className="text-[12.5px] text-muted-foreground">{c.domeniu}</p>
                 {!c.activa ? <Oprita /> : null}
               </div>
-              {c.incalzire_activa ? <span className="shrink-0 rounded-full border border-mint/25 bg-mint/10 px-2 py-0.5 text-[10.5px] text-mint">încălzire</span> : null}
+              {c.incalzire_activa ? <span className="shrink-0 rounded-full border border-mint/25 bg-mint/10 px-2 py-0.5 text-[12px] text-mint">încălzire</span> : null}
             </div>
             <div className="mt-2.5">
               <Limita casuta={c} />
             </div>
-            <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground">
               <span>limită atinsă: {c.limita_atinsa_la ? timeRo(c.limita_atinsa_la) : "—"}</span>
               <span className={c.bounce_azi > 0 ? "text-apricot" : undefined}>bounce: {num(c.bounce_azi)}</span>
               <span>răspunsuri: {num(c.raspunsuri_azi)}</span>

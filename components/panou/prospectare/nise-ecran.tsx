@@ -39,7 +39,7 @@ function Nume({ n }: { n: Nisa }) {
 function Nota({ text, className }: { text: string | null; className?: string }) {
   if (!text) return null;
   return (
-    <p className={cn("line-clamp-3 whitespace-pre-line text-[11.5px] leading-relaxed text-foreground/75", className)} title={text}>
+    <p className={cn("line-clamp-3 whitespace-pre-line text-[13px] leading-relaxed text-foreground/75", className)} title={text}>
       {text}
     </p>
   );
@@ -96,8 +96,8 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
 
       <Card padded={false} className="overflow-hidden">
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3.5 sm:px-5">
-          <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Tabla de nișe</h2>
-          {!eroare && nise.length > 0 ? <p className="pu-num text-[12px] text-muted-foreground">{num(nise.length)} pe tablă</p> : null}
+          <h2 className="text-[16px] font-semibold tracking-[-0.01em]">Tabla de nișe</h2>
+          {!eroare && nise.length > 0 ? <p className="pu-num text-[13.5px] text-muted-foreground">{num(nise.length)} pe tablă</p> : null}
         </div>
 
         {eroare ? (
@@ -108,7 +108,7 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
             title="Nicio nișă pe tablă"
             text={
               <>
-                Roboții își rezervă singuri nișele, prin <code className="font-mono text-[12px] text-foreground">POST /api/prospectare/robot/nisa</code> (acțiunea „rezerva”). Poți
+                Roboții își rezervă singuri nișele, prin <code className="font-mono text-[13.5px] text-foreground">POST /api/prospectare/robot/nisa</code> (acțiunea „rezerva”). Poți
                 pune și tu una pe tablă, liberă, din „Adaugă nișă”.
               </>
             }
@@ -124,16 +124,16 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
             <div className="xl:hidden">
               {GRUPE.map((g) => (
                 <section key={g.id} aria-labelledby={`nise-c-${g.id}`} className="border-b border-border last:border-0">
-                  <h3 id={`nise-c-${g.id}`} className="flex items-baseline gap-2 px-4 pb-2 pt-4 text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/75 sm:px-5">
+                  <h3 id={`nise-c-${g.id}`} className="flex items-baseline gap-2 px-4 pb-2 pt-4 text-[12.5px] font-medium uppercase tracking-[0.14em] text-foreground/75 sm:px-5">
                     {g.titlu} <span className="pu-num text-muted-foreground">{num(grupe[g.id].length)}</span>
                   </h3>
                   {grupe[g.id].length === 0 ? (
-                    <p className="px-4 pb-4 text-[12px] text-muted-foreground sm:px-5">{g.gol}</p>
+                    <p className="px-4 pb-4 text-[13.5px] text-muted-foreground sm:px-5">{g.gol}</p>
                   ) : (
                     <ul className="grid gap-2.5 px-3 pb-4 sm:px-4 md:grid-cols-2">
                       {vizibile(g.id).map((n) => (
                         <li key={n.id} className={cn("flex flex-col gap-2.5 rounded-2xl border bg-white/[0.02] p-3.5", n.expirata ? "border-apricot/25" : "border-white/[0.07]")}>
-                          <div className="flex items-start justify-between gap-2 text-[13px]">
+                          <div className="flex items-start justify-between gap-2 text-[14.5px]">
                             <Nume n={n} />
                             <NisaPill nisa={n} />
                           </div>
@@ -155,7 +155,7 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
               <table className="w-full border-collapse text-left">
                 <caption className="sr-only">Tabla de nișe, pe grupe: în lucru, libere și expirate, terminate</caption>
                 <thead>
-                  <tr className="border-b border-border text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                  <tr className="border-b border-border text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">
                     <th scope="col" className="py-2.5 pl-5 pr-3 font-medium">
                       Nișă · zonă
                     </th>
@@ -176,20 +176,20 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
                 {GRUPE.map((g) => (
                   <tbody key={g.id} className="border-b border-border last:border-0">
                     <tr>
-                      <th scope="rowgroup" colSpan={5} className="bg-white/[0.025] py-2 pl-5 pr-3 text-[11px] font-medium uppercase tracking-[0.14em] text-foreground/75">
+                      <th scope="rowgroup" colSpan={5} className="bg-white/[0.025] py-2 pl-5 pr-3 text-[12.5px] font-medium uppercase tracking-[0.14em] text-foreground/75">
                         {g.titlu} <span className="pu-num ml-1 text-muted-foreground">{num(grupe[g.id].length)}</span>
                       </th>
                     </tr>
                     {grupe[g.id].length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-3 pl-5 pr-3 text-[12px] text-muted-foreground">
+                        <td colSpan={5} className="py-3 pl-5 pr-3 text-[13.5px] text-muted-foreground">
                           {g.gol}
                         </td>
                       </tr>
                     ) : (
                       vizibile(g.id).map((n) => (
                         <tr key={n.id} className="border-t border-border/70 align-top">
-                          <td className="max-w-[320px] py-3 pl-5 pr-3 text-[13px]">
+                          <td className="max-w-[320px] py-3 pl-5 pr-3 text-[14.5px]">
                             <Nume n={n} />
                             <Nota text={n.nota} className="mt-1" />
                           </td>
@@ -222,7 +222,7 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
       </Card>
 
       <InlineNote tone="neutral">
-        Roboții vorbesc cu tabla prin <code className="font-mono text-[11.5px] text-foreground">POST /api/prospectare/robot/nisa</code>: „rezerva” (nișă + zonă), „progres”
+        Roboții vorbesc cu tabla prin <code className="font-mono text-[13px] text-foreground">POST /api/prospectare/robot/nisa</code>: „rezerva” (nișă + zonă), „progres”
         (semn de viață și cifrele, care nu scad niciodată) și „termina”. O nișă terminată nu se mai rezervă. „Eliberează” nu șterge nimic: nișa redevine liberă, cu cifrele și
         nota de până atunci.
       </InlineNote>

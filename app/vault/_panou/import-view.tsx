@@ -289,7 +289,7 @@ export function ImportView({
             <span
               aria-current={i === step && !outcome ? "step" : undefined}
               className={cn(
-                "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px]",
+                "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px]",
                 i === step && !outcome
                   ? "border-mint/40 bg-mint/10 text-[#B4F2CD]"
                   : i < step || outcome
@@ -297,7 +297,7 @@ export function ImportView({
                     : "border-white/[0.07] text-muted-foreground"
               )}
             >
-              <span className={cn("pu-num flex h-4 w-4 items-center justify-center rounded-full text-[9px]", i === step && !outcome ? "bg-mint text-[#0B1A12]" : "bg-white/[0.08]")}>
+              <span className={cn("pu-num flex h-4 w-4 items-center justify-center rounded-full text-[10.5px]", i === step && !outcome ? "bg-mint text-[#0B1A12]" : "bg-white/[0.08]")}>
                 {i < step || outcome ? "✓" : i + 1}
               </span>
               {label}
@@ -311,14 +311,14 @@ export function ImportView({
       {outcome ? (
         <Card className="text-center">
           <CheckCircle2 className="mx-auto h-6 w-6 text-mint" aria-hidden="true" />
-          <p className="mt-2 text-[14px] font-medium">Import terminat</p>
-          <p className="mt-1 text-[12px] text-muted-foreground">
+          <p className="mt-2 text-[15px] font-medium">Import terminat</p>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">
             {countNoun(outcome.imported, "intrare adăugată", "intrări adăugate")}
             {outcome.imported !== outcome.planned ? ` din ${outcome.planned} planificate` : ""}
             {outcome.skippedDuplicates ? `, ${countNoun(outcome.skippedDuplicates, "dublură sărită", "dubluri sărite")}` : ""}
             {outcome.clientsCreated ? `, ${countNoun(outcome.clientsCreated, "client nou", "clienți noi")}` : ""}. Criptarea s-a făcut local.
           </p>
-          <p className="mx-auto mt-2 max-w-md text-[11px] leading-relaxed text-muted-foreground/80">
+          <p className="mx-auto mt-2 max-w-md text-[12.5px] leading-relaxed text-muted-foreground/80">
             {source?.kind === "items" && source.label === "export MERIDIAN"
               ? "Fișierul de export rămâne criptat; îl poți păstra."
               : "Fișierul importat rămâne pe calculatorul tău, în clar. Șterge-l."}
@@ -342,8 +342,8 @@ export function ImportView({
                     className={cn("rounded-xl border p-3 text-left transition-colors", sourceId === s.id ? "border-mint/40 bg-mint/[0.07]" : "border-white/[0.09] hover:border-white/20")}
                   >
                     <s.icon className={cn("h-4 w-4", sourceId === s.id ? "text-mint" : "text-foreground/50")} aria-hidden="true" />
-                    <p className="mt-2 text-[12.5px] font-medium">{s.title}</p>
-                    <p className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">{s.text}</p>
+                    <p className="mt-2 text-[14px] font-medium">{s.title}</p>
+                    <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">{s.text}</p>
                   </button>
                 ))}
               </div>
@@ -360,8 +360,8 @@ export function ImportView({
                 )}
               >
                 <Upload className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <span className="mt-2 text-[12.5px]">{fileName ?? "Trage fișierul aici sau apasă"}</span>
-                <span className="mt-0.5 text-[10.5px] text-muted-foreground">CSV, JSON, maximum 5 MB · se citește aici, în browser</span>
+                <span className="mt-2 text-[14px]">{fileName ?? "Trage fișierul aici sau apasă"}</span>
+                <span className="mt-0.5 text-[12px] text-muted-foreground">CSV, JSON, maximum 5 MB · se citește aici, în browser</span>
                 <input type="file" className="sr-only" accept={selectedSource.accept} onChange={onFile} />
               </label>
 
@@ -370,7 +370,7 @@ export function ImportView({
                   type="button"
                   onClick={() => setPasteOpen((open) => !open)}
                   aria-expanded={pasteOpen}
-                  className="text-[11.5px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  className="text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
                   {pasteOpen ? "Ascunde câmpul de lipit" : "sau lipește textul (CSV / JSON)"}
                 </button>
@@ -386,7 +386,7 @@ export function ImportView({
                       rows={5}
                       spellCheck={false}
                       placeholder={"name,url,username,password,note\n…"}
-                      className="w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-2.5 font-mono text-[11.5px] leading-relaxed outline-none focus:border-lav/50"
+                      className="w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-2.5 font-mono text-[13px] leading-relaxed outline-none focus:border-lav/50"
                     />
                     <Btn size="xs" variant="outline" className="mt-2" disabled={!pasted.trim()} onClick={() => load(pasted, null)}>
                       Citește textul
@@ -412,7 +412,7 @@ export function ImportView({
 
               {pendingExport ? (
                 <div className="mt-3">
-                  <p className="text-[11.5px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     {pendingExport.name ?? "text lipit"} · {countNoun(pendingExport.file.counts.entries, "intrare", "intrări")} · {countNoun(pendingExport.file.counts.clients, "client", "clienți")} · exportat{" "}
                     {dateRo(pendingExport.file.exportedAt)}
                   </p>
@@ -441,7 +441,7 @@ export function ImportView({
                 <div className="mt-3 space-y-2">
                   {ROLES.map((role) => (
                     <div key={role} className="grid grid-cols-[110px_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[140px_minmax(0,1fr)]">
-                      <span className="text-[11.5px] text-muted-foreground">{role === "password" ? "Parolă (secret)" : role === "totp" ? "Cod 2FA (secret)" : ROLE_LABEL[role]}</span>
+                      <span className="text-[13px] text-muted-foreground">{role === "password" ? "Parolă (secret)" : role === "totp" ? "Cod 2FA (secret)" : ROLE_LABEL[role]}</span>
                       <SoftSelect
                         ariaLabel={ROLE_LABEL[role]}
                         value={mapping[role] === undefined ? NO_COLUMN : String(mapping[role])}
@@ -462,7 +462,7 @@ export function ImportView({
                       : "Parolele și codurile 2FA rămân secrete și se criptează la import; restul câmpurilor se păstrează cum sunt în fișier."}
                   </InlineNote>
 
-                  <p className={cn("mt-4", "text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground")}>În ce client ajung</p>
+                  <p className={cn("mt-4", "text-[12px] uppercase tracking-[0.12em] text-muted-foreground")}>În ce client ajung</p>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {hasGroupColumn ? (
                       <button
@@ -471,8 +471,8 @@ export function ImportView({
                         onClick={() => setClientMode("column")}
                         className={cn("rounded-xl border p-3 text-left transition-colors", clientMode === "column" ? "border-mint/40 bg-mint/[0.07]" : "border-white/[0.09] hover:border-white/20")}
                       >
-                        <p className="text-[12.5px] font-medium">Din {groupLabel}</p>
-                        <p className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">
+                        <p className="text-[14px] font-medium">Din {groupLabel}</p>
+                        <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
                           {plan ? `${countNoun(plan.groups.length, "client", "clienți")}${plan.groups.length ? `: ${plan.groups.slice(0, 4).join(", ")}${plan.groups.length > 4 ? "…" : ""}` : ""}` : ""}
                           {plan?.items.some((item) => !item.empty && !item.group) ? ` · rândurile fără folder ajung în „${FALLBACK_CLIENT}”` : ""}
                         </p>
@@ -484,8 +484,8 @@ export function ImportView({
                       onClick={() => setClientMode("single")}
                       className={cn("rounded-xl border p-3 text-left transition-colors", clientMode === "single" ? "border-mint/40 bg-mint/[0.07]" : "border-white/[0.09] hover:border-white/20")}
                     >
-                      <p className="text-[12.5px] font-medium">Toate într-un singur client</p>
-                      <p className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">Alegi clientul sau creezi unul nou.</p>
+                      <p className="text-[14px] font-medium">Toate într-un singur client</p>
+                      <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">Alegi clientul sau creezi unul nou.</p>
                     </button>
                   </div>
                   {clientMode === "single" ? (
@@ -498,7 +498,7 @@ export function ImportView({
                       />
                       {singleClient === NEW_CLIENT ? (
                         <div>
-                          <label htmlFor="import-new-client" className="mb-1 block text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">
+                          <label htmlFor="import-new-client" className="mb-1 block text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
                             Numele clientului nou
                           </label>
                           <TextInput id="import-new-client" value={newClientName} onChange={(event) => setNewClientName(event.target.value)} placeholder="ex. Băcănia Verde" autoComplete="off" className="h-8" />
@@ -527,7 +527,7 @@ export function ImportView({
                 hint="dublurile sunt marcate; secretele rămân ascunse"
                 action={plan.duplicates > 0 ? <Pill tone="apricot">{countNoun(plan.duplicates, "dublură", "dubluri")}</Pill> : <Pill tone="mint">fără dubluri</Pill>}
               />
-              <p className="mt-2 text-[11px] text-muted-foreground">
+              <p className="mt-2 text-[12.5px] text-muted-foreground">
                 {fileName ?? "text lipit"} · {countNoun(plan.importable, "intrare nouă", "intrări noi")}
                 {plan.duplicates ? ` · ${countNoun(plan.duplicates, "dublură", "dubluri")} ${includeDuplicates ? "(se importă)" : "(sărite)"}` : ""}
                 {plan.empty ? ` · ${countNoun(plan.empty, "rând gol", "rânduri goale")} (sărite)` : ""}
@@ -541,8 +541,8 @@ export function ImportView({
                   return (
                     <li key={item.row} className={cn("flex items-center gap-3 px-3 py-2.5", skipped && "opacity-50")}>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[12.5px]">{item.payload.title}</p>
-                        <p className="truncate text-[10.5px] text-muted-foreground">
+                        <p className="truncate text-[14px]">{item.payload.title}</p>
+                        <p className="truncate text-[12px] text-muted-foreground">
                           {client} · {KIND_LABEL[item.payload.kind]}
                           {username ? ` · ${username}` : ""}
                           {hasSecret ? " · ••••••••" : ""}
@@ -560,11 +560,11 @@ export function ImportView({
                     </li>
                   );
                 })}
-                {plan.items.length > PREVIEW_ROWS ? <li className="px-3 py-2 text-[10.5px] text-muted-foreground">… încă {plan.items.length - PREVIEW_ROWS}</li> : null}
+                {plan.items.length > PREVIEW_ROWS ? <li className="px-3 py-2 text-[12px] text-muted-foreground">… încă {plan.items.length - PREVIEW_ROWS}</li> : null}
               </ul>
 
               {plan.duplicates > 0 ? (
-                <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12px] text-muted-foreground">
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-[13.5px] text-muted-foreground">
                   <input type="checkbox" checked={includeDuplicates} onChange={(event) => setIncludeDuplicates(event.target.checked)} className="accent-[#C6B5FF]" />
                   Importă și dublurile (același client, titlu și utilizator)
                 </label>
@@ -573,7 +573,7 @@ export function ImportView({
               {progress ? (
                 <div className="mt-4" role="status">
                   <ProgressBar value={(progress.done / (progress.total || 1)) * 100} tone="mint" />
-                  <p className="pu-num mt-1.5 text-[10.5px] text-muted-foreground">
+                  <p className="pu-num mt-1.5 text-[12px] text-muted-foreground">
                     Se importă… {progress.done} din {progress.total} · criptate local, în loturi
                   </p>
                 </div>

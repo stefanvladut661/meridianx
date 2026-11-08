@@ -22,7 +22,7 @@ const RESULT: Record<"ok" | "eroare" | "sarit", { tone: PillTone; label: string;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const chip = (active: boolean) =>
-  cn("whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors", active ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground");
+  cn("whitespace-nowrap rounded-full px-3 py-1.5 text-[14px] font-medium transition-colors", active ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground");
 
 /** /admin/postari/istoric — fiecare acțiune a modulului: cine, ce, când, rezultatul. Ultimele 300. */
 export default async function IstoricPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -77,11 +77,11 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
                     <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px]">
+                    <p className="text-[14px]">
                       <span className="font-medium">{row.actiune}</span>
                       {row.mesaj ? <span className="text-foreground/75"> — {row.mesaj}</span> : null}
                     </p>
-                    <p className="text-[10.5px] text-muted-foreground">
+                    <p className="text-[12px] text-muted-foreground">
                       {ZONA_LABEL[row.zona]} · {row.actor} · {dateTimeRo(row.createdAt)}
                       {row.tinta && UUID.test(row.tinta) ? (
                         <>

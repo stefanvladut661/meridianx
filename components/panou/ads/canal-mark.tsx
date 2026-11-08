@@ -21,7 +21,7 @@ export function CanalMark({ platform, size = "md", label = true, className }: { 
       <span className={cn("flex items-center justify-center rounded-lg border", size === "sm" ? "h-6 w-6" : "h-7 w-7", channel.ring)}>
         <Icon className={cn(size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5", channel.tone)} aria-hidden="true" />
       </span>
-      {label ? <span className="text-[12.5px] text-foreground/80">{PLATFORM_LABEL[platform]}</span> : <span className="sr-only">{PLATFORM_LABEL[platform]}</span>}
+      {label ? <span className="text-[14px] text-foreground/80">{PLATFORM_LABEL[platform]}</span> : <span className="sr-only">{PLATFORM_LABEL[platform]}</span>}
     </span>
   );
 }

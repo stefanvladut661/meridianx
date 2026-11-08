@@ -38,7 +38,7 @@ export function SyncBar({
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <p className="text-[11.5px] text-muted-foreground">
+      <p className="text-[13px] text-muted-foreground">
         Ultima sincronizare: <span className="text-foreground/80">{lastSyncedAt ? dateTimeRo(lastSyncedAt) : "încă niciuna"}</span>
         {failedAccounts > 0 ? (
           <span className="text-rose">

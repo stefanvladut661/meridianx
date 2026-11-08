@@ -13,7 +13,7 @@ export function ConversiiPasi({ setup, calls }: { setup: ConversionSetup; calls:
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <SectionTitle title="În GTM, după descărcare" hint="portalul nu publică nimic în containerul clientului" />
-        <ol className="mt-3 list-decimal space-y-2 pl-5 text-[12px] leading-relaxed text-foreground/80 marker:text-muted-foreground">
+        <ol className="mt-3 list-decimal space-y-2 pl-5 text-[13.5px] leading-relaxed text-foreground/80 marker:text-muted-foreground">
           <li>Administrator → Importă containerul → alege fișierul.</li>
           <li>Spațiul de lucru: cel existent (sau unul nou, dacă altcineva lucrează în container).</li>
           <li>
@@ -30,7 +30,7 @@ export function ConversiiPasi({ setup, calls }: { setup: ConversionSetup; calls:
 
       <Card>
         <SectionTitle title="De mână, în Google Ads" hint="setări de cont pe care portalul le citește, dar nu le schimbă" />
-        <ul className="mt-3 space-y-3.5 text-[12px] leading-relaxed text-foreground/80">
+        <ul className="mt-3 space-y-3.5 text-[13.5px] leading-relaxed text-foreground/80">
           <li>
             <p className="flex flex-wrap items-center gap-2">
               <strong className="font-semibold text-foreground">Raportarea apelurilor</strong>
@@ -48,10 +48,10 @@ export function ConversiiPasi({ setup, calls }: { setup: ConversionSetup; calls:
           </li>
           <li>
             <strong className="font-semibold text-foreground">Butonul de apel din planul de căutare</strong> — pune id-ul acțiunii „apel din anunț” la{" "}
-            <code className="font-mono text-[11px] text-foreground">assets.call.conversion_action_id</code>
+            <code className="font-mono text-[12.5px] text-foreground">assets.call.conversion_action_id</code>
             {calls.length > 0 ? (
               <>
-                : <span className="font-mono text-[11px] text-foreground">{calls.map((action) => `${action.id} (${action.name})`).join(", ")}</span>.
+                : <span className="font-mono text-[12.5px] text-foreground">{calls.map((action) => `${action.id} (${action.name})`).join(", ")}</span>.
               </>
             ) : (
               "; contul n-are încă una — creează-o în cardul de creare."

@@ -311,8 +311,8 @@ export function EntryEditor({
       <form onSubmit={submit} onKeyDown={onKeyDown} noValidate>
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/[0.07] bg-[#0F0F13] px-5 py-3.5">
           <div className="min-w-0">
-            <h2 className="text-[15px] font-semibold">{heading}</h2>
-            <p className="text-[11px] text-muted-foreground">Câmpurile marcate secret se criptează înainte să plece din browser.</p>
+            <h2 className="text-[16px] font-semibold">{heading}</h2>
+            <p className="text-[12.5px] text-muted-foreground">Câmpurile marcate secret se criptează înainte să plece din browser.</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {dirty ? <Pill tone="apricot">nesalvat</Pill> : null}
@@ -425,7 +425,7 @@ export function EntryEditor({
                 onChange={(event) => patch({ notes: event.target.value })}
                 rows={2}
                 placeholder="Context pentru echipă. Nu pune parole aici: notițele se caută."
-                className="mt-1 w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-2.5 text-[12.5px] outline-none focus:border-lav/50"
+                className="mt-1 w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-2.5 text-[14px] outline-none focus:border-lav/50"
               />
             </div>
           </div>
@@ -495,7 +495,7 @@ function FieldEditor({
           aria-label={`Valoarea câmpului ${index + 1}`}
           rows={3}
           spellCheck={false}
-          className="w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-2 font-mono text-[11.5px] outline-none focus:border-lav/50"
+          className="w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-2 font-mono text-[13px] outline-none focus:border-lav/50"
         />
       ) : (
         <div className="flex items-center gap-1">
@@ -507,7 +507,7 @@ function FieldEditor({
             placeholder={isTotp ? "Seed base32 sau otpauth://totp/…" : field.secret ? "Secret" : "Valoare"}
             autoComplete={field.secret ? "new-password" : "off"}
             spellCheck={false}
-            className="font-mono text-[11.5px]"
+            className="font-mono text-[13px]"
           />
           {field.secret ? (
             <button
@@ -528,7 +528,7 @@ function FieldEditor({
           onClick={() => onChange({ secret: !field.secret, shown: false })}
           disabled={isTotp}
           aria-pressed={field.secret}
-          className={cn("rounded-md border px-1.5 py-1 text-[10px] disabled:opacity-70", field.secret ? "border-mint/25 bg-mint/10 text-mint" : "border-white/[0.1] text-muted-foreground")}
+          className={cn("rounded-md border px-1.5 py-1 text-[11.5px] disabled:opacity-70", field.secret ? "border-mint/25 bg-mint/10 text-mint" : "border-white/[0.1] text-muted-foreground")}
           aria-label={`${position}: ${field.secret ? "secret" : "public"}${isTotp ? " (seed 2FA, mereu secret)" : ""}`}
         >
           {field.secret ? "secret" : "public"}
@@ -604,7 +604,7 @@ function Generator({ onUse }: { onUse: (password: string) => void }) {
         }
       />
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <label className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
           lungime
           <input
             type="range"
@@ -627,7 +627,7 @@ function Generator({ onUse }: { onUse: (password: string) => void }) {
             key={key}
             type="button"
             onClick={() => update({ [key]: !options[key] })}
-            className={cn("rounded-md border px-1.5 py-0.5 text-[10.5px]", options[key] ? "border-lav/30 bg-lav/10 text-[#D8CCFF]" : "border-white/[0.1] text-muted-foreground")}
+            className={cn("rounded-md border px-1.5 py-0.5 text-[12px]", options[key] ? "border-lav/30 bg-lav/10 text-[#D8CCFF]" : "border-white/[0.1] text-muted-foreground")}
             aria-pressed={options[key]}
           >
             {label}
@@ -636,7 +636,7 @@ function Generator({ onUse }: { onUse: (password: string) => void }) {
       </div>
       {value ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-lg border border-white/[0.09] bg-[#0A0A0E] px-2.5 py-1.5 font-mono text-[12px] text-mint select-all">{value}</code>
+          <code className="min-w-0 flex-1 truncate rounded-lg border border-white/[0.09] bg-[#0A0A0E] px-2.5 py-1.5 font-mono text-[13.5px] text-mint select-all">{value}</code>
           <Btn
             size="xs"
             variant="outline"

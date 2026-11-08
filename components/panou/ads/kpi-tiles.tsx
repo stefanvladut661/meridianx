@@ -37,13 +37,13 @@ export function KpiStat({
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className={cn("pu-num text-[26px] font-medium leading-none sm:text-[30px]", dim && "text-foreground/70")}>{value}</span>
-        {unit ? <span className="text-xs text-muted-foreground">{unit}</span> : null}
+        {unit ? <span className="text-[13.5px] text-muted-foreground">{unit}</span> : null}
         {delta && delta.percent !== null ? <DeltaChip delta={delta} /> : null}
       </div>
-      {hint ? <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="mt-1.5 text-[13.5px] leading-snug text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

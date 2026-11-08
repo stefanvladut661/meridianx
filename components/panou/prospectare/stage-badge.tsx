@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export function StageBadge({ etapa, className }: { etapa: Etapa; className?: string }) {
   const meta = ETAPE[etapa] ?? ETAPE.cercetat;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11.5px] font-medium leading-5", meta.badge, className)}>
+    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[13px] font-medium leading-5", meta.badge, className)}>
       <span className={cn("h-1.5 w-1.5 rounded-full", meta.punct)} aria-hidden="true" />
       {meta.label}
     </span>
@@ -34,7 +34,7 @@ export function canaleFolosite(f: CuCanale): { canal: Canal; la: string; cont: n
 export function CanaleBadge({ firma, className }: { firma: CuCanale; className?: string }) {
   const canale = canaleFolosite(firma);
   if (!canale.length) {
-    return <span className={cn("whitespace-nowrap text-[11.5px] text-muted-foreground", className)}>necontactată</span>;
+    return <span className={cn("whitespace-nowrap text-[13px] text-muted-foreground", className)}>necontactată</span>;
   }
   return (
     <span className={cn("inline-flex flex-wrap items-center gap-1", className)}>
@@ -42,7 +42,7 @@ export function CanaleBadge({ firma, className }: { firma: CuCanale; className?:
         const meta = CANALE[c.canal];
         const detaliu = `${meta.label}${c.cont ? `, contul ${c.cont}` : ""}: ${dateTimeRo(c.la)}`;
         return (
-          <span key={c.canal} title={detaliu} className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11.5px] font-medium", meta.badge)}>
+          <span key={c.canal} title={detaliu} className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[13px] font-medium", meta.badge)}>
             <Check className="h-2.5 w-2.5 opacity-80" aria-hidden="true" />
             {meta.label}
             <span className="sr-only"> ({detaliu})</span>

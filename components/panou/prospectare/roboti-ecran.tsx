@@ -57,7 +57,7 @@ function CeFace({ d, acum }: { d: Dispozitiv; acum: number }) {
     const vazut = vazutLa(d);
     const ultima = sarcina && d.ce_face_la ? `Ultima sarcină: ${sarcina.label}${d.ce_face_detaliu ? `, ${d.ce_face_detaliu}` : ""} (${dateTimeRo(d.ce_face_la)})` : undefined;
     return (
-      <span className="flex items-start gap-1.5 text-[12px]" title={ultima}>
+      <span className="flex items-start gap-1.5 text-[13.5px]" title={ultima}>
         <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-white/30" aria-hidden="true" />
         <span className="min-w-0">
           <span className="font-medium text-foreground/80">Inactiv</span>
@@ -76,7 +76,7 @@ function CeFace({ d, acum }: { d: Dispozitiv; acum: number }) {
     );
   }
   return (
-    <span className="flex items-start gap-1.5 text-[12px]">
+    <span className="flex items-start gap-1.5 text-[13.5px]">
       <sarcina.icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", sarcina.culoare)} aria-hidden="true" />
       <span className="min-w-0 break-words">
         <span className="font-medium text-foreground">{sarcina.label}</span>
@@ -100,7 +100,7 @@ function FirmaCurenta({ d, acum, scurt = false }: { d: Dispozitiv; acum: number;
       <Link href={linkFirma(f.id)} className="block truncate rounded-sm underline-offset-2 hover:underline" title={f.nume}>
         <span className="pu-num text-muted-foreground">#{f.nr}</span> {f.nume}
       </Link>
-      <span className="block text-[11px] text-muted-foreground" title={`Rezervarea expiră la ${dateTimeRo(f.expira_la)}`}>
+      <span className="block text-[12.5px] text-muted-foreground" title={`Rezervarea expiră la ${dateTimeRo(f.expira_la)}`}>
         {f.tip_lucru === "refacere" ? "refacere" : "construire"} · expiră {untilRo(f.expira_la, acum)}
       </span>
     </span>
@@ -229,7 +229,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
             <div className="hidden overflow-x-auto xl:block">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-border text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                  <tr className="border-b border-border text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">
                     <th scope="col" className="py-2.5 pl-4 pr-3 font-medium">
                       Nume
                     </th>
@@ -259,20 +259,20 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                 <tbody>
                   {dispozitive.map((d) => (
                     <tr key={d.id} className="border-b border-border/70 last:border-0">
-                      <td className="py-2.5 pl-4 pr-3 text-[12.5px] font-medium">
+                      <td className="py-2.5 pl-4 pr-3 text-[14px] font-medium">
                         <span className="inline-flex items-center gap-1.5">
                           <Cpu className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                           {d.nume}
                         </span>
                       </td>
-                      <td className="py-2.5 pr-3 text-[12px]">{d.proprietar}</td>
+                      <td className="py-2.5 pr-3 text-[13.5px]">{d.proprietar}</td>
                       <td className="py-2.5 pr-3">
                         <RobotStare stare={stareRobot(d, acum)} />
                       </td>
                       <td className="min-w-[200px] max-w-[300px] py-2.5 pr-3">
                         <CeFace d={d} acum={acum} />
                       </td>
-                      <td className="whitespace-nowrap py-2.5 pr-3 text-[12px] text-muted-foreground">
+                      <td className="whitespace-nowrap py-2.5 pr-3 text-[13.5px] text-muted-foreground">
                         {d.ultima_activitate ? (
                           <time dateTime={d.ultima_activitate} title={dateTimeRo(d.ultima_activitate)}>
                             {relativeRo(d.ultima_activitate, acum)}
@@ -281,10 +281,10 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                           "niciodată"
                         )}
                       </td>
-                      <td className="max-w-[240px] py-2.5 pr-3 text-[12px]">
+                      <td className="max-w-[240px] py-2.5 pr-3 text-[13.5px]">
                         <FirmaCurenta d={d} acum={acum} scurt />
                       </td>
-                      <td className="pu-num whitespace-nowrap py-2.5 pr-3 text-[12px]">
+                      <td className="pu-num whitespace-nowrap py-2.5 pr-3 text-[13.5px]">
                         {num(d.site_uri_azi)} / {num(d.site_uri_total)}
                       </td>
                       <td className="py-2.5 pr-4 text-right">{buton(d)}</td>
@@ -298,21 +298,21 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
               {dispozitive.map((d) => (
                 <li key={d.id} className="space-y-2 px-4 py-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex min-w-0 items-center gap-1.5 text-[12.5px] font-medium">
+                    <span className="inline-flex min-w-0 items-center gap-1.5 text-[14px] font-medium">
                       <Cpu className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                       <span className="truncate">{d.nume}</span>
                     </span>
                     <RobotStare stare={stareRobot(d, acum)} />
                   </div>
-                  <p className="text-[11.5px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     {d.proprietar} · {d.ultima_activitate ? relativeRo(d.ultima_activitate, acum) : "niciodată activ"}
                   </p>
                   <CeFace d={d} acum={acum} />
-                  <div className="flex gap-1 text-[11.5px]">
+                  <div className="flex gap-1 text-[13px]">
                     <span className="shrink-0 text-muted-foreground">construiește:</span>
                     <FirmaCurenta d={d} acum={acum} scurt />
                   </div>
-                  <p className="pu-num text-[11.5px] text-muted-foreground">
+                  <p className="pu-num text-[13px] text-muted-foreground">
                     {num(d.site_uri_azi)} azi / {num(d.site_uri_total)} total
                   </p>
                   {buton(d)}
@@ -324,14 +324,14 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
       </Card>
 
       <InlineNote tone="neutral">
-        Cum vorbește robotul cu adminul (rutele, codurile de răspuns, exemplele): <code className="font-mono text-[11.5px] text-foreground">docs/prospectare-api.md</code>, în
-        repo. Pe calculatorul robotului, tokenul stă în variabila de mediu <code className="font-mono text-[11.5px] text-foreground">MERIDIAN_ROBOT_TOKEN</code>, niciodată într-un
+        Cum vorbește robotul cu adminul (rutele, codurile de răspuns, exemplele): <code className="font-mono text-[13px] text-foreground">docs/prospectare-api.md</code>, în
+        repo. Pe calculatorul robotului, tokenul stă în variabila de mediu <code className="font-mono text-[13px] text-foreground">MERIDIAN_ROBOT_TOKEN</code>, niciodată într-un
         fișier din repo.
       </InlineNote>
 
       <Modal open={deschis} onOpenChange={(v) => (v ? setDeschis(true) : inchide())} label={token ? `Tokenul robotului ${numeCreat}` : "Adaugă robot"}>
-        <h2 className="text-[17px] font-semibold">{token ? `Tokenul robotului ${numeCreat}` : "Adaugă robot"}</h2>
-        <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
+        <h2 className="text-[18px] font-semibold">{token ? `Tokenul robotului ${numeCreat}` : "Adaugă robot"}</h2>
+        <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
           {token
             ? "Copiază tokenul acum și pune-l pe calculatorul robotului. Nu se mai afișează după ce închizi fereastra."
             : "Dă-i un nume scurt, ca să știi ce calculator e. Tokenul de acces apare o singură dată."}
@@ -343,13 +343,13 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
               ref={tokenRef}
               tabIndex={0}
               aria-label="Tokenul robotului"
-              className="block select-all break-all rounded-lg border border-border bg-secondary px-3 py-2.5 font-mono text-[12px] leading-relaxed"
+              className="block select-all break-all rounded-lg border border-border bg-secondary px-3 py-2.5 font-mono text-[13.5px] leading-relaxed"
             >
               {token}
             </code>
             <div className="flex flex-wrap items-center gap-2">
               <CopyButton value={token} label="Copiază tokenul" clearAfter={120} />
-              <span className="text-[11px] text-muted-foreground">Clipboardul se golește singur după 2 minute.</span>
+              <span className="text-[12.5px] text-muted-foreground">Clipboardul se golește singur după 2 minute.</span>
             </div>
             <InlineNote tone="apricot" className="flex items-start gap-2">
               <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -367,7 +367,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         ) : (
           <form className="mt-4 space-y-3" onSubmit={creeaza} noValidate>
             <label className="block">
-              <span className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Nume robot</span>
+              <span className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Nume robot</span>
               <input
                 ref={numeRef}
                 value={nume}
@@ -383,11 +383,11 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                 className={inputClass(`mt-1.5 ${eroareNume ? "border-rose/50" : ""}`)}
               />
               {eroareNume ? (
-                <span id="robot-nume-eroare" role="alert" className="mt-1 block text-[11.5px] text-rose">
+                <span id="robot-nume-eroare" role="alert" className="mt-1 block text-[13px] text-rose">
                   {eroareNume}
                 </span>
               ) : (
-                <span id="robot-nume-ajutor" className="mt-1 block text-[11.5px] text-muted-foreground/80">
+                <span id="robot-nume-ajutor" className="mt-1 block text-[13px] text-muted-foreground/80">
                   Litere, cifre, punct, liniuță, spațiu. Unic.
                 </span>
               )}

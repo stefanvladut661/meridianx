@@ -101,7 +101,7 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
       <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Variabile">
         {VARIABILE.map((x) => (
           <li key={x.v}>
-            <code className="rounded-md border border-border bg-secondary px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground" title={x.ce}>
+            <code className="rounded-md border border-border bg-secondary px-1.5 py-0.5 font-mono text-[12px] text-muted-foreground" title={x.ce}>
               {x.v}
             </code>
             <span className="sr-only">: {x.ce}</span>
@@ -119,7 +119,7 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
             const lungime = valoare.trim().length;
             return (
               <div key={s.cheie}>
-                <label htmlFor={id} className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                <label htmlFor={id} className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   {s.label}
                 </label>
                 <textarea
@@ -143,30 +143,30 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
                   aria-describedby={`${id}-h${eroare ? ` ${id}-e` : ""}`}
                   className={inputClass(cn("mt-1.5 h-auto resize-y py-2 leading-relaxed", eroare && "border-rose/50"))}
                 />
-                <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[11.5px] text-muted-foreground/80">
+                <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[13px] text-muted-foreground/80">
                   <span id={`${id}-h`}>{s.hint}</span>
                   <span className={cn("pu-num", lungime > MAX && "text-rose")}>
                     {lungime}/{MAX}
                   </span>
                 </div>
                 {eroare ? (
-                  <span id={`${id}-e`} role="alert" className="mt-1 block text-[11.5px] text-rose">
+                  <span id={`${id}-e`} role="alert" className="mt-1 block text-[13px] text-rose">
                     {eroare}
                   </span>
                 ) : null}
                 {faraUtilizator(s.cheie) && valoare.includes("{utilizator}") ? (
-                  <p className="mt-1 text-[11.5px] text-apricot">
+                  <p className="mt-1 text-[13px] text-apricot">
                     {"{utilizator}"} rămâne gol aici: pe WhatsApp trimiteți de pe un cont, nu în numele cuiva. Scoate-l din mesaj.
                   </p>
                 ) : null}
                 {gresite.length ? (
-                  <p className="mt-1 text-[11.5px] text-apricot">
+                  <p className="mt-1 text-[13px] text-apricot">
                     {gresite.length === 1 ? "Variabilă necunoscută" : "Variabile necunoscute"}: {gresite.join(", ")}. Rămân așa, ca text, în mesaj.
                   </p>
                 ) : null}
                 <div className="mt-2 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] px-3 py-2.5">
-                  <p className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Exemplu · firmă inventată ({EXEMPLU.nume})</p>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-[12.5px] leading-relaxed text-foreground/85">
+                  <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Exemplu · firmă inventată ({EXEMPLU.nume})</p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-relaxed text-foreground/85">
                     {umpleSablon(valoare, EXEMPLU, faraUtilizator(s.cheie) ? "" : utilizator) || <span className="text-muted-foreground">Șablonul e gol.</span>}
                   </p>
                 </div>
@@ -181,7 +181,7 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
         </InlineNote>
 
         <div className="mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-border pt-3">
-          <p aria-live="polite" className={cn("text-[11.5px]", stare?.ton === "eroare" ? "text-rose" : "text-muted-foreground")}>
+          <p aria-live="polite" className={cn("text-[13px]", stare?.ton === "eroare" ? "text-rose" : "text-muted-foreground")}>
             {pending ? "Se salvează…" : (stare?.text ?? (schimbate.length ? (schimbate.length === 1 ? "Un șablon nesalvat." : `${schimbate.length} șabloane nesalvate.`) : ""))}
           </p>
           <Btn type="submit" size="sm" variant="primary" icon={pending ? Loader2 : Save} disabled={!schimbate.length || pending}>

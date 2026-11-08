@@ -29,7 +29,7 @@ export interface HistoryApi {
 const REVEAL_MS = 30 * 1000;
 const MASK = "••••••••";
 
-const LINK_BUTTON = "shrink-0 rounded border border-white/[0.1] px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground";
+const LINK_BUTTON = "shrink-0 rounded border border-white/[0.1] px-1.5 py-0.5 text-[11.5px] text-muted-foreground hover:text-foreground";
 
 export function EntryHistory({
   entry,
@@ -102,7 +102,7 @@ export function EntryHistory({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         disabled={previous === 0}
-        className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
+        className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
       >
         <History className="h-3.5 w-3.5" aria-hidden="true" /> Istoric versiuni ({previous})
         {previous === 0 ? <span className="text-muted-foreground/70">· prima versiune, nimic înainte</span> : null}
@@ -114,7 +114,7 @@ export function EntryHistory({
           {loading && !versions ? <Spinner label="Se decriptează versiunile" /> : null}
           {versions ? (
             <>
-              <p className="mb-2 text-[10.5px] text-muted-foreground">Fiecare versiune apare ca diferență față de cea de acum: „atunci → acum”.</p>
+              <p className="mb-2 text-[12px] text-muted-foreground">Fiecare versiune apare ca diferență față de cea de acum: „atunci → acum”.</p>
               <ol className="space-y-2">
                 {versions.map((version) => {
                   const shown = revealed?.version === version.version;
@@ -126,7 +126,7 @@ export function EntryHistory({
                     <li key={version.id} className="border-b border-white/[0.04] pb-2 last:border-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-[11.5px]">
+                          <p className="text-[13px]">
                             <span className="pu-num font-mono">v{version.version}</span>
                             <span className="text-muted-foreground">
                               {" "}
@@ -138,7 +138,7 @@ export function EntryHistory({
                                   : `${changes.length} ${changes.length === 1 ? "diferență" : "diferențe"}`}
                             </span>
                           </p>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-[11.5px] text-muted-foreground">
                             {emailOf(version.createdBy)} · {dateTimeRo(version.createdAt)}
                           </p>
                         </div>
@@ -150,11 +150,11 @@ export function EntryHistory({
                       </div>
 
                       {version.content.status === "unreadable" ? (
-                        <p className="mt-1.5 text-[11px] text-rose">Versiune ilizibilă: {version.content.reason}</p>
+                        <p className="mt-1.5 text-[12.5px] text-rose">Versiune ilizibilă: {version.content.reason}</p>
                       ) : changes.length > 0 ? (
                         <ul className="mt-1.5 space-y-1">
                           {changes.map((change, index) => (
-                            <li key={index} className="text-[11px] leading-relaxed">
+                            <li key={index} className="text-[12.5px] leading-relaxed">
                               <span className="text-muted-foreground">{change.label}: </span>
                               <span className="break-all font-mono text-foreground/85">{change.secret && !shown ? MASK : (change.before ?? "—")}</span>
                               <span className="text-muted-foreground" role="img" aria-label="devine">
@@ -177,7 +177,7 @@ export function EntryHistory({
                           >
                             {shown ? "Ascunde secretele" : "Arată secretele"}
                           </button>
-                          {shown ? <span className="text-[10px] text-apricot">se ascund singure în {left}s</span> : null}
+                          {shown ? <span className="text-[11.5px] text-apricot">se ascund singure în {left}s</span> : null}
                         </div>
                       ) : null}
                     </li>

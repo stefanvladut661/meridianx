@@ -116,7 +116,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link href="/admin/ads" className="mb-2 inline-flex items-center gap-1 text-[11.5px] text-muted-foreground hover:text-foreground">
+          <Link href="/admin/ads" className="mb-2 inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-3 w-3" aria-hidden="true" /> Toate campaniile
           </Link>
           <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +125,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               {campaignStatusLabel(campaign.status)}
             </Pill>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] text-muted-foreground">
             <ChannelMark platform={campaign.platform} size="sm" />
             <span>{workspace?.name ?? campaign.workspace}</span>
             <span aria-hidden="true">·</span>
@@ -154,7 +154,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      <div className="flex items-start gap-2.5 rounded-xl border border-apricot/20 bg-apricot/[0.06] px-3.5 py-2.5 text-[11.5px] leading-relaxed text-[#FFD0AC]">
+      <div className="flex items-start gap-2.5 rounded-xl border border-apricot/20 bg-apricot/[0.06] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#FFD0AC]">
         <PlayCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <p>
           Campania a fost creată oprită. Aici nu există buton de pornire, de buget sau de licitare — doar platforma le schimbă, la mâna omului. Pauza se pune din{" "}
@@ -208,19 +208,19 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               </div>
               <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-white/[0.06] pt-4">
                 <div>
-                  <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">CTR</dt>
-                  <dd className="pu-num mt-1 text-[15px]">{formatPercent(lastWeek.ctr)}</dd>
-                  <dd className="mt-0.5 text-[11px] text-muted-foreground">clicuri pe link / afișări</dd>
+                  <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">CTR</dt>
+                  <dd className="pu-num mt-1 text-[16px]">{formatPercent(lastWeek.ctr)}</dd>
+                  <dd className="mt-0.5 text-[12.5px] text-muted-foreground">clicuri pe link / afișări</dd>
                 </div>
                 <div>
-                  <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">CPC</dt>
-                  <dd className="pu-num mt-1 text-[15px]">{formatAmount(lastWeek.cpc, currency)}</dd>
-                  <dd className="mt-0.5 text-[11px] text-muted-foreground">cost pe clic pe link</dd>
+                  <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">CPC</dt>
+                  <dd className="pu-num mt-1 text-[16px]">{formatAmount(lastWeek.cpc, currency)}</dd>
+                  <dd className="mt-0.5 text-[12.5px] text-muted-foreground">cost pe clic pe link</dd>
                 </div>
                 <div>
-                  <dt className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">CPM</dt>
-                  <dd className="pu-num mt-1 text-[15px]">{formatAmount(lastWeek.cpm, currency)}</dd>
-                  <dd className="mt-0.5 text-[11px] text-muted-foreground">cost la 1.000 de afișări</dd>
+                  <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">CPM</dt>
+                  <dd className="pu-num mt-1 text-[16px]">{formatAmount(lastWeek.cpm, currency)}</dd>
+                  <dd className="mt-0.5 text-[12.5px] text-muted-foreground">cost la 1.000 de afișări</dd>
                 </div>
               </dl>
               <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -240,7 +240,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
                   height={130}
                 />
               </div>
-              <p className="mt-3 text-[11px] text-muted-foreground">
+              <p className="mt-3 text-[12.5px] text-muted-foreground">
                 Graficele arată {rows[0] && rows[0].date < chartFrom ? `ultimele ${countOf(CHART_DAYS, "zile")}` : "toată viața campaniei"}.
               </p>
             </Card>
@@ -249,20 +249,20 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               <SectionTitle title="De la creare" hint="cumulat, fără reset" />
               <div className="mt-4 space-y-4">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[12px] text-muted-foreground">Cheltuială totală</span>
+                  <span className="text-[13.5px] text-muted-foreground">Cheltuială totală</span>
                   <span className="pu-num text-[20px]">{formatAmount(lifetime.spend, currency)}</span>
                 </div>
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[12px] text-muted-foreground">{names.plural}</span>
+                  <span className="text-[13.5px] text-muted-foreground">{names.plural}</span>
                   <span className="pu-num text-[20px]">{formatCount(lifetime.results)}</span>
                 </div>
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[12px] text-muted-foreground">Cost mediu</span>
-                  <span className="pu-num text-[15px]">{formatAmount(lifetime.costPerResult, currency)}</span>
+                  <span className="text-[13.5px] text-muted-foreground">Cost mediu</span>
+                  <span className="pu-num text-[16px]">{formatAmount(lifetime.costPerResult, currency)}</span>
                 </div>
                 <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.07] pt-3">
-                  <span className="text-[12px] text-muted-foreground">Zile cu livrare</span>
-                  <span className="pu-num text-[15px]">{lifetime.days}</span>
+                  <span className="text-[13.5px] text-muted-foreground">Zile cu livrare</span>
+                  <span className="pu-num text-[16px]">{lifetime.days}</span>
                 </div>
               </div>
               <div className="mt-5">
@@ -273,8 +273,8 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
 
           <Card padded={false} className="overflow-hidden">
             <div className="border-b border-white/[0.06] px-4 py-3">
-              <h2 className="text-[13.5px] font-medium">Zi cu zi</h2>
-              <p className="mt-0.5 text-[11.5px] text-muted-foreground">toate zilele de la creare, cu totalul</p>
+              <h2 className="text-[15px] font-medium">Zi cu zi</h2>
+              <p className="mt-0.5 text-[13px] text-muted-foreground">toate zilele de la creare, cu totalul</p>
             </div>
             <DaysTable days={fillDays(rows, rows[0].date, today)} currency={currency} resultLabel={names.plural} caption={`Cifrele campaniei ${campaign.name}, pe zile`} />
           </Card>
@@ -318,16 +318,16 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
 
       <Card>
         <details className="group">
-          <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 text-[13.5px] font-medium">
+          <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 text-[15px] font-medium">
             <span>
               <span aria-hidden="true" className="mr-2 inline-block transition-transform duration-150 group-open:rotate-90">
                 ›
               </span>
               Planul JSON{search ? ", cu cheile locațiilor găsite de Google" : `, cu cheile găsite de ${PLATFORM_LABEL[campaign.platform]}`}
             </span>
-            <span className="text-[11.5px] font-normal text-muted-foreground">se deschide aici; „Copiază planul JSON” e în dreapta sus</span>
+            <span className="text-[13px] font-normal text-muted-foreground">se deschide aici; „Copiază planul JSON” e în dreapta sus</span>
           </summary>
-          <pre className="mt-3 max-h-[28rem] overflow-auto rounded-xl border border-white/[0.08] bg-[#0A0A0E] p-3.5 font-mono text-[11px] leading-relaxed text-foreground/80">{planJson}</pre>
+          <pre className="mt-3 max-h-[28rem] overflow-auto rounded-xl border border-white/[0.08] bg-[#0A0A0E] p-3.5 font-mono text-[12.5px] leading-relaxed text-foreground/80">{planJson}</pre>
           <div className="mt-3">
             <CopyButton value={planJson} label="Copiază planul JSON" size="xs" />
           </div>

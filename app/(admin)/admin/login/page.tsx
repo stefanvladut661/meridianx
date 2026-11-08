@@ -47,7 +47,7 @@ export default async function AdminLoginPage({
           <PanouMark />
           <div>
             <p className="pu-display text-[19px] leading-none tracking-[0.16em]">MERIDIAN</p>
-            <p className="mt-1 text-[9.5px] uppercase tracking-[0.24em] text-muted-foreground">panou intern</p>
+            <p className="mt-1 text-[11px] uppercase tracking-[0.24em] text-muted-foreground">panou intern</p>
           </div>
         </div>
         <div className="relative max-w-md">
@@ -56,33 +56,33 @@ export default async function AdminLoginPage({
             <br />
             un singur loc de lucru.
           </h2>
-          <p className="mt-4 text-[13.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
             Lead-uri, campanii create pe pauză, postări aprobate de om și seiful echipei. Fără ferestre secundare, fără cifre inventate.
           </p>
           <dl className="mt-8 grid grid-cols-3 gap-4 border-t border-white/[0.08] pt-6">
             {REGULI.map(([nume, regula]) => (
               <div key={nume}>
-                <dt className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{nume}</dt>
-                <dd className="mt-1 text-[14px] leading-snug">{regula}</dd>
+                <dt className="text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">{nume}</dt>
+                <dd className="mt-1 text-[15px] leading-snug">{regula}</dd>
               </div>
             ))}
           </dl>
         </div>
-        <p className="relative text-[11px] text-muted-foreground/70">Acces doar pentru echipa Meridian.</p>
+        <p className="relative text-[12.5px] text-muted-foreground/70">Acces doar pentru echipa Meridian.</p>
       </div>
 
       <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-[382px]">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <PanouMark size="sm" />
-            <p className="pu-display text-[17px] leading-none tracking-[0.16em]">MERIDIAN</p>
+            <p className="pu-display text-[18px] leading-none tracking-[0.16em]">MERIDIAN</p>
           </div>
 
           <h1 className="text-[26px] font-semibold leading-tight">Intră în panou</h1>
-          <p className="mt-1.5 text-[13px] text-muted-foreground">Acces doar pentru echipă, cu contul Google de pe lista de admini.</p>
+          <p className="mt-1.5 text-[14.5px] text-muted-foreground">Acces doar pentru echipă, cu contul Google de pe lista de admini.</p>
 
           {error ? (
-            <div role="alert" className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose/25 bg-rose/[0.08] px-3.5 py-3 text-[12.5px] leading-relaxed text-[#FFC2CE]">
+            <div role="alert" className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose/25 bg-rose/[0.08] px-3.5 py-3 text-[14px] leading-relaxed text-[#FFC2CE]">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{error}</span>
             </div>
@@ -94,16 +94,16 @@ export default async function AdminLoginPage({
                   Link ar preîncărca-o (adică ar porni singur o intrare) și ar cere-o prin fetch,
                   pe care redirecționarea externă îl rupe. Merge și înainte de hidratare. */}
               {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-              <a href="/admin/auth/google" className={btnClass({ variant: "primary", size: "lg", className: "w-full rounded-xl text-[13.5px] font-semibold" })}>
+              <a href="/admin/auth/google" className={btnClass({ variant: "primary", size: "lg", className: "w-full rounded-xl text-[15px] font-semibold" })}>
                 <GoogleMark />
                 Continuă cu Google
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
-              <p className="mt-6 text-center text-[12px] text-muted-foreground">Nu ai acces? Cere-l de la cineva din echipă, ca adresa ta să ajungă pe lista de admini.</p>
+              <p className="mt-6 text-center text-[13.5px] text-muted-foreground">Nu ai acces? Cere-l de la cineva din echipă, ca adresa ta să ajungă pe lista de admini.</p>
             </div>
           ) : (
-            <div className="mt-6 rounded-xl border border-white/[0.09] bg-white/[0.03] p-4 text-[12.5px] leading-relaxed text-muted-foreground">
-              <p className="text-[11px] uppercase tracking-[0.14em]">Nu e configurat</p>
+            <div className="mt-6 rounded-xl border border-white/[0.09] bg-white/[0.03] p-4 text-[14px] leading-relaxed text-muted-foreground">
+              <p className="text-[12.5px] uppercase tracking-[0.14em]">Nu e configurat</p>
               <p className="mt-2">
                 Lipsesc variabilele de mediu pentru Supabase: <Code>NEXT_PUBLIC_SUPABASE_URL</Code> și <Code>NEXT_PUBLIC_SUPABASE_ANON_KEY</Code>. Copiază <Code>.env.example</Code> în <Code>.env.local</Code>, completează-le și
                 repornește serverul.
@@ -117,7 +117,7 @@ export default async function AdminLoginPage({
 }
 
 function Code({ children }: { children: React.ReactNode }) {
-  return <code className="mx-0.5 rounded bg-white/[0.07] px-1.5 py-0.5 font-mono text-[11.5px] text-foreground">{children}</code>;
+  return <code className="mx-0.5 rounded bg-white/[0.07] px-1.5 py-0.5 font-mono text-[13px] text-foreground">{children}</code>;
 }
 
 /** „G”-ul Google, în culorile din ghidul lor pentru butonul de intrare. */

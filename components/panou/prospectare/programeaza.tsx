@@ -188,12 +188,12 @@ function DialogProgramare({
     const zile = Object.entries(d.pe_zile).sort(([a], [b]) => a.localeCompare(b));
     return (
       <div className="space-y-4 p-5 sm:p-6">
-        <h2 className="text-[17px] font-semibold">{CANAL_TEXT[canal].titlu}</h2>
-        <p role="status" className="text-[13px] leading-relaxed">
+        <h2 className="text-[18px] font-semibold">{CANAL_TEXT[canal].titlu}</h2>
+        <p role="status" className="text-[14.5px] leading-relaxed">
           {num(d.programate)} {d.programate === 1 ? "firmă programată" : "firme programate"} {CANAL_TEXT[canal].pe}.
         </p>
         {d.avertisment ? <InlineNote tone="apricot">{d.avertisment}</InlineNote> : null}
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[12.5px] sm:grid-cols-3">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[14px] sm:grid-cols-3">
           {zile.map(([z, n]) => (
             <div key={z} className="flex items-baseline justify-between gap-2 rounded-lg border border-border px-3 py-2">
               <dt className="text-muted-foreground">{ziRo(z)}</dt>
@@ -203,10 +203,10 @@ function DialogProgramare({
         </dl>
         {d.refuzate.length > 0 ? (
           <div className="space-y-1.5">
-            <p className="text-[12.5px] font-medium">
+            <p className="text-[14px] font-medium">
               {num(d.refuzate.length)} {d.refuzate.length === 1 ? "firmă n-a putut fi programată" : "firme n-au putut fi programate"}:
             </p>
-            <ul className="max-h-40 space-y-1 overflow-y-auto text-[12px] text-muted-foreground">
+            <ul className="max-h-40 space-y-1 overflow-y-auto text-[13.5px] text-muted-foreground">
               {d.refuzate.slice(0, 50).map((x) => (
                 <li key={x.nr}>
                   <span className="pu-num text-foreground/80">#{x.nr}</span> {x.nume}: {x.motiv}
@@ -230,8 +230,8 @@ function DialogProgramare({
   return (
     <div className="flex max-h-[min(88vh,52rem)] flex-col">
       <div className="space-y-1 border-b border-border px-5 pb-4 pt-5 sm:px-6">
-        <h2 className="text-[17px] font-semibold">{CANAL_TEXT[canal].titlu}</h2>
-        <p className="text-[12.5px] leading-relaxed text-muted-foreground">
+        <h2 className="text-[18px] font-semibold">{CANAL_TEXT[canal].titlu}</h2>
+        <p className="text-[14px] leading-relaxed text-muted-foreground">
           Din rezervă, cele mai vechi site-uri primele. Cel mai devreme mâine; ce nu încape în limita zilei trece în zilele următoare, {CANAL_TEXT[canal].pe}. Se anulează până în ziua ei.
         </p>
       </div>
@@ -255,10 +255,10 @@ function DialogProgramare({
           ) : null}
           {canal === "telefon" ? (
             <fieldset className="sm:col-span-2">
-              <legend className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Cine sună</legend>
+              <legend className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Cine sună</legend>
               <div className="mt-1.5 inline-flex rounded-lg border border-white/[0.12] p-0.5">
                 {(Object.keys(UTILIZATORI) as Utilizator[]).map((u) => (
-                  <label key={u} className={cn("cursor-pointer rounded-md px-3 py-1.5 text-[12.5px] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-lav", cineSuna === u ? "bg-white/[0.1] text-foreground" : "text-muted-foreground")}>
+                  <label key={u} className={cn("cursor-pointer rounded-md px-3 py-1.5 text-[14px] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-lav", cineSuna === u ? "bg-white/[0.1] text-foreground" : "text-muted-foreground")}>
                     <input type="radio" name={`${id}-cine`} value={u} checked={cineSuna === u} onChange={() => setCineSuna(u)} className="sr-only" />
                     {UTILIZATORI[u]}
                   </label>
@@ -269,7 +269,7 @@ function DialogProgramare({
         </div>
 
         <fieldset className="space-y-3">
-          <legend className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Ce firme</legend>
+          <legend className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Ce firme</legend>
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Lot">
               <select className={inputClass()} value={filtre.lot ?? ""} onChange={(e) => seteaza("lot", e.target.value)}>
@@ -322,7 +322,7 @@ function DialogProgramare({
             <input type="search" className={inputClass()} value={filtre.cauta ?? ""} placeholder="ex. instal, rent a car" onChange={(e) => seteaza("cauta", e.target.value)} />
           </Field>
           {filtrate ? (
-            <button type="button" className="rounded-sm text-[12px] text-muted-foreground underline underline-offset-2 hover:text-foreground" onClick={() => setFiltre({})}>
+            <button type="button" className="rounded-sm text-[13.5px] text-muted-foreground underline underline-offset-2 hover:text-foreground" onClick={() => setFiltre({})}>
               Șterge filtrele
             </button>
           ) : null}
@@ -330,13 +330,13 @@ function DialogProgramare({
 
         <section aria-labelledby={`${id}-lista`} className="rounded-xl border border-border">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5">
-            <h3 id={`${id}-lista`} className="text-[12.5px] font-medium" aria-live="polite">
+            <h3 id={`${id}-lista`} className="text-[14px] font-medium" aria-live="polite">
               {incarc && firme.length === 0 ? "Caut în rezervă…" : `${num(total)} ${total === 1 ? "firmă poate merge" : "firme pot merge"} ${CANAL_TEXT[canal].pe}`}
             </h3>
             {total > 0 ? (
               <button
                 type="button"
-                className="rounded-sm text-[12px] font-medium text-lav underline-offset-2 hover:underline disabled:opacity-50"
+                className="rounded-sm text-[13.5px] font-medium text-lav underline-offset-2 hover:underline disabled:opacity-50"
                 disabled={incarc}
                 onClick={() => (toateAlese ? setAlese(new Set()) : void alegeToate())}
               >
@@ -345,11 +345,11 @@ function DialogProgramare({
             ) : null}
           </div>
           {eroare ? (
-            <p role="alert" className="px-3 py-4 text-[12.5px] text-rose">
+            <p role="alert" className="px-3 py-4 text-[14px] text-rose">
               {eroare}
             </p>
           ) : !incarc && total === 0 ? (
-            <p className="px-3 py-4 text-[12.5px] text-muted-foreground">
+            <p className="px-3 py-4 text-[14px] text-muted-foreground">
               Nicio firmă din rezervă nu se potrivește. {filtrate ? "Schimbă filtrele sau șterge-le." : "Când roboții publică site-uri noi, apar aici."}
             </p>
           ) : (
@@ -359,14 +359,14 @@ function DialogProgramare({
                   <label className="flex cursor-pointer items-start gap-3 px-3 py-2 hover:bg-white/[0.03]">
                     <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-[#C6B5FF]" checked={alese.has(f.id)} onChange={() => comuta(f.id)} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[12.5px] font-medium">
+                      <span className="block truncate text-[14px] font-medium">
                         <span className="pu-num text-muted-foreground">#{f.nr}</span> {f.nume}
                       </span>
-                      <span className="block truncate text-[11px] text-muted-foreground">
+                      <span className="block truncate text-[12.5px] text-muted-foreground">
                         {[f.oras, f.lot, f.construit_de].filter(Boolean).join(" · ") || f.domeniu}
                       </span>
                     </span>
-                    <span className="shrink-0 text-right text-[11px] text-muted-foreground">
+                    <span className="shrink-0 text-right text-[12.5px] text-muted-foreground">
                       {f.site_gata_la ? <>gata {dayMonthRo(f.site_gata_la)}</> : "fără dată"}
                     </span>
                   </label>
@@ -374,7 +374,7 @@ function DialogProgramare({
               ))}
               {firme.length < total ? (
                 <li className="px-3 py-2">
-                  <button type="button" className="rounded-sm text-[12px] text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:opacity-50" disabled={incarc} onClick={() => void incarcaInca()}>
+                  <button type="button" className="rounded-sm text-[13.5px] text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:opacity-50" disabled={incarc} onClick={() => void incarcaInca()}>
                     {incarc ? "Se încarcă…" : `Arată încă ${num(Math.min(PAGINA, total - firme.length))}`}
                   </button>
                 </li>
@@ -383,14 +383,14 @@ function DialogProgramare({
           )}
         </section>
         {rezultat && !rezultat.date ? (
-          <p role="alert" className="text-[12.5px] text-rose">
+          <p role="alert" className="text-[14px] text-rose">
             {rezultat.mesaj}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3.5 sm:px-6">
-        <p className="text-[12.5px] text-muted-foreground" aria-live="polite">
+        <p className="text-[14px] text-muted-foreground" aria-live="polite">
           {alese.size === 0 ? "Bifează firmele sau „Alege toate”." : `${num(alese.size)} ${alese.size === 1 ? "firmă aleasă" : "firme alese"}, pentru ${ziRo(zi)}`}
         </p>
         <div className="flex gap-2">

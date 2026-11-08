@@ -113,7 +113,7 @@ export function LeadFiltersBar({
             maxLength={120}
             placeholder="Caută nume, email sau firmă"
             aria-label="Caută lead-uri"
-            className="h-9 w-full rounded-lg border border-white/[0.1] bg-white/[0.03] pl-9 pr-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-lav/50"
+            className="h-9 w-full rounded-lg border border-white/[0.1] bg-white/[0.03] pl-9 pr-3 text-[14.5px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-lav/50"
           />
         </div>
 
@@ -136,24 +136,24 @@ export function LeadFiltersBar({
             className={cn(!compact && "lg:w-[132px]")}
             options={[{ value: "toate", label: "Toate statusurile" }, ...LEAD_STATUSES.map((status) => ({ value: status, label: statusLabel(status) }))]}
           />
-          <label className={cn("flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 text-[11px] text-muted-foreground", !compact && "lg:w-[148px]")}>
+          <label className={cn("flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 text-[12.5px] text-muted-foreground", !compact && "lg:w-[148px]")}>
             <span className="shrink-0">de la</span>
             <input
               type="date"
               value={local.from}
               onChange={(event) => apply({ from: event.target.value })}
               aria-label="De la data"
-              className="h-7 w-full min-w-0 bg-transparent text-[11.5px] text-foreground outline-none"
+              className="h-7 w-full min-w-0 bg-transparent text-[13px] text-foreground outline-none"
             />
           </label>
-          <label className={cn("flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 text-[11px] text-muted-foreground", !compact && "lg:w-[148px]")}>
+          <label className={cn("flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white/[0.04] px-2 text-[12.5px] text-muted-foreground", !compact && "lg:w-[148px]")}>
             <span className="shrink-0">până</span>
             <input
               type="date"
               value={local.to}
               onChange={(event) => apply({ to: event.target.value })}
               aria-label="Până la data"
-              className="h-7 w-full min-w-0 bg-transparent text-[11.5px] text-foreground outline-none"
+              className="h-7 w-full min-w-0 bg-transparent text-[13px] text-foreground outline-none"
             />
           </label>
         </div>
@@ -164,7 +164,7 @@ export function LeadFiltersBar({
               Șterge filtrele
             </Btn>
           ) : (
-            <span className="hidden items-center gap-1.5 text-[11.5px] text-muted-foreground/70 xl:inline-flex">
+            <span className="hidden items-center gap-1.5 text-[13px] text-muted-foreground/70 xl:inline-flex">
               <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" /> fără filtre
             </span>
           )}
@@ -186,7 +186,7 @@ export function LeadFiltersBar({
         </div>
       </div>
 
-      <p className="mt-2 text-[11px] text-muted-foreground/70" aria-live="polite">
+      <p className="mt-2 text-[12.5px] text-muted-foreground/70" aria-live="polite">
         {totalAll === null || filtered === totalAll ? `${leadCount(filtered)} în total` : `${filtered} din ${leadCount(totalAll)} se potrivesc filtrului`}
       </p>
     </form>

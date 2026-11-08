@@ -54,7 +54,7 @@ export function SettingsForm({
       className="mt-7 grid max-w-3xl gap-6"
     >
       <section aria-labelledby="facturi-set" className="grid gap-3">
-        <h2 id="facturi-set" className="text-[15px] font-semibold text-bone">
+        <h2 id="facturi-set" className="text-[16px] font-semibold text-bone">
           Facturi și contabil
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -87,7 +87,7 @@ export function SettingsForm({
       </section>
 
       <section aria-labelledby="drive-set" className="grid gap-3">
-        <h2 id="drive-set" className="text-[15px] font-semibold text-bone">
+        <h2 id="drive-set" className="text-[16px] font-semibold text-bone">
           Folderul de pe Drive
         </h2>
         <Field id="set-driveRadacina" label="Folderul rădăcină (adresa sau id-ul)" error={fieldError("driveRadacina")} hint="Folderul cu câte un subfolder pe lună. Gol = adminul nu scrie nimic pe Drive.">
@@ -99,15 +99,15 @@ export function SettingsForm({
       </section>
 
       {error && !error.field ? (
-        <p role="alert" className="text-[13.5px] text-[var(--ap-error)]">
+        <p role="alert" className="text-[15px] text-[var(--ap-error)]">
           {error.message}
         </p>
       ) : null}
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
           {pending ? "Se salvează…" : "Salvează setările"}
         </button>
-        <p role="status" className="text-[13px] text-dim">
+        <p role="status" className="text-[14.5px] text-dim">
           {saved ? <span className="text-[var(--ap-ok)]">Salvat.</span> : settings.updatedAt ? `Ultima schimbare: ${dateTimeLabel(settings.updatedAt)}${settings.updatedBy ? `, ${settings.updatedBy}` : ""}` : null}
         </p>
       </div>

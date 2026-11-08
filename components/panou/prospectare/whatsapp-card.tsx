@@ -88,7 +88,7 @@ function CopiazaMic({
       className={btnClass({
         variant: "outline",
         size: "xs",
-        className: cn("h-8 gap-1 border-white/[0.09] px-2 text-[11.5px] font-normal text-muted-foreground hover:text-foreground", copiat && "text-mint"),
+        className: cn("h-8 gap-1 border-white/[0.09] px-2 text-[13px] font-normal text-muted-foreground hover:text-foreground", copiat && "text-mint"),
       })}
     >
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -141,11 +141,11 @@ export function WhatsAppRand({
         <div className="min-w-0 flex-1 sm:w-60 sm:flex-none lg:w-72">
           <Link
             href={linkFisa(firma.id)}
-            className="inline-block max-w-full truncate align-top text-[14px] font-medium leading-5 underline-offset-2 hover:underline"
+            className="inline-block max-w-full truncate align-top text-[15px] font-medium leading-5 underline-offset-2 hover:underline"
           >
             {firma.nume}
           </Link>
-          <p className="truncate text-[12px] leading-4 text-muted-foreground">
+          <p className="truncate text-[13.5px] leading-4 text-muted-foreground">
             {firma.telefon ? <span className="pu-num text-foreground/85">{numarAfisat(firma.telefon)}</span> : <span className="text-[#FFB0C0]">fără telefon</span>}
             {firma.oras ? ` · ${firma.oras}` : ""}
             {` · ${contNume}`}
@@ -162,7 +162,7 @@ export function WhatsAppRand({
             variant: "primary",
             size: "sm",
             className:
-              "h-10 w-[6.75rem] shrink-0 whitespace-normal px-2 text-center text-[12.5px] leading-[1.15] sm:order-last sm:h-9 sm:w-auto sm:whitespace-nowrap sm:px-3.5 sm:text-[13px]",
+              "h-10 w-[6.75rem] shrink-0 whitespace-normal px-2 text-center text-[14px] leading-[1.15] sm:order-last sm:h-9 sm:w-auto sm:whitespace-nowrap sm:px-3.5 sm:text-[14.5px]",
           })}
         >
           <MessageCircle className="hidden h-4 w-4 sm:block" aria-hidden="true" />
@@ -176,7 +176,7 @@ export function WhatsAppRand({
               <p
                 id={idMesaj}
                 className={cn(
-                  "text-[12.5px] leading-5 text-foreground/75",
+                  "text-[14px] leading-5 text-foreground/75",
                   deschis ? "basis-full whitespace-pre-wrap break-words rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-2" : "min-w-0 flex-1 truncate"
                 )}
               >
@@ -187,14 +187,14 @@ export function WhatsAppRand({
                 aria-expanded={deschis}
                 aria-controls={idMesaj}
                 onClick={() => setDeschis((v) => !v)}
-                className="h-8 shrink-0 rounded-md px-1.5 text-[12px] text-lav/90 underline-offset-2 hover:text-lav hover:underline"
+                className="h-8 shrink-0 rounded-md px-1.5 text-[13.5px] text-lav/90 underline-offset-2 hover:text-lav hover:underline"
               >
                 {deschis ? "ascunde" : "vezi tot"}
                 <span className="sr-only"> mesajul pentru {firma.nume}</span>
               </button>
             </>
           ) : (
-            <p className="min-w-0 flex-1 truncate text-[12.5px] leading-5 text-muted-foreground">Fără mesaj pregătit: WhatsApp se deschide gol.</p>
+            <p className="min-w-0 flex-1 truncate text-[14px] leading-5 text-muted-foreground">Fără mesaj pregătit: WhatsApp se deschide gol.</p>
           )}
           <span className="ml-auto flex shrink-0 gap-1">
             {firma.telefon ? <CopiazaMic valoare={numarScurt(firma.telefon)} eticheta="Nr." descriere={`copiază numărul ${numarAfisat(firma.telefon)}, fără 0`} anunt="Numărul copiat, fără 0 în față." onCopiat={onCopiat} /> : null}
@@ -211,8 +211,8 @@ export function WhatsAppRand({
         </div>
       </div>
 
-      {motivBlocare ? <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{motivBlocare}</p> : null}
-      {eroare ? <p className="mt-1.5 rounded-lg border border-rose/25 bg-rose/[0.07] px-2.5 py-1.5 text-[12px] leading-snug text-[#FFC2CE]">{eroare}</p> : null}
+      {motivBlocare ? <p className="mt-1 text-[13.5px] leading-snug text-muted-foreground">{motivBlocare}</p> : null}
+      {eroare ? <p className="mt-1.5 rounded-lg border border-rose/25 bg-rose/[0.07] px-2.5 py-1.5 text-[13.5px] leading-snug text-[#FFC2CE]">{eroare}</p> : null}
     </li>
   );
 }
@@ -241,17 +241,17 @@ export function WhatsAppTrimisaRand({
   return (
     <li className="flex items-center gap-2 px-3 py-2 sm:px-4" aria-busy={lucru !== null || undefined}>
       <div className="min-w-0 flex-1">
-        <Link href={linkFisa(firma.id)} className="inline-block max-w-full truncate align-top text-[13.5px] font-medium leading-5 underline-offset-2 hover:underline">
+        <Link href={linkFisa(firma.id)} className="inline-block max-w-full truncate align-top text-[15px] font-medium leading-5 underline-offset-2 hover:underline">
           {firma.nume}
         </Link>
-        <p className="truncate text-[12px] leading-4 text-muted-foreground">
+        <p className="truncate text-[13.5px] leading-4 text-muted-foreground">
           <span className={cn("pu-num", lucru ? "text-lav" : "text-foreground/85")}>{lucru ? "Se marchează…" : la ? timeRo(la) : "azi"}</span>
           {` · ${contNume}`}
           {firma.telefon ? <span className="pu-num"> · {numarAfisat(firma.telefon)}</span> : null}
         </p>
       </div>
       {poateAnula && !lucru ? (
-        <button type="button" onClick={onAnuleaza} className={btnClass({ variant: "outline", size: "xs", className: "h-9 px-2.5 text-[12px] sm:h-8" })}>
+        <button type="button" onClick={onAnuleaza} className={btnClass({ variant: "outline", size: "xs", className: "h-9 px-2.5 text-[13.5px] sm:h-8" })}>
           Anulează
           <span className="sr-only"> marcarea pentru {firma.nume}</span>
         </button>

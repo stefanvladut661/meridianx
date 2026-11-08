@@ -77,13 +77,13 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           }}
           placeholder="Caută un ecran sau un modul…"
           aria-label="Caută"
-          className="h-7 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground/70"
+          className="h-7 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/70"
         />
-        <kbd className="rounded border border-white/[0.1] px-1.5 py-0.5 text-[10px] text-muted-foreground">esc</kbd>
+        <kbd className="rounded border border-white/[0.1] px-1.5 py-0.5 text-[11.5px] text-muted-foreground">esc</kbd>
       </div>
       <ul role="listbox" aria-label="Rezultate" className="max-h-[52vh] overflow-y-auto p-2">
         {items.length === 0 ? (
-          <li className="px-3 py-8 text-center text-[13px] text-muted-foreground">Nimic pentru „{query}”. Încearcă numele modulului sau al ecranului.</li>
+          <li className="px-3 py-8 text-center text-[14.5px] text-muted-foreground">Nimic pentru „{query}”. Încearcă numele modulului sau al ecranului.</li>
         ) : (
           items.map((item, position) => (
             <li key={item.id} role="option" aria-selected={position === index}>
@@ -94,15 +94,15 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                 className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors", position === index ? "bg-white/[0.08]" : "hover:bg-white/[0.04]")}
               >
                 <item.icon className="h-4 w-4 shrink-0 text-foreground/40" aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate text-[13px]">{item.label}</span>
-                <span className="shrink-0 text-[10.5px] uppercase tracking-[0.1em] text-muted-foreground">{item.hint}</span>
+                <span className="min-w-0 flex-1 truncate text-[14.5px]">{item.label}</span>
+                <span className="shrink-0 text-[12px] uppercase tracking-[0.1em] text-muted-foreground">{item.hint}</span>
                 {position === index ? <CornerDownLeft className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
               </button>
             </li>
           ))
         )}
       </ul>
-      <div className="flex items-center gap-3 border-t border-white/[0.07] px-4 py-2 text-[10.5px] text-muted-foreground">
+      <div className="flex items-center gap-3 border-t border-white/[0.07] px-4 py-2 text-[12px] text-muted-foreground">
         <span>↑↓ alege</span>
         <span>↵ deschide</span>
         <span className="ml-auto">Ctrl+K oriunde</span>

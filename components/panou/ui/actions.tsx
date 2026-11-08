@@ -118,26 +118,26 @@ export function ConfirmDialog({
   return (
     <Modal open={open} onOpenChange={onOpenChange} label={typeof title === "string" ? title : undefined}>
       <div className="space-y-2 text-left">
-        <h2 className="text-[17px] font-semibold">{title}</h2>
-        {description ? <p className="text-[13px] leading-relaxed text-muted-foreground">{description}</p> : null}
+        <h2 className="text-[18px] font-semibold">{title}</h2>
+        {description ? <p className="text-[14.5px] leading-relaxed text-muted-foreground">{description}</p> : null}
       </div>
 
       {consequence ? (
-        <p className="mt-3 rounded-xl border border-rose/20 bg-rose/[0.07] px-3.5 py-3 text-[12.5px] leading-relaxed text-[#FFC2CE]">{consequence}</p>
+        <p className="mt-3 rounded-xl border border-rose/20 bg-rose/[0.07] px-3.5 py-3 text-[14px] leading-relaxed text-[#FFC2CE]">{consequence}</p>
       ) : null}
 
       {children}
 
       {requirePhrase ? (
         <div className="mt-4">
-          <label htmlFor="confirm-phrase" className="text-[12px] text-muted-foreground">
+          <label htmlFor="confirm-phrase" className="text-[13.5px] text-muted-foreground">
             Scrie <span className="font-mono text-foreground">{requirePhrase}</span> ca să confirmi
           </label>
           <input
             id="confirm-phrase"
             value={phrase}
             onChange={(event) => setPhrase(event.target.value)}
-            className="mt-1.5 h-9 w-full rounded-lg border border-white/[0.12] bg-white/[0.03] px-3 text-[13px] outline-none focus:border-lav/50"
+            className="mt-1.5 h-9 w-full rounded-lg border border-white/[0.12] bg-white/[0.03] px-3 text-[14.5px] outline-none focus:border-lav/50"
             autoComplete="off"
           />
         </div>
@@ -176,5 +176,5 @@ const NOTE_TONES = {
 } as const;
 
 export function InlineNote({ tone = "apricot", children, className }: { tone?: keyof typeof NOTE_TONES; children: ReactNode; className?: string }) {
-  return <div className={cn("rounded-xl border px-3.5 py-3 text-[12.5px] leading-relaxed", NOTE_TONES[tone], className)}>{children}</div>;
+  return <div className={cn("rounded-xl border px-3.5 py-3 text-[14px] leading-relaxed", NOTE_TONES[tone], className)}>{children}</div>;
 }

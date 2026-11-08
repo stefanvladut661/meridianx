@@ -233,16 +233,16 @@ export function CautariTermeni({
       {/* Starea sincronizării */}
       <Card as="section" aria-labelledby="sincronizare-termeni" className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
         <div className="min-w-0">
-          <h2 id="sincronizare-termeni" className="text-[13.5px] font-medium">
+          <h2 id="sincronizare-termeni" className="text-[15px] font-medium">
             {terms.length === 0 ? "Niciun termen în perioada asta" : `${counted(terms.length, "termen", "termeni")} în ultimele ${period.days} zile`}
           </h2>
-          <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
             {terms.length > 0 ? `${money(totals.cost)} · ${totals.clicks} clicuri · ${Math.round(totals.conversions * 100) / 100} conversii · ` : ""}
             {rules.lastSyncedAt ? `sincronizat ${dateTimeRo(rules.lastSyncedAt)}` : "nesincronizat încă"}
           </p>
-          {rules.lastSyncError ? <p className="mt-1 text-[11.5px] text-rose">Ultima sincronizare: {rules.lastSyncError}</p> : null}
+          {rules.lastSyncError ? <p className="mt-1 text-[13px] text-rose">Ultima sincronizare: {rules.lastSyncError}</p> : null}
           {syncMessage ? (
-            <p role={syncMessage.ok ? "status" : "alert"} className={cn("mt-1 text-[11.5px]", syncMessage.ok ? "text-mint" : "text-rose")}>
+            <p role={syncMessage.ok ? "status" : "alert"} className={cn("mt-1 text-[13px]", syncMessage.ok ? "text-mint" : "text-rose")}>
               {syncMessage.text}
             </p>
           ) : null}
@@ -306,14 +306,14 @@ export function CautariTermeni({
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <label htmlFor={`p-${item.id}`} className="cursor-pointer font-mono text-[12.5px] [overflow-wrap:anywhere]">
+                            <label htmlFor={`p-${item.id}`} className="cursor-pointer font-mono text-[14px] [overflow-wrap:anywhere]">
                               {keywordNotation({ text: item.text, match })}
                             </label>
                             <MatchSelect id={`m-${item.id}`} value={match} term={item.text} onChange={(value) => setMatches((previous) => ({ ...previous, [item.id]: value }))} />
-                            <span className="text-[11.5px] text-muted-foreground">pe „{item.campaignName}”</span>
+                            <span className="text-[13px] text-muted-foreground">pe „{item.campaignName}”</span>
                           </div>
-                          <p className="mt-1 text-[12px] leading-snug text-foreground/75">{item.reasons.map((reason) => reasonLabel(reason, money)).join(" · ")}</p>
-                          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+                          <p className="mt-1 text-[13.5px] leading-snug text-foreground/75">{item.reasons.map((reason) => reasonLabel(reason, money)).join(" · ")}</p>
+                          <p className="mt-0.5 text-[12.5px] leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                             {item.terms.length === 1 ? "Termenul" : `${item.terms.length} termeni`}: {item.terms.slice(0, 4).map((term) => `„${term}”`).join(", ")}
                             {item.terms.length > 4 ? ` și încă ${item.terms.length - 4}` : ""} · {money(item.cost)} · {item.clicks} clicuri
                           </p>
@@ -335,7 +335,7 @@ export function CautariTermeni({
               action={<Pill tone="apricot">{items.length} negative alese</Pill>}
             />
             {terms.length === 0 ? (
-              <p className="px-4 py-6 text-[12.5px] text-muted-foreground">Niciun termen sincronizat în perioada asta ({period.from} – {period.to}).</p>
+              <p className="px-4 py-6 text-[14px] text-muted-foreground">Niciun termen sincronizat în perioada asta ({period.from} – {period.to}).</p>
             ) : (
               <div className="max-h-[40rem] overflow-auto">
                 <table className="w-full min-w-[980px] text-left">
@@ -359,10 +359,10 @@ export function CautariTermeni({
                       const isMarked = markedIds.has(id);
                       const excluded = term.status === "EXCLUDED" || term.status === "ADDED_EXCLUDED";
                       return (
-                        <tr key={`${term.campaignId}-${term.adGroupId}-${term.term}`} className={cn("border-b border-white/[0.04] align-top text-[12.5px] last:border-0", isMarked && "bg-rose/[0.04]")}>
+                        <tr key={`${term.campaignId}-${term.adGroupId}-${term.term}`} className={cn("border-b border-white/[0.04] align-top text-[14px] last:border-0", isMarked && "bg-rose/[0.04]")}>
                           <th scope="row" className="py-2.5 pl-4 pr-3 font-normal">
-                            <span className={cn("font-mono text-[11.5px] [overflow-wrap:break-word]", isMarked && "line-through opacity-60")}>{term.term}</span>
-                            <span className="block text-[10.5px] text-muted-foreground">
+                            <span className={cn("font-mono text-[13px] [overflow-wrap:break-word]", isMarked && "line-through opacity-60")}>{term.term}</span>
+                            <span className="block text-[12px] text-muted-foreground">
                               {term.campaignName} › {term.adGroupName}
                             </span>
                           </th>
@@ -374,7 +374,7 @@ export function CautariTermeni({
                           <td className="pu-num px-3 py-2.5 text-right">{money(term.cost)}</td>
                           <td className={cn("pu-num px-3 py-2.5 text-right", term.cost > 0 && term.conversions === 0 && "text-apricot")}>{term.conversions}</td>
                           <td className="px-3 py-2.5 text-muted-foreground">{STATUS_LABEL[term.status] ?? term.status}</td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-[11px] text-muted-foreground" title={`${term.firstSeen ?? "—"} → ${term.lastSeen ?? "—"}`}>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[12.5px] text-muted-foreground" title={`${term.firstSeen ?? "—"} → ${term.lastSeen ?? "—"}`}>
                             {term.firstSeen ? dayMonthRo(term.firstSeen) : "—"} → {term.lastSeen ? dayMonthRo(term.lastSeen) : "—"}
                           </td>
                           <td className="py-2.5 pl-3 pr-4 text-right">
@@ -398,7 +398,7 @@ export function CautariTermeni({
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-4 py-3">
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[12.5px] text-muted-foreground">
                 Negativele se aplică pe campanie sau într-o listă comună, după previzualizare. Nu afectează bugetul.
                 {terms.length > 500 ? ` Primii 500 de termeni după cost, din ${terms.length}.` : ""}
               </p>
@@ -408,10 +408,10 @@ export function CautariTermeni({
 
           {/* Regulile */}
           <Card as="section" aria-labelledby="reguli" className="p-4 sm:p-5">
-            <h2 id="reguli" className="text-[15px] font-semibold tracking-[-0.01em]">
+            <h2 id="reguli" className="text-[16px] font-semibold tracking-[-0.01em]">
               Regulile propunerilor, pentru contul ăsta
             </h2>
-            <p className="mt-1 max-w-2xl text-[12.5px] leading-relaxed text-muted-foreground">
+            <p className="mt-1 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
               Se țin în baza portalului, nu în cod.{rules.updatedByEmail ? ` Ultima modificare: ${rules.updatedByEmail}.` : ""}
               {!rules.exists ? " Contul n-are încă reguli: se folosesc valorile implicite." : ""}
             </p>
@@ -423,14 +423,14 @@ export function CautariTermeni({
                   onChange={(event) => setWords(event.target.value)}
                   placeholder={"angajari\ngratis\nsecond hand"}
                   spellCheck={false}
-                  className={cn(textareaClass, "h-36 font-mono text-[12px] leading-[1.6]")}
+                  className={cn(textareaClass, "h-36 font-mono text-[13.5px] leading-[1.6]")}
                 />
               </Field>
               <div className="space-y-4">
                 <Field label={`Pragul de cost fără conversii (${account.currency})`} hint="0 = fără propuneri după cost.">
                   <TextInput id="prag-cost" inputMode="decimal" value={threshold} onChange={(event) => setThreshold(event.target.value)} className="font-mono" />
                 </Field>
-                <label className="flex items-center gap-3 text-[12.5px] text-foreground/85">
+                <label className="flex items-center gap-3 text-[14px] text-foreground/85">
                   <input type="checkbox" checked={syncEnabled} onChange={(event) => setSyncEnabled(event.target.checked)} className={checkClass} />
                   Sincronizează termenii zilnic
                 </label>
@@ -438,7 +438,7 @@ export function CautariTermeni({
                   {saving ? "Se salvează…" : "Salvează regulile"}
                 </Btn>
                 {rulesMessage ? (
-                  <p role={rulesMessage.ok ? "status" : "alert"} className={cn("text-[12px]", rulesMessage.ok ? "text-mint" : "text-rose")}>
+                  <p role={rulesMessage.ok ? "status" : "alert"} className={cn("text-[13.5px]", rulesMessage.ok ? "text-mint" : "text-rose")}>
                     {rulesMessage.text}
                   </p>
                 ) : null}
@@ -451,10 +451,10 @@ export function CautariTermeni({
         <div className="min-w-0 space-y-3 xl:sticky xl:top-20">
           <Card as="section" aria-labelledby="alese" className="space-y-4 p-4 sm:p-4">
             <div>
-              <h2 id="alese" className="text-[13.5px] font-medium">
+              <h2 id="alese" className="text-[15px] font-medium">
                 Negative de trimis · {items.length}
               </h2>
-              <p className="text-[11px] text-muted-foreground">Propunerile bifate și termenii marcați. Nimic nu se adaugă fără bifă.</p>
+              <p className="text-[12.5px] text-muted-foreground">Propunerile bifate și termenii marcați. Nimic nu se adaugă fără bifă.</p>
             </div>
 
             {marked.length > 0 ? (
@@ -462,8 +462,8 @@ export function CautariTermeni({
                 {marked.map((item) => (
                   <li key={item.id} className="flex items-center gap-2 px-3 py-2">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-mono text-[11.5px]">{keywordNotation({ text: item.term, match: item.match })}</p>
-                      <p className="truncate text-[10.5px] text-muted-foreground">pe „{item.campaignName}”</p>
+                      <p className="truncate font-mono text-[13px]">{keywordNotation({ text: item.term, match: item.match })}</p>
+                      <p className="truncate text-[12px] text-muted-foreground">pe „{item.campaignName}”</p>
                     </div>
                     <MatchSelect
                       id={`mm-${item.id}`}
@@ -485,7 +485,7 @@ export function CautariTermeni({
             ) : null}
 
             <fieldset>
-              <legend className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">Unde merg negativele</legend>
+              <legend className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">Unde merg negativele</legend>
               <div className="mt-2 grid gap-2">
                 <RadioRow name="destinatie" value="campaign" checked={destination === "campaign"} onChange={() => setDestination("campaign")}>
                   Pe campania fiecărui termen
@@ -513,7 +513,7 @@ export function CautariTermeni({
                 {adding ? "Se adaugă…" : "Adaugă negativele"}
               </Btn>
             </div>
-            <p className="text-[11.5px] leading-snug text-muted-foreground" aria-live="polite">
+            <p className="text-[13px] leading-snug text-muted-foreground" aria-live="polite">
               {items.length === 0
                 ? "Bifează propunerile sau marchează termeni în tabel."
                 : preview && !fresh

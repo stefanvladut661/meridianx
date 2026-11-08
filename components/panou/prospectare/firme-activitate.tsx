@@ -190,7 +190,7 @@ export function descrieActivitate(a: Activitate): Descriere {
 
 export function ActivitateFirma({ activitate, acum, gol = "Nicio activitate pentru firma asta." }: { activitate: Activitate[]; acum: number; gol?: string }) {
   if (!activitate.length) {
-    return <p className="py-4 text-[12.5px] text-muted-foreground">{gol}</p>;
+    return <p className="py-4 text-[14px] text-muted-foreground">{gol}</p>;
   }
 
   return (
@@ -205,11 +205,11 @@ export function ActivitateFirma({ activitate, acum, gol = "Nicio activitate pent
               <Icon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="break-words text-[12.5px] leading-snug">{d.titlu}</p>
-              {d.detaliu ? <p className="mt-0.5 break-words text-[12px] leading-snug text-foreground/65">{d.detaliu}</p> : null}
-              {d.citat ? <p className="mt-1 break-words border-l-2 border-white/[0.12] pl-2 text-[12px] italic leading-snug text-foreground/75">„{d.citat}”</p> : null}
+              <p className="break-words text-[14px] leading-snug">{d.titlu}</p>
+              {d.detaliu ? <p className="mt-0.5 break-words text-[13.5px] leading-snug text-foreground/65">{d.detaliu}</p> : null}
+              {d.citat ? <p className="mt-1 break-words border-l-2 border-white/[0.12] pl-2 text-[13.5px] italic leading-snug text-foreground/75">„{d.citat}”</p> : null}
               {d.linkuri?.length ? (
-                <p className="mt-0.5 flex flex-wrap gap-x-3 text-[12px]">
+                <p className="mt-0.5 flex flex-wrap gap-x-3 text-[13.5px]">
                   {d.linkuri.map((l) => (
                     <a key={l.href} href={l.href} target="_blank" rel="noreferrer" className="truncate text-lav hover:underline">
                       {l.eticheta}
@@ -218,7 +218,7 @@ export function ActivitateFirma({ activitate, acum, gol = "Nicio activitate pent
                   ))}
                 </p>
               ) : null}
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12.5px] text-muted-foreground">
                 <span className="font-medium text-foreground/70">{a.autor}</span>
                 <span aria-hidden="true">·</span>
                 <time dateTime={a.la} title={dateTimeRo(a.la)}>

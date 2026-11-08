@@ -35,7 +35,7 @@ function WorkspaceSwitch({ workspaces, currentId }: { workspaces: WorkspaceSumma
   if (google.length < 2) return null;
   return (
     <form action={chooseWorkspace} aria-label="Spațiul de lucru Google" className="flex items-center gap-2">
-      <span className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">Spațiu</span>
+      <span className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">Spațiu</span>
       <div role="group" aria-label="Spațiul Google" className="inline-flex items-center gap-1 rounded-full border border-white/[0.07] bg-white/[0.03] p-1">
         {google.map((workspace) => {
           const active = workspace.id === currentId;
@@ -48,7 +48,7 @@ function WorkspaceSwitch({ workspaces, currentId }: { workspaces: WorkspaceSumma
               aria-pressed={active}
               title={workspace.tokenConfigured ? undefined : `Fără cheie: setează ${workspace.tokenEnv} în Vercel`}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors",
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-medium transition-colors",
                 active ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -80,7 +80,7 @@ export function CautariHeader({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Căutări</h1>
-          <p className="mt-2 max-w-2xl text-[12.5px] text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
             Doar Google. Planuri de căutare, termenii reali, auditul unui cont existent și acțiunile de conversie.
           </p>
         </div>
@@ -99,7 +99,7 @@ export function CautariHeader({
               href={href}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors",
+                "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-[14px] font-medium transition-colors",
                 isActive ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -129,7 +129,7 @@ export function ContPicker({
     <Card className="p-4 sm:p-4">
       <form method="get" action={action} className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="min-w-0 flex-1">
-          <label htmlFor="cont-ales" className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <label htmlFor="cont-ales" className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
             Contul Google Ads
           </label>
           <input
@@ -140,7 +140,7 @@ export function ContPicker({
             inputMode="numeric"
             autoComplete="off"
             placeholder="123-456-7890"
-            className={inputClass("mt-1.5 font-mono text-[12.5px]")}
+            className={inputClass("mt-1.5 font-mono text-[14px]")}
           />
           <datalist id="conturi">
             {accounts.map((item) => (
@@ -167,12 +167,12 @@ export function ContHeadline({ info, hint, aside, children }: { info: { id: stri
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold tracking-[-0.01em]">{info.name}</h2>
-          <p className="mt-1 text-[12.5px] text-muted-foreground">{hint}</p>
+          <h2 className="text-[16px] font-semibold tracking-[-0.01em]">{info.name}</h2>
+          <p className="mt-1 text-[14px] text-muted-foreground">{hint}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone="sky">
-            <span className="font-mono text-[11px]">Google Ads {formatCustomerId(info.id)}</span>
+            <span className="font-mono text-[12.5px]">Google Ads {formatCustomerId(info.id)}</span>
           </Pill>
           <Pill tone="neutral">{info.currency}</Pill>
           {aside}

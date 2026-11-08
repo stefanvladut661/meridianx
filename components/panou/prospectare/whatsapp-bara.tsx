@@ -96,8 +96,8 @@ export function BaraTrimitere({
       >
         <Icon className={cn("h-4 w-4 shrink-0", bara.tip === "anulare" && "motion-safe:animate-spin")} aria-hidden="true" />
         <div className="min-w-0 flex-1 basis-36">
-          <p className="text-[13.5px] font-medium leading-snug">{bara.titlu}</p>
-          {bara.detaliu ? <p className="text-[12px] leading-snug opacity-80">{bara.detaliu}</p> : null}
+          <p className="text-[15px] font-medium leading-snug">{bara.titlu}</p>
+          {bara.detaliu ? <p className="text-[13.5px] leading-snug opacity-80">{bara.detaliu}</p> : null}
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           {bara.tip === "blocat" && bara.link ? (

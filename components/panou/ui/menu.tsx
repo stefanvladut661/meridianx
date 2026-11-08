@@ -62,11 +62,11 @@ export function Menu({
 }
 
 export function MenuLabel({ children }: { children: ReactNode }) {
-  return <p className="px-2 py-1.5 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{children}</p>;
+  return <p className="px-2 py-1.5 text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">{children}</p>;
 }
 
 export function MenuSeparator() {
   return <div role="separator" className="my-1.5 h-px bg-white/[0.07]" />;
 }
 
-export const menuItemClass = "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-left text-[12.5px] transition-colors hover:bg-white/[0.06] focus-visible:bg-white/[0.06]";
+export const menuItemClass = "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-left text-[14px] transition-colors hover:bg-white/[0.06] focus-visible:bg-white/[0.06]";

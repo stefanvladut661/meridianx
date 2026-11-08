@@ -40,8 +40,8 @@ export function SentMaterial({
       <div className="mt-4 flex justify-center">
         <CreativePreview creative={{ ...creative, video }} platform={platform === "google" ? "meta" : platform} placement={placement} className="w-full" />
       </div>
-      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">Exact ce a plecat la creare. Plasamentele sunt cele din plan; textele sunt ale primei reclame.</p>
-      <dl className="mt-4 divide-y divide-white/[0.05] rounded-xl border border-white/[0.07] text-[12.5px]">
+      <p className="mt-3 text-[12.5px] leading-relaxed text-muted-foreground">Exact ce a plecat la creare. Plasamentele sunt cele din plan; textele sunt ale primei reclame.</p>
+      <dl className="mt-4 divide-y divide-white/[0.05] rounded-xl border border-white/[0.07] text-[14px]">
         {details.map(([label, value]) => (
           <div key={label} className="grid gap-1 px-3 py-2 sm:grid-cols-[6.5rem_minmax(0,1fr)]">
             <dt className="text-muted-foreground">{label}</dt>
@@ -52,7 +52,7 @@ export function SentMaterial({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {destination ? <CopyButton value={destination} label="Copiază linkul destinație" size="xs" /> : null}
         {videos.slice(0, 3).map((name) => (
-          <Pill key={name} tone="neutral" className="font-mono text-[10px]">
+          <Pill key={name} tone="neutral" className="font-mono text-[11.5px]">
             {name}
           </Pill>
         ))}

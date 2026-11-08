@@ -44,7 +44,7 @@ function Change({ current, previous, direction }: { current: number | null; prev
   return delta.percent === null ? <span className="text-muted-foreground">—</span> : <DeltaChip delta={delta} />;
 }
 
-const TH = "px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
+const TH = "px-3 py-2.5 text-[11.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
 
 /**
  * /admin/ads/statistici — perioada aleasă sus, pe zile și pe canale, comparată
@@ -61,7 +61,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <div>
           <h1 className={PAGE_TITLE}>Statistici</h1>
           <p className={PAGE_LEAD}>Cheltuiala și rezultatele, pe zile. Săgețile ← → schimbă ziua selectată.</p>
-          {options?.subtitle ? <p className="mt-1.5 text-[11.5px] text-muted-foreground">{options.subtitle}</p> : null}
+          {options?.subtitle ? <p className="mt-1.5 text-[13px] text-muted-foreground">{options.subtitle}</p> : null}
         </div>
         {options?.right}
       </div>
@@ -183,7 +183,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       {channels.length > 1 ? (
         <Card padded={false} className="overflow-hidden">
           <div className="border-b border-white/[0.06] px-4 py-3">
-            <h2 className="text-[13.5px] font-medium">Pe canale</h2>
+            <h2 className="text-[15px] font-medium">Pe canale</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[36rem] text-left">
@@ -200,15 +200,15 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               <tbody>
                 {channelRows.map(({ platform, totals: list, count }) =>
                   list.map((total, index) => (
-                    <tr key={`${platform}-${total.currency}`} className="border-b border-white/[0.04] text-[12.5px] last:border-0 hover:bg-white/[0.03]">
+                    <tr key={`${platform}-${total.currency}`} className="border-b border-white/[0.04] text-[14px] last:border-0 hover:bg-white/[0.03]">
                       <th scope="row" className="py-2.5 pl-4 pr-3 text-left font-normal">
                         {index === 0 ? (
                           <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                             <ChannelMark platform={platform} size="sm" />
-                            <span className="text-[11px] text-muted-foreground">{count === 1 ? "o campanie" : `${count} campanii`} cu cheltuială</span>
+                            <span className="text-[12.5px] text-muted-foreground">{count === 1 ? "o campanie" : `${count} campanii`} cu cheltuială</span>
                           </span>
                         ) : (
-                          <span className="pl-9 text-[11px] text-muted-foreground">în {total.currency}</span>
+                          <span className="pl-9 text-[12.5px] text-muted-foreground">în {total.currency}</span>
                         )}
                       </th>
                       <td className="pu-num px-3 py-2.5 text-right">{formatAmount(total.spend, total.currency)}</td>
@@ -232,7 +232,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             hint={`${PERIOD_SHORT[selection.period]}, ${mainCurrency}${current.length > 1 ? " · doar campaniile în această monedă" : ""}`}
             action={<Pill tone="neutral">{formatAmount(periodSpend, mainCurrency)}</Pill>}
           />
-          {!days.ok ? <p className="mt-2 text-[12.5px] text-rose">{days.message}</p> : null}
+          {!days.ok ? <p className="mt-2 text-[14px] text-rose">{days.message}</p> : null}
           <div className="mt-3">
             <DayChart title="Cheltuit pe zi" name="Cheltuială" days={series.map((day) => ({ date: day.date, value: day.spend }))} unit={{ type: "money", currency: mainCurrency }} />
           </div>
@@ -247,7 +247,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             {measuredAny ? (
               <DayChart title="Rezultate pe zi" name="Rezultate" color="#FFB27A" days={series.map((day) => ({ date: day.date, value: day.results }))} unit={{ type: "count" }} />
             ) : (
-              <p className="py-10 text-center text-[12.5px] text-muted-foreground">Rezultatele pe zi apar când măcar o campanie numără un rezultat.</p>
+              <p className="py-10 text-center text-[14px] text-muted-foreground">Rezultatele pe zi apar când măcar o campanie numără un rezultat.</p>
             )}
           </div>
         </Card>
@@ -257,8 +257,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
       <Card padded={false} className="overflow-hidden">
         <div className="border-b border-white/[0.06] px-4 py-3">
-          <h2 className="text-[13.5px] font-medium">Pe campanii</h2>
-          <p className="mt-0.5 text-[11.5px] text-muted-foreground">față de perioada dinainte</p>
+          <h2 className="text-[15px] font-medium">Pe campanii</h2>
+          <p className="mt-0.5 text-[13px] text-muted-foreground">față de perioada dinainte</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-left">
@@ -275,7 +275,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             </thead>
             <tbody>
               {ranked.map(({ entity, figures, before: old }) => (
-                <tr key={entity.id} className="border-b border-white/[0.04] text-[12.5px] last:border-0 hover:bg-white/[0.03]">
+                <tr key={entity.id} className="border-b border-white/[0.04] text-[14px] last:border-0 hover:bg-white/[0.03]">
                   <th scope="row" className="max-w-[20rem] py-2.5 pl-4 pr-3 text-left font-normal">
                     <span className="flex min-w-0 items-center gap-2.5">
                       <ChannelMark platform={entity.platform} size="sm" label={false} className="shrink-0" />
@@ -308,7 +308,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         </div>
       </Card>
 
-      <p className="px-1 text-[11px] text-muted-foreground/60">Cheltuiala se citește din platformă, nu se recalculează. Lei și euro nu se adună: fiecare monedă are rândul ei.</p>
+      <p className="px-1 text-[12.5px] text-muted-foreground/60">Cheltuiala se citește din platformă, nu se recalculează. Lei și euro nu se adună: fiecare monedă are rândul ei.</p>
     </>,
     { subtitle, right: <div className="flex flex-wrap items-end gap-3">{<StatsFilters currencies={currencies} current={mainCurrency} />}{sync}</div> }
   );

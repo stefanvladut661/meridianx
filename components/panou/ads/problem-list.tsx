@@ -54,19 +54,19 @@ export function ProblemList({
         error ? "border-rose/25 bg-rose/[0.07]" : "border-apricot/25 bg-apricot/[0.07]"
       )}
     >
-      <h3 className={cn("flex items-center gap-2 text-[12.5px] font-medium", error ? "text-[#FFC2CE]" : "text-[#FFD0AC]")}>
+      <h3 className={cn("flex items-center gap-2 text-[14px] font-medium", error ? "text-[#FFC2CE]" : "text-[#FFD0AC]")}>
         <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         {title}
       </h3>
       <ul className="mt-2.5 space-y-1.5">
         {problems.map((problem, index) =>
           !linked ? (
-            <li key={index} className={cn("flex items-start gap-2.5 px-1 py-0.5 text-[12px] leading-relaxed", error ? "text-[#FFC2CE]" : "text-[#FFD0AC]")}>
-              <span aria-hidden="true" className="mt-px font-mono text-[10.5px] opacity-60">
+            <li key={index} className={cn("flex items-start gap-2.5 px-1 py-0.5 text-[13.5px] leading-relaxed", error ? "text-[#FFC2CE]" : "text-[#FFD0AC]")}>
+              <span aria-hidden="true" className="mt-px font-mono text-[12px] opacity-60">
                 →
               </span>
               <span>
-                {problem.path ? <span className="mr-1.5 font-mono text-[11px] opacity-70">{problem.path}</span> : null}
+                {problem.path ? <span className="mr-1.5 font-mono text-[12.5px] opacity-70">{problem.path}</span> : null}
                 {problem.message}
               </span>
             </li>
@@ -76,11 +76,11 @@ export function ProblemList({
                 type="button"
                 onClick={() => jumpTo(problem.path)}
                 className={cn(
-                  "group flex w-full items-start gap-2.5 rounded-lg px-1 py-0.5 text-left text-[12px] leading-relaxed hover:bg-white/[0.05]",
+                  "group flex w-full items-start gap-2.5 rounded-lg px-1 py-0.5 text-left text-[13.5px] leading-relaxed hover:bg-white/[0.05]",
                   error ? "text-[#FFC2CE]" : "text-[#FFD0AC]"
                 )}
               >
-                <span aria-hidden="true" className="mt-px font-mono text-[10.5px] opacity-60 group-hover:opacity-100">
+                <span aria-hidden="true" className="mt-px font-mono text-[12px] opacity-60 group-hover:opacity-100">
                   →
                 </span>
                 <span>{problem.message}</span>

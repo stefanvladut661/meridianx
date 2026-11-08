@@ -14,8 +14,8 @@ function Sources({ sources, hasFilters }: { sources: LeadSourcesSummary; hasFilt
   return (
     <div className="border-t border-white/[0.06] px-4 py-3.5 sm:px-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Surse</h3>
-        <p className="text-[11.5px] text-muted-foreground/70">
+        <h3 className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">Surse</h3>
+        <p className="text-[13px] text-muted-foreground/70">
           {hasFilters ? `în filtrul curent: ${leadCount(sources.total)}` : `toate cele ${leadCount(sources.total)}`} · după utm_source și utm_campaign
           {sources.truncated ? " · primele 5.000" : ""}
         </p>
@@ -28,14 +28,14 @@ function Sources({ sources, hasFilters }: { sources: LeadSourcesSummary; hasFilt
           return (
             <li key={`${group.source ?? ""}|${group.campaign ?? ""}`} className="min-w-0">
               <div className="flex items-baseline justify-between gap-3">
-                <p className="truncate text-[12.5px] font-medium" title={group.source ?? "Fără UTM"}>
+                <p className="truncate text-[14px] font-medium" title={group.source ?? "Fără UTM"}>
                   {group.source ?? "Fără UTM"}
                 </p>
-                <p className="pu-num shrink-0 text-[12.5px]">
+                <p className="pu-num shrink-0 text-[14px]">
                   {num(group.count)} <span className="text-muted-foreground">· {percent(group.count)}</span>
                 </p>
               </div>
-              <p className="mt-0.5 truncate font-mono text-[10.5px] text-muted-foreground" title={group.campaign ?? undefined}>
+              <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground" title={group.campaign ?? undefined}>
                 {direct ? "intrare directă sau formular fără parametri" : (group.campaign ?? "fără campanie")}
               </p>
               <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.07]" aria-hidden="true">
@@ -47,7 +47,7 @@ function Sources({ sources, hasFilters }: { sources: LeadSourcesSummary; hasFilt
       </ul>
 
       {sources.othersGroups > 0 ? (
-        <p className="mt-3 text-[11.5px] text-muted-foreground">
+        <p className="mt-3 text-[13px] text-muted-foreground">
           + {sources.othersGroups} {sources.othersGroups === 1 ? "altă sursă" : "alte surse"} · {leadCount(sources.othersCount)} ({percent(sources.othersCount)})
         </p>
       ) : null}
@@ -73,11 +73,11 @@ export function LeadStatsCard({ stats, sources, hasFilters }: { stats: LeadStats
           <div className="flex items-baseline gap-2">
             <span className="pu-num text-[30px] font-medium leading-none">{num(total)}</span>
           </div>
-          <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Total</p>
-          <p className="mt-1.5 text-[12px] text-muted-foreground">toate lead-urile din bază</p>
+          <p className="mt-2 text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">Total</p>
+          <p className="mt-1.5 text-[13.5px] text-muted-foreground">toate lead-urile din bază</p>
         </div>
         <div className="p-4 sm:p-5">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Video / Software</p>
+          <p className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">Video / Software</p>
           <p className="pu-num mt-2 text-[22px] font-medium leading-none">
             {num(stats.video)} <span className="text-muted-foreground/40">/</span> {num(stats.software)}
           </p>
@@ -112,7 +112,7 @@ export function LeadStatsCard({ stats, sources, hasFilters }: { stats: LeadStats
         </div>
         <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
           {STATUS_ORDER.map((status) => (
-            <span key={status} className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+            <span key={status} className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS_COLORS[status] }} aria-hidden="true" />
               {statusLabel(status)} <span className="pu-num text-foreground/60">{stats.byStatus[status]}</span>
             </span>

@@ -35,7 +35,7 @@ function Row({
 }) {
   return (
     <div className="grid gap-x-6 gap-y-1 py-2.5 sm:grid-cols-[8.5rem_minmax(0,1fr)]">
-      <dt className="flex items-center gap-2 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">
+      <dt className="flex items-center gap-2 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
         <span
           aria-hidden="true"
           className={cn(
@@ -45,7 +45,7 @@ function Row({
         />
         {label}
       </dt>
-      <dd className="min-w-0 text-[12.5px] leading-snug text-foreground/90 [overflow-wrap:anywhere]">{children}</dd>
+      <dd className="min-w-0 text-[14px] leading-snug text-foreground/90 [overflow-wrap:anywhere]">{children}</dd>
     </div>
   );
 }
@@ -54,10 +54,10 @@ function NameGroup({ title, items }: { title: string; items: ResolvedName[] }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <h4 className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">{title}</h4>
+      <h4 className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{title}</h4>
       <ul className="mt-2 space-y-1.5">
         {items.map((item) => (
-          <li key={item.path} className="grid gap-x-3 text-[12.5px] leading-snug sm:grid-cols-[minmax(0,14rem)_auto_minmax(0,1fr)]">
+          <li key={item.path} className="grid gap-x-3 text-[14px] leading-snug sm:grid-cols-[minmax(0,14rem)_auto_minmax(0,1fr)]">
             <button
               type="button"
               onClick={() => jumpTo(item.path)}
@@ -72,7 +72,7 @@ function NameGroup({ title, items }: { title: string; items: ResolvedName[] }) {
               <span className="min-w-0 text-foreground">
                 <span className="sr-only">găsit: </span>
                 {item.found}
-                <span className="ml-2 font-mono text-[10.5px] text-muted-foreground">{item.given ? "id din plan" : item.key}</span>
+                <span className="ml-2 font-mono text-[12px] text-muted-foreground">{item.given ? "id din plan" : item.key}</span>
               </span>
             ) : (
               <span className={ERROR_TEXT}>negăsit</span>
@@ -104,10 +104,10 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
   return (
     <section ref={ref} tabIndex={-1} aria-labelledby="platform-check" className="border-t border-white/[0.06] pt-5 outline-none">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 id="platform-check" className="text-[13.5px] font-medium">
+        <h3 id="platform-check" className="text-[15px] font-medium">
           Ce a găsit {PLATFORM_LABEL[check.platform]}
         </h3>
-        <p className={cn("pu-num font-mono text-[10.5px]", stale ? WARNING_TEXT : "text-muted-foreground")}>
+        <p className={cn("pu-num font-mono text-[12px]", stale ? WARNING_TEXT : "text-muted-foreground")}>
           {stale ? `Verificat la ${time} · planul s-a schimbat de atunci` : `Verificat la ${time}`}
         </p>
       </div>
@@ -117,7 +117,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
           {check.account ? (
             <>
               {check.account.name}
-              <span className="ml-2 font-mono text-[11px] text-muted-foreground">
+              <span className="ml-2 font-mono text-[12.5px] text-muted-foreground">
                 {check.account.currency} · {check.account.state}
               </span>
             </>
@@ -145,7 +145,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
           {check.pixel ? (
             <>
               {check.pixel.name}
-              <span className="ml-2 inline-block font-mono text-[11px] text-muted-foreground">{check.pixel.id}</span>
+              <span className="ml-2 inline-block font-mono text-[12.5px] text-muted-foreground">{check.pixel.id}</span>
             </>
           ) : (
             <span className="text-muted-foreground">{google ? "obiectivul nu optimizează pe conversii" : "obiectivul nu folosește pixel"}</span>
@@ -154,7 +154,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
         {check.conversionDomain ? (
           <Row label="Domeniul" tone="ok">
             {check.conversionDomain}
-            <span className="ml-2 text-[12px] text-muted-foreground">conversiile se atribuie pe domeniul ăsta</span>
+            <span className="ml-2 text-[13.5px] text-muted-foreground">conversiile se atribuie pe domeniul ăsta</span>
           </Row>
         ) : null}
         {check.dsa ? (
@@ -163,7 +163,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
               Beneficiar: {check.dsa.beneficiary ?? <span className={ERROR_TEXT}>lipsește</span>}
             </span>
             <span className="block">Plătitor: {check.dsa.payor ?? <span className={ERROR_TEXT}>lipsește</span>}</span>
-            <span className="mt-0.5 block font-mono text-[11px] text-muted-foreground">
+            <span className="mt-0.5 block font-mono text-[12.5px] text-muted-foreground">
               din {check.dsa.source} · apar pe reclamă, în „De ce văd reclama asta”
             </span>
           </Row>
@@ -189,10 +189,10 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
                     ) : null}
                     <div className="min-w-0">
                       <p className="truncate">
-                        {videos.length > 1 ? <span className="mr-1.5 font-mono text-[10.5px] text-muted-foreground">{index + 1}</span> : null}
+                        {videos.length > 1 ? <span className="mr-1.5 font-mono text-[12px] text-muted-foreground">{index + 1}</span> : null}
                         {video.title ?? "Video fără titlu"}
                       </p>
-                      <p className={cn("font-mono text-[11px]", video.ready ? "text-muted-foreground" : WARNING_TEXT)}>
+                      <p className={cn("font-mono text-[12.5px]", video.ready ? "text-muted-foreground" : WARNING_TEXT)}>
                         {[
                           formatDuration(video.lengthSeconds),
                           video.ready ? "gata de folosit" : `${PLATFORM_LABEL[check.platform]} încă îl procesează`,
@@ -216,7 +216,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
 
       {names.length > 0 ? (
         <div className="mt-4 space-y-5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-4">
-          <p className="text-[12px] leading-snug text-muted-foreground">
+          <p className="text-[13.5px] leading-snug text-muted-foreground">
             {countOf(names.length, "nume")} din plan, cum le-a înțeles {PLATFORM_LABEL[check.platform]}. Asta intră în targetare, nu
             textul din plan.
           </p>

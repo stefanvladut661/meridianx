@@ -191,7 +191,7 @@ export function FirmeFiltre({
             autoComplete="off"
           />
         </form>
-        <p className="mr-auto text-[11.5px] text-muted-foreground sm:mr-0" aria-live="polite">
+        <p className="mr-auto text-[13px] text-muted-foreground sm:mr-0" aria-live="polite">
           {pending ? "Se actualizează…" : gasite === null ? "" : `${firmeCuNumar(gasite)} găsite`}
         </p>
         <Btn size="sm" variant="ghost" icon={RotateCcw} onClick={curata} disabled={!areFiltre}>

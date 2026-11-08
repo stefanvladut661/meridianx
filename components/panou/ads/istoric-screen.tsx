@@ -82,7 +82,7 @@ export function IstoricScreen({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Istoric</h1>
-          <p className="mt-2 max-w-2xl text-[12.5px] text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
             Jurnalul portalului: ce s-a făcut, pe ce campanie, când (ora României) și cu ce rezultat.
           </p>
         </div>
@@ -154,7 +154,7 @@ export function IstoricScreen({
                     <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12.5px] leading-snug">
+                    <p className="text-[14px] leading-snug">
                       {event.href ? (
                         <Link href={event.href} className="underline-offset-2 hover:text-lav hover:underline">
                           {event.title}
@@ -164,15 +164,15 @@ export function IstoricScreen({
                       )}
                     </p>
                     {event.detail ? (
-                      <p className={cn("mt-0.5 whitespace-pre-line text-[11.5px] leading-relaxed", event.tone === "error" ? "text-rose" : event.tone === "warn" ? "text-apricot" : "text-muted-foreground")}>{event.detail}</p>
+                      <p className={cn("mt-0.5 whitespace-pre-line text-[13px] leading-relaxed", event.tone === "error" ? "text-rose" : event.tone === "warn" ? "text-apricot" : "text-muted-foreground")}>{event.detail}</p>
                     ) : null}
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
                       {event.platform ? <CanalMark platform={event.platform} size="sm" label={false} /> : null}
                       <span>{[target, event.by].filter(Boolean).join(" · ") || "portal"}</span>
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="pu-num text-[11px] text-muted-foreground">{dateTimeRo(event.at)}</p>
+                    <p className="pu-num text-[12.5px] text-muted-foreground">{dateTimeRo(event.at)}</p>
                     <Pill tone={result.tone} className="mt-1">
                       {result.label}
                     </Pill>
@@ -184,7 +184,7 @@ export function IstoricScreen({
         )}
       </Card>
 
-      <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground/60">
+      <p className="flex items-center gap-1.5 px-1 text-[12.5px] text-muted-foreground/60">
         <PenLine className="h-3 w-3" aria-hidden="true" /> Orele sunt afișate în ora României (Europe/Bucharest). Jurnalul arată ultimele 300 de evenimente.
       </p>
     </div>

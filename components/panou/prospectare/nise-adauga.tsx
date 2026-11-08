@@ -10,7 +10,7 @@ import { useToast } from "@/components/panou/ui/toast";
 
 type Eroare = { camp: "nisa" | "zona"; text: string } | null;
 
-const ETICHETA = "text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground";
+const ETICHETA = "text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground";
 
 /**
  * „Adaugă nișă”: pune pe tablă o nișă liberă (nișă + zonă), pe care o ia primul
@@ -63,10 +63,10 @@ export function NiseAdauga({ nisaRef }: { nisaRef: RefObject<HTMLInputElement | 
 
   return (
     <form onSubmit={trimite} noValidate aria-labelledby="nisa-adauga-titlu" aria-busy={pending}>
-      <h2 id="nisa-adauga-titlu" className="text-[15px] font-semibold tracking-[-0.01em]">
+      <h2 id="nisa-adauga-titlu" className="text-[16px] font-semibold tracking-[-0.01em]">
         Adaugă nișă
       </h2>
-      <p id="nisa-adauga-ajutor" className="mt-1 text-[12.5px] text-muted-foreground">
+      <p id="nisa-adauga-ajutor" className="mt-1 text-[14px] text-muted-foreground">
         Apare liberă pe tablă. Primul robot care o cere o rezervă.
       </p>
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -109,7 +109,7 @@ export function NiseAdauga({ nisaRef }: { nisaRef: RefObject<HTMLInputElement | 
         </Btn>
       </div>
       {eroare ? (
-        <p id="nisa-adauga-eroare" role="alert" className="mt-2 text-[12px] text-rose">
+        <p id="nisa-adauga-eroare" role="alert" className="mt-2 text-[13.5px] text-rose">
           {eroare.text}
         </p>
       ) : null}

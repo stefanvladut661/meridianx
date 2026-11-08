@@ -35,17 +35,17 @@ export default async function PlanPage() {
           </div>
           <ul className="divide-y divide-white/[0.05]">
             {plans.data.map((plan) => (
-              <li key={plan.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 px-4 py-3 text-[12.5px]">
+              <li key={plan.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 px-4 py-3 text-[14px]">
                 <span>
-                  <span className="font-medium">{plan.nume ?? "Fără nume"}</span> · {plan.nrPostari} {plan.nrPostari === 1 ? "postare" : "postări"} · <span className="font-mono text-[11px] text-muted-foreground">{plan.folderCale}</span>
+                  <span className="font-medium">{plan.nume ?? "Fără nume"}</span> · {plan.nrPostari} {plan.nrPostari === 1 ? "postare" : "postări"} · <span className="font-mono text-[12.5px] text-muted-foreground">{plan.folderCale}</span>
                 </span>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[12.5px] text-muted-foreground">
                   aprobat {momentLabel(plan.aprobatLa, fus)} de {plan.aprobatDe}
                 </span>
               </li>
             ))}
           </ul>
-          <div className="border-t border-white/[0.06] px-4 py-2.5 text-[11px] text-muted-foreground">
+          <div className="border-t border-white/[0.06] px-4 py-2.5 text-[12.5px] text-muted-foreground">
             <Link href="/admin/postari" className="hover:text-foreground">
               Deschide coada →
             </Link>

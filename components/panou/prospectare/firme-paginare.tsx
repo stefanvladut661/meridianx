@@ -40,7 +40,7 @@ export function FirmePaginare({
       prefetch={false}
       aria-current={n === pagina ? "page" : undefined}
       aria-label={`Pagina ${n}`}
-      className={cn("pu-num flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-[11.5px]", n === pagina ? "bg-white/[0.11] text-foreground" : "text-muted-foreground hover:bg-white/[0.05]")}
+      className={cn("pu-num flex h-7 min-w-7 items-center justify-center rounded-lg px-2 text-[13px]", n === pagina ? "bg-white/[0.11] text-foreground" : "text-muted-foreground hover:bg-white/[0.05]")}
     >
       {n}
     </Link>
@@ -48,7 +48,7 @@ export function FirmePaginare({
 
   return (
     <div className={cn("flex flex-wrap items-center justify-between gap-3 px-4 py-2.5", pozitie === "sus" ? "border-b border-white/[0.08]" : "border-t border-white/[0.08]")}>
-      <p className="pu-num text-[11.5px] text-muted-foreground">
+      <p className="pu-num text-[13px] text-muted-foreground">
         {total === 0 ? "0" : `${num(prima)}–${num(ultima)}`} din {num(total)}
       </p>
       {pagini > 1 ? (
@@ -65,13 +65,13 @@ export function FirmePaginare({
           {numere[0] > 1 ? (
             <>
               {linkPagina(1)}
-              {numere[0] > 2 ? <span className="px-0.5 text-[11px] text-muted-foreground" aria-hidden="true">…</span> : null}
+              {numere[0] > 2 ? <span className="px-0.5 text-[12.5px] text-muted-foreground" aria-hidden="true">…</span> : null}
             </>
           ) : null}
           {numere.map(linkPagina)}
           {numere[numere.length - 1] < pagini ? (
             <>
-              {numere[numere.length - 1] < pagini - 1 ? <span className="px-0.5 text-[11px] text-muted-foreground" aria-hidden="true">…</span> : null}
+              {numere[numere.length - 1] < pagini - 1 ? <span className="px-0.5 text-[12.5px] text-muted-foreground" aria-hidden="true">…</span> : null}
               {linkPagina(pagini)}
             </>
           ) : null}

@@ -1,33 +1,18 @@
 import type { ReactNode } from "react";
-import { getShellState, type ShellState } from "@/lib/panou/alerts";
+import { getShellState } from "@/lib/panou/alerts";
 import { PanouFrame } from "./frame";
 
 /**
- * Cadrul comun al panoului (lead-uri, reclame, postări, firmă), din redesign:
- * meniul în stânga, bara de sus, bara de module pe telefon, căutarea Ctrl+K.
- * Fiecare layout își face singur garda de sesiune și își dă `selectors` (ce
- * alege omul în modulul lui: client, perioadă, platformă) și, la nevoie,
- * `banner` (coada oprită). Alertele și numerele din meniu se citesc aici, din
- * bază; un layout care le are deja le poate da prin `state`.
+ * Cadrul comun al panoului (lead-uri, prospectare, reclame, postări, firmă): îl
+ * pune o singură dată `app/(admin)/admin/layout.tsx`, deci rămâne pe loc când
+ * treci dintr-un modul în altul — doar conținutul se schimbă.
+ *
+ * Alertele și numerele din meniu se citesc din bază, dar nu se așteaptă: pleacă
+ * spre browser ca promisiune și apar când sosesc, fără să țină pagina.
  */
-export async function PanouShell({
-  email,
-  signOut,
-  selectors,
-  banner,
-  state,
-  children,
-}: {
-  email: string | null;
-  signOut?: () => Promise<void>;
-  selectors?: ReactNode;
-  banner?: ReactNode;
-  state?: ShellState;
-  children: ReactNode;
-}) {
-  const { alerts, badges } = state ?? (await getShellState());
+export function PanouShell({ email, signOut, children }: { email: string | null; signOut?: () => Promise<void>; children: ReactNode }) {
   return (
-    <PanouFrame email={email} alerts={alerts} badges={badges} selectors={selectors} banner={banner} signOut={signOut}>
+    <PanouFrame email={email} state={getShellState()} signOut={signOut}>
       {children}
     </PanouFrame>
   );

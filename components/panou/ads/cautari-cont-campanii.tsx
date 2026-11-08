@@ -167,7 +167,7 @@ export function CautariContCampanii({
             options={(Object.keys(SORT_LABEL) as Sort[]).map((item) => ({ value: item, label: SORT_LABEL[item] }))}
           />
         </div>
-        <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground" aria-live="polite">
+        <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground" aria-live="polite">
           <strong className="font-semibold text-foreground">{counted(shown.length, "campanie", "campanii")}</strong>
           {" — "}
           {totals.active} active, {totals.paused} pe pauză, {totals.removed} șterse. În 30 de zile: {money(totals.cost30)}, {number.format(totals.conversions30)} conversii. De la început:{" "}
@@ -238,7 +238,7 @@ export function CautariContCampanii({
               {shown.map((item) => {
                 const active = item.status === "ENABLED";
                 return (
-                  <tr key={item.id} className={cn("border-b border-white/[0.04] text-[12.5px] last:border-0", item.status === "REMOVED" && "text-foreground/45", selected.has(item.id) && "bg-lav/[0.05]")}>
+                  <tr key={item.id} className={cn("border-b border-white/[0.04] text-[14px] last:border-0", item.status === "REMOVED" && "text-foreground/45", selected.has(item.id) && "bg-lav/[0.05]")}>
                     <td className="py-2.5 pl-4 pr-1">
                       {active ? (
                         <input type="checkbox" aria-label={`Bifează „${item.name}” pentru pauză`} checked={selected.has(item.id)} onChange={() => toggle(item.id)} className={checkClass} />
@@ -251,7 +251,7 @@ export function CautariContCampanii({
                           <span className="block truncate" title={item.name}>
                             {item.name}
                           </span>
-                          <span className="block truncate font-mono text-[10.5px] text-muted-foreground">
+                          <span className="block truncate font-mono text-[12px] text-muted-foreground">
                             {item.id}
                             {item.bidding ? ` · ${label(BIDDING_STRATEGY_LABEL, item.bidding)}` : ""}
                             {item.portalRecordId ? (
@@ -278,7 +278,7 @@ export function CautariContCampanii({
                     <td className={cn("pu-num px-3 py-2.5 text-right", active && item.cost30 > 0 && item.conversions30 === 0 && "text-apricot")}>{number.format(item.conversions30)}</td>
                     <td className="pu-num px-3 py-2.5 text-right">{money(item.costAll)}</td>
                     <td className="pu-num px-3 py-2.5 text-right">{number.format(item.conversionsAll)}</td>
-                    <td className="whitespace-nowrap px-3 py-2.5 font-mono text-[11px] text-muted-foreground">{item.startDate ?? "—"}</td>
+                    <td className="whitespace-nowrap px-3 py-2.5 font-mono text-[12.5px] text-muted-foreground">{item.startDate ?? "—"}</td>
                     <td className="sticky right-0 bg-card py-2.5 pl-3 pr-4 shadow-[-12px_0_12px_-12px_rgba(0,0,0,0.7)]">
                       <div className="flex items-center justify-end gap-1.5">
                         <Btn
@@ -313,7 +313,7 @@ export function CautariContCampanii({
             </tbody>
           </table>
         </div>
-        <p className="border-t border-white/[0.06] px-4 py-2.5 text-[11px] text-muted-foreground">
+        <p className="border-t border-white/[0.06] px-4 py-2.5 text-[12.5px] text-muted-foreground">
           Cifrele vin acum din Google Ads, în moneda contului; „de la început” = tot istoricul păstrat de Google. Alte modificări nu sunt permise din portal: bugetul, licitarea și pornirea se schimbă doar în Google Ads.
         </p>
       </Card>
@@ -322,7 +322,7 @@ export function CautariContCampanii({
         <Btn variant="primary" size="sm" icon={PauseCircle} onClick={() => setConfirming(true)} disabled={selected.size === 0} className="shrink-0">
           {`Pune pe pauză${selected.size > 0 ? ` (${selected.size})` : ""}`}
         </Btn>
-        <p className="text-[12px] leading-snug text-muted-foreground">
+        <p className="text-[13.5px] leading-snug text-muted-foreground">
           {selected.size === 0
             ? "Bifează campaniile active pe care vrei să le oprești. Pauza oprește cheltuiala; repornirea se face din Google Ads."
             : `${counted(selected.size, "campanie aleasă", "campanii alese")} · ${money(chosenCost)} cheltuiți în ultimele 30 de zile.`}
@@ -340,13 +340,13 @@ export function CautariContCampanii({
       >
         <ul className="mt-4 max-h-[40vh] divide-y divide-white/[0.05] overflow-auto rounded-xl border border-white/[0.07]">
           {chosen.map((item) => (
-            <li key={item.id} className="flex items-baseline justify-between gap-4 px-3 py-2 text-[12.5px]">
+            <li key={item.id} className="flex items-baseline justify-between gap-4 px-3 py-2 text-[14px]">
               <span className="min-w-0 truncate">{item.name}</span>
               <span className="pu-num shrink-0 text-muted-foreground">{money(item.cost30)} · 30 z</span>
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[12.5px] text-foreground/80">În total, {money(chosenCost)} cheltuiți în ultimele 30 de zile.</p>
+        <p className="mt-3 text-[14px] text-foreground/80">În total, {money(chosenCost)} cheltuiți în ultimele 30 de zile.</p>
       </ConfirmDialog>
     </section>
   );

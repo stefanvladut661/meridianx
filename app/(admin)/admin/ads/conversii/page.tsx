@@ -50,8 +50,8 @@ function existingFor(setup: ConversionSetup): Record<LeadKind, string | null> {
 function Tile({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0 rounded-xl border border-white/[0.07] bg-white/[0.02] px-3.5 py-3">
-      <p className="text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-      <div className="mt-1.5 text-[12.5px] leading-snug">{children}</div>
+      <p className="text-[12px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <div className="mt-1.5 text-[14px] leading-snug">{children}</div>
     </div>
   );
 }
@@ -145,7 +145,7 @@ export default async function ConversionsPage({ searchParams }: { searchParams: 
             <Tile label="Id-ul de urmărire">
               {setup.trackingId ? (
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-[12.5px]">AW-{setup.trackingId}</span>
+                  <span className="font-mono text-[14px]">AW-{setup.trackingId}</span>
                   <CopyButton value={`AW-${setup.trackingId}`} label="Copiază" size="xs" variant="ghost" />
                 </span>
               ) : (
@@ -162,7 +162,7 @@ export default async function ConversionsPage({ searchParams }: { searchParams: 
                 <Pill tone={callReportingOn ? "mint" : "apricot"} dot>
                   {setup.callReporting.enabled ? (setup.callReporting.conversions ? "pornită" : "pornită, fără conversii") : "oprită"}
                 </Pill>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-[12.5px] text-muted-foreground">
                   {setup.callReporting.enabled
                     ? setup.callReporting.conversions
                       ? "cu conversii din apeluri"

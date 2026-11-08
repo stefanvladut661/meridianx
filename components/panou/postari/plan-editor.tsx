@@ -156,7 +156,7 @@ export function PlanEditor({
         {approving ? "Se aprobă…" : "Aprobă planul"}
       </Btn>
       {!canApprove && !approving && result ? (
-        <p className="text-[11.5px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           {stale
             ? "Verifică din nou după schimbare."
             : verified && verified.pending > 0
@@ -166,7 +166,7 @@ export function PlanEditor({
                 : null}
         </p>
       ) : null}
-      {canApprove ? <p className="text-[11.5px] text-muted-foreground">După aprobare, postările intră în coadă și pleacă singure la ora lor.</p> : null}
+      {canApprove ? <p className="text-[13px] text-muted-foreground">După aprobare, postările intră în coadă și pleacă singure la ora lor.</p> : null}
     </div>
   );
 
@@ -258,10 +258,10 @@ export function PlanEditor({
             rows={16}
             aria-describedby="plan-sintaxa"
             aria-invalid={syntax && !syntax.ok ? true : undefined}
-            className={inputClass(cn("h-auto min-h-[18rem] resize-y py-2.5 font-mono text-[12px] leading-[1.55]", syntax && !syntax.ok && "border-rose/50"))}
+            className={inputClass(cn("h-auto min-h-[18rem] resize-y py-2.5 font-mono text-[13.5px] leading-[1.55]", syntax && !syntax.ok && "border-rose/50"))}
             placeholder={'{\n  "folder": "meridian reclame/lot-1",\n  "postari": [ … ]\n}'}
           />
-          <p id="plan-sintaxa" className={cn("text-[11.5px] leading-relaxed", syntax && !syntax.ok ? "text-[#FFC2CE]" : syntax?.ok ? "text-[#B4F2CD]" : "text-muted-foreground")}>
+          <p id="plan-sintaxa" className={cn("text-[13px] leading-relaxed", syntax && !syntax.ok ? "text-[#FFC2CE]" : syntax?.ok ? "text-[#B4F2CD]" : "text-muted-foreground")}>
             {!syntax ? "Formatul e în README, la „Planul JSON”. Sau pornește de la „Pune un exemplu”." : syntax.ok ? "JSON valid. Verificarea citește folderul de pe Drive, clipurile și coada." : syntax.message}
             {syntax && !syntax.ok && syntax.line !== null && syntax.column !== null ? (
               <>
@@ -276,7 +276,7 @@ export function PlanEditor({
             <Btn variant="primary" size="sm" icon={checking ? Loader2 : ClipboardCheck} disabled={!syntax?.ok || checking !== null || approving} onClick={() => void runVerify()}>
               {checking ? "Se verifică…" : "Verifică planul"}
             </Btn>
-            <p role="status" aria-live="polite" className="text-[11.5px] text-muted-foreground">
+            <p role="status" aria-live="polite" className="text-[13px] text-muted-foreground">
               {checking && checking.total > 0
                 ? `Se citesc clipurile de pe Drive: ${checking.total - checking.pending} din ${checking.total}.`
                 : checking
@@ -300,10 +300,10 @@ export function PlanEditor({
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-mint" aria-hidden="true" />
                 <div className="min-w-0">
-                  <h2 ref={resultHeading} tabIndex={-1} className="text-[15px] font-semibold outline-none">
+                  <h2 ref={resultHeading} tabIndex={-1} className="text-[16px] font-semibold outline-none">
                     Plan aprobat
                   </h2>
-                  <p className="mt-1.5 text-[12.5px] leading-relaxed text-foreground/85" role="status">
+                  <p className="mt-1.5 text-[14px] leading-relaxed text-foreground/85" role="status">
                     {approved.posts} {approved.posts === 1 ? "postare a intrat" : "postări au intrat"} în coadă: {approved.instagram} pe Instagram, {approved.tiktok} pe TikTok
                     {approved.first ? `, de ${momentLabel(approved.first)}${approved.last && approved.last !== approved.first ? ` până ${momentLabel(approved.last)}` : ""}` : ""}. De aici pleacă singure.
                   </p>
@@ -327,7 +327,7 @@ export function PlanEditor({
 
           {result ? (
             <section aria-labelledby="plan-rezultat" className={cn("space-y-3", stale && "opacity-60")}>
-              <h2 ref={resultHeading} id="plan-rezultat" tabIndex={-1} className="text-[15px] font-semibold outline-none">
+              <h2 ref={resultHeading} id="plan-rezultat" tabIndex={-1} className="text-[16px] font-semibold outline-none">
                 {!result.value.ok ? "Planul nu se poate citi" : result.value.ready ? "Planul e gata de aprobat" : result.value.pending > 0 ? "Verificarea nu e gata" : "Planul are probleme"}
               </h2>
               {!result.value.ok ? (
@@ -337,8 +337,8 @@ export function PlanEditor({
                     <Card className="p-0">
                       <ul className="divide-y divide-white/[0.05]">
                         {result.value.schema.map((issue, index) => (
-                          <li key={`${issue.path}-${index}`} className="flex flex-wrap items-baseline gap-2 px-4 py-2.5 text-[12px]">
-                            <span className="rounded-md border border-white/[0.1] bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10.5px]">{issue.path}</span>
+                          <li key={`${issue.path}-${index}`} className="flex flex-wrap items-baseline gap-2 px-4 py-2.5 text-[13.5px]">
+                            <span className="rounded-md border border-white/[0.1] bg-white/[0.04] px-1.5 py-0.5 font-mono text-[12px]">{issue.path}</span>
                             <span className="text-[#FFC2CE]">{issue.message}</span>
                           </li>
                         ))}
@@ -349,7 +349,7 @@ export function PlanEditor({
               ) : (
                 <PlanPreview plan={result.value} action={approveBar} />
               )}
-              {stale ? <p className="text-[11.5px] text-muted-foreground">Previzualizarea e a textului de dinainte.</p> : null}
+              {stale ? <p className="text-[13px] text-muted-foreground">Previzualizarea e a textului de dinainte.</p> : null}
             </section>
           ) : null}
         </div>

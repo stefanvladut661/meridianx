@@ -125,7 +125,7 @@ export function CautariContNegative({
               </RadioRow>
             ))}
           </div>
-          {lists.length === 0 ? <p className="mt-2 text-[11.5px] text-muted-foreground">Contul n-are liste comune de negative active.</p> : null}
+          {lists.length === 0 ? <p className="mt-2 text-[13px] text-muted-foreground">Contul n-are liste comune de negative active.</p> : null}
         </fieldset>
 
         {mode !== "campaigns" && lists.length > 0 ? (
@@ -153,9 +153,9 @@ export function CautariContNegative({
               spellCheck={false}
               aria-describedby="negative-notatie"
               placeholder={'angajari\n"locuri de munca"\n[pret gratuit]'}
-              className={cn(textareaClass, "mt-1.5 h-44 font-mono text-[12px] leading-[1.6]")}
+              className={cn(textareaClass, "mt-1.5 h-44 font-mono text-[13.5px] leading-[1.6]")}
             />
-            <p id="negative-notatie" className="mt-1.5 text-[11.5px] leading-snug text-muted-foreground">
+            <p id="negative-notatie" className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
               Fără semne = potrivire amplă; între ghilimele = frază; între paranteze drepte = exactă. Rândurile goale se sar.
             </p>
           </div>
@@ -164,17 +164,17 @@ export function CautariContNegative({
         <fieldset>
           <legend className={legendClass}>{mode === "campaigns" ? "Pe campaniile" : mode === "list" ? "Și leagă lista de campaniile (opțional)" : "De campaniile"}</legend>
           {campaigns.length === 0 ? (
-            <p className="mt-2 text-[12.5px] text-muted-foreground">Contul n-are campanii de căutare.</p>
+            <p className="mt-2 text-[14px] text-muted-foreground">Contul n-are campanii de căutare.</p>
           ) : (
             <ul className="mt-2 max-h-72 divide-y divide-white/[0.05] overflow-auto rounded-xl border border-white/[0.07]">
               {campaigns.map((item) => {
                 const linked = list?.campaigns.includes(item.id) && mode !== "campaigns";
                 return (
                   <li key={item.id}>
-                    <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-[12.5px] hover:bg-white/[0.04]">
+                    <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 text-[14px] hover:bg-white/[0.04]">
                       <input type="checkbox" checked={chosen.has(item.id)} onChange={() => toggle(item.id)} className={checkClass} />
                       <span className="min-w-0 flex-1 truncate text-foreground/90">{item.name}</span>
-                      <span className="shrink-0 font-mono text-[10.5px] text-muted-foreground">
+                      <span className="shrink-0 font-mono text-[12px] text-muted-foreground">
                         {linked ? "legată · " : ""}
                         {label(CAMPAIGN_STATUS_LABEL, item.status)} · {accountMoney(item.cost30, account.currency)}
                       </span>
@@ -194,7 +194,7 @@ export function CautariContNegative({
             {adding ? "Se adaugă…" : verb}
           </Btn>
         </div>
-        <p className="text-[11.5px] leading-snug text-muted-foreground" aria-live="polite">
+        <p className="text-[13px] leading-snug text-muted-foreground" aria-live="polite">
           {previewing
             ? "Portalul citește cuvintele cheie ale campaniilor, caută conflictele și trimite totul la Google fără să schimbe nimic…"
             : preview && !fresh

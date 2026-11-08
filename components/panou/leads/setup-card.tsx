@@ -52,11 +52,11 @@ export function LeadsSetupCard() {
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-apricot/25 bg-apricot/10">
           <WifiOff className="h-5 w-5 text-apricot" aria-hidden="true" />
         </div>
-        <h1 className="text-[18px] font-semibold">Baza de date nu e configurată</h1>
-        <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-muted-foreground">
+        <h1 className="text-[19px] font-semibold">Baza de date nu e configurată</h1>
+        <p className="mt-2 max-w-sm text-[14.5px] leading-relaxed text-muted-foreground">
           Panoul poate citi lead-urile doar după ce conexiunea la bază e completată. Lipsesc adresa bazei și cheile de acces. Cinci pași, o singură dată.
         </p>
-        <div className="mt-4 w-full max-w-sm rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-left font-mono text-[11.5px] text-muted-foreground">
+        <div className="mt-4 w-full max-w-sm rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-left font-mono text-[13px] text-muted-foreground">
           {envStatus().map((variable) => (
             <p key={variable.name} className="break-all">
               {variable.name} — <span className={variable.set ? "text-mint" : "text-apricot"}>{variable.set ? "setat" : "lipsește"}</span>
@@ -68,19 +68,19 @@ export function LeadsSetupCard() {
       <ol className="mt-1 divide-y divide-white/[0.06] overflow-hidden rounded-xl border border-white/[0.07]">
         {STEPS.map((step, index) => (
           <li key={step.title} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 px-4 py-4">
-            <span className="pu-num pt-0.5 text-[11px] tracking-[0.18em] text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
+            <span className="pu-num pt-0.5 text-[12.5px] tracking-[0.18em] text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
             <div className="min-w-0">
-              <h2 className="text-[13.5px] font-semibold">{step.title}</h2>
-              <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{step.body}</p>
+              <h2 className="text-[15px] font-semibold">{step.title}</h2>
+              <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">{step.body}</p>
               {step.code ? (
-                <p className="mt-2 overflow-x-auto whitespace-pre-line rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-mono text-[11px] leading-relaxed text-foreground/85">{step.code}</p>
+                <p className="mt-2 overflow-x-auto whitespace-pre-line rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 font-mono text-[12.5px] leading-relaxed text-foreground/85">{step.code}</p>
               ) : null}
             </div>
           </li>
         ))}
       </ol>
 
-      <p className="mt-4 text-[12px] leading-relaxed text-muted-foreground">
+      <p className="mt-4 text-[13.5px] leading-relaxed text-muted-foreground">
         După ce ai completat fișierul, repornește serverul: variabilele de mediu se citesc la pornire. La final, <code className="font-mono text-foreground">/api/health</code> îți confirmă că toate sunt legate.
       </p>
     </Card>

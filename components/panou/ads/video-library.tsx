@@ -68,13 +68,13 @@ export function VideoLibrary({
         <Btn variant="outline" size="sm" icon={Film} onClick={open} disabled={!adAccount || pending} aria-describedby={`${legendId}-hint`}>
           {pending ? "Se încarcă biblioteca…" : "Alege din biblioteca contului"}
         </Btn>
-        <p id={`${legendId}-hint`} className="mt-2 text-[11.5px] leading-snug text-muted-foreground">
+        <p id={`${legendId}-hint`} className="mt-2 text-[13px] leading-snug text-muted-foreground">
           {adAccount
             ? `Video-urile din ${adAccount}, cele mai noi primele.`
             : "Scrie întâi contul de reclame — biblioteca e a contului."}
         </p>
         {state.status === "failed" ? (
-          <p role="alert" className={cn("mt-2 text-[12.5px] leading-snug", ERROR_TEXT)}>
+          <p role="alert" className={cn("mt-2 text-[14px] leading-snug", ERROR_TEXT)}>
             {state.message}
           </p>
         ) : null}
@@ -88,7 +88,7 @@ export function VideoLibrary({
         <p id={legendId} className={LABEL}>
           Biblioteca {state.account} · {state.videos.length === 1 ? "un video" : `${state.videos.length} video-uri`}
         </p>
-        <div className="flex gap-3 text-[12px]">
+        <div className="flex gap-3 text-[13.5px]">
           <button type="button" onClick={open} disabled={pending} className="text-muted-foreground underline underline-offset-4 hover:text-foreground">
             {pending ? "Se reîncarcă…" : "Reîncarcă"}
           </button>
@@ -103,7 +103,7 @@ export function VideoLibrary({
       </div>
 
       {state.videos.length === 0 ? (
-        <p className="mt-3 rounded-xl border border-dashed border-white/[0.12] px-4 py-5 text-[12.5px] leading-relaxed text-foreground/75">
+        <p className="mt-3 rounded-xl border border-dashed border-white/[0.12] px-4 py-5 text-[14px] leading-relaxed text-foreground/75">
           Contul n-are încă niciun video. Urcă unul din portal („Fișier nou”) sau din{" "}
           {platform === "tiktok"
             ? "biblioteca de creative din TikTok Ads Manager"
@@ -151,8 +151,8 @@ export function VideoLibrary({
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px]">{video.title ?? "Video fără titlu"}</span>
-                  <span className={cn("block font-mono text-[10.5px]", video.ready ? "text-muted-foreground" : WARNING_TEXT)}>
+                  <span className="block truncate text-[14px]">{video.title ?? "Video fără titlu"}</span>
+                  <span className={cn("block font-mono text-[12px]", video.ready ? "text-muted-foreground" : WARNING_TEXT)}>
                     {[
                       duration,
                       video.createdAt ? date.format(new Date(video.createdAt)) : null,
@@ -169,7 +169,7 @@ export function VideoLibrary({
         </div>
       )}
       {state.truncated ? (
-        <p className="mt-2 text-[11.5px] text-muted-foreground">
+        <p className="mt-2 text-[13px] text-muted-foreground">
           Se văd cele mai noi {state.videos.length}. Pentru unul mai vechi, scrie id-ul direct.
         </p>
       ) : null}

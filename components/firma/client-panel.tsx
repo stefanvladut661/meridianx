@@ -21,7 +21,7 @@ export interface ClientActions {
   searchOblio: (query: string) => Promise<{ ok: true; clients: OblioClient[] } | { ok: false; message: string }>;
 }
 
-const sectionTitle = "text-[13px] font-semibold uppercase tracking-[0.08em] text-dim";
+const sectionTitle = "text-[14.5px] font-semibold uppercase tracking-[0.08em] text-dim";
 
 /**
  * Panoul unui client (sau al unui client nou): datele firmei (cu căutarea în
@@ -55,14 +55,14 @@ export function ClientPanel({
   if (loading) {
     return (
       <SidePanel title="Clientul" onClose={onClose}>
-        <p className="text-[14px] text-dim">Se încarcă clientul…</p>
+        <p className="text-[15px] text-dim">Se încarcă clientul…</p>
       </SidePanel>
     );
   }
 
   const footer = client ? (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      {archiveError ? <p className="text-[13px] text-[var(--ap-error)]">{archiveError}</p> : <span className="text-[12.5px] text-dim">Arhiva păstrează facturile și istoricul.</span>}
+      {archiveError ? <p className="text-[14.5px] text-[var(--ap-error)]">{archiveError}</p> : <span className="text-[14px] text-dim">Arhiva păstrează facturile și istoricul.</span>}
       <button
         type="button"
         disabled={archiving}
@@ -74,7 +74,7 @@ export function ClientPanel({
             else onChanged();
           })
         }
-        className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13px]"
+        className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[14.5px]"
       >
         {client.arhivatLa ? "Scoate din arhivă" : "Arhivează clientul"}
       </button>
@@ -208,15 +208,15 @@ function ClientForm({ client, oblio, actions, onSaved }: { client: Client | null
         <textarea id="client-note" rows={2} value={values.note} onChange={(event) => set("note", event.currentTarget.value)} className={textareaClass} maxLength={2000} />
       </Field>
       {error && !error.field ? (
-        <p role="alert" className="text-[13.5px] text-[var(--ap-error)]">
+        <p role="alert" className="text-[15px] text-[var(--ap-error)]">
           {error.message}
         </p>
       ) : null}
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
           {pending ? "Se salvează…" : client ? "Salvează datele" : "Adaugă clientul"}
         </button>
-        <p role="status" className="text-[13px] text-[var(--ap-ok)]">
+        <p role="status" className="text-[14.5px] text-[var(--ap-ok)]">
           {saved ? "Salvat." : fromOblio ? <span className="text-dim">Date luate din Oblio — verifică-le și salvează.</span> : null}
         </p>
       </div>
@@ -241,7 +241,7 @@ function OblioLookup({
   const [pending, start] = useTransition();
 
   if (!oblio) {
-    return <p className="rounded-lg bg-[var(--ap-side)] px-3 py-2 text-[13px] text-dim">Oblio nu e legat încă: completează datele de mână. Pașii pentru legare sunt în README, la „Oblio”.</p>;
+    return <p className="rounded-lg bg-[var(--ap-side)] px-3 py-2 text-[14.5px] text-dim">Oblio nu e legat încă: completează datele de mână. Pașii pentru legare sunt în README, la „Oblio”.</p>;
   }
 
   const run = () =>
@@ -259,7 +259,7 @@ function OblioLookup({
 
   return (
     <div className="rounded-lg border border-hair bg-[var(--ap-side)] p-3">
-      <label htmlFor="oblio-cauta" className="text-[13px] font-medium text-bone">
+      <label htmlFor="oblio-cauta" className="text-[14.5px] font-medium text-bone">
         Caută în Oblio (CUI sau nume)
       </label>
       <div className="mt-1 flex gap-2">
@@ -275,11 +275,11 @@ function OblioLookup({
           }}
           className={inputClass}
         />
-        <button type="button" disabled={pending} onClick={run} className="btn btn-ghost !min-h-10 shrink-0 !px-3.5 !py-2 !text-[13.5px]">
+        <button type="button" disabled={pending} onClick={run} className="btn btn-ghost !min-h-10 shrink-0 !px-3.5 !py-2 !text-[15px]">
           {pending ? "Caut…" : "Caută"}
         </button>
       </div>
-      {message ? <p className="mt-2 text-[13px] text-dim">{message}</p> : null}
+      {message ? <p className="mt-2 text-[14.5px] text-dim">{message}</p> : null}
       {results && results.length > 0 ? (
         <ul className="mt-2 grid gap-1">
           {results.map((found, index) => (
@@ -291,10 +291,10 @@ function OblioLookup({
                   setResults(null);
                   setMessage(null);
                 }}
-                className="w-full rounded-md bg-char px-3 py-2 text-left text-[13.5px] hover:bg-[var(--ap-accent-soft)]"
+                className="w-full rounded-md bg-char px-3 py-2 text-left text-[15px] hover:bg-[var(--ap-accent-soft)]"
               >
                 <span className="font-semibold text-bone">{found.name}</span>
-                <span className="block text-[12.5px] text-dim">
+                <span className="block text-[14px] text-dim">
                   {[found.cif ? `CUI ${found.cif}` : null, found.city, found.email].filter(Boolean).join(" · ")}
                 </span>
               </button>
@@ -317,11 +317,11 @@ function ContactsSection({ client, actions, onChanged }: { client: Client; actio
 
   return (
     <div className="mt-3">
-      {client.contacte.length === 0 && !adding ? <p className="text-[13.5px] text-dim">Nicio persoană de contact.</p> : null}
+      {client.contacte.length === 0 && !adding ? <p className="text-[15px] text-dim">Nicio persoană de contact.</p> : null}
       <ul className="grid gap-2">
         {client.contacte.map((contact) => (
           <li key={contact.id} className="flex items-start justify-between gap-3 rounded-lg border border-hair px-3 py-2">
-            <div className="min-w-0 text-[13.5px]">
+            <div className="min-w-0 text-[15px]">
               <p className="font-semibold text-bone">
                 {contact.nume}
                 {contact.rol ? <span className="font-normal text-dim"> · {contact.rol}</span> : null}
@@ -350,7 +350,7 @@ function ContactsSection({ client, actions, onChanged }: { client: Client; actio
                   else onChanged();
                 })
               }
-              className="shrink-0 text-[13px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]"
+              className="shrink-0 text-[14.5px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]"
             >
               Scoate
             </button>
@@ -390,23 +390,23 @@ function ContactsSection({ client, actions, onChanged }: { client: Client; actio
               <input id="contact-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.currentTarget.value })} className={inputClass} maxLength={200} />
             </Field>
           </div>
-          {error && !error.field ? <p className="text-[13px] text-[var(--ap-error)]">{error.message}</p> : null}
+          {error && !error.field ? <p className="text-[14.5px] text-[var(--ap-error)]">{error.message}</p> : null}
           <div className="flex gap-2">
-            <button type="submit" disabled={pending} className="btn btn-light !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]">
+            <button type="submit" disabled={pending} className="btn btn-light !min-h-9 !px-3.5 !py-1.5 !text-[15px]">
               Adaugă persoana
             </button>
-            <button type="button" onClick={() => setAdding(false)} className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]">
+            <button type="button" onClick={() => setAdding(false)} className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[15px]">
               Renunță
             </button>
           </div>
         </form>
       ) : (
-        <button type="button" onClick={() => setAdding(true)} className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] font-medium text-[var(--md-a1)]">
+        <button type="button" onClick={() => setAdding(true)} className="mt-3 inline-flex items-center gap-1.5 text-[15px] font-medium text-[var(--md-a1)]">
           <IconPlus size={15} />
           Adaugă o persoană
         </button>
       )}
-      {error && !adding ? <p className="mt-2 text-[13px] text-[var(--ap-error)]">{error.message}</p> : null}
+      {error && !adding ? <p className="mt-2 text-[14.5px] text-[var(--ap-error)]">{error.message}</p> : null}
     </div>
   );
 }
@@ -432,13 +432,13 @@ function ContractsSection({ client, month, actions, onChanged }: { client: Clien
 
   return (
     <div className="mt-3">
-      {client.contracte.length === 0 ? <p className="text-[13.5px] text-dim">Niciun contract. Fără contract activ nu se pregătesc facturi lunare pentru client.</p> : null}
+      {client.contracte.length === 0 ? <p className="text-[15px] text-dim">Niciun contract. Fără contract activ nu se pregătesc facturi lunare pentru client.</p> : null}
       <ul className="grid gap-2">
         {client.contracte.map((contract) => {
           const active = contractInMonth(contract, month);
           const price = priceForMonth(contract.preturi, month);
           return (
-            <li key={contract.id} className="rounded-lg border border-hair px-3 py-2.5 text-[13.5px]">
+            <li key={contract.id} className="rounded-lg border border-hair px-3 py-2.5 text-[15px]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-semibold text-bone">
                   {contract.numar ? `Contract ${contract.numar}` : "Contract"}{" "}
@@ -446,7 +446,7 @@ function ContractsSection({ client, month, actions, onChanged }: { client: Clien
                     {STARE_CONTRACT_LABEL[contract.starea]}
                   </Tag>
                 </p>
-                <button type="button" onClick={() => setEditing(contract)} className="text-[13px] font-medium text-[var(--md-a1)] underline underline-offset-4">
+                <button type="button" onClick={() => setEditing(contract)} className="text-[14.5px] font-medium text-[var(--md-a1)] underline underline-offset-4">
                   Modifică
                 </button>
               </div>
@@ -462,7 +462,7 @@ function ContractsSection({ client, month, actions, onChanged }: { client: Clien
                 {contract.bugetReclame !== null ? ` · buget reclame recomandat ${money(contract.bugetReclame, contract.moneda)}/lună (nu se facturează)` : ""}
               </p>
               {contract.preturi.length > 1 ? (
-                <ul className="mt-1.5 grid gap-0.5 text-[12.5px] text-dim">
+                <ul className="mt-1.5 grid gap-0.5 text-[14px] text-dim">
                   {contract.preturi.map((item) => (
                     <li key={item.id}>
                       {monthLabel(item.deLa.slice(0, 7))} – {item.panaLa ? monthLabel(item.panaLa.slice(0, 7)) : "fără sfârșit"}: {money(item.suma, contract.moneda)}
@@ -474,7 +474,7 @@ function ContractsSection({ client, month, actions, onChanged }: { client: Clien
           );
         })}
       </ul>
-      <button type="button" onClick={() => setEditing("nou")} className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] font-medium text-[var(--md-a1)]">
+      <button type="button" onClick={() => setEditing("nou")} className="mt-3 inline-flex items-center gap-1.5 text-[15px] font-medium text-[var(--md-a1)]">
         <IconPlus size={15} />
         Contract nou
       </button>
@@ -557,7 +557,7 @@ function ContractForm({
 
   return (
     <form onSubmit={submit} noValidate className="mt-3 grid gap-3 rounded-lg border border-hair p-3">
-      <p className="text-[14px] font-semibold text-bone">{contract ? "Modifică contractul" : "Contract nou"}</p>
+      <p className="text-[15px] font-semibold text-bone">{contract ? "Modifică contractul" : "Contract nou"}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field id="ct-numar" label="Numărul (opțional)" error={fieldError("numar")}>
           <input id="ct-numar" value={fields.numar} onChange={(e) => set("numar", e.currentTarget.value)} className={inputClass} maxLength={60} />
@@ -598,9 +598,9 @@ function ContractForm({
       </Field>
 
       <fieldset className="grid gap-2">
-        <legend className="text-[13px] font-medium text-bone">Abonamentul, pe perioade</legend>
-        <p className="text-[12.5px] text-dim">Pe luni întregi. Ex.: martie–mai o sumă, din iunie alta. Ultima perioadă poate rămâne fără sfârșit.</p>
-        {fieldError("preturi") ? <p className="text-[13px] text-[var(--ap-error)]">{fieldError("preturi")}</p> : null}
+        <legend className="text-[14.5px] font-medium text-bone">Abonamentul, pe perioade</legend>
+        <p className="text-[14px] text-dim">Pe luni întregi. Ex.: martie–mai o sumă, din iunie alta. Ultima perioadă poate rămâne fără sfârșit.</p>
+        {fieldError("preturi") ? <p className="text-[14.5px] text-[var(--ap-error)]">{fieldError("preturi")}</p> : null}
         {prices.map((row, index) => (
           <div key={row.key} className="grid gap-2 rounded-lg bg-[var(--ap-side)] p-2.5 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
             <Field id={`pr-${row.key}-de`} label="Din luna" error={fieldError(`preturi.${index}.deLa`)}>
@@ -616,7 +616,7 @@ function ContractForm({
               type="button"
               disabled={prices.length === 1}
               onClick={() => setPrices((rows) => rows.filter((item) => item.key !== row.key))}
-              className="h-10 rounded-lg px-2 text-[13px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)] disabled:opacity-40"
+              className="h-10 rounded-lg px-2 text-[14.5px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)] disabled:opacity-40"
             >
               Scoate
             </button>
@@ -628,7 +628,7 @@ function ContractForm({
         <button
           type="button"
           onClick={() => setPrices((rows) => [...rows, { key: Math.max(...rows.map((item) => item.key)) + 1, deLa: "", panaLa: "", suma: "", descriere: rows.at(-1)?.descriere ?? "Abonament lunar" }])}
-          className="inline-flex items-center gap-1.5 justify-self-start text-[13.5px] font-medium text-[var(--md-a1)]"
+          className="inline-flex items-center gap-1.5 justify-self-start text-[15px] font-medium text-[var(--md-a1)]"
         >
           <IconPlus size={15} />
           Adaugă o perioadă
@@ -642,10 +642,10 @@ function ContractForm({
         <Notice tone="error">{error.message}</Notice>
       ) : null}
       <div className={cn("flex gap-2")}>
-        <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
           {pending ? "Se salvează…" : "Salvează contractul"}
         </button>
-        <button type="button" onClick={() => onDone(false)} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[14px]">
+        <button type="button" onClick={() => onDone(false)} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
           Renunță
         </button>
       </div>
@@ -661,7 +661,7 @@ function AdsSection({ client, adsClients, actions, onChanged }: { client: Client
   const [pending, start] = useTransition();
 
   if (adsClients.length === 0) {
-    return <p className="mt-3 text-[13.5px] text-dim">Portalul de reclame n-are încă niciun client (sau migrarea lui nu e rulată). Adaugă clientul acolo, în Reclame → Clienți, apoi leagă-l aici.</p>;
+    return <p className="mt-3 text-[15px] text-dim">Portalul de reclame n-are încă niciun client (sau migrarea lui nu e rulată). Adaugă clientul acolo, în Reclame → Clienți, apoi leagă-l aici.</p>;
   }
 
   return (
@@ -687,11 +687,11 @@ function AdsSection({ client, adsClients, actions, onChanged }: { client: Client
               if (result.ok) onChanged();
             })
           }
-          className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[13.5px]"
+          className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[15px]"
         >
           Salvează legătura
         </button>
-        {message ? <p className={cn("text-[13px]", message.tone === "ok" ? "text-[var(--ap-ok)]" : "text-[var(--ap-error)]")}>{message.text}</p> : null}
+        {message ? <p className={cn("text-[14.5px]", message.tone === "ok" ? "text-[var(--ap-ok)]" : "text-[var(--ap-error)]")}>{message.text}</p> : null}
       </div>
     </div>
   );

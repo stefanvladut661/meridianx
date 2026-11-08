@@ -46,8 +46,8 @@ export function QueueStrip({
     <Card className="p-0">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-white/[0.06] px-4 py-2.5">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-[12.5px] font-medium">{title}</h2>
-          <span className="text-[11px] text-muted-foreground">{zoneLabel(fus)}</span>
+          <h2 className="text-[14px] font-medium">{title}</h2>
+          <span className="text-[12.5px] text-muted-foreground">{zoneLabel(fus)}</span>
         </div>
         <div className="flex items-center gap-1">
           <Link href={prevHref} className={btnClass({ variant: "ghost", size: "xs", className: "px-1.5" })} aria-label="Cele 7 zile dinainte">
@@ -75,14 +75,14 @@ export function QueueStrip({
               aria-label={`${day.label}: ${day.count === 0 ? "nicio postare" : `${day.count} ${day.count === 1 ? "postare" : "postări"}`}${day.failed ? `, ${day.failed} eșuate` : ""}`}
               className={cn("min-w-[74px] flex-1 rounded-xl border px-2 py-2 text-left transition-colors", active ? "border-lav/40 bg-lav/[0.1]" : "border-white/[0.07] hover:border-white/20")}
             >
-              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">{day.weekday}</p>
-              <p className={cn("pu-num mt-0.5 text-[15px]", active ? "text-[#D8CCFF]" : "")}>{day.date}</p>
+              <p className="text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">{day.weekday}</p>
+              <p className={cn("pu-num mt-0.5 text-[16px]", active ? "text-[#D8CCFF]" : "")}>{day.date}</p>
               <div className="mt-1 flex items-center gap-1">
                 {Array.from({ length: Math.min(day.count, 4) }).map((_, index) => (
                   <span key={index} className="h-1 w-1 rounded-full bg-lav" aria-hidden="true" />
                 ))}
                 {day.failed ? <span className="h-1 w-1 rounded-full bg-rose" aria-hidden="true" /> : null}
-                <span className="ml-auto text-[10px] text-muted-foreground">{day.count || "—"}</span>
+                <span className="ml-auto text-[11.5px] text-muted-foreground">{day.count || "—"}</span>
               </div>
             </Link>
           );
@@ -107,10 +107,10 @@ export function QueueStatus({
 }) {
   return (
     <Card className="flex flex-wrap items-center gap-x-5 gap-y-2 py-3">
-      <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+      <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <Database className="h-3.5 w-3.5" aria-hidden="true" /> Supabase Cron: <span className={cronOk ? "text-mint" : "text-rose"}>{cronOk ? "da" : "nu"}</span>
       </span>
-      <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+      <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <Clock className="h-3.5 w-3.5" aria-hidden="true" /> ultima rulare:{" "}
         {lastRun ? (
           <span className="text-foreground/80">
@@ -122,7 +122,7 @@ export function QueueStatus({
         )}
       </span>
       <LiveDot active={running} label={running ? "verifică la 5 minute" : "oprit din portal"} />
-      <span className="ml-auto flex items-center gap-3 text-[11.5px] text-muted-foreground">
+      <span className="ml-auto flex items-center gap-3 text-[13px] text-muted-foreground">
         {waiting} {waiting === 1 ? "postare în așteptare" : "postări în așteptare"}
         <Link href="/admin/postari/istoric?zona=coada" className="hover:text-foreground">
           Istoricul cozii →
@@ -141,7 +141,7 @@ export interface PlatformStats {
 function MiniStat({ label, value, tone }: { label: string; value: number; tone?: "rose" }) {
   return (
     <div className="rounded-xl border border-white/[0.07] px-3 py-2">
-      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+      <p className="text-[11.5px] uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
       <p className={cn("pu-num mt-1 text-[20px] font-medium leading-none", tone === "rose" && value > 0 ? "text-rose" : value === 0 ? "text-foreground/45" : "")}>{value}</p>
     </div>
   );
@@ -152,8 +152,8 @@ export function QueueStats({ instagram, tiktok }: { instagram: PlatformStats | n
   return (
     <Card className="py-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[12.5px] font-medium">Ultimele 7 zile</h2>
-        <span className="text-[11px] text-muted-foreground">după ora din plan</span>
+        <h2 className="text-[14px] font-medium">Ultimele 7 zile</h2>
+        <span className="text-[12.5px] text-muted-foreground">după ora din plan</span>
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {instagram ? (
@@ -200,8 +200,8 @@ export function QueueAlerts({ alerts }: { alerts: QueueAlert[] }) {
           <li key={`${alert.when}-${index}`} className="flex items-start gap-3 px-4 py-3">
             <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", alert.tone === "rose" ? "bg-rose" : "bg-apricot")} aria-hidden="true" />
             <div className="min-w-0 flex-1">
-              <p className="whitespace-pre-line text-[12.5px]">{alert.mesaj}</p>
-              <p className="mt-0.5 text-[10.5px] text-muted-foreground">
+              <p className="whitespace-pre-line text-[14px]">{alert.mesaj}</p>
+              <p className="mt-0.5 text-[12px] text-muted-foreground">
                 {alert.when} · {alert.meta}
               </p>
             </div>

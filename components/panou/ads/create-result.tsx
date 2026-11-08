@@ -35,7 +35,7 @@ const KIND_LABEL: Record<CreatedObject["kind"], string> = {
 
 function CreatedList({ created, platform }: { created: CreatedObject[]; platform: Platform }) {
   return (
-    <ul className="mt-4 space-y-1 text-left font-mono text-[11px] leading-relaxed text-foreground/75">
+    <ul className="mt-4 space-y-1 text-left font-mono text-[12.5px] leading-relaxed text-foreground/75">
       {created.map((object) => (
         <li key={`${object.kind}-${object.id}`} className="flex min-w-0 flex-wrap gap-x-2">
           <span className="text-muted-foreground">
@@ -107,7 +107,7 @@ export function CreateResult({
             <CheckCircle2 className="h-5 w-5 text-mint" aria-hidden="true" />
           </div>
           <h2 className="text-[19px] font-semibold">Campanie creată pe pauză</h2>
-          <p className="mx-auto mt-2 max-w-md text-[13px] leading-relaxed text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-md text-[14.5px] leading-relaxed text-muted-foreground">
             {ads === 1 ? "O reclamă" : countOf(ads, "reclame")} pe pauză. Nu livrează nimic până nu o pornești în {manager}: verific-o acolo și pornește-o când e gata.
           </p>
           <div className="mt-4 flex justify-center">
@@ -126,7 +126,7 @@ export function CreateResult({
               </Btn>
             ) : null}
           </div>
-          {result.storeWarning ? <p className="mt-4 text-[12.5px] leading-snug text-apricot">{result.storeWarning}</p> : null}
+          {result.storeWarning ? <p className="mt-4 text-[14px] leading-snug text-apricot">{result.storeWarning}</p> : null}
           <CreatedList created={result.created} platform={platform} />
         </Card>
       </div>
@@ -136,11 +136,11 @@ export function CreateResult({
   if (result.duplicate) {
     return (
       <div ref={ref} tabIndex={-1} role="alert" className="rounded-xl border border-apricot/25 bg-apricot/[0.07] px-4 py-4 outline-none">
-        <p className="flex items-center gap-2 text-[13.5px] font-medium text-[#FFD0AC]">
+        <p className="flex items-center gap-2 text-[15px] font-medium text-[#FFD0AC]">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           Planul ăsta a fost deja creat.
         </p>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-[#FFD0AC]/85">{result.message}</p>
+        <p className="mt-2 text-[14px] leading-relaxed text-[#FFD0AC]/85">{result.message}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <ExternalButton href={result.duplicate.adsManagerUrl}>Deschide campania existentă</ExternalButton>
           <Btn variant="outline" size="sm" onClick={onCreateAnyway} disabled={pending}>
@@ -154,12 +154,12 @@ export function CreateResult({
   if (result.partial) {
     return (
       <div ref={ref} tabIndex={-1} role="alert" className="rounded-xl border border-apricot/25 bg-apricot/[0.07] px-4 py-4 outline-none">
-        <p className="flex items-center gap-2 text-[13.5px] font-medium text-[#FFD0AC]">
+        <p className="flex items-center gap-2 text-[15px] font-medium text-[#FFD0AC]">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           Crearea s-a oprit la jumătate. Ce există e pe pauză.
         </p>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-[#FFD0AC]/85">{result.message}</p>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-[#FFD0AC]/85">
+        <p className="mt-2 text-[14px] leading-relaxed text-[#FFD0AC]/85">{result.message}</p>
+        <p className="mt-2 text-[14px] leading-relaxed text-[#FFD0AC]/85">
           Completează ce lipsește din {manager} sau șterge campania de acolo și creeaz-o din nou după corectură.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -173,11 +173,11 @@ export function CreateResult({
   return (
     <div ref={ref} tabIndex={-1} role="alert" className={cn("space-y-2 outline-none")}>
       <div className="rounded-xl border border-rose/25 bg-rose/[0.07] px-4 py-3">
-        <p className="flex items-center gap-2 text-[13.5px] font-medium text-[#FFC2CE]">
+        <p className="flex items-center gap-2 text-[15px] font-medium text-[#FFC2CE]">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           Nu s-a creat nimic.
         </p>
-        <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#FFC2CE]/85">{result.message}</p>
+        <p className="mt-1.5 text-[14px] leading-relaxed text-[#FFC2CE]/85">{result.message}</p>
       </div>
       {result.problems && result.problems.length > 0 ? (
         <ProblemList title="De corectat" problems={result.problems} tone="error" />

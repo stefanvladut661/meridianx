@@ -21,7 +21,7 @@ const REVEAL_MS = 30 * 1000;
 const MASK = "••••••••••••";
 
 const BUTTON =
-  "inline-flex h-6 items-center gap-1 rounded-md border border-white/[0.1] px-1.5 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground";
+  "inline-flex h-6 items-center gap-1 rounded-md border border-white/[0.1] px-1.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground";
 
 /** Doar http(s) pleacă într-un link; orice altceva rămâne text (un `javascript:` lipit într-un URL n-are ce căuta într-o ancoră). */
 export function safeHref(value: string): string | undefined {
@@ -86,7 +86,7 @@ export function Totp({ value }: { value: string }) {
 
   if (!config) {
     return (
-      <p className="text-[12px] text-rose">
+      <p className="text-[13.5px] text-rose">
         Seed-ul nu e valid: aștept base32 (ex. <code className="font-mono">JBSW Y3DP …</code>) sau un link{" "}
         <code className="font-mono">otpauth://totp/…</code>.
       </p>
@@ -97,13 +97,13 @@ export function Totp({ value }: { value: string }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
       <span
-        className="rounded-lg border border-mint/25 bg-mint/[0.08] px-2.5 py-1 font-mono text-[15px] tracking-[0.22em] text-[#B4F2CD]"
+        className="rounded-lg border border-mint/25 bg-mint/[0.08] px-2.5 py-1 font-mono text-[16px] tracking-[0.22em] text-[#B4F2CD]"
         aria-label={state ? `Cod ${state.code}` : "Se calculează codul"}
       >
         {state ? groupCode(state.code) : "··· ···"}
       </span>
       <Ring progress={progress} color={state && state.remaining <= 5 ? "#FFB27A" : "#8FE3B0"} size={22} stroke={2.5} />
-      <span className="pu-num text-[10.5px] text-muted-foreground" aria-hidden="true">
+      <span className="pu-num text-[12px] text-muted-foreground" aria-hidden="true">
         {state?.remaining ?? config.period} s
       </span>
       {isClipboardSupported() ? (
@@ -118,7 +118,7 @@ export function Totp({ value }: { value: string }) {
         </button>
       ) : null}
       {config.issuer || config.account ? (
-        <span className="basis-full text-[10.5px] text-muted-foreground">
+        <span className="basis-full text-[12px] text-muted-foreground">
           {[config.issuer, config.account].filter(Boolean).join(" · ")}
           {config.algorithm !== "SHA-1" || config.digits !== 6 || config.period !== 30
             ? ` · ${config.algorithm} · ${config.digits} cifre · ${config.period} s`
@@ -156,29 +156,29 @@ export function VaultField({ field }: { field: EntryField }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-2 border-b border-white/[0.05] py-2.5 last:border-0">
       <div className="min-w-0 flex-1">
-        <p className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">{field.label || "Fără etichetă"}</p>
+        <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{field.label || "Fără etichetă"}</p>
         {isEmpty ? (
-          <p className="mt-1 text-[12.5px] text-muted-foreground">—</p>
+          <p className="mt-1 text-[14px] text-muted-foreground">—</p>
         ) : isTotp ? (
           <div className="mt-1">
             <Totp value={field.value} />
-            {revealed ? <p className="mt-2 break-all font-mono text-[11.5px] text-foreground/70">{field.value}</p> : null}
+            {revealed ? <p className="mt-2 break-all font-mono text-[13px] text-foreground/70">{field.value}</p> : null}
           </div>
         ) : href ? (
-          <a href={href} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1.5 break-all text-[12.5px] text-sky hover:underline">
+          <a href={href} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1.5 break-all text-[14px] text-sky hover:underline">
             <Link2 className="h-3 w-3 shrink-0" aria-hidden="true" />
             {field.value}
           </a>
         ) : field.secret ? (
-          <p className={cn("mt-1 break-all font-mono text-[12.5px] tracking-[0.06em]", revealed ? "text-foreground" : "text-foreground/50")}>
+          <p className={cn("mt-1 break-all font-mono text-[14px] tracking-[0.06em]", revealed ? "text-foreground" : "text-foreground/50")}>
             {revealed ? <span className={longText ? "whitespace-pre-wrap" : ""}>{field.value}</span> : <span aria-label="valoare ascunsă">{MASK}</span>}
           </p>
         ) : (
-          <p className={cn("mt-1 break-all text-[12.5px]", longText ? "whitespace-pre-wrap text-muted-foreground" : "font-mono text-foreground/85")}>{field.value}</p>
+          <p className={cn("mt-1 break-all text-[14px]", longText ? "whitespace-pre-wrap text-muted-foreground" : "font-mono text-foreground/85")}>{field.value}</p>
         )}
-        {revealed ? <p className="mt-1 text-[10px] text-apricot">se ascunde singur în {left}s</p> : null}
+        {revealed ? <p className="mt-1 text-[11.5px] text-apricot">se ascunde singur în {left}s</p> : null}
         {copied === "failed" ? (
-          <p className="mt-1 text-[10px] text-rose" role="status">
+          <p className="mt-1 text-[11.5px] text-rose" role="status">
             Browserul n-a lăsat copierea. Arată valoarea și copiaz-o cu mâna.
           </p>
         ) : null}

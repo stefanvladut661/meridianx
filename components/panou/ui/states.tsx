@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, Inbox, Loader2, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Info } from "./info";
 import { Btn } from "./primitives";
 
 export function EmptyState({
@@ -23,10 +24,10 @@ export function EmptyState({
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]">
         <Icon className="h-5 w-5 text-lav" aria-hidden="true" />
       </div>
-      <h3 className="text-[15px] font-semibold">{title}</h3>
-      {text ? <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-muted-foreground">{text}</p> : null}
+      <h3 className="text-[16px] font-semibold">{title}</h3>
+      {text ? <p className="mt-2 max-w-sm text-[14.5px] leading-relaxed text-muted-foreground">{text}</p> : null}
       {action ? <div className="mt-5">{action}</div> : null}
-      {hint ? <p className="mt-4 max-w-sm text-[11.5px] leading-relaxed text-muted-foreground/70">{hint}</p> : null}
+      {hint ? <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-muted-foreground/70">{hint}</p> : null}
     </div>
   );
 }
@@ -51,11 +52,11 @@ export function ErrorState({
       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-rose/25 bg-rose/10">
         <AlertTriangle className="h-5 w-5 text-rose" aria-hidden="true" />
       </div>
-      <h3 className="text-[15px] font-semibold">{title}</h3>
-      <p className="mt-2 max-w-md text-[13px] leading-relaxed text-muted-foreground">
+      <h3 className="text-[16px] font-semibold">{title}</h3>
+      <p className="mt-2 max-w-md text-[14.5px] leading-relaxed text-muted-foreground">
         {text || "Nu am putut citi datele. Verifică dacă ești conectat la internet și reîncearcă."}
       </p>
-      {hint ? <p className="mt-2 text-[11.5px] text-muted-foreground/70">{hint}</p> : null}
+      {hint ? <p className="mt-2 text-[13px] text-muted-foreground/70">{hint}</p> : null}
       {onRetry ? (
         <Btn variant="outline" size="sm" className="mt-5" onClick={onRetry}>
           {retryLabel}
@@ -90,7 +91,7 @@ export function LoadingRows({ rows = 6, cols = 5 }: { rows?: number; cols?: numb
 
 export function Spinner({ className, label = "Se încarcă" }: { className?: string; label?: string }) {
   return (
-    <span className="inline-flex items-center gap-2 text-[12.5px] text-muted-foreground" role="status">
+    <span className="inline-flex items-center gap-2 text-[14px] text-muted-foreground" role="status">
       <Loader2 className={cn("h-3.5 w-3.5 animate-spin", className)} aria-hidden="true" />
       {label}
     </span>
@@ -114,7 +115,7 @@ export function Avatar({ name = "", className, tone = "lav" }: { name?: string; 
     .toUpperCase();
   return (
     <span
-      className={cn("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold", AVATAR_TONES[tone], className)}
+      className={cn("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[12.5px] font-semibold", AVATAR_TONES[tone], className)}
       aria-hidden="true"
     >
       {letters || "—"}
@@ -138,19 +139,23 @@ export function ProgressBar({ value, tone = "lav", className }: { value: number;
   );
 }
 
-export function Field({ label, children, hint, className }: { label: ReactNode; children: ReactNode; hint?: ReactNode; className?: string }) {
+/** Câmp de formular. `hint`: un rând scurt sub câmp, doar dacă e de neocolit; `info`: explicația, sub „i” lângă etichetă. */
+export function Field({ label, children, hint, info, className }: { label: ReactNode; children: ReactNode; hint?: ReactNode; info?: ReactNode; className?: string }) {
   return (
     <label className={cn("block", className)}>
-      <span className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
+      <span className="flex items-center gap-1.5">
+        <span className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
+        {info ? <Info>{info}</Info> : null}
+      </span>
       <div className="mt-1.5">{children}</div>
-      {hint ? <span className="mt-1 block text-[11.5px] text-muted-foreground/80">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-[13px] text-muted-foreground/80">{hint}</span> : null}
     </label>
   );
 }
 
 export function inputClass(extra?: string): string {
   return cn(
-    "h-9 w-full rounded-lg border border-white/[0.12] bg-white/[0.03] px-3 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-lav/50 focus:bg-white/[0.05]",
+    "h-9 w-full rounded-lg border border-white/[0.12] bg-white/[0.03] px-3 text-[14.5px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-lav/50 focus:bg-white/[0.05]",
     extra
   );
 }

@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, ElementType, HTMLAttributes, ReactNode } from "react";
 import { ArrowDownRight, ArrowUpRight, Minus, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Info } from "./info";
 
 /**
  * Primitivele panoului, copiate din redesign (Base44) cu aceleași clase:
@@ -43,10 +44,10 @@ const BTN_VARIANTS: Record<BtnVariant, string> = {
 };
 
 const BTN_SIZES: Record<BtnSize, string> = {
-  xs: "h-7 px-2.5 text-[12px] gap-1.5 rounded-lg",
-  sm: "h-8 px-3 text-[12.5px] gap-1.5 rounded-lg",
-  md: "h-10 px-4 text-[13.5px] gap-2 rounded-xl",
-  lg: "h-11 px-5 text-sm gap-2 rounded-xl",
+  xs: "h-7 px-2.5 text-[13.5px] gap-1.5 rounded-lg",
+  sm: "h-8 px-3 text-[14px] gap-1.5 rounded-lg",
+  md: "h-10 px-4 text-[15px] gap-2 rounded-xl",
+  lg: "h-11 px-5 text-[15px] gap-2 rounded-xl",
 };
 
 /** Clasele unui buton, ca un link (`<Link>`) să arate la fel fără un <button> în <a>. */
@@ -97,7 +98,7 @@ const PILL_TONES: Record<PillTone, string> = {
 
 export function Pill({ tone = "neutral", className, children, dot = false }: { tone?: PillTone; className?: string; children?: ReactNode; dot?: boolean }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11.5px] font-medium leading-5", PILL_TONES[tone] ?? PILL_TONES.neutral, className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px] font-medium leading-5", PILL_TONES[tone] ?? PILL_TONES.neutral, className)}>
       {dot ? <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" /> : null}
       {children}
     </span>
@@ -106,14 +107,14 @@ export function Pill({ tone = "neutral", className, children, dot = false }: { t
 
 /** Variația procentuală cu săgeată: verde = mai bine, roz = mai rău (`invert`: la costuri, mai puțin e mai bine). */
 export function Trend({ value, invert = false, className }: { value: number | null | undefined; invert?: boolean; className?: string }) {
-  if (value === null || value === undefined) return <span className="text-xs text-muted-foreground">—</span>;
+  if (value === null || value === undefined) return <span className="text-[13.5px] text-muted-foreground">—</span>;
   const up = value >= 0;
   const good = invert ? !up : up;
   const Icon = value === 0 ? Minus : up ? ArrowUpRight : ArrowDownRight;
   return (
     <span
       className={cn(
-        "pu-num inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11.5px] font-medium",
+        "pu-num inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[13px] font-medium",
         value === 0 ? "bg-white/[0.06] text-muted-foreground" : good ? "bg-mint/12 text-mint" : "bg-rose/12 text-rose",
         className
       )}
@@ -145,23 +146,29 @@ export function Stat({
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className={cn("pu-num text-[26px] font-medium leading-none sm:text-[30px]", tone === "dim" && "text-foreground/70")}>{value}</span>
-        {unit ? <span className="text-xs text-muted-foreground">{unit}</span> : null}
+        {unit ? <span className="text-[13.5px] text-muted-foreground">{unit}</span> : null}
         {delta !== undefined ? <Trend value={delta} invert={invertDelta} /> : null}
       </div>
-      {hint ? <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="mt-1.5 text-[13.5px] leading-snug text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
 
-export function SectionTitle({ title, hint, action, className }: { title: ReactNode; hint?: ReactNode; action?: ReactNode; className?: string }) {
+/**
+ * Titlul unei secțiuni. `hint`: o cifră sau o stare scurtă, pe același rând
+ * („12 firme”, „azi la 09:14”) — nu o propoziție. `info`: explicația, ascunsă
+ * sub „i”.
+ */
+export function SectionTitle({ title, hint, info, action, className }: { title: ReactNode; hint?: ReactNode; info?: ReactNode; action?: ReactNode; className?: string }) {
   return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-3", className)}>
-      <div>
-        <h2 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h2>
-        {hint ? <p className="mt-1 text-[12.5px] text-muted-foreground">{hint}</p> : null}
+    <div className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+        <h2 className="text-[17px] font-semibold tracking-[-0.01em]">{title}</h2>
+        {info ? <Info>{info}</Info> : null}
+        {hint ? <span className="pu-num text-[14px] text-muted-foreground">{hint}</span> : null}
       </div>
       {action}
     </div>
@@ -195,7 +202,7 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(option.value)}
             className={cn(
               "rounded-full font-medium transition-colors",
-              size === "sm" ? "px-2.5 py-1 text-[11.5px]" : "px-3 py-1.5 text-[12.5px]",
+              size === "sm" ? "px-2.5 py-1 text-[13px]" : "px-3 py-1.5 text-[14px]",
               active ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -212,7 +219,7 @@ export function Stamp({ children, className }: { children?: ReactNode; className
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md border border-dashed border-apricot/35 bg-apricot/[0.07] px-2 py-1 font-mono text-[10.5px] uppercase tracking-[0.1em] text-[#FFC79C]",
+        "inline-flex items-center gap-1.5 rounded-md border border-dashed border-apricot/35 bg-apricot/[0.07] px-2 py-1 font-mono text-[12px] uppercase tracking-[0.1em] text-[#FFC79C]",
         className
       )}
     >
@@ -224,7 +231,7 @@ export function Stamp({ children, className }: { children?: ReactNode; className
 
 export function LiveDot({ active, label = "Live" }: { active: boolean; label?: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+    <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
       <span className={cn("h-1.5 w-1.5 rounded-full", active ? "animate-dotpulse bg-mint" : "bg-white/25")} aria-hidden="true" />
       {label}
     </span>

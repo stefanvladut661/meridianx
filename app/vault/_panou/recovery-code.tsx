@@ -54,10 +54,10 @@ export function RecoveryCodeBox({ code }: { code: string }) {
     <div>
       <style>{PRINT_CSS}</style>
       <div id={PRINT_ID}>
-        <p className="hidden text-[12px] print:block">MERIDIAN · Vault · cod de recuperare. Păstrează-l pe hârtie, într-un loc sigur. Cine îl are poate deschide seiful.</p>
+        <p className="hidden text-[13.5px] print:block">MERIDIAN · Vault · cod de recuperare. Păstrează-l pe hârtie, într-un loc sigur. Cine îl are poate deschide seiful.</p>
         <ol
           aria-label="Codul de recuperare, opt grupuri"
-          className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-mint/25 bg-mint/[0.07] px-3 py-4 text-center font-mono text-[15px] tracking-[0.16em] text-[#B4F2CD] sm:grid-cols-4 sm:text-[16px]"
+          className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-mint/25 bg-mint/[0.07] px-3 py-4 text-center font-mono text-[16px] tracking-[0.16em] text-[#B4F2CD] sm:grid-cols-4 sm:text-[17px]"
         >
           {groups.map((group, index) => (
             <li key={index} className="pu-num">
@@ -66,7 +66,7 @@ export function RecoveryCodeBox({ code }: { code: string }) {
           ))}
         </ol>
       </div>
-      <p className="mt-2 text-[10.5px] text-muted-foreground">200 de biți · Crockford base32 · fără I, L, O, U · liniuțele și literele mici nu contează la introducere</p>
+      <p className="mt-2 text-[12px] text-muted-foreground">200 de biți · Crockford base32 · fără I, L, O, U · liniuțele și literele mici nu contează la introducere</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {isClipboardSupported() ? (
           <Btn size="sm" variant="outline" icon={copied === "ok" ? Check : Copy} onClick={() => void copy()}>
@@ -78,7 +78,7 @@ export function RecoveryCodeBox({ code }: { code: string }) {
         </Btn>
       </div>
       {copied === "failed" ? (
-        <p className="mt-2 text-[11px] text-rose" role="status">
+        <p className="mt-2 text-[12.5px] text-rose" role="status">
           Browserul n-a lăsat copierea. Notează codul de mână.
         </p>
       ) : null}
@@ -137,15 +137,15 @@ export function RecoveryCodeDialog({
     >
       {code ? (
         <>
-          <h2 id="cod-nou-titlu" className="text-[16px] font-semibold">
+          <h2 id="cod-nou-titlu" className="text-[17px] font-semibold">
             {title}
           </h2>
-          <p className="text-[12px] text-muted-foreground">{description}</p>
+          <p className="text-[13.5px] text-muted-foreground">{description}</p>
           <div className="mt-4">
             <RecoveryCodeBox code={code} />
           </div>
           <RecoveryWarning />
-          <label className="mt-3 flex items-start gap-2 text-[11.5px] text-muted-foreground">
+          <label className="mt-3 flex items-start gap-2 text-[13px] text-muted-foreground">
             <input type="checkbox" checked={saved} onChange={(event) => setSaved(event.target.checked)} className="mt-0.5 accent-[#8FE3B0]" />
             L-am notat într-un loc sigur, în afara seifului. Știu că nu se mai afișează.
           </label>

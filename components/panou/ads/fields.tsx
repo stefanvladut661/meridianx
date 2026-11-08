@@ -82,12 +82,12 @@ export function FieldMessages({
   return (
     <div id={id} className="mt-1.5 space-y-1">
       {errors.map((problem, index) => (
-        <p key={`e${index}`} className={cn("text-[12px] leading-snug", ERROR_TEXT)}>
+        <p key={`e${index}`} className={cn("text-[13.5px] leading-snug", ERROR_TEXT)}>
           {problem.message}
         </p>
       ))}
       {warnings.map((problem, index) => (
-        <p key={`w${index}`} className={cn("text-[12px] leading-snug", WARNING_TEXT)}>
+        <p key={`w${index}`} className={cn("text-[13.5px] leading-snug", WARNING_TEXT)}>
           {problem.message}
         </p>
       ))}
@@ -160,7 +160,7 @@ export function TextField({
     className: cn(
       FIELD,
       multiline ? "min-h-[5.5rem] resize-y py-2.5 leading-relaxed" : "h-9",
-      mono && "font-mono text-[12.5px]",
+      mono && "font-mono text-[14px]",
       field.invalid && FIELD_INVALID
     ),
   };
@@ -174,7 +174,7 @@ export function TextField({
         {counter ? (
           <span
             className={cn(
-              "pu-num font-mono text-[10.5px]",
+              "pu-num font-mono text-[12px]",
               over ? (counter.hard ? ERROR_TEXT : WARNING_TEXT) : "text-muted-foreground"
             )}
           >
@@ -190,7 +190,7 @@ export function TextField({
         )}
       </div>
       {hint ? (
-        <p id={`${id}-hint`} className="mt-1 text-[11.5px] leading-snug text-muted-foreground/80">
+        <p id={`${id}-hint`} className="mt-1 text-[13px] leading-snug text-muted-foreground/80">
           {hint}
         </p>
       ) : null}
@@ -257,13 +257,13 @@ export function NumberField({
           className={cn(FIELD, "pu-num h-9", suffix && "pr-14", field.invalid && FIELD_INVALID)}
         />
         {suffix ? (
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] text-muted-foreground">
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13.5px] text-muted-foreground">
             {suffix}
           </span>
         ) : null}
       </div>
       {hint ? (
-        <p id={`${id}-hint`} className="mt-1 text-[11.5px] leading-snug text-muted-foreground/80">
+        <p id={`${id}-hint`} className="mt-1 text-[13px] leading-snug text-muted-foreground/80">
           {hint}
         </p>
       ) : null}
@@ -318,7 +318,7 @@ export function SelectField({
         ))}
       </select>
       {hint ? (
-        <p id={`${id}-hint`} className="mt-1 text-[11.5px] leading-snug text-muted-foreground/80">
+        <p id={`${id}-hint`} className="mt-1 text-[13px] leading-snug text-muted-foreground/80">
           {hint}
         </p>
       ) : null}
@@ -352,16 +352,16 @@ export function ToggleField({
   return (
     <div className="flex items-start justify-between gap-4 py-3">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-[13px] font-medium text-foreground">
+        <label htmlFor={id} className="text-[14.5px] font-medium text-foreground">
           {title}
         </label>
-        {body ? <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">{body}</p> : null}
+        {body ? <p className="mt-0.5 text-[13.5px] leading-snug text-muted-foreground">{body}</p> : null}
         <FieldMessages id={`${id}-msg`} errors={field.errors} warnings={field.warnings} />
       </div>
       <div className="flex shrink-0 items-center gap-2.5">
         <span
           className={cn(
-            "font-mono text-[10.5px] uppercase tracking-[0.12em]",
+            "font-mono text-[12px] uppercase tracking-[0.12em]",
             on ? (dangerWhenOn ? WARNING_TEXT : "text-foreground") : "text-muted-foreground"
           )}
         >
@@ -426,7 +426,7 @@ export function TextListField({
       </p>
       <PathMessages path={path} />
       {items.length === 0 && emptyText ? (
-        <p className="mt-2 text-[12.5px] text-muted-foreground">{emptyText}</p>
+        <p className="mt-2 text-[14px] text-muted-foreground">{emptyText}</p>
       ) : null}
       <ol className="mt-2 space-y-4">
         {items.map((_, index) => (
@@ -446,12 +446,12 @@ export function TextListField({
         <button
           type="button"
           onClick={() => update(`${path}.${items.length}`, "")}
-          className="mt-3 text-[12.5px] font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+          className="mt-3 text-[14px] font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
         >
           + {addLabel}
         </button>
       ) : (
-        <p className="mt-3 text-[11.5px] text-muted-foreground">Maximum {max}.</p>
+        <p className="mt-3 text-[13px] text-muted-foreground">Maximum {max}.</p>
       )}
     </div>
   );
@@ -463,7 +463,7 @@ export function RemoveButton({ label, onClick }: { label: string; onClick: () =>
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="mt-1.5 text-[11.5px] text-muted-foreground underline-offset-4 hover:text-rose hover:underline"
+      className="mt-1.5 text-[13px] text-muted-foreground underline-offset-4 hover:text-rose hover:underline"
     >
       Scoate
     </button>

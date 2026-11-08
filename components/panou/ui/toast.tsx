@@ -58,7 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             ) : (
               <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             )}
-            <p className="flex-1 text-[12.5px] leading-snug">{toast.text}</p>
+            <p className="flex-1 text-[14px] leading-snug">{toast.text}</p>
             <button type="button" onClick={() => dismiss(toast.id)} className="rounded p-0.5 opacity-60 hover:opacity-100" aria-label="Închide notificarea">
               <X className="h-3 w-3" aria-hidden="true" />
             </button>

@@ -73,13 +73,13 @@ export function JobProgress({
 
   return (
     <div tabIndex={-1} role="status" className={cn("rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-4", className)}>
-      <p className="text-[13.5px] font-medium text-foreground">
+      <p className="text-[15px] font-medium text-foreground">
         {job.status === "waiting" ? `${platform} a cerut o pauză. Crearea se reia singură.` : "Se creează pe pauză, pas cu pas…"}
       </p>
-      <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">{job.message}</p>
+      <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">{job.message}</p>
 
       <div className="mt-4">
-        <div className="flex justify-between text-[11.5px] text-muted-foreground">
+        <div className="flex justify-between text-[13px] text-muted-foreground">
           <span>
             {job.stepsDone} din {job.stepsTotal} pași gata{job.next ? ` · urmează ${job.next}` : ""}
           </span>
@@ -89,7 +89,7 @@ export function JobProgress({
       </div>
 
       {job.status === "waiting" && job.waitUntil ? (
-        <p className="mt-3 text-[12.5px] text-foreground/85">
+        <p className="mt-3 text-[14px] text-foreground/85">
           Reiau la <strong className="pu-num">{time.format(new Date(job.waitUntil))}</strong>
           {left > 0 ? (
             <>
@@ -102,7 +102,7 @@ export function JobProgress({
       ) : null}
 
       {job.created.length > 0 ? (
-        <p className="mt-3 text-[11.5px] text-muted-foreground">
+        <p className="mt-3 text-[13px] text-muted-foreground">
           Create deja, pe pauză: {job.created.map((object) => object.name).slice(0, 4).join(" · ")}
           {job.created.length > 4 ? ` · și încă ${job.created.length - 4}` : ""}
         </p>
@@ -121,7 +121,7 @@ export function JobProgress({
         ) : null}
       </div>
       {error ? (
-        <p role="alert" className="mt-3 text-[12.5px] text-rose">
+        <p role="alert" className="mt-3 text-[14px] text-rose">
           {error}
         </p>
       ) : null}

@@ -161,7 +161,7 @@ export function ApeluriScreen({
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <UserSwitch value={cine} className={COMUTATOR_TAP} />
-        <span className="text-[12px] text-muted-foreground sm:text-[11.5px]">Fiecare vede doar lista lui.</span>
+        <span className="text-[13.5px] text-muted-foreground sm:text-[13px]">Fiecare vede doar lista lui.</span>
       </div>
 
       <NepotrivireUtilizator cine={cine} salvat={salvat} />
@@ -175,12 +175,12 @@ export function ApeluriScreen({
       <Card className="p-4">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Progres azi</p>
+            <p className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">Progres azi</p>
             <p className="pu-num mt-1 text-[19px] font-medium leading-none">
-              {num(sunate)} <span className="text-[13px] font-normal text-muted-foreground">/ {num(toate.length)} sunate</span>
+              {num(sunate)} <span className="text-[14.5px] font-normal text-muted-foreground">/ {num(toate.length)} sunate</span>
             </p>
           </div>
-          <p className="text-[12px] text-muted-foreground sm:text-[11.5px]">
+          <p className="text-[13.5px] text-muted-foreground sm:text-[13px]">
             {deSunat.length === 0 ? "Lista e golită" : `rămân ${num(deSunat.length)} de sunat`} · ce nu suni azi se întoarce în distribuție la 00:00
           </p>
         </div>
@@ -263,7 +263,7 @@ export function ApeluriScreen({
                 const eOra = ora ? Date.parse(ora) <= acum : false;
                 return (
                   <li key={linie.id} className="space-y-1.5">
-                    <p className="flex flex-wrap items-center gap-1.5 px-1 text-[12px] text-muted-foreground sm:text-[11.5px]">
+                    <p className="flex flex-wrap items-center gap-1.5 px-1 text-[13.5px] text-muted-foreground sm:text-[13px]">
                       <CalendarClock className="h-3 w-3" aria-hidden="true" />
                       programat {ora ? `${dateRo(ora)} · ${timeRo(ora)}` : "fără oră"}
                       {eOra ? <Pill tone="apricot">e ora</Pill> : null}
@@ -293,13 +293,13 @@ export function ApeluriScreen({
                 return (
                   <li key={linie.id} className="flex flex-wrap items-center gap-2 px-4 py-3">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13.5px] font-medium sm:text-[12.5px]">{firma.nume}</p>
-                      <p className="text-[12px] text-muted-foreground sm:text-[11px]">
+                      <p className="truncate text-[15px] font-medium sm:text-[14px]">{firma.nume}</p>
+                      <p className="text-[13.5px] text-muted-foreground sm:text-[12.5px]">
                         {[firma.telefon ? numarAfisat(firma.telefon) : null, firma.oras, linie.incercari ? `${linie.incercari} ${linie.incercari === 1 ? "încercare" : "încercări"}` : null].filter(Boolean).join(" · ")}
                       </p>
-                      {linie.nota ? <p className="mt-0.5 break-words text-[12px] text-muted-foreground sm:text-[11px]">„{linie.nota}”</p> : null}
+                      {linie.nota ? <p className="mt-0.5 break-words text-[13.5px] text-muted-foreground sm:text-[12.5px]">„{linie.nota}”</p> : null}
                     </div>
-                    <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-[11px]", meta.badge)}>{meta.label}</span>
+                    <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-[12.5px]", meta.badge)}>{meta.label}</span>
                     {whatsapp && firma.telefon ? (
                       <a
                         href={linkWhatsApp(firma.telefon, mesaj)}

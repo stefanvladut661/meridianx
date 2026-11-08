@@ -32,7 +32,7 @@ export function ProgramariViitoare({
   const [, startAnulare] = useTransition();
 
   if (programari.length === 0) {
-    return <p className="py-3 text-[12.5px] text-muted-foreground">{gol}</p>;
+    return <p className="py-3 text-[14px] text-muted-foreground">{gol}</p>;
   }
 
   const peZile = new Map<string, ProgramareCuFirma[]>();
@@ -64,7 +64,7 @@ export function ProgramariViitoare({
     <div className="space-y-3">
       {[...peZile].map(([zi, lista]) => (
         <section key={zi} aria-label={`Programate pe ${dayMonthRo(`${zi}T12:00:00Z`)}`}>
-          <h4 className="mb-1.5 flex items-baseline gap-2 text-[12px] text-muted-foreground">
+          <h4 className="mb-1.5 flex items-baseline gap-2 text-[13.5px] text-muted-foreground">
             <span className="font-medium text-foreground/90">
               {weekdayRo(`${zi}T12:00:00Z`)}, {dayMonthRo(`${zi}T12:00:00Z`)}
             </span>
@@ -76,10 +76,10 @@ export function ProgramariViitoare({
                 <label className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-white/[0.03]">
                   <input type="checkbox" className="h-4 w-4 shrink-0 accent-[#C6B5FF]" checked={alese.has(p.id)} onChange={() => comuta(p.id)} aria-label={`Alege #${p.firma.nr} ${p.firma.nume}`} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[12.5px] font-medium">
+                    <span className="block truncate text-[14px] font-medium">
                       <span className="pu-num text-muted-foreground">#{p.firma.nr}</span> {p.firma.nume}
                     </span>
-                    <span className="block truncate text-[11px] text-muted-foreground">
+                    <span className="block truncate text-[12.5px] text-muted-foreground">
                       {[cheie(p), p.sursa === "manual" ? `manual, ${p.creat_de}` : "automat", p.zi_ceruta ? `cerută pe ${dayMonthRo(`${p.zi_ceruta}T12:00:00Z`)}` : null]
                         .filter(Boolean)
                         .join(" · ")}
@@ -92,7 +92,7 @@ export function ProgramariViitoare({
         </section>
       ))}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[11.5px] text-muted-foreground">Bifează ce vrei să anulezi: firmele se întorc în rezervă.</p>
+        <p className="text-[13px] text-muted-foreground">Bifează ce vrei să anulezi: firmele se întorc în rezervă.</p>
         <button type="button" className={btnClass({ variant: "danger", size: "sm" })} disabled={alese.size === 0} onClick={() => setConfirm(true)}>
           Anulează {alese.size > 0 ? num(alese.size) : ""}
         </button>

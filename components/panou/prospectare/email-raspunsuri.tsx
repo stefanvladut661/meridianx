@@ -69,18 +69,18 @@ export function EmailRaspunsuri({ raspunsuri, acum }: { raspunsuri: RaspunsEmail
         return (
           <li key={r.id} className="px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Link href={linkFirma(r.firma.id)} className="min-w-0 rounded-sm text-[12.5px] font-medium underline-offset-2 hover:underline">
+              <Link href={linkFirma(r.firma.id)} className="min-w-0 rounded-sm text-[14px] font-medium underline-offset-2 hover:underline">
                 <span className="pu-num text-muted-foreground">#{r.firma.nr}</span> {r.firma.nume}
               </Link>
-              <span className={cn("rounded-full border px-2 py-0.5 text-[10.5px] font-medium", meta.cls)}>{meta.label}</span>
+              <span className={cn("rounded-full border px-2 py-0.5 text-[12px] font-medium", meta.cls)}>{meta.label}</span>
             </div>
-            <p className="mt-1 break-words text-[11.5px] leading-relaxed text-muted-foreground">{r.extras ? `„${r.extras}”` : "Fără extras: deschide mesajul în Gmail."}</p>
+            <p className="mt-1 break-words text-[13px] leading-relaxed text-muted-foreground">{r.extras ? `„${r.extras}”` : "Fără extras: deschide mesajul în Gmail."}</p>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <time dateTime={r.la} title={dateTimeRo(r.la)} className="text-[10.5px] text-muted-foreground">
+              <time dateTime={r.la} title={dateTimeRo(r.la)} className="text-[12px] text-muted-foreground">
                 {relativeRo(r.la, acum)}
               </time>
-              {r.casuta ? <span className="min-w-0 break-all text-[10.5px] text-muted-foreground">· {r.casuta}</span> : null}
-              <StageBadge etapa={etapa} className="px-2 py-0 text-[10.5px]" />
+              {r.casuta ? <span className="min-w-0 break-all text-[12px] text-muted-foreground">· {r.casuta}</span> : null}
+              <StageBadge etapa={etapa} className="px-2 py-0 text-[12px]" />
               <span className="ml-auto flex flex-wrap items-center gap-1.5">
                 <a href={linkGmail(r)} target="_blank" rel="noreferrer" className={btnClass({ variant: "outline", size: "xs" })}>
                   <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />

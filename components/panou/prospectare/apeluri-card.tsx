@@ -106,8 +106,8 @@ function AlegeOra({ onSalveaza, onRenunta }: { onSalveaza: (iso: string) => void
         salveaza();
       }}
     >
-      <h2 className="text-[16px] font-semibold">Când sunăm înapoi?</h2>
-      <p className="mt-1 text-[12.5px] text-muted-foreground sm:text-[12px]">Alege data și ora. Firma apare în tabul „Sună înapoi” până atunci.</p>
+      <h2 className="text-[17px] font-semibold">Când sunăm înapoi?</h2>
+      <p className="mt-1 text-[14px] text-muted-foreground sm:text-[13.5px]">Alege data și ora. Firma apare în tabul „Sună înapoi” până atunci.</p>
       <div className="mt-4">
         <Field label="Data și ora" hint="Ora României.">
           <input
@@ -134,7 +134,7 @@ function AlegeOra({ onSalveaza, onRenunta }: { onSalveaza: (iso: string) => void
                 setEroare(null);
               }}
               className={cn(
-                "h-11 rounded-lg border px-3 text-[13px] transition-colors sm:h-8 sm:text-[12px]",
+                "h-11 rounded-lg border px-3 text-[14.5px] transition-colors sm:h-8 sm:text-[13.5px]",
                 cand === v.value ? "border-lav bg-lav/10 text-lav" : "border-white/[0.1] text-muted-foreground hover:text-foreground"
               )}
             >
@@ -143,7 +143,7 @@ function AlegeOra({ onSalveaza, onRenunta }: { onSalveaza: (iso: string) => void
           ))}
         </div>
         {eroare ? (
-          <p id={`${id}-eroare`} role="alert" className="mt-2 text-[12.5px] text-[#FFB0C0]">
+          <p id={`${id}-eroare`} role="alert" className="mt-2 text-[14px] text-[#FFB0C0]">
             {eroare}
           </p>
         ) : null}
@@ -162,7 +162,7 @@ function AlegeOra({ onSalveaza, onRenunta }: { onSalveaza: (iso: string) => void
 
 // ---------------------------------------------------------------------------
 
-const REZULTAT_BTN = "h-auto min-h-12 justify-start py-1.5 text-left text-[14px] sm:h-10 sm:min-h-0 sm:py-0 sm:text-[13.5px]";
+const REZULTAT_BTN = "h-auto min-h-12 justify-start py-1.5 text-left text-[15px] sm:h-10 sm:min-h-0 sm:py-0 sm:text-[15px]";
 
 export function CallCard({
   linie,
@@ -231,14 +231,14 @@ export function CallCard({
       <div className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="break-words text-[16px] font-semibold leading-tight sm:text-[15px]">{firma.nume}</h3>
-            {meta ? <p className="mt-0.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">{meta}</p> : null}
+            <h3 className="break-words text-[17px] font-semibold leading-tight sm:text-[16px]">{firma.nume}</h3>
+            {meta ? <p className="mt-0.5 text-[14px] text-muted-foreground sm:text-[13px]">{meta}</p> : null}
             {firma.persoana_contact ? (
-              <p className="mt-0.5 text-[12.5px] text-muted-foreground sm:text-[11.5px]">Persoană de contact: {firma.persoana_contact}</p>
+              <p className="mt-0.5 text-[14px] text-muted-foreground sm:text-[13px]">Persoană de contact: {firma.persoana_contact}</p>
             ) : null}
           </div>
           {incercari > 0 ? (
-            <span className="pu-num shrink-0 rounded-full border border-white/[0.1] px-2 py-0.5 text-[11px] text-muted-foreground">
+            <span className="pu-num shrink-0 rounded-full border border-white/[0.1] px-2 py-0.5 text-[12.5px] text-muted-foreground">
               {incercari === 1 ? "1 încercare" : `${incercari} încercări`}
             </span>
           ) : null}
@@ -247,13 +247,13 @@ export function CallCard({
         {telefon ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="pu-num mr-auto text-[22px] font-medium leading-none tracking-tight sm:mr-0">{numarAfisat(telefon)}</span>
-            <CopyButton value={numarScurt(telefon)} label="Copiază numărul" className="h-11 px-3 text-[13px] sm:h-8 sm:text-[12.5px]" />
+            <CopyButton value={numarScurt(telefon)} label="Copiază numărul" className="h-11 px-3 text-[14.5px] sm:h-8 sm:text-[14px]" />
             {/* Pe telefon: grilă cu butoane mari; de la `sm`, în același rând cu numărul, ca în prototip. */}
             <div className="grid w-full grid-cols-2 gap-2 sm:contents">
               <a
                 href={linkTelefon(telefon)}
                 aria-label={`Sună ${firma.nume} la ${numarAfisat(telefon)}`}
-                className={btnClass({ variant: "solid", size: "sm", className: "col-span-2 h-12 gap-2 text-[15px] sm:h-8 sm:text-[12.5px]" })}
+                className={btnClass({ variant: "solid", size: "sm", className: "col-span-2 h-12 gap-2 text-[16px] sm:h-8 sm:text-[14px]" })}
               >
                 <Phone className="h-4 w-4" aria-hidden="true" />
                 Sună
@@ -270,10 +270,10 @@ export function CallCard({
                 </a>
               ) : null}
             </div>
-            {!firma.este_mobil ? <p className="w-full text-[12px] text-muted-foreground sm:text-[11px]">Număr fix: după „Interesat” nu se poate continua pe WhatsApp.</p> : null}
+            {!firma.este_mobil ? <p className="w-full text-[13.5px] text-muted-foreground sm:text-[12.5px]">Număr fix: după „Interesat” nu se poate continua pe WhatsApp.</p> : null}
           </div>
         ) : (
-          <p className="mt-3 rounded-xl border border-rose/25 bg-rose/[0.07] px-3 py-2 text-[12.5px] text-[#FFC2CE]">
+          <p className="mt-3 rounded-xl border border-rose/25 bg-rose/[0.07] px-3 py-2 text-[14px] text-[#FFC2CE]">
             Firma nu are telefon în fișă. Marchează „Număr greșit”: iese din listă și rămâne doar pentru email.
           </p>
         )}
@@ -283,7 +283,7 @@ export function CallCard({
             {script ? (
               <TextPregatit>{script}</TextPregatit>
             ) : (
-              <p className="text-[12.5px] text-muted-foreground sm:text-[11.5px]">Scriptul de apel e gol: scrie-l în Setări, la șabloane.</p>
+              <p className="text-[14px] text-muted-foreground sm:text-[13px]">Scriptul de apel e gol: scrie-l în Setări, la șabloane.</p>
             )}
           </Dezvaluire>
           {whatsapp ? (
@@ -291,12 +291,12 @@ export function CallCard({
               {mesajDupaApel ? (
                 <>
                   <TextPregatit>{mesajDupaApel}</TextPregatit>
-                  <p className="mt-2 text-[12.5px] leading-snug text-muted-foreground sm:text-[11.5px]">
+                  <p className="mt-2 text-[14px] leading-snug text-muted-foreground sm:text-[13px]">
                     Se deschide pe WhatsApp când apeși „Interesat”. Firma rămâne pe canalul Telefon; în activitate apare „Continuare apel pe WhatsApp”.
                   </p>
                 </>
               ) : (
-                <p className="text-[12.5px] text-muted-foreground sm:text-[11.5px]">Șablonul de după apel e gol: scrie-l în Setări, la șabloane.</p>
+                <p className="text-[14px] text-muted-foreground sm:text-[13px]">Șablonul de după apel e gol: scrie-l în Setări, la șabloane.</p>
               )}
             </Dezvaluire>
           ) : null}
@@ -306,7 +306,7 @@ export function CallCard({
           <Btn variant="outline" size="md" icon={RotateCcw} disabled={pending} onClick={() => trimite("nu_raspunde")} className={REZULTAT_BTN}>
             <span className="flex min-w-0 flex-col items-start leading-tight sm:flex-row sm:items-center">
               <span>Nu răspunde</span>
-              <span className="pu-num text-[11.5px] font-normal text-muted-foreground sm:text-[13.5px] sm:font-medium sm:text-foreground">
+              <span className="pu-num text-[13px] font-normal text-muted-foreground sm:text-[15px] sm:font-medium sm:text-foreground">
                 <span className="hidden sm:inline" aria-hidden="true">
                   {" · "}
                 </span>
@@ -326,7 +326,7 @@ export function CallCard({
         </div>
 
         {linie.rezultat === "nu_raspunde" ? (
-          <p className="mt-2 text-[12.5px] leading-snug text-[#FFD0AC] sm:text-[11.5px]">
+          <p className="mt-2 text-[14px] leading-snug text-[#FFD0AC] sm:text-[13px]">
             N-a răspuns: firma e înapoi în distribuție, încercările rămân notate. O poți suna din nou azi; dacă răspunde, rămâne pe telefon.
           </p>
         ) : null}
@@ -336,7 +336,7 @@ export function CallCard({
             type="button"
             disabled={pending}
             onClick={() => setConfirmGresit(true)}
-            className="inline-flex min-h-11 items-center gap-1 text-[12.5px] text-muted-foreground underline-offset-2 hover:text-rose hover:underline disabled:opacity-45 sm:min-h-0 sm:text-[11px]"
+            className="inline-flex min-h-11 items-center gap-1 text-[14px] text-muted-foreground underline-offset-2 hover:text-rose hover:underline disabled:opacity-45 sm:min-h-0 sm:text-[12.5px]"
           >
             <Flag className="h-3 w-3" aria-hidden="true" /> Număr greșit
           </button>
@@ -352,7 +352,7 @@ export function CallCard({
               rows={2}
               maxLength={2000}
               placeholder="ex. revin după 16:00, secretara cere pe email"
-              className={inputClass("h-auto resize-y py-2 text-base leading-relaxed sm:text-[12.5px]")}
+              className={inputClass("h-auto resize-y py-2 text-base leading-relaxed sm:text-[14px]")}
             />
           </Field>
         </div>

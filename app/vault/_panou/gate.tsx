@@ -111,7 +111,7 @@ function VaultBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-mint/15 bg-mint/[0.04] px-3.5 py-2.5">
-      <span className="flex items-center gap-1.5 text-[11.5px] text-[#B4F2CD]" aria-live="polite">
+      <span className="flex items-center gap-1.5 text-[13px] text-[#B4F2CD]" aria-live="polite">
         <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
         {snapshot ? (
           <>
@@ -125,7 +125,7 @@ function VaultBar() {
         )}
       </span>
       {remaining !== null ? (
-        <span className={cn("flex items-center gap-1.5 text-[11.5px]", urgent ? "text-apricot" : "text-muted-foreground")} title="Auto-blocare după 15 minute fără activitate">
+        <span className={cn("flex items-center gap-1.5 text-[13px]", urgent ? "text-apricot" : "text-muted-foreground")} title="Auto-blocare după 15 minute fără activitate">
           <Lock className="h-3 w-3" aria-hidden="true" /> se blochează în <span className="pu-num font-mono text-foreground/80">{formatCountdown(remaining)}</span>
         </span>
       ) : null}
@@ -156,12 +156,12 @@ export function AlreadyOpen({ title, text }: { title: string; text: string }) {
       <Card className="pu-sealed">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-mint" aria-hidden="true" />
-          <h1 className="text-[15px] font-semibold">{title}</h1>
+          <h1 className="text-[16px] font-semibold">{title}</h1>
         </div>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">{text}</p>
+        <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{text}</p>
         <Link
           href="/vault"
-          className="mt-4 inline-flex h-8 items-center justify-center rounded-lg border border-white/[0.14] px-3 text-[12.5px] font-medium text-foreground transition-colors hover:bg-white/[0.06]"
+          className="mt-4 inline-flex h-8 items-center justify-center rounded-lg border border-white/[0.14] px-3 text-[14px] font-medium text-foreground transition-colors hover:bg-white/[0.06]"
         >
           Mergi la intrări
         </Link>

@@ -102,8 +102,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             {accounts.map((item) => (
               <li key={item.id}>
                 <Link href={`/admin/ads/cont?cont=${item.id}`} className="block h-full rounded-[22px] border border-white/[0.07] bg-card p-4 transition-colors hover:border-white/[0.16] hover:bg-white/[0.03]">
-                  <span className="block text-[13.5px] font-medium">{item.name}</span>
-                  <span className="mt-1 block font-mono text-[11px] text-muted-foreground">
+                  <span className="block text-[15px] font-medium">{item.name}</span>
+                  <span className="mt-1 block font-mono text-[12.5px] text-muted-foreground">
                     {formatCustomerId(item.id)} · {item.currency} · {item.state}
                   </span>
                 </Link>
@@ -179,7 +179,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 href={`/admin/ads/cont?cont=${info.id}&vedere=${item.id}`}
                 aria-current={view === item.id ? "page" : undefined}
                 className={cn(
-                  "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-medium transition-colors",
+                  "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[13px] font-medium transition-colors",
                   view === item.id ? "bg-white/[0.11] text-foreground shadow-[0_1px_0_rgba(255,255,255,0.07)_inset]" : "text-muted-foreground hover:text-foreground"
                 )}
               >

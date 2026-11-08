@@ -258,7 +258,7 @@ export function VideoUpload({
             tastatura și cititorul de ecran îl folosesc la fel. */}
         <label
           className={cn(
-            "mt-2 inline-flex h-8 cursor-pointer items-center rounded-lg border border-white/[0.14] px-3 text-[12.5px] font-medium text-foreground transition-colors hover:bg-white/[0.06] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav",
+            "mt-2 inline-flex h-8 cursor-pointer items-center rounded-lg border border-white/[0.14] px-3 text-[14px] font-medium text-foreground transition-colors hover:bg-white/[0.06] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav",
             busy && "pointer-events-none opacity-45"
           )}
         >
@@ -277,23 +277,23 @@ export function VideoUpload({
           />
           <span id={`${inputId}-button`}>{file ? "Alege alt fișier" : "Alege fișierul"}</span>
         </label>
-        <p id={`${inputId}-hint`} className="mt-2 text-[11.5px] leading-snug text-muted-foreground">
+        <p id={`${inputId}-hint`} className="mt-2 text-[13px] leading-snug text-muted-foreground">
           MP4 sau MOV, cel mult {megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Fișierul trece printr-o stocare temporară a
           portalului și se șterge imediat ce {label} îl are.
         </p>
         {file ? (
-          <p className="mt-2 text-[12.5px] text-foreground/85">
-            {file.name} <span className="font-mono text-[11px] text-muted-foreground">· {megabytes(file.size)} MB</span>
+          <p className="mt-2 text-[14px] text-foreground/85">
+            {file.name} <span className="font-mono text-[12.5px] text-muted-foreground">· {megabytes(file.size)} MB</span>
           </p>
         ) : null}
-        {problem ? <p className={cn("mt-1.5 text-[12.5px] leading-snug", ERROR_TEXT)}>{problem}</p> : null}
+        {problem ? <p className={cn("mt-1.5 text-[14px] leading-snug", ERROR_TEXT)}>{problem}</p> : null}
         {file && !problem && expectedName && expectedName !== file.name ? (
-          <p className={cn("mt-1.5 text-[12.5px] leading-snug", WARNING_TEXT)}>
+          <p className={cn("mt-1.5 text-[14px] leading-snug", WARNING_TEXT)}>
             Planul pomenește „{expectedName}”, iar tu ai ales „{file.name}”. Verifică să fie video-ul potrivit.
           </p>
         ) : null}
         {!adAccount ? (
-          <p className="mt-1.5 text-[12.5px] text-muted-foreground">Scrie întâi contul de reclame — video-ul intră în biblioteca lui.</p>
+          <p className="mt-1.5 text-[14px] text-muted-foreground">Scrie întâi contul de reclame — video-ul intră în biblioteca lui.</p>
         ) : null}
       </div>
 
@@ -311,7 +311,7 @@ export function VideoUpload({
                 key={step.key}
                 aria-current={index === activeIndex ? "step" : undefined}
                 className={cn(
-                  "flex items-center gap-2 text-[12px]",
+                  "flex items-center gap-2 text-[13.5px]",
                   index < activeIndex ? "text-foreground/70" : index === activeIndex ? "font-semibold text-foreground" : "text-muted-foreground"
                 )}
               >
@@ -331,37 +331,37 @@ export function VideoUpload({
             <div className="mt-4">
               <ProgressBar value={(phase.loaded / Math.max(1, phase.total)) * 100} tone="lav" />
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="pu-num font-mono text-[11px] text-foreground/80">
+                <p className="pu-num font-mono text-[12.5px] text-foreground/80">
                   {Math.floor((phase.loaded / Math.max(1, phase.total)) * 100)}% · {megabytes(phase.loaded)} din{" "}
                   {megabytes(phase.total)} MB
                 </p>
                 <button
                   type="button"
                   onClick={() => xhrRef.current?.abort()}
-                  className="text-[12px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                  className="text-[13.5px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
                 >
                   Oprește urcarea
                 </button>
               </div>
             </div>
           ) : phase.step === "copying" ? (
-            <p className="mt-4 text-[12.5px] leading-snug text-foreground/80">
+            <p className="mt-4 text-[14px] leading-snug text-foreground/80">
               {label} descarcă fișierul din stocarea portalului
-              {phase.progress !== null ? <span className="pu-num font-mono text-[11px]"> · {phase.progress}%</span> : null}
+              {phase.progress !== null ? <span className="pu-num font-mono text-[12.5px]"> · {phase.progress}%</span> : null}
               . Durează cât o descărcare obișnuită — nu închide pagina.
             </p>
           ) : phase.step === "processing" ? (
-            <p className="mt-4 text-[12.5px] leading-snug text-foreground/80">
+            <p className="mt-4 text-[14px] leading-snug text-foreground/80">
               {label} pregătește video-ul pentru reclame
-              {phase.progress !== null ? <span className="pu-num font-mono text-[11px]"> · {phase.progress}%</span> : null}
-              . De obicei, un minut sau două. Id-ul din bibliotecă: <span className="font-mono text-[11px]">{phase.videoId}</span>.
+              {phase.progress !== null ? <span className="pu-num font-mono text-[12.5px]"> · {phase.progress}%</span> : null}
+              . De obicei, un minut sau două. Id-ul din bibliotecă: <span className="font-mono text-[12.5px]">{phase.videoId}</span>.
             </p>
           ) : null}
         </div>
       ) : null}
 
       {phase.step === "failed" ? (
-        <div role="alert" className={cn("text-[12.5px] leading-snug", ERROR_TEXT)}>
+        <div role="alert" className={cn("text-[14px] leading-snug", ERROR_TEXT)}>
           <p>{phase.message}</p>
           {phase.retry === "status" && phase.videoId && phase.stagingName ? (
             <button

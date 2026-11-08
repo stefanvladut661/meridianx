@@ -76,7 +76,7 @@ function PlanSentence({
 
   return (
     <div>
-      <p className="text-[15px] font-semibold leading-snug tracking-[-0.01em]">
+      <p className="text-[16px] font-semibold leading-snug tracking-[-0.01em]">
         {summary.objective
           ? `O campanie de ${summary.objective.toLowerCase()}`
           : summary.objectiveInvalid
@@ -90,7 +90,7 @@ function PlanSentence({
             : "fără buget"}
         .
       </p>
-      <p className="mt-2 text-[13px] leading-relaxed text-foreground/80">
+      <p className="mt-2 text-[14.5px] leading-relaxed text-foreground/80">
         Pentru oameni de {summary.age}
         {summary.platformAge ? ` (pe ${PLATFORM_LABEL[platform]}, ${summary.platformAge})` : ""}, {summary.gender}, din{" "}
         {summary.places.length > 0 ? joinRo(summary.places) : dash}
@@ -99,7 +99,7 @@ function PlanSentence({
           ? "Nicio reclamă încă."
           : `${adCount === 1 ? "O reclamă" : countOf(adCount, "reclame")} ${summary.cta ? `cu butonul „${summary.cta}”` : summary.ctaInvalid ? "cu butonul de corectat" : "fără buton ales"}.`}
       </p>
-      <p className="mt-3 font-mono text-[11px] tracking-wide text-muted-foreground">
+      <p className="mt-3 font-mono text-[12.5px] tracking-wide text-muted-foreground">
         1 campanie → 1 set de reclame → {adCount === 1 ? "1 reclamă" : countOf(adCount, "reclame")}
         {summary.videos.length > 1 ? ` (${summary.videos.length} video-uri × texte)` : ""}
         {summary.monthly ? ` · ${summary.monthly}` : ""}
@@ -457,7 +457,7 @@ export function PlanEditor({
             aria-invalid={syntax ? true : undefined}
             placeholder={'{\n  "workspace": "meta-meridian",\n  …\n}'}
             className={cn(
-              "mt-3 h-[22rem] w-full resize-y whitespace-pre rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[11.5px] leading-relaxed text-foreground/85 outline-none placeholder:text-muted-foreground/50 focus:border-lav/50 lg:h-[calc(100dvh-26rem)] lg:min-h-[22rem]",
+              "mt-3 h-[22rem] w-full resize-y whitespace-pre rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[13px] leading-relaxed text-foreground/85 outline-none placeholder:text-muted-foreground/50 focus:border-lav/50 lg:h-[calc(100dvh-26rem)] lg:min-h-[22rem]",
               syntax && "!border-rose/60"
             )}
           />
@@ -478,8 +478,8 @@ export function PlanEditor({
             >
               Golește
             </Btn>
-            <span className="text-[11px] text-muted-foreground">sau</span>
-            <label className="cursor-pointer text-[11.5px] text-foreground/70 underline underline-offset-4 hover:text-foreground has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav">
+            <span className="text-[12.5px] text-muted-foreground">sau</span>
+            <label className="cursor-pointer text-[13px] text-foreground/70 underline underline-offset-4 hover:text-foreground has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav">
               încarcă un fișier .json
               <input
                 type="file"
@@ -493,7 +493,7 @@ export function PlanEditor({
             </label>
           </div>
 
-          <div id="plan-status" className="mt-3 space-y-2 text-[12.5px] leading-snug">
+          <div id="plan-status" className="mt-3 space-y-2 text-[14px] leading-snug">
             {syntax ? (
               <InlineNote tone="rose">
                 <p>{syntax.message}</p>
@@ -632,7 +632,7 @@ export function PlanEditor({
                 </div>
 
                 <section aria-labelledby="ads-list" className="mt-4 border-t border-white/[0.06] pt-4">
-                  <h3 id="ads-list" className="text-[13.5px] font-medium">
+                  <h3 id="ads-list" className="text-[15px] font-medium">
                     Reclamele care se creează
                   </h3>
                   <AdsPreview
@@ -651,7 +651,7 @@ export function PlanEditor({
                       onChange={switchWorkspace}
                       options={workspaces.map((workspace) => ({ value: workspace.id, label: workspace.name }))}
                     />
-                    <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground" aria-live="polite">
+                    <p className="mt-1.5 text-[12.5px] leading-snug text-muted-foreground" aria-live="polite">
                       {current.owner === "clienti" ? (
                         <span className="font-medium text-apricot">Banii clienților</span>
                       ) : (
@@ -662,8 +662,8 @@ export function PlanEditor({
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground">Plafon zilnic</p>
-                    <p className="pu-num text-[13px]">{currency && cap !== null ? formatMoney(cap, currency) : "—"}</p>
+                    <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Plafon zilnic</p>
+                    <p className="pu-num text-[14.5px]">{currency && cap !== null ? formatMoney(cap, currency) : "—"}</p>
                   </div>
                 </div>
               </Card>
@@ -684,7 +684,7 @@ export function PlanEditor({
                     <CheckPanel check={check.check} stale={check.key !== planKey} />
                   </div>
                 ) : (
-                  <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+                  <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">
                     Verificarea citește contul ales: pagină, pixel, acțiune de conversie și biblioteca de video. Nu se creează nimic.
                   </p>
                 )}
@@ -700,7 +700,7 @@ export function PlanEditor({
                   </div>
                 ) : null}
 
-                <p id="create-reason" className="mt-3 text-[12px] leading-snug text-foreground/75" aria-live="polite">
+                <p id="create-reason" className="mt-3 text-[13.5px] leading-snug text-foreground/75" aria-live="polite">
                   {checking
                     ? current.platform === "google"
                       ? "Google caută contul, conversia, video-urile și fiecare nume din targetare, apoi verifică toată crearea, fără să creeze nimic…"
@@ -711,7 +711,7 @@ export function PlanEditor({
                 </p>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-4">
-                  <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <p className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
                     <ShieldCheck className="h-3.5 w-3.5 text-mint" aria-hidden="true" /> se creează oprit, fără excepții
                   </p>
                   <Btn
