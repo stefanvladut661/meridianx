@@ -115,14 +115,14 @@ export function PanouTopbar({
           >
             <MenuLabel>De rezolvat azi</MenuLabel>
             {alerts.length === 0 ? (
-              <p className="px-2 py-4 text-[14px] text-muted-foreground">Nimic în așteptare. Bine lucrat.</p>
+              <p className="px-2 py-4 text-[14px] text-muted-foreground">Nimic de rezolvat.</p>
             ) : (
               alerts.map((alert) => (
                 <Link key={alert.id} href={alert.to} role="menuitem" className="flex items-start gap-2.5 rounded-xl px-2 py-2 hover:bg-white/[0.06] focus-visible:bg-white/[0.06]">
                   <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", DOT_TONES[alert.tone])} aria-hidden="true" />
                   <span className="min-w-0">
                     <span className="block text-[14px] font-medium text-foreground">{alert.title}</span>
-                    <span className="block truncate text-[12.5px] text-muted-foreground">{alert.text}</span>
+                    <span className="block truncate text-[13px] text-muted-foreground">{alert.text}</span>
                   </span>
                 </Link>
               ))
@@ -137,10 +137,7 @@ export function PanouTopbar({
               </button>
             )}
           >
-            <div className="px-2 py-2">
-              <p className="text-[14.5px] font-medium">Administrator</p>
-              <p className="truncate text-[13px] text-muted-foreground">{email ?? "cont fără email"}</p>
-            </div>
+            <p className="truncate px-2 py-2 text-[14px] font-medium">{email ?? "Cont fără email"}</p>
             <MenuSeparator />
             <Link href="/vault/cont" role="menuitem" className={menuItemClass}>
               <User className="h-3.5 w-3.5" aria-hidden="true" /> Contul meu
@@ -161,7 +158,7 @@ export function PanouTopbar({
               <>
                 <MenuSeparator />
                 <p className="flex items-center gap-2 px-2 py-2 text-[13px] text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" aria-hidden="true" /> Sesiunea seifului se închide din Vault.
+                  <Lock className="h-3.5 w-3.5" aria-hidden="true" /> Se închide din Vault.
                 </p>
               </>
             )}

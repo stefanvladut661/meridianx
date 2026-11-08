@@ -75,7 +75,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
               go(items[index]);
             }
           }}
-          placeholder="Caută un ecran sau un modul…"
+          placeholder="Caută un ecran…"
           aria-label="Caută"
           className="h-7 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground/70"
         />
@@ -83,7 +83,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       </div>
       <ul role="listbox" aria-label="Rezultate" className="max-h-[52vh] overflow-y-auto p-2">
         {items.length === 0 ? (
-          <li className="px-3 py-8 text-center text-[14.5px] text-muted-foreground">Nimic pentru „{query}”. Încearcă numele modulului sau al ecranului.</li>
+          <li className="px-3 py-8 text-center text-[14.5px] text-muted-foreground">Nimic pentru „{query}”.</li>
         ) : (
           items.map((item, position) => (
             <li key={item.id} role="option" aria-selected={position === index}>
@@ -102,11 +102,6 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           ))
         )}
       </ul>
-      <div className="flex items-center gap-3 border-t border-white/[0.07] px-4 py-2 text-[12px] text-muted-foreground">
-        <span>↑↓ alege</span>
-        <span>↵ deschide</span>
-        <span className="ml-auto">Ctrl+K oriunde</span>
-      </div>
     </Modal>
   );
 }

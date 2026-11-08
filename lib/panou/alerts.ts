@@ -35,13 +35,13 @@ async function count(table: string, column: string, value: string): Promise<numb
 async function newLeads(): Promise<{ n: number; alerts: ShellAlert[] }> {
   const n = await count("leads", "status", "new");
   if (n === 0) return { n, alerts: [] };
-  return { n, alerts: [{ id: "lead-uri-noi", title: plural(n, "lead nou", "lead-uri noi"), text: "Încă neatinse. Primul răspuns rapid contează.", to: "/admin?status=new", tone: "lav" }] };
+  return { n, alerts: [{ id: "lead-uri-noi", title: plural(n, "lead nou", "lead-uri noi"), text: "Neatinse încă", to: "/admin?status=new", tone: "lav" }] };
 }
 
 async function failedPosts(): Promise<{ n: number; alerts: ShellAlert[] }> {
   const n = await count("postari", "stare", "esuata");
   if (n === 0) return { n, alerts: [] };
-  return { n, alerts: [{ id: "postari-esuate", title: plural(n, "postare eșuată", "postări eșuate"), text: "Deschide coada: are motivul și „Reîncearcă”.", to: "/admin/postari", tone: "rose" }] };
+  return { n, alerts: [{ id: "postari-esuate", title: plural(n, "postare eșuată", "postări eșuate"), text: "Motivul e în Coadă", to: "/admin/postari", tone: "rose" }] };
 }
 
 async function stoppedQueue(): Promise<ShellAlert[]> {
@@ -51,7 +51,7 @@ async function stoppedQueue(): Promise<ShellAlert[]> {
     {
       id: "coada-oprita",
       title: "Coada de postări e oprită",
-      text: settings.data.coadaMotiv || "Fără motiv notat. Nimic nu pleacă până nu o pornești.",
+      text: settings.data.coadaMotiv || "Nimic nu pleacă până o pornești",
       to: "/admin/postari",
       tone: "apricot",
     },

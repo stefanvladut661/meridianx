@@ -27,7 +27,7 @@ export function EmptyState({
       <h3 className="text-[16px] font-semibold">{title}</h3>
       {text ? <p className="mt-2 max-w-sm text-[14.5px] leading-relaxed text-muted-foreground">{text}</p> : null}
       {action ? <div className="mt-5">{action}</div> : null}
-      {hint ? <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-muted-foreground/70">{hint}</p> : null}
+      {hint ? <p className="mt-4 max-w-sm text-[13.5px] leading-relaxed text-muted-foreground/80">{hint}</p> : null}
     </div>
   );
 }
@@ -54,7 +54,7 @@ export function ErrorState({
       </div>
       <h3 className="text-[16px] font-semibold">{title}</h3>
       <p className="mt-2 max-w-md text-[14.5px] leading-relaxed text-muted-foreground">
-        {text || "Nu am putut citi datele. Verifică dacă ești conectat la internet și reîncearcă."}
+        {text || "Datele nu s-au citit. Verifică internetul și reîncearcă."}
       </p>
       {hint ? <p className="mt-2 text-[13px] text-muted-foreground/70">{hint}</p> : null}
       {onRetry ? (

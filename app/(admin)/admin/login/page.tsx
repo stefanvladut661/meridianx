@@ -11,13 +11,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Regulile produsului, în locul cifrelor de exemplu din prototip: pe ecranul de intrare nu există date reale de arătat. */
-const REGULI: [string, string][] = [
-  ["Reclame", "create pe pauză"],
-  ["Postări", "aprobate de om"],
-  ["Seif", "decriptat în browser"],
-];
-
 /**
  * /admin/login, în designul din redesign: panou stâng cu lumină și grilă,
  * dreapta cu intrarea. Stă în afara grupului `(dash)`, deci nu trece prin garda
@@ -45,30 +38,16 @@ export default async function AdminLoginPage({
         <div className="pu-gridlines absolute inset-0 opacity-30" aria-hidden="true" />
         <div className="relative flex items-center gap-3">
           <PanouMark />
-          <div>
-            <p className="pu-display text-[19px] leading-none tracking-[0.16em]">MERIDIAN</p>
-            <p className="mt-1 text-[11px] uppercase tracking-[0.24em] text-muted-foreground">panou intern</p>
-          </div>
+          <p className="pu-display text-[20px] leading-none tracking-[0.16em]">MERIDIAN</p>
         </div>
         <div className="relative max-w-md">
-          <h2 className="pu-display text-[40px] leading-[1.05] text-foreground">
-            Patru module,
+          <h2 className="pu-display text-[48px] leading-[1.02] text-foreground">
+            Un singur
             <br />
-            un singur loc de lucru.
+            loc de lucru.
           </h2>
-          <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
-            Lead-uri, campanii create pe pauză, postări aprobate de om și seiful echipei. Fără ferestre secundare, fără cifre inventate.
-          </p>
-          <dl className="mt-8 grid grid-cols-3 gap-4 border-t border-white/[0.08] pt-6">
-            {REGULI.map(([nume, regula]) => (
-              <div key={nume}>
-                <dt className="text-[11.5px] uppercase tracking-[0.16em] text-muted-foreground">{nume}</dt>
-                <dd className="mt-1 text-[15px] leading-snug">{regula}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
-        <p className="relative text-[12.5px] text-muted-foreground/70">Acces doar pentru echipa Meridian.</p>
+        <span aria-hidden="true" />
       </div>
 
       <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8">
@@ -78,8 +57,7 @@ export default async function AdminLoginPage({
             <p className="pu-display text-[18px] leading-none tracking-[0.16em]">MERIDIAN</p>
           </div>
 
-          <h1 className="text-[26px] font-semibold leading-tight">Intră în panou</h1>
-          <p className="mt-1.5 text-[14.5px] text-muted-foreground">Acces doar pentru echipă, cu contul Google de pe lista de admini.</p>
+          <h1 className="text-[28px] font-semibold leading-tight">Intră în panou</h1>
 
           {error ? (
             <div role="alert" className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose/25 bg-rose/[0.08] px-3.5 py-3 text-[14px] leading-relaxed text-[#FFC2CE]">
@@ -99,13 +77,12 @@ export default async function AdminLoginPage({
                 Continuă cu Google
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
-              <p className="mt-6 text-center text-[13.5px] text-muted-foreground">Nu ai acces? Cere-l de la cineva din echipă, ca adresa ta să ajungă pe lista de admini.</p>
             </div>
           ) : (
             <div className="mt-6 rounded-xl border border-white/[0.09] bg-white/[0.03] p-4 text-[14px] leading-relaxed text-muted-foreground">
               <p className="text-[12.5px] uppercase tracking-[0.14em]">Nu e configurat</p>
               <p className="mt-2">
-                Lipsesc variabilele de mediu pentru Supabase: <Code>NEXT_PUBLIC_SUPABASE_URL</Code> și <Code>NEXT_PUBLIC_SUPABASE_ANON_KEY</Code>. Copiază <Code>.env.example</Code> în <Code>.env.local</Code>, completează-le și
+                Lipsesc <Code>NEXT_PUBLIC_SUPABASE_URL</Code> și <Code>NEXT_PUBLIC_SUPABASE_ANON_KEY</Code> în <Code>.env.local</Code>. Completează-le și
                 repornește serverul.
               </p>
             </div>
