@@ -6,6 +6,7 @@ import { clientsForRequest } from "@/lib/ads/model/read";
 import { ClientsScreen } from "@/components/firma/clients-screen";
 import { Notice, PageHead } from "@/components/firma/ui";
 import { addContactAction, archiveClientAction, deleteContactAction, linkAdsAction, saveClientAction, saveContractAction, searchOblioAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Clienți — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
  * clientul din portalul de reclame.
  */
 export default async function ClientiPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const month = typeof params.luna === "string" && isMonth(params.luna) ? params.luna : currentMonth();
   const showArchived = params.arhiva === "1";

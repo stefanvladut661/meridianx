@@ -6,6 +6,7 @@ import { driveMode } from "@/lib/firma/drive/google";
 import { ExpensesScreen } from "@/components/firma/expenses-screen";
 import { Notice, PageHead } from "@/components/firma/ui";
 import { finishUploadAction, hideAction, prepareUploadAction, previewAction, rereadAction, saveExpenseAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Cheltuieli — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
  * și puse în folderul lunii de pe Drive.
  */
 export default async function CheltuieliPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const month = typeof params.luna === "string" && isMonth(params.luna) ? params.luna : currentMonth();
   const expenses = await listExpenses(month);

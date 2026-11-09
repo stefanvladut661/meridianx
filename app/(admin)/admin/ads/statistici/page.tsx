@@ -21,6 +21,7 @@ import { PAGE_TITLE } from "@/components/panou/ads/tone";
 import { Card, Pill, SectionTitle, btnClass } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { syncClientAction } from "../clienti/actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Statistici — MERIDIAN Reclame",
@@ -57,6 +58,7 @@ const TH = "px-3 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text
  * cu perioada de aceeași durată de dinainte. Doar din bază (modelul comun v2).
  */
 export default async function StatsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const selection = await readSelection(params);
   const clients = await clientsForRequest();

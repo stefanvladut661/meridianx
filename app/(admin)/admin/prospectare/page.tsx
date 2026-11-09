@@ -22,6 +22,7 @@ import {
 } from "@/lib/prospectare/citire";
 import { ETAPE, ETAPE_ORDINE } from "@/lib/prospectare/labels";
 import type { Dispozitiv, Etapa, RezumatDistributie } from "@/lib/prospectare/types";
+import { requireAdmin } from "../_components/require-admin";
 
 export const metadata: Metadata = { title: "Prezentare — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -312,6 +313,7 @@ function Distributie({ d }: { d: RezumatDistributie }) {
 
 /** /admin/prospectare — rezumatul prospectării: cifrele zilei, distribuția pe canale, pâlnia, căsuțele, roboții, ultimele schimbări. */
 export default async function PrezentarePage() {
+  await requireAdmin();
   const { azi } = aziBucuresti();
   const [rezumat, activitate, casute, dispozitive, construite, distributie] = await Promise.all([
     citesteRezumat(),

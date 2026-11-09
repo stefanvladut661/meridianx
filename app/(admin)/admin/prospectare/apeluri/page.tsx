@@ -19,6 +19,7 @@ import {
 import { UTILIZATORI } from "@/lib/prospectare/labels";
 import type { Utilizator } from "@/lib/prospectare/types";
 import { utilizatorCurent } from "@/lib/prospectare/utilizator";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Apeluri azi — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -29,6 +30,7 @@ export const dynamic = "force-dynamic";
  * următoare și programările lui de mâine încolo. Garda de admin e în layout-ul modulului.
  */
 export default async function ApeluriPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const cine = await utilizatorCurent(params.cine);
   // Acțiunile salvează pe cel din cookie; `?cine=` schimbă doar ce vezi.

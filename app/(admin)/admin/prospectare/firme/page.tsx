@@ -11,6 +11,7 @@ import { FirmeEroare, FirmeTabel } from "@/components/panou/prospectare/firme-ta
 import { FirmeFisa, type StareFisa } from "@/components/panou/prospectare/firme-fisa";
 import { FirmePaginare } from "@/components/panou/prospectare/firme-paginare";
 import { firmeCuNumar } from "@/components/panou/prospectare/firme-format";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Firme — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -43,6 +44,7 @@ const cu = (query: string, cale = CALE): string => (query ? `${cale}?${query}` :
  * Firmele fără site apar doar la căutare sau pe etapă; cele respinse la evaluare, niciodată.
  */
 export default async function FirmePage({ searchParams }: { searchParams: Promise<Params> }) {
+  await requireAdmin();
   const params = await searchParams;
   const filtre = filtreDinAdresa(params);
   const ceruta = Number(unul(params.pagina));

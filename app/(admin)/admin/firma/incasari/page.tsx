@@ -5,6 +5,7 @@ import { isOblioConfigured } from "@/lib/firma/oblio/api";
 import { BankScreen } from "@/components/firma/bank-screen";
 import { Notice, PageHead } from "@/components/firma/ui";
 import { confirmLineAction, ignoreLineAction, importStatementAction, prepareStatementAction, previewStatementAction, rematchAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Încasări — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic";
  * plus lista de confirmat. Extrasul ajunge pe Drive.
  */
 export default async function IncasariPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const month = typeof params.luna === "string" && isMonth(params.luna) ? params.luna : currentMonth();
   const bank = await listBank(month);

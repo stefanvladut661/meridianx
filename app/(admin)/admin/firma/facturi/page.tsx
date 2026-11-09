@@ -9,6 +9,7 @@ import { InvoicesScreen } from "@/components/firma/invoices-screen";
 import { Notice, PageHead } from "@/components/firma/ui";
 import { driveMode } from "@/lib/firma/drive/google";
 import { approveAction, createManualAction, discardDraftAction, prepareMonthAction, refreshOblioAction, saveDraftAction, sendEmailAction, uploadMissingDriveAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Facturi — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
  * starea fiecăreia: ciornă, emisă, trimisă în e-Factura, încasată, întârziată.
  */
 export default async function FacturiPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const month = typeof params.luna === "string" && isMonth(params.luna) ? params.luna : currentMonth();
   const clientId = typeof params.client === "string" && params.client ? params.client : null;

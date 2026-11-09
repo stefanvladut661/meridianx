@@ -8,6 +8,7 @@ import { uploadMissingDriveAction } from "../facturi/actions";
 import { AccountantScreen } from "@/components/firma/accountant-screen";
 import { Notice, PageHead } from "@/components/firma/ui";
 import { buildPackageAction, downloadPackageAction, sendPackageAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Contabil — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export const dynamic = "force-dynamic";
  * luna trecută), zip-ul cu folderul lunii și extrasul, emailul către contabil.
  */
 export default async function ContabilPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   // Pachetul se face la început de lună, pentru luna trecută.
   const month = typeof params.luna === "string" && isMonth(params.luna) ? params.luna : addMonths(currentMonth(), -1);

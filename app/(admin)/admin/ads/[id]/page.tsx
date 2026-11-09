@@ -24,6 +24,7 @@ import { InlineNote } from "@/components/panou/ui/actions";
 import { dateTimeRo } from "@/components/panou/ui/format";
 import { Card, Pill, SectionTitle, Stamp, btnClass, type PillTone } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Campanie — MERIDIAN Reclame",
@@ -53,6 +54,7 @@ function statusTone(status: string): PillTone {
  * mai e azi în Ads Manager.
  */
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdmin();
   const { id } = await params;
   const found = await getCampaign(id);
   if (!found.ok) {

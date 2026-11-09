@@ -28,6 +28,7 @@ import {
   citesteSetari,
   maineBucuresti,
 } from "@/lib/prospectare/citire";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Email — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ const ZILE = 14;
  * lista tuturor emailurilor trimise (filtrabilă pe căsuță), ultimele 14 zile și răspunsurile.
  */
 export default async function EmailPage({ searchParams }: { searchParams: Promise<{ casuta?: string | string[] }> }) {
+  await requireAdmin();
   const params = await searchParams;
   const { azi } = aziBucuresti();
   const maine = maineBucuresti(azi);

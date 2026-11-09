@@ -5,6 +5,7 @@ import { isZona, ZONA_LABEL, ZONE } from "@/lib/firma/istoric-shared";
 import { dateTimeLabel } from "@/lib/firma/format";
 import { cn } from "@/lib/utils";
 import { Empty, Notice, PageHead, Tag, tdClass, thClass } from "@/components/firma/ui";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Istoric — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ const REZULTAT = { ok: { tone: "ok", label: "Reușit" }, eroare: { tone: "error"
 
 /** /admin/firma/istoric — fiecare acțiune a modulului: cine, ce, când, rezultatul. */
 export default async function IstoricPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const zona = typeof params.zona === "string" && isZona(params.zona) ? params.zona : null;
   const history = await readHistory({ zona, limit: 300 });

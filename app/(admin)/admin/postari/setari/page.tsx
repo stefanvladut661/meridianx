@@ -12,6 +12,7 @@ import { SettingsScreen, type DriveInfo, type StatusItem } from "@/components/pa
 import { ScreenHead } from "@/components/panou/postari/shared";
 import { checkDriveAction, saveSettingsAction } from "./actions";
 import { connectInstagramAction, disconnectAction } from "./conturi-actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Setări — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ const TIKTOK_RESULT: Record<string, { tone: "mint" | "apricot" | "rose"; text: s
  * Pagina citește doar booleene despre ce e pus în Vercel, niciodată valorile.
  */
 export default async function SetariPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const result = typeof params.tiktok === "string" ? (TIKTOK_RESULT[params.tiktok] ?? null) : null;
   const motiv = typeof params.motiv === "string" ? params.motiv.slice(0, 200) : null;

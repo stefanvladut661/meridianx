@@ -5,6 +5,7 @@ import { BatchEditor } from "@/components/panou/ads/batch-editor";
 import { PAGE_TITLE } from "@/components/panou/ads/tone";
 import { checkBatchPlan, chooseWorkspace, createBatchPlan } from "../actions";
 import { continueJobAction } from "../v2-actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Lot de planuri — MERIDIAN Reclame",
@@ -21,6 +22,7 @@ export const maxDuration = 60;
  * (agenția sau clienții), pe oricare platformă.
  */
 export default async function BatchPage() {
+  await requireAdmin();
   const workspaces = listWorkspaces();
   const currentId = await currentWorkspaceId();
 

@@ -15,6 +15,7 @@ import {
   maineBucuresti,
 } from "@/lib/prospectare/citire";
 import { utilizatorCurent } from "@/lib/prospectare/utilizator";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "WhatsApp azi — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ function firme(n: number): string {
  * programat de mâine încolo. Garda de admin e în layout.
  */
 export default async function WhatsAppPage() {
+  await requireAdmin();
   const { azi } = aziBucuresti();
   // Ciclul de azi întâi: dacă cronul de la 00:00 n-a rulat, îl pornește citirea asta.
   const ciclu = await asiguraCiclu();

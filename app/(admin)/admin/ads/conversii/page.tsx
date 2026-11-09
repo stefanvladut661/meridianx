@@ -17,6 +17,7 @@ import { ConversiiLista } from "@/components/panou/ads/cautari-conversii-lista";
 import { ConversiiPasi } from "@/components/panou/ads/cautari-conversii-pasi";
 import { GtmExport } from "@/components/panou/ads/cautari-gtm";
 import { createConversionActions, previewConversionActions } from "../actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Conversii — MERIDIAN Reclame",
@@ -64,6 +65,7 @@ function Tile({ label, children }: { label: string; children: React.ReactNode })
  * GTM — e scris pe pagină, ca pași.
  */
 export default async function ConversionsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const user = await getAdminUser();
   if (!user) redirect("/admin/login");
 

@@ -9,6 +9,7 @@ import { dateTimeRo } from "@/components/panou/ui/format";
 import { Card, Pill, type PillTone } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { ScreenHead } from "@/components/panou/postari/shared";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Istoric — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ const chip = (active: boolean) =>
 
 /** /admin/postari/istoric — fiecare acțiune a modulului: cine, ce, când, rezultatul. Ultimele 300. */
 export default async function IstoricPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const zona = typeof params.zona === "string" && isZona(params.zona) ? params.zona : null;
   const tinta = typeof params.tinta === "string" && params.tinta.length <= 200 ? params.tinta : null;

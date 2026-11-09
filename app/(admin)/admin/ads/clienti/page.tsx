@@ -13,6 +13,7 @@ import {
   syncClientAction,
   visibleAccountsAction,
 } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Clienți — MERIDIAN Reclame",
@@ -29,6 +30,7 @@ export const maxDuration = 60;
  * cont trece în continuare prin spațiul lui de lucru (tokenul și plafonul).
  */
 export default async function ClientsPage() {
+  await requireAdmin();
   const user = await getAdminUser();
   if (!user) redirect("/admin/login");
 

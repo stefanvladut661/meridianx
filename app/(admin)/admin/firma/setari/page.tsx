@@ -8,6 +8,7 @@ import { DriveStatusCard } from "@/components/firma/drive-status";
 import { driveStatus, monthFolderName } from "@/lib/firma/drive";
 import { currentMonth } from "@/lib/firma/format";
 import { createMonthFolderAction, saveSettingsAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Setări — MERIDIAN Firmă", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export const dynamic = "force-dynamic";
  * se văd și nu se scriu aici.
  */
 export default async function SetariPage() {
+  await requireAdmin();
   const settings = await readSettings();
   // Seriile de factură din Oblio, ca seria să se aleagă, nu să se scrie (doar citire).
   let series: { names: string[]; error: string | null } = { names: [], error: null };

@@ -13,6 +13,7 @@ import {
   sendStagedVideo,
 } from "../actions";
 import { continueJobAction } from "../v2-actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Plan nou — MERIDIAN Reclame",
@@ -35,6 +36,7 @@ export const maxDuration = 60;
  * aici, pe server.
  */
 export default async function NewPlanPage() {
+  await requireAdmin();
   const workspaces = listWorkspaces();
   const currentId = await currentWorkspaceId();
 

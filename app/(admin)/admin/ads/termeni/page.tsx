@@ -16,6 +16,7 @@ import { CautariTermeni } from "@/components/panou/ads/cautari-termeni";
 import { CautariTermeniFiltre } from "@/components/panou/ads/cautari-termeni-filtre";
 import { InlineNote } from "@/components/panou/ui/actions";
 import { addTermNegatives, previewTermNegatives, saveTermRules, syncTermsNow } from "../actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Termeni de căutare — MERIDIAN Reclame",
@@ -33,6 +34,7 @@ export const maxDuration = 60;
  * și abia apoi adaugă.
  */
 export default async function TermsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const user = await getAdminUser();
   if (!user) redirect("/admin/login");
 

@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/panou/ui/states";
 import { ScreenHead } from "@/components/panou/postari/shared";
 import { TiktokDrafts } from "@/components/panou/postari/tiktok-drafts";
 import { markTiktokPublishedAction } from "../actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "De publicat pe TikTok — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export const dynamic = "force-dynamic";
  * copiezi, lipești, postezi, apoi „Publicat”.
  */
 export default async function TiktokPage() {
+  await requireAdmin();
   const settings = await readSettings();
   const fus = settings.ok ? settings.data.sloturiFus : "Europe/Bucharest";
   const today = todayIn(fus);

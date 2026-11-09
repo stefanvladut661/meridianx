@@ -15,6 +15,7 @@ import { InlineNote } from "@/components/panou/ui/actions";
 import { Card, SectionTitle, btnClass } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { checkSearchPlan, createSearchPlan } from "../actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Căutări — MERIDIAN Reclame",
@@ -37,6 +38,7 @@ const SHOWN = 12;
  * română, verificat cu `validateOnly`, creat într-o singură cerere — totul oprit.
  */
 export default async function SearchPlanPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const workspaces = listWorkspaces();
   const currentId = await currentWorkspaceId();

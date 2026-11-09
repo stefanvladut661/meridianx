@@ -4,6 +4,7 @@ import { knownAccounts } from "@/lib/ads/store";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { ClaudeHelper } from "@/components/panou/ads/claude-helper";
 import { chooseWorkspace, readClaudeContext } from "../actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Pentru Claude — MERIDIAN Reclame",
@@ -20,6 +21,7 @@ export const maxDuration = 60;
  * conversația în care se scriu planurile.
  */
 export default async function ClaudePage() {
+  await requireAdmin();
   const workspaces = listWorkspaces();
   const currentId = await currentWorkspaceId();
   const tiktok = workspaces.filter((workspace) => workspace.platform === "tiktok");

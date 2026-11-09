@@ -7,6 +7,7 @@ import { addDays, momentLabel, todayIn } from "@/lib/postari/timp";
 import { Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { PlanEditor } from "@/components/panou/postari/plan-editor";
 import { approvePlanAction, verifyPlanAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Plan nou — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -19,6 +20,7 @@ export const maxDuration = 60;
  * „Aprobă planul”. Pagina nu există în prototip; e proiectată în același limbaj.
  */
 export default async function PlanPage() {
+  await requireAdmin();
   const settings = await readSettings();
   const fus = settings.ok ? settings.data.sloturiFus : "Europe/Bucharest";
   const plans = await listPlans(10);

@@ -17,6 +17,7 @@ import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { InlineNote } from "@/components/panou/ui/actions";
 import { syncClientAction } from "./clienti/actions";
 import { entityDaysAction, pauseAction, setResultAction } from "./v2-actions";
+import { requireAdmin } from "../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Campanii — MERIDIAN Reclame",
@@ -41,6 +42,7 @@ const AGAINST: Record<string, string> = {
  * canalul alese sus. Citește doar din bază (sincronizarea zilnică + „Sincronizează”).
  */
 export default async function AdsCampaignsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const selection = await readSelection(params);
   const clients = await clientsForRequest();

@@ -20,6 +20,7 @@ import { Card, Pill, SectionTitle, Stamp, btnClass } from "@/components/panou/ui
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { cn } from "@/lib/utils";
 import { continueJobAction } from "../v2-actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Planuri — MERIDIAN Reclame",
@@ -62,6 +63,7 @@ function isPaused(status: string): boolean {
  * spre fișa fiecăruia, și intrările spre crearea unui plan nou.
  */
 export default async function PlansPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const selection = await readSelection(params);
   const [plans, clients, jobs] = await Promise.all([listCampaigns(500), clientsForRequest(), listUnfinishedJobs()]);

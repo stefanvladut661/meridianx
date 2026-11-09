@@ -13,6 +13,7 @@ import { Card, btnClass } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
 import { checkPlan, chooseWorkspace, createPausedCampaign, materialUploadStatus, sendMaterialToAccount } from "../actions";
 import { continueJobAction } from "../v2-actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Creează ghidat — MERIDIAN Reclame",
@@ -29,6 +30,7 @@ export const maxDuration = 60;
  * creare pe pauză. Reclamele se aleg din Materiale.
  */
 export default async function CreatePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const selection = await readSelection(params);
   const [clients, materials] = await Promise.all([clientsForRequest(), listMaterials()]);

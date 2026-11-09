@@ -15,6 +15,7 @@ import { ClaudePlan } from "@/components/panou/postari/claude-plan";
 import { ClipsLot, type ClipRowData } from "@/components/panou/postari/clips";
 import { ScreenHead } from "@/components/panou/postari/shared";
 import { probeClipAction, writeCaptionsAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Clipuri — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ function partLabel(part: ManifestPart | null): string | null {
  * lângă ele de terminalul de reclame și „Scrie planul cu Claude”. Doar citire.
  */
 export default async function ClipuriPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const path = typeof params.folder === "string" ? params.folder.slice(0, 500) : "";
   const root = await rootFolder();

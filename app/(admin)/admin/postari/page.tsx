@@ -14,6 +14,7 @@ import { QueueList, type QueueGroup } from "@/components/panou/postari/queue-lis
 import { QueueAlerts, QueueStats, QueueStatus, QueueStrip, type PlatformStats, type QueueAlert, type StripDay } from "@/components/panou/postari/queue-panels";
 import { ScreenHead } from "@/components/panou/postari/shared";
 import { postHistoryAction, removePostAction, retryPostAction, runNowAction, setQueueAction } from "./actions";
+import { requireAdmin } from "../_components/require-admin";
 
 export const metadata: Metadata = { title: "Coada — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ const platformOf = (value: unknown): Platforma | null => (value === "instagram" 
  * (`zi`, `de`, `platforma`).
  */
 export default async function CoadaPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const settings = await readSettings();
   const fus = settings.ok ? settings.data.sloturiFus : "Europe/Bucharest";

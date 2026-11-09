@@ -9,6 +9,7 @@ import { ApeluriScreen, type CallCampaign } from "@/components/panou/ads/apeluri
 import { btnClass, Card } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { addCallAction, deleteCallAction } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Apeluri — MERIDIAN Reclame",
@@ -24,6 +25,7 @@ export const dynamic = "force-dynamic";
  * lângă „Rezultate”.
  */
 export default async function CallsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const selection = await readSelection(params);
   const clients = await clientsForRequest();

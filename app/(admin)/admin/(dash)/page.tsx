@@ -9,6 +9,7 @@ import { LeadsSetupCard } from "@/components/panou/leads/setup-card";
 import { LeadsWorkspace } from "@/components/panou/leads/leads-workspace";
 import type { LeadDetailData } from "@/components/panou/leads/types";
 import { FILTER_KEYS, leadsHref, type LeadDetailNeighbors, type LeadFilterValues, type LeadSourcesSummary } from "@/components/panou/leads/urls";
+import { requireAdmin } from "../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Lead-uri — MERIDIAN Admin",
@@ -91,6 +92,7 @@ function neighborsOf(leadId: string, facts: LeadFacts | null, total: number, fil
 }
 
 export default async function AdminDashboardPage({ searchParams }: Readonly<{ searchParams: Promise<SearchParams> }>) {
+  await requireAdmin();
   const raw = await searchParams;
   const cleaned = cleanParams(raw);
   // `sters` e semnul lăsat de acțiunea de ștergere; nu e filtru și nu trebuie să supraviețuiască următoarei navigări.

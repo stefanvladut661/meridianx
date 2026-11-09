@@ -15,6 +15,12 @@ import "./ads/portal.css";
  * rămâne curată pagina de login). Fiecare modul își face garda în layout-ul lui
  * (`getAdminUser()` → altfel /admin/login), iar `getAdminUser` e memorat pe
  * randare, deci verificarea se face o singură dată.
+ *
+ * ⚠️ NU pune `loading.tsx` aici și niciun `<Suspense>` în jurul lui `children`.
+ * Un Suspense deasupra gărzilor face ca răspunsul să plece (200) înainte de
+ * verificare, iar pagina — randată în paralel, rând separat în fluxul RSC —
+ * ajunge în HTML chiar dacă layout-ul modulului redirecționează. S-a întâmplat
+ * pe 9 nov 2026 (d2762f4). Scheletul la clic vine din cadru, pe client.
  */
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   if (!isAuthConfigured()) return children;

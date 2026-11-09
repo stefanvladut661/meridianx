@@ -20,6 +20,7 @@ import { InlineNote } from "@/components/panou/ui/actions";
 import { Stat } from "@/components/panou/ui/primitives";
 import { cn } from "@/lib/utils";
 import { addAccountNegatives, pauseAccountCampaigns, previewAccountNegatives } from "../actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Contul Google — MERIDIAN Reclame",
@@ -45,6 +46,7 @@ type View = (typeof VIEWS)[number]["id"];
  * conversie: niciun buton nu pornește, nu șterge și nu schimbă bugete.
  */
 export default async function AccountPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const user = await getAdminUser();
   if (!user) redirect("/admin/login");
 

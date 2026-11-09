@@ -5,6 +5,7 @@ import { MATERIALS_MIGRATION_MISSING, listMaterials } from "@/lib/ads/materials"
 import { MaterialeScreen } from "@/components/panou/ads/materiale-screen";
 import { InlineNote } from "@/components/panou/ui/actions";
 import { archiveMaterial, finishMaterialUpload, prepareMaterialUpload, renameMaterial } from "./actions";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = {
   title: "Materiale — MERIDIAN Reclame",
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
  * agenției (fără client), și în ce conturi a ajuns deja fiecare.
  */
 export default async function MaterialsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin();
   const params = await searchParams;
   const selection = await readSelection(params);
   const [clients, materials] = await Promise.all([clientsForRequest(), listMaterials()]);

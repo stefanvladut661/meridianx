@@ -9,12 +9,14 @@ import { SetariLimite } from "@/components/panou/prospectare/setari-limite";
 import { SetariSabloane } from "@/components/panou/prospectare/setari-sabloane";
 import { aziBucuresti, citesteCasute, citesteConturiWhatsapp, citesteSetari } from "@/lib/prospectare/citire";
 import { COOKIE_UTILIZATOR, isUtilizator, UTILIZATORI } from "@/lib/prospectare/labels";
+import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Setări — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 /** /admin/prospectare/setari — conturile WhatsApp, limitele distribuției și ale roboților, șabloanele de mesaj. */
 export default async function SetariPage() {
+  await requireAdmin();
   const { azi } = aziBucuresti();
   const [setari, casute, conturi, jar] = await Promise.all([citesteSetari(), citesteCasute(azi), citesteConturiWhatsapp(), cookies()]);
   const ales = jar.get(COOKIE_UTILIZATOR)?.value;
