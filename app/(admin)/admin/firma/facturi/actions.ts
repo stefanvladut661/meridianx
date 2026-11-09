@@ -94,5 +94,5 @@ export async function refreshOblioAction(): Promise<InvoiceActionResult> {
   const result = await refreshFromOblio(actor);
   revalidatePath(PATH);
   if (!result.ok) return { ok: false, message: result.message };
-  return { ok: true, message: result.data.checked === 0 ? "Nicio factură deschisă de verificat." : `Am verificat ${result.data.checked} ${result.data.checked === 1 ? "factură" : "facturi"} în Oblio; ${result.data.updated} cu schimbări.` };
+  return { ok: true, message: result.data.checked === 0 ? "Nicio factură deschisă de verificat." : `${result.data.checked} ${result.data.checked === 1 ? "factură verificată" : "facturi verificate"} în Oblio, ${result.data.updated} cu schimbări.` };
 }

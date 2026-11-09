@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  */
 export function EmailPeZile({ zile, casute, total, azi, casutaAleasa }: { zile: string[]; casute: CasutaPeZile[]; total: number; azi: string; casutaAleasa?: string }) {
   if (casute.length === 0 || zile.length === 0) {
-    return <p className="py-6 text-center text-[14px] text-muted-foreground">Niciun email trimis încă. Primul mesaj al unui robot deschide aici rândul căsuței lui.</p>;
+    return <p className="py-6 text-center text-[14px] text-muted-foreground">Niciun email trimis încă.</p>;
   }
   const peZiToate = Object.fromEntries(zile.map((z) => [z, casute.reduce((s, c) => s + (c.peZi[z] ?? 0), 0)]));
   const zi = (z: string) => new Date(`${z}T12:00:00Z`);

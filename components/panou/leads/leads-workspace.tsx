@@ -150,31 +150,27 @@ export function LeadsWorkspace({ now, items, total, page, perPage, listFailed, s
     listBody = (
       <ErrorState
         title="Nu am putut citi lead-urile"
-        text="Conexiunea la Supabase a eșuat. Verifică variabilele de mediu și starea proiectului în consola Supabase, apoi încearcă din nou. Datele tale nu s-au pierdut."
+        text="Supabase n-a răspuns. Verifică proiectul în consola Supabase și reîncearcă."
         onRetry={refresh}
-        hint="Lista se reîncearcă singură la 20 de secunde. Dacă eroarea rămâne și după ce baza răspunde, conexiunea are nevoie de verificare."
       />
     );
   } else if (items.length === 0 && total === 0 && !hasFilters) {
     listBody = (
       <EmptyState
         icon={Sparkles}
-        title="Încă nu a venit niciun lead"
-        text="Lead-ul apare aici în secunda în care cineva completează un formular pe site. Îți trimitem și un email, ca să nu-l ratezi."
+        title="Niciun lead încă"
         action={
           <a href="/video" target="_blank" rel="noopener noreferrer" className={btnClass({ variant: "outline", size: "sm" })}>
-            Deschide formularul de pe site
+            Deschide formularul
           </a>
         }
-        hint="Vrei să verifici că merge? Trimite o cerere de test din formularul de pe /video. Lista se reîmprospătează singură, nu trebuie să reîncarci pagina."
       />
     );
   } else if (items.length === 0 && total === 0) {
     listBody = (
       <EmptyState
         icon={Inbox}
-        title="Niciun lead nu se potrivește filtrului"
-        text="Filtrul e prea strâns. Șterge data de la/până la sau caută doar numele firmei. Dacă abia ai schimbat statusul cuiva, s-ar putea să fi ieșit din selecție."
+        title="Niciun lead în filtru"
         action={
           <Btn variant="outline" size="sm" onClick={clearFilters}>
             Șterge filtrele
@@ -187,10 +183,10 @@ export function LeadsWorkspace({ now, items, total, page, perPage, listFailed, s
       <EmptyState
         icon={Inbox}
         title={`Pagina ${page} e goală`}
-        text={`Filtrul curent are ${leadCount(total)}, în ${pageCount} ${pageCount === 1 ? "pagină" : "pagini"}.`}
+        text={`${leadCount(total)}, în ${pageCount} ${pageCount === 1 ? "pagină" : "pagini"}`}
         action={
           <NavLink href={leadsHref(filterSearch, { page: pageCount })} className={btnClass({ variant: "outline", size: "sm" })}>
-            Mergi la ultima pagină
+            Ultima pagină
           </NavLink>
         }
       />
@@ -214,7 +210,7 @@ export function LeadsWorkspace({ now, items, total, page, perPage, listFailed, s
       <Card className="p-0">
         <ErrorState
           title="Nu am putut citi lead-ul"
-          text="Conexiunea la bază a eșuat în timp ce deschideam fișa. Datele nu s-au pierdut: încearcă din nou sau întoarce-te la listă."
+          text="Baza n-a răspuns. Reîncearcă."
           onRetry={refresh}
         />
       </Card>
@@ -225,7 +221,7 @@ export function LeadsWorkspace({ now, items, total, page, perPage, listFailed, s
         <EmptyState
           icon={Inbox}
           title="Lead-ul nu mai există"
-          text="Poate a fost șters de un coleg. Lista din stânga are lead-urile rămase."
+          text="Poate l-a șters un coleg."
           action={
             <NavLink href={listHref} className={btnClass({ variant: "primary", size: "sm" })}>
               Vezi lista
@@ -254,11 +250,12 @@ export function LeadsWorkspace({ now, items, total, page, perPage, listFailed, s
               {listBody}
             </Card>
 
-            <p className="flex items-center gap-1.5 px-1 text-[12.5px] text-muted-foreground/60">
-              <Download className="h-3 w-3 shrink-0" aria-hidden="true" />
-              Exportul CSV conține exact rândurile filtrate, nu toată baza.
-              {total > EXPORT_CAP ? ` La peste 5.000 de rânduri se exportă cele mai noi 5.000.` : ""}
-            </p>
+            {total > EXPORT_CAP ? (
+              <p className="flex items-center gap-1.5 px-1 text-[13px] text-muted-foreground">
+                <Download className="h-3 w-3 shrink-0" aria-hidden="true" />
+                Exportul CSV ia doar cele mai noi 5.000 de rânduri.
+              </p>
+            ) : null}
           </div>
 
           {open && detailBody ? <div className="min-w-0">{detailBody}</div> : null}

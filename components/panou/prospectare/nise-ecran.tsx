@@ -4,8 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutGrid } from "lucide-react";
 import { nisaAdmin } from "@/app/(admin)/admin/prospectare/actions";
-import { ConfirmDialog, InlineNote } from "@/components/panou/ui/actions";
+import { ConfirmDialog } from "@/components/panou/ui/actions";
 import { num, relativeRo } from "@/components/panou/ui/format";
+import { Info } from "@/components/panou/ui/info";
 import { Btn, Card } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
 import { useToast } from "@/components/panou/ui/toast";
@@ -96,7 +97,13 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
 
       <Card padded={false} className="overflow-hidden">
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-3.5 sm:px-5">
-          <h2 className="text-[16px] font-semibold tracking-[-0.01em]">Tabla de nișe</h2>
+          <h2 className="flex items-center gap-2 text-[16px] font-semibold tracking-[-0.01em]">
+            Tabla de nișe
+            <Info label="Cum lucrează roboții cu tabla">
+              Prin <code className="font-mono">POST /api/prospectare/robot/nisa</code>: „rezerva” (nișă + zonă), „progres” (semn de viață și cifrele, care nu scad) și
+              „termina”. O nișă terminată nu se mai rezervă. „Eliberează” nu șterge nimic.
+            </Info>
+          </h2>
           {!eroare && nise.length > 0 ? <p className="pu-num text-[13.5px] text-muted-foreground">{num(nise.length)} pe tablă</p> : null}
         </div>
 
@@ -106,15 +113,10 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
           <EmptyState
             icon={LayoutGrid}
             title="Nicio nișă pe tablă"
-            text={
-              <>
-                Roboții își rezervă singuri nișele, prin <code className="font-mono text-[13.5px] text-foreground">POST /api/prospectare/robot/nisa</code> (acțiunea „rezerva”). Poți
-                pune și tu una pe tablă, liberă, din „Adaugă nișă”.
-              </>
-            }
+            text="Roboții își rezervă singuri nișele."
             action={
               <Btn size="sm" variant="primary" onClick={() => nisaRef.current?.focus()}>
-                Adaugă prima nișă
+                Adaugă nișă
               </Btn>
             }
           />
@@ -155,7 +157,7 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
               <table className="w-full border-collapse text-left">
                 <caption className="sr-only">Tabla de nișe, pe grupe: în lucru, libere și expirate, terminate</caption>
                 <thead>
-                  <tr className="border-b border-border text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">
+                  <tr className="border-b border-border text-[12px] uppercase tracking-[0.1em] text-muted-foreground">
                     <th scope="col" className="py-2.5 pl-5 pr-3 font-medium">
                       Nișă · zonă
                     </th>
@@ -163,7 +165,7 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
                       Stare
                     </th>
                     <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Robot și semn de viață
+                      Robot
                     </th>
                     <th scope="col" className="py-2.5 pr-3 font-medium">
                       Rezultate
@@ -221,24 +223,18 @@ export function NiseEcran({ nise, eroare, rezumat, acum }: { nise: Nisa[]; eroar
         )}
       </Card>
 
-      <InlineNote tone="neutral">
-        Roboții vorbesc cu tabla prin <code className="font-mono text-[13px] text-foreground">POST /api/prospectare/robot/nisa</code>: „rezerva” (nișă + zonă), „progres”
-        (semn de viață și cifrele, care nu scad niciodată) și „termina”. O nișă terminată nu se mai rezervă. „Eliberează” nu șterge nimic: nișa redevine liberă, cu cifrele și
-        nota de până atunci.
-      </InlineNote>
-
       <ConfirmDialog
         open={deEliberat !== null}
         onOpenChange={(v) => {
           if (!v) setDeEliberat(null);
         }}
         title={deEliberat ? `Eliberezi „${deEliberat.nisa} · ${deEliberat.zona}”?` : "Eliberezi nișa?"}
-        description="Nișa redevine liberă pe tablă. Cifrele de până acum și nota rămân; în notă se scrie cine a eliberat-o și când."
+        description="Redevine liberă; cifrele și nota rămân."
         consequence={
           deEliberat
             ? deEliberat.expirata
-              ? `Ultimul semn de la ${robotDeEliberat}: ${semnDeEliberat ? relativeRo(semnDeEliberat, acum) : "niciunul"}. După eliberare, orice robot o poate rezerva; dacă ${robotDeEliberat} revine, primește 409 și trebuie să ceară altă nișă.`
-              : `${robotDeEliberat.charAt(0).toUpperCase()}${robotDeEliberat.slice(1)} o pierde chiar dacă lucrează acum pe ea: la următorul raport primește 409 și se oprește. Orice alt robot o poate rezerva apoi.`
+              ? `Ultimul semn de la ${robotDeEliberat}: ${semnDeEliberat ? relativeRo(semnDeEliberat, acum) : "niciunul"}. Dacă revine, primește 409 și cere altă nișă.`
+              : `${robotDeEliberat.charAt(0).toUpperCase()}${robotDeEliberat.slice(1)} o pierde chiar dacă lucrează acum pe ea: se oprește la următorul raport.`
             : undefined
         }
         confirmLabel="Eliberează"

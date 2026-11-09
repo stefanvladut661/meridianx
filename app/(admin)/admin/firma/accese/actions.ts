@@ -39,5 +39,5 @@ export async function addStarterAction(): Promise<AccountResult> {
   await logEvent({ actor, zona: "accese", actiune: "lista de bază adăugată", rezultat: result.ok ? "ok" : "eroare", mesaj: result.ok ? `${result.data.added} conturi` : result.message });
   if (!result.ok) return { ok: false, message: result.message };
   revalidatePath(PATH);
-  return { ok: true, message: result.data.added === 0 ? "Lista de bază era deja completă." : `${result.data.added} conturi adăugate. Completează-le pe rând.` };
+  return { ok: true, message: result.data.added === 0 ? "Lista de bază era deja completă." : `${result.data.added} conturi adăugate.` };
 }

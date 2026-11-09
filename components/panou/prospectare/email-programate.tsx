@@ -101,7 +101,7 @@ export function EmailProgramate({ randuri, total }: { randuri: RandProgramate[];
   if (randuri.length === 0) {
     return (
       <p className="py-6 text-center text-[14px] text-muted-foreground">
-        Nicio căsuță conectată, deci nimic programat. O căsuță apare după primul email trimis de pe ea; apoi distribuția îi pune firme la 00:00.
+        Nicio căsuță încă: apare după primul email trimis.
       </p>
     );
   }

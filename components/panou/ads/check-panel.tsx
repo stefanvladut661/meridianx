@@ -5,6 +5,7 @@ import type { PlatformCheck, ResolvedName } from "@/lib/ads/types";
 import { PLATFORM_LABEL } from "@/lib/ads/constants";
 import { countOf } from "@/lib/ads/plan-derive";
 import { cn } from "@/lib/utils";
+import { Info } from "../ui/info";
 import { ProblemList, jumpTo } from "./problem-list";
 import { ERROR_DOT, ERROR_TEXT, OK_DOT, ROW_OK, WARNING_DOT, WARNING_TEXT } from "./tone";
 
@@ -137,7 +138,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
             {check.instagram ? (
               `@${check.instagram.username}`
             ) : (
-              <span className="text-muted-foreground">fără cont de Instagram — pe Instagram apare pagina</span>
+              <span className="text-muted-foreground">fără cont — apare pagina</span>
             )}
           </Row>
         ) : null}
@@ -148,13 +149,13 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
               <span className="ml-2 inline-block font-mono text-[12.5px] text-muted-foreground">{check.pixel.id}</span>
             </>
           ) : (
-            <span className="text-muted-foreground">{google ? "obiectivul nu optimizează pe conversii" : "obiectivul nu folosește pixel"}</span>
+            <span className="text-muted-foreground">nefolosit de obiectiv</span>
           )}
         </Row>
         {check.conversionDomain ? (
           <Row label="Domeniul" tone="ok">
             {check.conversionDomain}
-            <span className="ml-2 text-[13.5px] text-muted-foreground">conversiile se atribuie pe domeniul ăsta</span>
+            <Info className="ml-1.5">Conversiile se atribuie pe domeniul ăsta.</Info>
           </Row>
         ) : null}
         {check.dsa ? (
@@ -163,9 +164,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
               Beneficiar: {check.dsa.beneficiary ?? <span className={ERROR_TEXT}>lipsește</span>}
             </span>
             <span className="block">Plătitor: {check.dsa.payor ?? <span className={ERROR_TEXT}>lipsește</span>}</span>
-            <span className="mt-0.5 block font-mono text-[12.5px] text-muted-foreground">
-              din {check.dsa.source} · apar pe reclamă, în „De ce văd reclama asta”
-            </span>
+            <span className="mt-0.5 block font-mono text-[12.5px] text-muted-foreground">din {check.dsa.source}</span>
           </Row>
         ) : null}
         <Row
@@ -195,7 +194,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
                       <p className={cn("font-mono text-[12.5px]", video.ready ? "text-muted-foreground" : WARNING_TEXT)}>
                         {[
                           formatDuration(video.lengthSeconds),
-                          video.ready ? "gata de folosit" : `${PLATFORM_LABEL[check.platform]} încă îl procesează`,
+                          video.ready ? "gata" : `${PLATFORM_LABEL[check.platform]} îl procesează`,
                           video.id,
                         ]
                           .filter(Boolean)
@@ -216,9 +215,10 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
 
       {names.length > 0 ? (
         <div className="mt-4 space-y-5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-4">
-          <p className="text-[13.5px] leading-snug text-muted-foreground">
-            {countOf(names.length, "nume")} din plan, cum le-a înțeles {PLATFORM_LABEL[check.platform]}. Asta intră în targetare, nu
-            textul din plan.
+          <p className="flex items-center gap-1.5 text-[14px] font-medium text-foreground/90">
+            Targetare în {PLATFORM_LABEL[check.platform]}
+            <span className="pu-num font-normal text-muted-foreground">· {countOf(names.length, "nume")}</span>
+            <Info>Asta intră în targetare, nu textul din plan.</Info>
           </p>
           <NameGroup title="Locații" items={check.locations} />
           <NameGroup title="Limbi" items={check.languages} />
@@ -240,7 +240,7 @@ export function CheckPanel({ check, stale }: { check: PlatformCheck; stale: bool
         />
       </div>
       {check.errors.length === 0 && !stale ? (
-        <p className={cn("mt-4", ROW_OK)}>Totul se potrivește. Campania se poate crea — oprită.</p>
+        <p className={cn("mt-4", ROW_OK)}>Totul se potrivește. Gata de creat.</p>
       ) : null}
     </section>
   );

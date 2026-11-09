@@ -23,6 +23,7 @@ import { InlineNote } from "@/components/panou/ui/actions";
 import { SoftSelect, TextInput } from "@/components/panou/ui/select";
 import { copyWithExpiry } from "../_components/clipboard";
 import { describeError, isConflict } from "./errors";
+import { countNoun } from "./format";
 import { LABEL_CLASS } from "./ui";
 
 /**
@@ -269,7 +270,7 @@ export function EntryEditor({
         return;
       }
       if (field.kind === "totp" && field.value.trim() && !parseTotp(field.value)) {
-        setError(`„${label}”: seed-ul 2FA nu e valid — aștept base32 (ca JBSW Y3DP…) sau un link otpauth://totp/….`);
+        setError(`„${label}”: seed 2FA invalid. Aștept base32 (JBSW Y3DP…) sau otpauth://totp/….`);
         return;
       }
       fields.push({ label, value: field.value, secret: field.secret || field.kind === "totp", kind: field.kind });
@@ -312,7 +313,6 @@ export function EntryEditor({
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/[0.07] bg-[#0F0F13] px-5 py-3.5">
           <div className="min-w-0">
             <h2 className="text-[16px] font-semibold">{heading}</h2>
-            <p className="text-[12.5px] text-muted-foreground">Câmpurile marcate secret se criptează înainte să plece din browser.</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {dirty ? <Pill tone="apricot">nesalvat</Pill> : null}
@@ -328,13 +328,13 @@ export function EntryEditor({
         <div className="space-y-4 px-5 py-4">
           {discardPrompt ? (
             <InlineNote tone="apricot">
-              Ai modificări nesalvate. Le lași?
+              Ai modificări nesalvate.
               <span className="mt-2 flex flex-wrap gap-2">
                 <Btn size="xs" variant="outline" onClick={onClose}>
-                  Renunță la modificări
+                  Renunță la ele
                 </Btn>
                 <Btn size="xs" variant="ghost" onClick={() => setDiscardPrompt(false)}>
-                  Continuă editarea
+                  Continuă
                 </Btn>
               </span>
             </InlineNote>
@@ -344,7 +344,7 @@ export function EntryEditor({
             {error ? <InlineNote tone="rose">{error}</InlineNote> : null}
             {conflict ? (
               <InlineNote tone="rose">
-                Altcineva a salvat această intrare între timp. Nu am suprascris nimic. Reîncarcă versiunea nouă, apoi aplică modificările tale.
+                Altcineva a salvat intrarea între timp; nimic nu s-a suprascris. Reîncarcă, apoi refă modificările.
                 <button
                   type="button"
                   disabled={reloading}
@@ -403,7 +403,7 @@ export function EntryEditor({
             ) : null}
             <div className="sm:col-span-2">
               <label htmlFor={ids.tags} className={LABEL_CLASS}>
-                Etichete (separate prin virgulă)
+                Etichete
               </label>
               <TextInput
                 id={ids.tags}
@@ -424,7 +424,7 @@ export function EntryEditor({
                 value={draft.notes}
                 onChange={(event) => patch({ notes: event.target.value })}
                 rows={2}
-                placeholder="Context pentru echipă. Nu pune parole aici: notițele se caută."
+                placeholder="Fără parole aici: notițele se caută."
                 className="mt-1 w-full resize-y rounded-lg border border-white/[0.12] bg-white/[0.03] p-2.5 text-[14px] outline-none focus:border-lav/50"
               />
             </div>
@@ -433,7 +433,7 @@ export function EntryEditor({
           <div>
             <SectionTitle
               title="Câmpuri"
-              hint={`${draft.fields.length === 0 ? "niciun câmp" : `${draft.fields.length} câmpuri`} · poți pune orice etichetă`}
+              hint={draft.fields.length === 0 ? "niciun câmp" : countNoun(draft.fields.length, "câmp", "câmpuri")}
               action={
                 <span className="flex gap-1.5">
                   <Btn size="xs" variant="outline" icon={Plus} onClick={() => addField()}>
@@ -528,7 +528,7 @@ function FieldEditor({
           onClick={() => onChange({ secret: !field.secret, shown: false })}
           disabled={isTotp}
           aria-pressed={field.secret}
-          className={cn("rounded-md border px-1.5 py-1 text-[11.5px] disabled:opacity-70", field.secret ? "border-mint/25 bg-mint/10 text-mint" : "border-white/[0.1] text-muted-foreground")}
+          className={cn("rounded-md border px-1.5 py-1 text-[12px] disabled:opacity-70", field.secret ? "border-mint/25 bg-mint/10 text-mint" : "border-white/[0.1] text-muted-foreground")}
           aria-label={`${position}: ${field.secret ? "secret" : "public"}${isTotp ? " (seed 2FA, mereu secret)" : ""}`}
         >
           {field.secret ? "secret" : "public"}

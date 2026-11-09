@@ -53,7 +53,7 @@ export function MailboxTable({ casute, compact = false }: { casute: Casuta[]; co
   if (casute.length === 0) {
     return (
       <p className={cn("text-center text-[14px] text-muted-foreground", compact ? "py-4" : "py-6")}>
-        Nicio căsuță conectată. O căsuță apare aici după primul email trimis de pe ea.
+        Nicio căsuță încă: apare după primul email trimis.
       </p>
     );
   }

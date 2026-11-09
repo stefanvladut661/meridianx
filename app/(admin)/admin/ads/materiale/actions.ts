@@ -16,7 +16,7 @@ import { clientById } from "@/lib/ads/model/store";
  * într-un cont se face din „Creează”, la verificare.
  */
 
-const SESSION_EXPIRED = "Sesiunea a expirat. Reîncarcă pagina și intră din nou în panou.";
+const SESSION_EXPIRED = "Sesiunea a expirat. Reîncarcă pagina și intră din nou.";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Failure = { ok: false; message: string };
@@ -38,7 +38,7 @@ export async function prepareMaterialUpload(input: {
   const invalid = validateUpload(input.file);
   if (invalid) return { ok: false, message: invalid };
   const name = cleanName(input.name);
-  if (!name) return { ok: false, message: "Dă-i materialului un nume — cel după care îl recunoști în listă." };
+  if (!name) return { ok: false, message: "Dă-i materialului un nume." };
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, message: "Supabase nu e configurat pe server." };

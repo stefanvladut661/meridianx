@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, FileJson, ShieldCheck, Wand2 } from "lucide-react";
+import { ArrowRight, FileJson, Wand2 } from "lucide-react";
 import { examplePlanFor } from "@/lib/ads/example-plan";
-import { CURRENCIES, OBJECTIVE_LABEL, PLATFORM_LABEL, type Platform } from "@/lib/ads/constants";
+import { CURRENCIES, PLATFORM_LABEL, type Platform } from "@/lib/ads/constants";
 import { parsePlanText, replaceSmartQuotes, type PlanTextResult } from "@/lib/ads/plan-json";
 import { asRecord, asString, getIn, setIn } from "@/lib/ads/plan-path";
 import { countOf, formatMoney, rawVideosOf } from "@/lib/ads/plan-derive";
@@ -20,7 +20,7 @@ import type {
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog, InlineNote } from "../ui/actions";
-import { Btn, Card, SectionTitle } from "../ui/primitives";
+import { Btn, Card, SectionTitle, Stamp } from "../ui/primitives";
 import { SoftSelect } from "../ui/select";
 import { EmptyState } from "../ui/states";
 import { AdsPreview } from "./ads-preview";
@@ -139,7 +139,7 @@ export interface PlanEditorActions {
   }) => ReturnType<UploadActions["status"]>;
 }
 
-const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Nu s-a trimis nimic spre platformă. Încearcă din nou.";
+const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Nu s-a trimis nimic. Încearcă din nou.";
 
 export function PlanEditor({
   workspaces,
@@ -354,7 +354,7 @@ export function PlanEditor({
       ? "JSON-ul nu se poate citi."
       : "Niciun plan încă."
     : syntax
-      ? "JSON-ul nu se mai poate citi. Previzualizarea arată ultima versiune citită."
+      ? "JSON-ul nu se mai poate citi. Vezi ultima versiune citită."
       : errorCount > 0
         ? `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat${warningCount ? `, ${warningCount} de citit` : ""}.`
         : `Planul e valid${warningCount ? `, cu ${warningCount === 1 ? "un lucru" : countOf(warningCount, "lucruri")} de citit` : ""}.`;
@@ -365,29 +365,27 @@ export function PlanEditor({
   /* Ce se poate face acum, într-un singur loc: pasul următor, dacă e
      disponibil, și propoziția care spune de ce (sau ce urmează). */
   const step: { action: "none" | "check" | "create"; reason: string } = !draft
-    ? { action: "none", reason: "Lipește un plan ca să-l poți verifica." }
+    ? { action: "none", reason: "Lipește un plan." }
     : syntax
-      ? { action: "none", reason: "Repară întâi JSON-ul din stânga." }
+      ? { action: "none", reason: "Repară JSON-ul din stânga." }
       : errorCount > 0
         ? { action: "none", reason: `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat mai sus.` }
         : !current.tokenConfigured
             ? {
                 action: "none",
-                reason: `Planul e valid, dar spațiul ${current.name} nu are token: setează ${current.tokenEnv} în Vercel și fă redeploy.`,
+                reason: `Spațiul ${current.name} n-are token: setează ${current.tokenEnv} în Vercel, apoi redeploy.`,
               }
             : pendingUpload
               ? {
                   action: "none",
-                  reason: `Planul e valid. Urcă întâi video-ul, la „Materialul”: când ${platformLabel} termină de procesat, planul trece singur pe el și se poate verifica.`,
+                  reason: `Urcă video-ul la „Materialul”. După procesarea în ${platformLabel}, planul trece singur pe el.`,
                 }
               : created
-                ? { action: "none", reason: "Creată. Pentru încă o campanie, schimbă planul și verifică din nou." }
+                ? { action: "none", reason: "Creată." }
                 : !freshCheck
                   ? {
                       action: "check",
-                      reason: check
-                        ? "Planul s-a schimbat de la verificare. Verifică din nou înainte de creare."
-                        : "Întâi verificarea pe contul real: contul, pagina, pixelul, video-ul și fiecare nume din targetare.",
+                      reason: check ? "Planul s-a schimbat. Verifică din nou." : "Verifică pe contul real.",
                     }
                   : !freshCheck.ok
                     ? {
@@ -424,7 +422,7 @@ export function PlanEditor({
         <Card className="flex flex-col lg:sticky lg:top-20">
           <SectionTitle
             title="1. Planul lipit"
-            hint="Acceptă blocuri ```json, comentarii și virgule în plus. Se citește singur."
+            info="Se citește singur. Acceptă blocuri ```json, comentarii și virgule în plus."
             action={
               <Btn
                 size="xs"
@@ -478,9 +476,8 @@ export function PlanEditor({
             >
               Golește
             </Btn>
-            <span className="text-[12.5px] text-muted-foreground">sau</span>
-            <label className="cursor-pointer text-[13px] text-foreground/70 underline underline-offset-4 hover:text-foreground has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav">
-              încarcă un fișier .json
+            <label className="cursor-pointer text-[13.5px] text-foreground/70 underline underline-offset-4 hover:text-foreground has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-lav">
+              Încarcă .json
               <input
                 type="file"
                 accept=".json,application/json"
@@ -554,14 +551,8 @@ export function PlanEditor({
               </InlineNote>
             ) : draft ? (
               <InlineNote tone={errorCount > 0 ? "rose" : "mint"}>{status}</InlineNote>
-            ) : (
-              <p className="text-muted-foreground">Lipește planul primit. Se citește singur — nu trebuie apăsat nimic.</p>
-            )}
-            {rewritten ? (
-              <InlineNote tone="neutral">
-                JSON-ul s-a rescris din corecturi, fără comentarii. Copiază-l dacă vrei să-l duci înapoi în conversație.
-              </InlineNote>
             ) : null}
+            {rewritten ? <InlineNote tone="neutral">JSON rescris din corecturi, fără comentarii.</InlineNote> : null}
           </div>
         </Card>
 
@@ -576,8 +567,8 @@ export function PlanEditor({
               <Card padded={false}>
                 <EmptyState
                   icon={FileJson}
-                  title="Aici apare planul citit"
-                  text="Lipește JSON-ul în stânga: vezi pe rânduri obiectivul, bugetul, publicul, textele și materialul — în română, nu în JSON. Corectezi aici, iar JSON-ul se rescrie singur."
+                  title="Niciun plan"
+                  text="Lipește JSON-ul în stânga."
                   action={
                     <Btn
                       size="sm"
@@ -587,18 +578,17 @@ export function PlanEditor({
                         setRewritten(false);
                       }}
                     >
-                      Încarcă exemplul comentat
+                      Încarcă exemplul
                     </Btn>
                   }
-                  hint={`O campanie de ${OBJECTIVE_LABEL.leads.toLowerCase()} pe ${platformLabel}, cu destinație website.`}
                 />
               </Card>
-              <HouseRule>Planul se creează oprit, fără excepții. Nu există buton de pornire, de ștergere sau de schimbare a bugetului.</HouseRule>
+              <HouseRule title="Totul se creează pe pauză">Fără buton de pornire, ștergere sau buget. Pornirea e în platformă.</HouseRule>
             </>
           ) : (
             <>
               <Card className={cn("transition-opacity duration-150", (syntax || switching) && "pointer-events-none opacity-50")} aria-busy={switching || undefined}>
-                <SectionTitle title="2. Citit în română" hint="corectează direct în câmpuri" />
+                <SectionTitle title="2. Citit în română" info="Corectezi în câmpuri; JSON-ul se rescrie singur." />
 
                 <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-4">
                   <PlanSentence summary={summary} platform={platform} workspaceName={planWorkspace?.name ?? null} />
@@ -633,7 +623,7 @@ export function PlanEditor({
 
                 <section aria-labelledby="ads-list" className="mt-4 border-t border-white/[0.06] pt-4">
                   <h3 id="ads-list" className="text-[15px] font-medium">
-                    Reclamele care se creează
+                    Reclamele
                   </h3>
                   <AdsPreview
                     summary={summary}
@@ -651,14 +641,14 @@ export function PlanEditor({
                       onChange={switchWorkspace}
                       options={workspaces.map((workspace) => ({ value: workspace.id, label: workspace.name }))}
                     />
-                    <p className="mt-1.5 text-[12.5px] leading-snug text-muted-foreground" aria-live="polite">
+                    <p className="mt-1.5 text-[13.5px] leading-snug text-muted-foreground" aria-live="polite">
                       {current.owner === "clienti" ? (
                         <span className="font-medium text-apricot">Banii clienților</span>
                       ) : (
                         <span className="text-foreground/80">Reclamele agenției</span>
                       )}
                       {" · "}
-                      {current.tokenConfigured ? "token setat" : "fără token — doar verificare"}
+                      {current.tokenConfigured ? "token setat" : "fără token"}
                     </p>
                   </div>
                   <div className="text-right">
@@ -670,8 +660,8 @@ export function PlanEditor({
 
               <Card>
                 <SectionTitle
-                  title="3. Verificare pe conturi"
-                  hint="obiectiv, buget, material, texte"
+                  title="3. Verificare"
+                  info="Citește contul ales: pagină, pixel, conversie, video și targetare. Nu creează nimic."
                   action={
                     <Btn size="sm" variant={step.action === "check" ? "primary" : "outline"} onClick={runCheck} disabled={step.action === "none" || busy} aria-describedby="create-reason">
                       {checking ? `Se verifică în ${platformLabel}…` : check ? "Verifică din nou" : `Verifică în ${platformLabel}`}
@@ -683,11 +673,7 @@ export function PlanEditor({
                   <div className={cn("mt-3", (syntax || switching) && "pointer-events-none opacity-50")}>
                     <CheckPanel check={check.check} stale={check.key !== planKey} />
                   </div>
-                ) : (
-                  <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">
-                    Verificarea citește contul ales: pagină, pixel, acțiune de conversie și biblioteca de video. Nu se creează nimic.
-                  </p>
-                )}
+                ) : null}
 
                 {checkFailure ? (
                   <div role="alert" className="mt-3 space-y-2">
@@ -700,20 +686,18 @@ export function PlanEditor({
                   </div>
                 ) : null}
 
-                <p id="create-reason" className="mt-3 text-[13.5px] leading-snug text-foreground/75" aria-live="polite">
+                <p id="create-reason" className="mt-3 text-[14px] leading-snug text-foreground/75" aria-live="polite">
                   {checking
                     ? current.platform === "google"
-                      ? "Google caută contul, conversia, video-urile și fiecare nume din targetare, apoi verifică toată crearea, fără să creeze nimic…"
-                      : `${platformLabel} caută contul, ${current.platform === "meta" ? "pagina" : "identitatea"}, pixelul, video-ul și fiecare nume din targetare…`
+                      ? "Google verifică contul, conversia, video-urile și targetarea…"
+                      : `${platformLabel} verifică contul, ${current.platform === "meta" ? "pagina" : "identitatea"}, pixelul, video-ul și targetarea…`
                     : creating
-                      ? "Se creează campania, setul și reclamele, una câte una. Nu închide pagina."
+                      ? "Se creează campania, setul și reclamele. Nu închide pagina."
                       : step.reason}
                 </p>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-4">
-                  <p className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
-                    <ShieldCheck className="h-3.5 w-3.5 text-mint" aria-hidden="true" /> se creează oprit, fără excepții
-                  </p>
+                  <Stamp>Se creează pe pauză</Stamp>
                   <Btn
                     size="md"
                     variant="primary"
@@ -758,7 +742,7 @@ export function PlanEditor({
         onOpenChange={setConfirm}
         title="Creezi campania pe pauză?"
         description={`${campaignName ?? "(fără nume)"} · ${platformLabel} · ${summary?.objective ?? "obiectiv de corectat"}`}
-        consequence={`Se creează o campanie oprită${summary?.budget ? `, cu buget de ${summary.budget}` : ""}. Plafonul spațiului ales: ${currency && cap !== null ? `${formatMoney(cap, currency)}/zi` : "nesetat pentru moneda planului"}. Pornirea rămâne la tine, în platformă.`}
+        consequence={`Campanie oprită${summary?.budget ? `, buget ${summary.budget}` : ""}. Plafonul spațiului: ${currency && cap !== null ? `${formatMoney(cap, currency)}/zi` : "nesetat pentru moneda planului"}. O pornești tu, din platformă.`}
         confirmLabel="Creează pe pauză"
         tone="primary"
         onConfirm={() => runCreate(false)}

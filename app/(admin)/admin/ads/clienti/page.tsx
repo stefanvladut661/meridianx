@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
-// „Actualizează acum” citește conturile clientului pe loc: până la un minut.
+// „Sincronizează” citește conturile clientului pe loc: până la un minut.
 export const maxDuration = 60;
 
 /**

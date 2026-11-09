@@ -40,8 +40,8 @@ function DraftCard({ post, fus, now, busy, onPublished }: { post: PostView; fus:
 
   async function copy() {
     const result = await copyText(post.caption, block.current);
-    if (result === "copiat") notify("Descrierea e în clipboard. Deschide TikTok și lipește-o.");
-    else notify("Descrierea e selectată: apasă lung și alege „Copiază”, apoi deschide TikTok.", "warn");
+    if (result === "copiat") notify("Descriere copiată.");
+    else notify("Descrierea e selectată: apasă lung și „Copiază”.", "warn");
   }
 
   return (
@@ -54,7 +54,7 @@ function DraftCard({ post, fus, now, busy, onPublished }: { post: PostView; fus:
             </Pill>
             <span className="break-all font-mono text-[12px] text-muted-foreground">{post.fisier}</span>
           </div>
-          <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
             <Clock className="h-3 w-3" aria-hidden="true" />
             {momentLabel(post.programataLa, fus)}
           </span>
@@ -66,9 +66,9 @@ function DraftCard({ post, fus, now, busy, onPublished }: { post: PostView; fus:
               {tags ? <p className={`break-words text-[14px] text-lav/85 ${body ? "mt-1.5" : ""}`}>{tags}</p> : null}
             </div>
           ) : (
-            <p className="rounded-xl border border-dashed border-white/[0.14] px-3 py-2.5 text-[14.5px] text-muted-foreground">Clipul n-are descriere în plan: scrie una direct în TikTok.</p>
+            <p className="rounded-xl border border-dashed border-white/[0.14] px-3 py-2.5 text-[14.5px] text-muted-foreground">Fără descriere: scrie-o în TikTok.</p>
           )}
-          {post.avertisment ? <p className="mt-2 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2 py-1 text-[12px] text-[#FFD0AC]">{post.avertisment}</p> : null}
+          {post.avertisment ? <p className="mt-2 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2 py-1 text-[13px] text-[#FFD0AC]">{post.avertisment}</p> : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {hasText ? (
@@ -84,9 +84,9 @@ function DraftCard({ post, fus, now, busy, onPublished }: { post: PostView; fus:
               {busy ? "Se marchează…" : "Publicat"}
             </Btn>
           </div>
-          <p className="mt-2.5 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+          <p className="mt-2.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
             <Smartphone className="h-3 w-3 shrink-0" aria-hidden="true" />
-            {post.trimisaLa ? `trimis ${relativeRo(post.trimisaLa, now)}` : "trimis de curând"} · se marchează singur în cel mult 30 de minute de la confirmarea TikTok
+            {post.trimisaLa ? `trimis ${relativeRo(post.trimisaLa, now)}` : "trimis de curând"} · se marchează singur la confirmarea TikTok
           </p>
         </div>
       </Card>
@@ -110,7 +110,7 @@ export function TiktokDrafts({ drafts, fus, now, markPublished }: { drafts: Post
     startTransition(async () => {
       try {
         const result = await markPublished(post.id);
-        notify(result.ok ? "Marcat ca publicat. Mulțumim." : result.message, result.ok ? "default" : "error");
+        notify(result.ok ? "Marcat publicat." : result.message, result.ok ? "default" : "error");
         if (result.ok) router.refresh();
       } catch {
         notify(UNREACHABLE, "error");

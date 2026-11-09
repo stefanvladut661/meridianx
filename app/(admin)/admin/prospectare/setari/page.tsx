@@ -30,10 +30,7 @@ export default async function SetariPage() {
 
   return (
     <div className="space-y-4">
-      <PageHead
-        title="Setări prospectare"
-        pill={pill}
-      />
+      <PageHead title="Setări" pill={pill} />
 
       <SetariConturi conturi={conturi.ok ? conturi.data : null} eroare={conturi.ok ? null : conturi.message} />
 

@@ -25,7 +25,7 @@ import { createAdminClient } from "@/lib/supabase/clients";
  * care le vede tokenul și ține evidența în Supabase.
  */
 
-const SESSION_EXPIRED = "Sesiunea a expirat. Reîncarcă pagina și intră din nou în panou.";
+const SESSION_EXPIRED = "Sesiunea a expirat. Reîncarcă pagina și intră din nou.";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Failure = { ok: false; message: string };
@@ -40,7 +40,7 @@ export async function createClientAction(input: { name: string; owner: string })
   if (!user) return { ok: false, message: SESSION_EXPIRED };
   const name = cleanName(input.name);
   if (!name) return { ok: false, message: "Scrie numele clientului (cel mult 80 de caractere)." };
-  if (input.owner !== "agentie" && input.owner !== "clienti") return { ok: false, message: "Alege ai cui sunt banii: ai agenției sau ai clientului." };
+  if (input.owner !== "agentie" && input.owner !== "clienti") return { ok: false, message: "Alege ai cui sunt banii." };
   const created = await createClientRecord({ name, owner: input.owner }, user);
   if (!created.ok) return created;
   revalidatePath("/admin/ads", "layout");
@@ -95,7 +95,7 @@ export async function addAccountAction(input: {
   if (workspace.owner !== client.owner) {
     return {
       ok: false,
-      message: `${client.name} e un client cu ${client.owner === "agentie" ? "banii agenției" : "banii clientului"}; contul trebuie adăugat printr-un spațiu ${client.owner === "agentie" ? "Meridian" : "Clienți"}, nu prin ${workspaceName(workspace)}.`,
+      message: `${client.name} merge pe ${client.owner === "agentie" ? "banii agenției" : "banii clientului"}: adaugă contul printr-un spațiu ${client.owner === "agentie" ? "Meridian" : "Clienți"}, nu prin ${workspaceName(workspace)}.`,
     };
   }
   const checked = await checkAccount(workspace, input.adAccount);
@@ -119,7 +119,7 @@ export async function addAccountAction(input: {
       ? checked.info && !checked.info.usable
         ? `Contul e adăugat, dar ${PLATFORM_LABEL[workspace.platform]} spune că e ${checked.info.state}.`
         : null
-      : `Contul e adăugat fără verificare: ${workspace.tokenEnv} nu e setat. Cifrele apar după ce pui tokenul și apeși „Actualizează”.`,
+      : `Cont adăugat neverificat: lipsește ${workspace.tokenEnv}. Pune tokenul, apoi „Sincronizează”.`,
   };
 }
 
@@ -133,7 +133,7 @@ export async function setAccountSyncAction(input: { accountId: string; enabled: 
   return { ok: true };
 }
 
-/** „Actualizează”: structura și cifrele conturilor unui client, acum. */
+/** „Sincronizează”: structura și cifrele conturilor unui client, acum. */
 export async function syncClientAction(input: { clientId: string }): Promise<{ ok: true; summary: string; problems: string[] } | Failure> {
   const user = await getAdminUser();
   if (!user) return { ok: false, message: SESSION_EXPIRED };

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, CloudDownload, Loader2, Users } from "lucide-react";
 import { importaLista } from "@/app/(admin)/admin/prospectare/actions";
 import { InlineNote } from "@/components/panou/ui/actions";
+import { Info } from "@/components/panou/ui/info";
 import { isoDay, num } from "@/components/panou/ui/format";
 import { Btn, Card } from "@/components/panou/ui/primitives";
 import { TextInput } from "@/components/panou/ui/select";
@@ -238,7 +239,7 @@ export function PanouRezerva({
   };
 
   const totalRezerva = rezerva !== null ? grupe.reduce((s, g) => s + Number(g.n), 0) : null;
-  const subtitlu = totalRezerva !== null ? `${firmeText(totalRezerva)} în rezervă, cele mai vechi site-uri primele` : "Rezerva nu s-a putut număra acum";
+  const subtitlu = totalRezerva !== null ? `${firmeText(totalRezerva)} în rezervă` : "Rezerva nu s-a numărat";
   const gataMin = ziDin(distributie?.optiuni?.gata_de);
   const gataMax = ziDin(distributie?.optiuni?.gata_pana);
 
@@ -280,7 +281,7 @@ export function PanouRezerva({
           <div className="space-y-3 border-t border-white/[0.08] px-4 py-4">
             {eroareRezerva ? (
               <InlineNote tone="rose">
-                Nu am putut număra rezerva: {eroareRezerva} Poți importa oricum; baza ia câte firme se potrivesc.
+                Rezerva nu s-a numărat: {eroareRezerva} Importul merge oricum.
               </InlineNote>
             ) : null}
 
@@ -358,16 +359,16 @@ export function PanouRezerva({
                 />
                 doar mobil
               </label>
-              <label className="flex min-h-11 items-center gap-2 text-[14.5px] text-muted-foreground sm:min-h-0 sm:text-[13.5px]" title="Importul ia doar firme cu site gata și link demo verificat">
+              <label className="flex min-h-11 items-center gap-2 text-[14.5px] text-muted-foreground sm:min-h-0 sm:text-[13.5px]" title="Doar firme cu link demo verificat">
                 <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
-                doar cu site gata și publicat
+                site publicat
               </label>
               <label
                 className="flex min-h-11 items-center gap-2 text-[14.5px] text-muted-foreground sm:min-h-0 sm:text-[13.5px]"
-                title="Cele care au primit email sau WhatsApp nu intră, decât cu apel permis din fișă; nici cele programate pe alt canal, până la 00:00"
+                title="Fără email sau WhatsApp primit (afară de apel permis din fișă), neprogramate pe alt canal"
               >
                 <input type="checkbox" checked disabled className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
-                fără contact și neprogramate
+                fără contact, neprogramate
               </label>
               {filtrat ? (
                 <button
@@ -381,16 +382,26 @@ export function PanouRezerva({
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
-              <p className="flex items-center gap-1.5 text-[14px] text-muted-foreground sm:text-[13px]" aria-live="polite">
-                <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                {seNumara
-                  ? "Număr firmele din rezervă…"
-                  : !cunoscuta
-                    ? `Se cer ${firmeText(seAdauga)}; baza ia câte se potrivesc`
-                    : celMult
-                      ? `Se adaugă cel mult ${num(seAdauga)}: ${firmeText(disponibile)} se potrivesc înainte de județ, scor și „doar mobil”`
-                      : `Se adaugă ${num(seAdauga)} din ${firmeText(disponibile)} disponibile`}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="flex items-center gap-1.5 text-[14px] text-muted-foreground sm:text-[13px]" aria-live="polite">
+                  <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {seNumara
+                    ? "Număr firmele din rezervă…"
+                    : !cunoscuta
+                      ? `Se cer ${firmeText(seAdauga)}; baza ia câte se potrivesc`
+                      : celMult
+                        ? `Se adaugă cel mult ${num(seAdauga)}: ${firmeText(disponibile)} se potrivesc înainte de județ, scor și „doar mobil”`
+                        : `Se adaugă ${num(seAdauga)} din ${firmeText(disponibile)} disponibile`}
+                </p>
+                <Info label="Ce intră în import">
+                  Firme cu site publicat, fără niciun contact și neprogramate, plus cele cu apel permis din fișă; cele mai vechi site-uri primele. Rămân pe telefon
+                  până la 00:00, apoi nesunatele se întorc în distribuție.
+                  <br />
+                  „Nu răspunde” nu e contact. „Nu vrea” = „Nu contacta”. „Număr greșit” = doar email.
+                  <br />
+                  Pentru alte zile: „Programează”.
+                </Info>
+              </div>
               <Btn
                 size="sm"
                 variant="primary"
@@ -408,17 +419,6 @@ export function PanouRezerva({
                   "Importă în lista mea"
                 )}
               </Btn>
-            </div>
-            <div className="space-y-1 text-[13.5px] leading-relaxed text-muted-foreground sm:text-[12.5px]">
-              <p>
-                Intră firmele cu site gata și publicat, fără niciun contact și neprogramate azi pe email sau WhatsApp, plus cele cu apel permis din fișă. Cele mai vechi
-                site-uri primele, nu scorul. Rămân pe telefon până la 00:00; atunci cele nesunate se întorc în distribuție.
-              </p>
-              <p>
-                „Nu răspunde” nu e contact: firma se întoarce în distribuție, încercările rămân notate. „Interesat” și „Sună înapoi” rămân pe telefon. „Nu vrea” trece la „Nu
-                contacta”. „Număr greșit” lasă firma doar pentru email. După „Interesat” poți continua pe WhatsApp: apare doar în activitate.
-              </p>
-              <p>Pentru zilele următoare folosește „Programează”: firmele intră în lista ta la 00:00, în ziua aleasă.</p>
             </div>
           </div>
         ) : null}

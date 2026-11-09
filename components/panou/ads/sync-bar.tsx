@@ -11,7 +11,7 @@ import { useToast } from "../ui/toast";
 type Failure = { ok: false; message: string };
 
 /**
- * „Ultima sincronizare” și „Sincronizează acum” (prototip: antetul Campaniilor).
+ * „Sincronizat …” și „Sincronizează” (prototip: antetul Campaniilor).
  * Citește conturile clientului ales din platforme; cifrele din ecrane vin doar
  * din bază, deci butonul e singura cale de a le aduce la zi între două rulări
  * ale cron-ului de dimineață. Rezultatul se anunță (toast cu `aria-live`), iar
@@ -39,7 +39,13 @@ export function SyncBar({
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
       <p className="text-[13px] text-muted-foreground">
-        Ultima sincronizare: <span className="text-foreground/80">{lastSyncedAt ? dateTimeRo(lastSyncedAt) : "încă niciuna"}</span>
+        {lastSyncedAt ? (
+          <>
+            Sincronizat <span className="text-foreground/80">{dateTimeRo(lastSyncedAt)}</span>
+          </>
+        ) : (
+          "Nesincronizat"
+        )}
         {failedAccounts > 0 ? (
           <span className="text-rose">
             {" "}
@@ -52,7 +58,7 @@ export function SyncBar({
         variant="outline"
         icon={RefreshCw}
         disabled={pending || !hasAccounts}
-        title={hasAccounts ? undefined : "Clientul n-are încă un cont legat."}
+        title={hasAccounts ? undefined : "Niciun cont legat."}
         onClick={() =>
           start(async () => {
             notify("Se citesc conturile…");
@@ -61,14 +67,14 @@ export function SyncBar({
               if (!result.ok) notify(result.message, "error");
               else notify(result.problems.length ? `${result.summary} ${result.problems.join(" ")}` : result.summary, result.problems.length ? "warn" : "default");
             } catch {
-              notify("Serverul n-a răspuns. Cifrele rămân cele de la ultima citire; încearcă din nou.", "error");
+              notify("Serverul n-a răspuns. Încearcă din nou.", "error");
             }
             router.refresh();
           })
         }
         className={pending ? "[&_svg]:animate-spin motion-reduce:[&_svg]:animate-none" : undefined}
       >
-        {pending ? "Se sincronizează…" : "Sincronizează acum"}
+        {pending ? "Se sincronizează…" : "Sincronizează"}
       </Btn>
     </div>
   );

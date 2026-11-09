@@ -4,6 +4,7 @@ import { RESULT_KIND_LABEL, resultUnit } from "@/lib/ads/model/results";
 import type { CurrencyTotals } from "@/lib/ads/model/rows";
 import type { ResultKind } from "@/lib/ads/model/types";
 import { cn } from "@/lib/utils";
+import { Info } from "../ui/info";
 import { Card } from "../ui/primitives";
 import { DeltaChip } from "./delta-chip";
 
@@ -17,12 +18,13 @@ export function splitAmount(value: number | null, currency: string): { value: st
   return cut > 0 ? { value: text.slice(0, cut), unit: text.slice(cut + 1) } : { value: text, unit: "" };
 }
 
-/** `Stat` din kit, cu locul schimbării față de perioada dinainte pentru `DeltaChip` (care cunoaște și „informativ”). */
+/** `Stat` din kit, cu locul schimbării față de perioada dinainte pentru `DeltaChip` (care cunoaște și „informativ”). `info`: explicația, sub „i”. */
 export function KpiStat({
   label,
   value,
   unit,
   hint,
+  info,
   delta,
   dim,
   className,
@@ -31,13 +33,17 @@ export function KpiStat({
   value: ReactNode;
   unit?: string;
   hint?: ReactNode;
+  info?: ReactNode;
   delta?: Delta;
   dim?: boolean;
   className?: string;
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <p className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="flex items-center gap-1.5 text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+        {info ? <Info>{info}</Info> : null}
+      </p>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className={cn("pu-num text-[26px] font-medium leading-none sm:text-[30px]", dim && "text-foreground/70")}>{value}</span>
         {unit ? <span className="text-[13.5px] text-muted-foreground">{unit}</span> : null}
@@ -55,25 +61,23 @@ function compare(current: number | null, previous: number | null, direction: Dir
 /**
  * Cele patru cifre mari, ca în prototip (Campanii): Cheltuit, Rezultate, Cost
  * per rezultat, Clickuri — pe ce e ales sus. Monedele nu se adună: fiecare are
- * rândul ei. Sub cifră, schimbarea față de perioada de aceeași durată de
+ * rândul ei. Lângă cifră, schimbarea față de perioada de aceeași durată de
  * dinainte (săgeată + procent; verde = mai bine, roz = mai rău, cheltuiala e
- * informativă). Nimic nu e inventat: fără campanii măsurate scrie „nemăsurat”.
+ * informativă); cu ce se compară stă sub „i”. Nimic nu e inventat: fără
+ * campanii măsurate scrie „nemăsurat”.
  */
 export function KpiTiles({
   current,
   previous,
   against,
-  periodLabel,
   emptyHint,
   className,
 }: {
   current: CurrencyTotals[];
   previous: CurrencyTotals[];
-  /** „față de cele 7 zile dinainte” */
+  /** „față de cele 7 zile dinainte” — sub „i”, la Cheltuit. */
   against: string;
-  /** „7 zile” — în eticheta Cheltuit. */
-  periodLabel: string;
-  /** Ce faci ca să apară rezultate, când nicio campanie nu e măsurată. */
+  /** Ce faci ca să apară rezultate, când nicio campanie nu e măsurată (sub „i”). */
   emptyHint?: string | null;
   className?: string;
 }) {
@@ -98,49 +102,36 @@ export function KpiTiles({
   return (
     <Card className={cn("grid grid-cols-2 gap-x-4 gap-y-5 p-4 sm:grid-cols-4 sm:p-5", className)}>
       <KpiStat
-        label={`Cheltuit · ${periodLabel}`}
+        label="Cheltuit"
         value={spent.value}
         unit={spent.unit}
         dim
         delta={main ? compare(main.spend, prev(main.currency)?.spend ?? null, "neutral") : undefined}
-        hint={
-          [...others.map((item) => `+ ${formatAmount(item.spend, item.currency)}`), main && prev(main.currency)?.spend ? against : ""].filter(Boolean).join(" · ") || null
-        }
+        info={`Schimbarea e calculată ${against}.`}
+        hint={others.map((item) => `+ ${formatAmount(item.spend, item.currency)}`).join(" · ") || null}
       />
       <KpiStat
         label="Rezultate"
         value={measured === 0 ? "nemăsurat" : formatCount(results)}
         delta={measured === 0 ? undefined : compare(results, previousResults || null, "up_good")}
+        info={measured === 0 ? (emptyHint ?? "Nicio campanie nu numără încă un rezultat.") : undefined}
         hint={
           measured === 0
-            ? (emptyHint ?? "Nicio campanie nu numără încă un rezultat.")
+            ? null
             : `${[...kinds.entries()].filter(([, value]) => value > 0).map(([kind, value]) => resultUnit(value, kind)).join(" · ") || RESULT_KIND_LABEL.other}${
                 unmeasured > 0 ? ` · ${unmeasured === 1 ? "o campanie nemăsurată" : `${unmeasured} campanii nemăsurate`}` : ""
               }`
         }
       />
       <KpiStat
-        label="Cost per rezultat"
+        label="Cost / rezultat"
         value={firstCost ? cost.value : "—"}
         unit={firstCost ? cost.unit : undefined}
         delta={firstCost ? compare(firstCostValue, firstCostOld, "up_bad") : undefined}
-        hint={
-          firstCost
-            ? [
-                ...withResults.slice(1).map((item) => `+ ${formatAmount(item.measuredSpend / item.results, item.currency)}`),
-                measured > 0 && unmeasured > 0 ? "doar din cheltuiala campaniilor măsurate" : "",
-              ]
-                .filter(Boolean)
-                .join(" · ") || null
-            : "apare când o campanie numără rezultate"
-        }
+        info={firstCost && measured > 0 && unmeasured > 0 ? "Doar din cheltuiala campaniilor măsurate." : undefined}
+        hint={withResults.slice(1).map((item) => `+ ${formatAmount(item.measuredSpend / item.results, item.currency)}`).join(" · ") || null}
       />
-      <KpiStat
-        label="Clickuri"
-        value={formatCount(clicks)}
-        delta={compare(clicks, previousClicks || null, "up_good")}
-        hint={previousClicks ? against : null}
-      />
+      <KpiStat label="Clickuri" value={formatCount(clicks)} delta={compare(clicks, previousClicks || null, "up_good")} />
     </Card>
   );
 }

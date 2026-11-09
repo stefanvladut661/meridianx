@@ -105,7 +105,7 @@ export function ClaudePlan({
       window.localStorage.setItem(PLAN_DRAFT_KEY, JSON.stringify(buildPlan(captions), null, 2));
       window.sessionStorage.setItem(PLAN_SOURCE_KEY, "claude");
     } catch {
-      setError("Browserul nu lasă salvarea planului (stocare locală blocată). Deschide adminul într-o fereastră obișnuită.");
+      setError("Browserul blochează stocarea locală. Deschide adminul într-o fereastră obișnuită.");
       return;
     }
     router.push("/admin/postari/plan");
@@ -132,7 +132,7 @@ export function ClaudePlan({
       }
       openInEditor(done);
     } catch {
-      setError("Serverul n-a răspuns (rețea sau sesiune). Descrierile scrise până acum rămân; apasă „Continuă”.");
+      setError("Serverul n-a răspuns. Ce s-a scris rămâne; apasă „Continuă”.");
     } finally {
       setRunning(false);
     }
@@ -146,17 +146,17 @@ export function ClaudePlan({
             <Sparkles className="h-4 w-4 text-lav" aria-hidden="true" /> Scrie planul cu Claude
           </span>
         }
-        hint="Claude scrie descrierea și hashtag-urile fiecărui clip din hook, CTA și voce. Planul ajunge la „Plan nou”, unde îl corectezi și îl verifici. Nimic nu intră în coadă de aici."
+        info="Planul ajunge în „Plan nou”, de corectat și verificat. Nimic nu intră în coadă de aici."
       />
 
       {!configured ? (
         <InlineNote tone="apricot" className="mt-4">
-          Claude nu e legat: lipsește ANTHROPIC_API_KEY în Vercel. Planul se poate scrie și de mână, la Plan nou.
+          Lipsește ANTHROPIC_API_KEY în Vercel. Planul se scrie de mână, la Plan nou.
         </InlineNote>
       ) : (
         <div className="mt-4 space-y-4">
           <fieldset className="space-y-2">
-            <legend className={labelClass}>Platformele</legend>
+            <legend className={labelClass}>Platforme</legend>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               <label className="inline-flex min-h-8 items-center gap-2 text-[14px]">
                 <input type="checkbox" checked={instagram} onChange={(event) => setInstagram(event.currentTarget.checked)} className="h-4 w-4 accent-[#C6B5FF]" />
@@ -172,12 +172,12 @@ export function ClaudePlan({
           {instagram ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <SoftSelect
-                label="Pe Instagram, ca"
+                label="Tip Instagram"
                 value={tip}
                 onChange={(value) => setTip(value as "reel" | "trial_reel")}
                 options={[
-                  { value: "reel", label: "Reel (la urmăritori și în feed)" },
-                  { value: "trial_reel", label: "Trial Reel (întâi la cei care nu te urmăresc)" },
+                  { value: "reel", label: "Reel" },
+                  { value: "trial_reel", label: "Trial Reel" },
                 ]}
               />
               {tip === "trial_reel" ? (
@@ -186,8 +186,8 @@ export function ClaudePlan({
                   value={absolvire}
                   onChange={(value) => setAbsolvire(value as "manual" | "automat")}
                   options={[
-                    { value: "manual", label: "O fac eu, din aplicație" },
-                    { value: "automat", label: "Singur, dacă merge bine" },
+                    { value: "manual", label: "Manual, din aplicație" },
+                    { value: "automat", label: "Automat, dacă merge" },
                   ]}
                 />
               ) : null}
@@ -196,49 +196,49 @@ export function ClaudePlan({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className={labelClass}>Sloturile încep din</span>
+              <span className={labelClass}>Începe din</span>
               <TextInput type="date" className="mt-1" value={start} aria-invalid={startOk ? undefined : true} onChange={(event) => setStart(event.target.value)} />
-              {startOk ? null : <span className="mt-1 block text-[12.5px] text-[#FFC2CE]">Alege o zi.</span>}
+              {startOk ? null : <span className="mt-1 block text-[13px] text-[#FFC2CE]">Alege o zi.</span>}
             </label>
             <label className="block">
-              <span className={labelClass}>Orele sloturilor</span>
+              <span className={labelClass}>Ore</span>
               <TextInput className="mt-1" value={ore} aria-invalid={hoursOk ? undefined : true} onChange={(event) => setOre(event.target.value)} />
-              <span className={cn("mt-1 block text-[12px]", hoursOk ? "text-muted-foreground" : "text-[#FFC2CE]")}>
-                {hoursOk ? `În fusul ${defaults.fus}. Postările iau sloturile pe rând, în ordinea din manifest.` : "Scrie orele ca „12:30, 19:00”."}
+              <span className={cn("mt-1 block text-[13px]", hoursOk ? "text-muted-foreground" : "text-[#FFC2CE]")}>
+                {hoursOk ? defaults.fus : "Scrie orele ca „12:30, 19:00”."}
               </span>
             </label>
           </div>
 
           <label className="block">
-            <span className={labelClass}>Indicații pentru Claude (opțional)</span>
+            <span className={labelClass}>Indicații (opțional)</span>
             <textarea
               value={indicatii}
               onChange={(event) => setIndicatii(event.target.value)}
               rows={3}
               maxLength={2000}
+              placeholder="oferta lunii, orașul, publicul, un cuvânt de evitat"
               className={inputClass("mt-1 h-auto py-2 leading-relaxed")}
             />
-            <span className="mt-1 block text-[12px] text-muted-foreground">De exemplu: oferta lunii, orașul, publicul, un cuvânt de evitat. Claude nu inventează prețuri, cifre sau clienți.</span>
           </label>
 
           <div className="flex flex-wrap items-center gap-3">
             <Btn size="sm" variant="primary" icon={running ? Loader2 : Sparkles} disabled={!canRun} onClick={() => void run()}>
-              {running ? "Claude scrie…" : written.length > 0 && remaining.length > 0 ? "Continuă" : `Scrie planul pentru ${clips.length} ${clips.length === 1 ? "clip" : "clipuri"}`}
+              {running ? "Claude scrie…" : written.length > 0 && remaining.length > 0 ? "Continuă" : `Scrie planul (${clips.length})`}
             </Btn>
             {running ? (
               <Btn size="sm" variant="outline" onClick={() => (stop.current = true)}>
-                Oprește după lotul ăsta
+                Oprește
               </Btn>
             ) : written.length > 0 ? (
               <Btn size="sm" variant="outline" onClick={() => openInEditor(written)}>
-                Deschide în editor ce s-a scris
+                Deschide în editor
               </Btn>
             ) : null}
             <p role="status" aria-live="polite" className={cn("text-[13px]", error ? "text-[#FFC2CE]" : "text-muted-foreground")}>
-              {running ? `Descrieri scrise: ${written.length} din ${clips.length}.` : error ? error : platforms.length === 0 ? "Alege cel puțin o platformă." : null}
+              {running ? `${written.length} din ${clips.length} scrise` : error ? error : platforms.length === 0 ? "Alege cel puțin o platformă." : null}
             </p>
           </div>
-          {draftExists && !running ? <p className="text-[12.5px] text-muted-foreground">În editorul de la „Plan nou” e deja o ciornă. Planul scris aici o înlocuiește.</p> : null}
+          {draftExists && !running ? <p className="text-[13px] text-[#FFD0AC]">Înlocuiește ciorna din „Plan nou”.</p> : null}
         </div>
       )}
     </Card>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Megaphone, Plus } from "lucide-react";
 import { clientsForRequest, readClientView } from "@/lib/ads/model/read";
 import { readSelection } from "@/lib/ads/model/selection.server";
-import { CHANNEL_LABEL, PERIOD_LABEL, selectionQuery } from "@/lib/ads/model/selection";
+import { selectionQuery } from "@/lib/ads/model/selection";
 import { callCountsByCampaign } from "@/lib/ads/model/calls";
 import { rowFigures, totalsByCurrency } from "@/lib/ads/model/rows";
 import { PLATFORM_LABEL } from "@/lib/ads/constants";
@@ -11,7 +11,7 @@ import { KpiTiles } from "@/components/panou/ads/kpi-tiles";
 import { CampaignsScreen } from "@/components/panou/ads/campaigns-screen";
 import { HouseRule } from "@/components/panou/ads/house-rule";
 import { SyncBar } from "@/components/panou/ads/sync-bar";
-import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
+import { PAGE_TITLE } from "@/components/panou/ads/tone";
 import { Card, Pill, btnClass } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { InlineNote } from "@/components/panou/ui/actions";
@@ -35,27 +35,21 @@ const AGAINST: Record<string, string> = {
   "luna-trecuta": "față de luna dinainte",
 };
 
-const PERIOD_SHORT: Record<string, string> = { "7": "7 zile", "30": "30 de zile", "90": "90 de zile", luna: "luna aceasta", "luna-trecuta": "luna trecută" };
-
 /**
  * /admin/ads — ecranul principal, ca în Meta Ads Manager: patru cifre mari,
  * apoi filele Campanii / Grupuri / Reclame și tabelul, pe clientul, perioada și
- * canalul alese sus. Citește doar din bază (sincronizarea zilnică + „Sincronizează acum”).
+ * canalul alese sus. Citește doar din bază (sincronizarea zilnică + „Sincronizează”).
  */
 export default async function AdsCampaignsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
   const selection = await readSelection(params);
   const clients = await clientsForRequest();
 
-  const header = (subtitle?: string, actions?: React.ReactNode) => (
+  const header = (actions?: React.ReactNode) => (
     <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <div className="flex items-center gap-2.5">
-          <h1 className={PAGE_TITLE}>Campanii</h1>
-          <Pill tone="apricot">doar pe pauză</Pill>
-        </div>
-        <p className={PAGE_LEAD}>Portalul creează campanii oprite. Pornirea, bugetul și licitarea se ating doar în platformă, de mână.</p>
-        {subtitle ? <p className="mt-1.5 text-[13px] text-muted-foreground">{subtitle}</p> : null}
+      <div className="flex items-center gap-2.5">
+        <h1 className={PAGE_TITLE}>Campanii</h1>
+        <Pill tone="apricot">doar pe pauză</Pill>
       </div>
       {actions}
     </div>
@@ -66,7 +60,7 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
       <div className="space-y-4">
         {header()}
         <Card padded={false}>
-          <ErrorState title="Clienții nu se pot citi" text={clients.message} hint="Nu s-a schimbat nimic în conturi — doar citirea a eșuat." />
+          <ErrorState title="Clienții nu se pot citi" text={clients.message} />
         </Card>
       </div>
     );
@@ -80,10 +74,9 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
           <EmptyState
             icon={Megaphone}
             title="Niciun client încă"
-            text="Ecranul arată campaniile, grupurile și reclamele unui client, de pe Meta, Google și TikTok, în același tabel. Un client adună conturile lui: îl adaugi o dată, îi legi conturile, iar portalul îi aduce cifrele în fiecare dimineață."
             action={
               <Link href="/admin/ads/clienti" className={btnClass({ variant: "primary", size: "sm" })}>
-                Adaugă primul client
+                Adaugă client
               </Link>
             }
           />
@@ -97,7 +90,6 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
     readClientView({ client, channel: selection.channel, range: selection.range }),
     callCountsByCampaign({ clientId: client.id, from: selection.range.from, to: selection.range.to }),
   ]);
-  const subtitle = `${client.name} · ${PERIOD_LABEL[selection.period]} · ${CHANNEL_LABEL[selection.channel]}`;
   const query = selectionQuery({ ...selection, clientId: client.id });
 
   const actions = (
@@ -122,9 +114,9 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
   if (!view.ok) {
     return (
       <div className="space-y-4">
-        {header(subtitle, actions)}
+        {header(actions)}
         <Card padded={false}>
-          <ErrorState title="Cifrele nu se pot citi" text={view.message} hint="Nu s-a schimbat nimic în conturi — doar citirea a eșuat." />
+          <ErrorState title="Cifrele nu se pot citi" text={view.message} />
         </Card>
       </div>
     );
@@ -134,12 +126,11 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
   if (accounts.length === 0) {
     return (
       <div className="space-y-4">
-        {header(subtitle, actions)}
+        {header(actions)}
         <Card padded={false}>
           <EmptyState
             icon={Megaphone}
             title={selection.channel === "toate" ? `${client.name} n-are încă niciun cont legat` : `${client.name} n-are cont ${PLATFORM_LABEL[selection.channel]}`}
-            text="Leagă-i conturile din pagina Clienți: alegi contul din lista pe care o vede tokenul, apoi „Sincronizează acum”."
             action={
               <Link href="/admin/ads/clienti" className={btnClass({ variant: "primary", size: "sm" })}>
                 Leagă un cont
@@ -161,24 +152,24 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
 
   return (
     <div className="space-y-4">
-      {header(subtitle, actions)}
+      {header(actions)}
 
       {neverSynced.length > 0 ? (
         <InlineNote tone="apricot">
-          <p className="font-medium">
-            {neverSynced.length === accounts.length
-              ? "Conturile n-au fost citite încă."
-              : `${neverSynced.length === 1 ? "Un cont n-a" : `${neverSynced.length} conturi n-au`} fost citit${neverSynced.length === 1 ? "" : "e"} încă.`}
-          </p>
-          <p className="mt-1">
-            Apasă „Sincronizează acum”: portalul citește campaniile, grupurile, reclamele și cifrele pe ultimele 90 de zile. De mâine, se actualizează singur în fiecare dimineață.
+          <p>
+            <span className="font-medium">
+              {neverSynced.length === accounts.length
+                ? "Conturile n-au fost citite încă."
+                : `${neverSynced.length === 1 ? "Un cont n-a" : `${neverSynced.length} conturi n-au`} fost citit${neverSynced.length === 1 ? "" : "e"} încă.`}
+            </span>{" "}
+            Apasă „Sincronizează”.
           </p>
         </InlineNote>
       ) : null}
       {failed.length > 0 ? (
         <InlineNote tone="rose">
           <div role="alert">
-            <p className="font-medium">{failed.length === 1 ? "Un cont n-a putut fi citit la ultima actualizare." : `${failed.length} conturi n-au putut fi citite la ultima actualizare.`}</p>
+            <p className="font-medium">{failed.length === 1 ? "Un cont n-a putut fi citit." : `${failed.length} conturi n-au putut fi citite.`}</p>
             <ul className="mt-1 list-disc pl-5">
               {failed.map((account) => (
                 <li key={account.id}>
@@ -186,13 +177,13 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
                 </li>
               ))}
             </ul>
-            <p className="mt-1.5">Cifrele de mai jos sunt cele de la ultima citire reușită.</p>
+            <p className="mt-1.5">Cifrele sunt de la ultima citire reușită.</p>
           </div>
         </InlineNote>
       ) : null}
       {calls.missing ? (
         <InlineNote tone="apricot">
-          <p className="font-medium">Coloana „Apeluri notate” e goală.</p>
+          <p className="font-medium">Coloana „Apeluri” e goală.</p>
           <p className="mt-1">{calls.missing}</p>
         </InlineNote>
       ) : null}
@@ -202,14 +193,9 @@ export default async function AdsCampaignsPage({ searchParams }: { searchParams:
           current={current}
           previous={before}
           against={AGAINST[selection.period]}
-          periodLabel={PERIOD_SHORT[selection.period]}
-          emptyHint={
-            noConversions
-              ? "Conturile n-au conversii configurate, deci nimic nu se numără ca rezultat."
-              : "Alege în panoul fiecărei campanii ce se numără ca rezultat (apel, lead sau formular)."
-          }
+          emptyHint={noConversions ? "Conturile n-au conversii configurate." : "Alege rezultatul în panoul fiecărei campanii."}
         />
-        <HouseRule>Din portal poți doar pune pe pauză, adăuga negative și acțiuni de conversie. Nu există buton de pornire, de ștergere sau de buget.</HouseRule>
+        <HouseRule>Doar pauză, negative și conversii. Fără pornire, ștergere sau buget.</HouseRule>
       </div>
 
       <CampaignsScreen

@@ -133,16 +133,16 @@ export function ExpensesScreen({
 
   return (
     <>
-      {!ocr ? <Notice className="mt-5">Citirea automată nu e legată (ANTHROPIC_API_KEY lipsește în Vercel): fișierele se urcă, iar datele le completezi tu.</Notice> : null}
-      {!drive ? <Notice className="mt-3">Drive-ul nu e legat: fișierele stau în admin până îl legi (Setări → Drive).</Notice> : null}
+      {!ocr ? <Notice className="mt-5">Citirea automată e oprită (lipsește ANTHROPIC_API_KEY în Vercel): completezi datele de mână.</Notice> : null}
+      {!drive ? <Notice className="mt-3">Drive nelegat: fișierele stau în admin (Setări → Drive).</Notice> : null}
 
       <div className="mt-5 rounded-xl border border-dashed border-hair-strong bg-[var(--ap-side)] p-4 sm:p-5">
         <input ref={input} id="urca-cheltuiala" type="file" accept="image/*,application/pdf" multiple className="sr-only" onChange={(event) => upload(event.currentTarget.files)} />
         <label htmlFor="urca-cheltuiala" className="btn btn-light w-full cursor-pointer justify-center !min-h-12 !text-[16px] sm:w-auto sm:!px-5">
           <IconUpload size={18} />
-          Urcă un bon sau o factură
+          Urcă bon sau factură
         </label>
-        <p className="mt-2 text-[14.5px] text-dim">Pe telefon poți face poza direct. Merg și mai multe odată. Poză (JPEG, PNG) sau PDF, până la 20 MB.</p>
+        <p className="mt-2 text-[14.5px] text-dim">JPEG, PNG sau PDF · max. 20 MB</p>
         {uploads.length > 0 ? (
           <ul className="mt-3 grid gap-1.5" aria-live="polite">
             {uploads.map((item) => (
@@ -166,7 +166,7 @@ export function ExpensesScreen({
 
       <div className="mt-5 flex flex-wrap items-baseline gap-x-6 gap-y-1">
         <p className="text-[15px] text-bone">
-          <span className="font-semibold">Total în {monthLabel(month)}:</span> {[...totals.entries()].map(([currency, sum]) => money(sum, currency)).join(" + ") || "—"}
+          <span className="font-semibold">Total:</span> {[...totals.entries()].map(([currency, sum]) => money(sum, currency)).join(" + ") || "—"}
         </p>
         {toCheck > 0 ? <p className="text-[15px] text-[var(--ap-warn)]">{toCheck === 1 ? "O cheltuială" : `${toCheck} cheltuieli`} de verificat</p> : null}
       </div>
@@ -183,7 +183,7 @@ export function ExpensesScreen({
       ) : null}
 
       {expenses.length === 0 ? (
-        <Empty className="mt-4">Nicio cheltuială în {monthLabel(month)}. Fă o poză primului bon cu „Urcă un bon sau o factură”.</Empty>
+        <Empty className="mt-4">Nicio cheltuială în {monthLabel(month)}.</Empty>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">
@@ -284,7 +284,7 @@ function ExpensePanel({
   if (!expense) {
     return (
       <SidePanel title="Cheltuiala" onClose={onClose}>
-        <p className="text-[15px] text-dim">Se încarcă… Dacă nu apare, cheltuiala e în altă lună.</p>
+        <p className="text-[15px] text-dim">Se încarcă… Dacă nu apare, e în altă lună.</p>
       </SidePanel>
     );
   }
@@ -308,7 +308,7 @@ function ExpensePanel({
           <p className="text-[14.5px] text-dim">Se încarcă documentul…</p>
         )}
         {expense.citireMesaj ? <Notice tone={expense.citireStare === "eroare" ? "warn" : "neutral"}>{expense.citireMesaj}</Notice> : null}
-        {expense.citireStare === "ok" && !expense.confirmata ? <p className="text-[14.5px] text-dim">Datele de mai jos sunt citite automat. Verifică-le și apasă „Salvează”.</p> : null}
+        {expense.citireStare === "ok" && !expense.confirmata ? <p className="text-[14.5px] text-dim">Citite automat: verifică și salvează.</p> : null}
 
         <form
           noValidate
@@ -338,10 +338,10 @@ function ExpensePanel({
             <input id="ch-furnizor" value={fields.furnizor} onChange={(e) => setFields({ ...fields, furnizor: e.currentTarget.value })} className={inputClass} maxLength={200} />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field id="ch-cui" label="CUI furnizor (opțional)" error={fieldError("furnizorCui")}>
+            <Field id="ch-cui" label="CUI furnizor" error={fieldError("furnizorCui")}>
               <input id="ch-cui" value={fields.furnizorCui} onChange={(e) => setFields({ ...fields, furnizorCui: e.currentTarget.value })} className={inputClass} maxLength={20} />
             </Field>
-            <Field id="ch-nr" label="Nr. document (opțional)" error={fieldError("nrDocument")}>
+            <Field id="ch-nr" label="Nr. document" error={fieldError("nrDocument")}>
               <input id="ch-nr" value={fields.nrDocument} onChange={(e) => setFields({ ...fields, nrDocument: e.currentTarget.value })} className={inputClass} maxLength={60} />
             </Field>
             <Field id="ch-data" label="Data documentului" error={fieldError("dataDoc")}>
@@ -370,7 +370,7 @@ function ExpensePanel({
               ))}
             </select>
           </Field>
-          <Field id="ch-desc" label="Ce s-a cumpărat (opțional)" error={fieldError("descriere")}>
+          <Field id="ch-desc" label="Ce s-a cumpărat" error={fieldError("descriere")}>
             <textarea id="ch-desc" rows={2} value={fields.descriere} onChange={(e) => setFields({ ...fields, descriere: e.currentTarget.value })} className={textareaClass} maxLength={500} />
           </Field>
           {error && !error.field ? <Notice tone="error">{error.message}</Notice> : null}
@@ -425,7 +425,6 @@ function ExpensePanel({
           ) : expense.driveMesaj ? (
             `Pe Drive nu e încă: ${expense.driveMesaj}`
           ) : null}
-          {expense.driveLink ? " · dacă schimbi luna, fișierul se mută singur în folderul ei." : ""}
         </p>
       </div>
     </SidePanel>

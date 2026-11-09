@@ -113,7 +113,7 @@ async function session(
   if (workspaceId !== currentId) {
     return {
       ok: false,
-      message: `Între timp ai trecut în ${workspaceName(workspace)} (probabil din alt tab). Reîncarcă pagina ca să vezi spațiul în care lucrezi acum.`,
+      message: `Între timp ai trecut în ${workspaceName(workspace)} (alt tab). Reîncarcă pagina.`,
     };
   }
   return { ok: true, user, workspace, adapter: adapterFor(workspace.platform) };
@@ -230,7 +230,7 @@ async function createPrepared(
   if (creation.check.fingerprint !== options.fingerprint) {
     return {
       ok: false,
-      message: `Planul sau ce a găsit ${label} s-a schimbat de la verificare. Verifică din nou, ca să creezi exact ce vezi pe ecran.`,
+      message: `Planul sau ce a găsit ${label} s-a schimbat de la verificare. Verifică din nou.`,
       recheck: true,
     };
   }
@@ -244,7 +244,7 @@ async function createPrepared(
     if (duplicate.data) {
       return {
         ok: false,
-        message: `Exact planul ăsta a fost creat ${agoLabel(duplicate.data.createdAt)}${duplicate.data.createdByEmail ? `, de ${duplicate.data.createdByEmail}` : ""}. Încă o creare înseamnă a doua campanie cu același buget.`,
+        message: `Planul ăsta a fost creat ${agoLabel(duplicate.data.createdAt)}${duplicate.data.createdByEmail ? `, de ${duplicate.data.createdByEmail}` : ""}. Încă o creare = a doua campanie, cu același buget.`,
         duplicate: {
           createdAt: duplicate.data.createdAt,
           adsManagerUrl: campaignUrl(duplicate.data.platform, duplicate.data.adAccount, duplicate.data.platformCampaignId),
@@ -332,7 +332,7 @@ async function createSearchPrepared(
     return { ok: false, message: "Verificarea pe Google a găsit probleme noi. Verifică din nou planul.", problems: context.check.errors, recheck: true };
   }
   if (context.check.fingerprint !== options.fingerprint) {
-    return { ok: false, message: "Planul sau ce a găsit Google s-a schimbat de la verificare. Verifică din nou, ca să creezi exact ce vezi pe ecran.", recheck: true };
+    return { ok: false, message: "Planul sau ce a găsit Google s-a schimbat de la verificare. Verifică din nou.", recheck: true };
   }
 
   const result = await createSearchOnGoogle({ workspace, context, user });
@@ -410,7 +410,7 @@ async function prepareBatchPlan(input: { plan: unknown; screenWorkspace: string 
   if (workspace.owner !== screen.workspace.owner) {
     return {
       ok: false,
-      message: `Planul e pentru ${workspaceName(workspace)}, iar lotul e pentru ${workspaceName(screen.workspace)}: un lot nu amestecă banii agenției cu ai clienților. Nu s-a trimis nimic.`,
+      message: `Planul e pentru ${workspaceName(workspace)}, lotul pentru ${workspaceName(screen.workspace)}: un lot nu amestecă banii agenției cu ai clienților. Nu s-a trimis nimic.`,
     };
   }
 
@@ -434,7 +434,7 @@ async function prepareBatchSearch(input: { plan: unknown; screenWorkspace: strin
   if (workspace.owner !== screen.workspace.owner) {
     return {
       ok: false,
-      message: `Planul e pentru ${workspaceName(workspace)}, iar lotul e pentru ${workspaceName(screen.workspace)}: un lot nu amestecă banii agenției cu ai clienților. Nu s-a trimis nimic.`,
+      message: `Planul e pentru ${workspaceName(workspace)}, lotul pentru ${workspaceName(screen.workspace)}: un lot nu amestecă banii agenției cu ai clienților. Nu s-a trimis nimic.`,
     };
   }
   return validateSearchFor(workspace, input.plan, screen.user);
@@ -496,7 +496,7 @@ export async function prepareVideoUpload(input: {
     if (!account) {
       return {
         ok: false,
-        message: `Tokenul spațiului ${workspaceName(context.workspace)} nu vede contul ${context.adAccount}, deci n-ar putea pune video-ul în biblioteca lui. Verifică contul din plan.`,
+        message: `Tokenul spațiului ${workspaceName(context.workspace)} nu vede contul ${context.adAccount}. Verifică contul din plan.`,
       };
     }
   } catch (error) {

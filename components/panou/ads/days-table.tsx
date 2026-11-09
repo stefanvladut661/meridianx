@@ -29,7 +29,7 @@ export function DaysTable({
 }) {
   const rows = [...days].reverse();
   const total = totalsOf(days);
-  const head = "px-2 py-2 text-[11.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
+  const head = "px-2 py-2 text-[12px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
 
   return (
     <div className={cn("overflow-auto", maxHeight)}>

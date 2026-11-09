@@ -23,7 +23,7 @@ export default async function ContabilPage({ searchParams }: { searchParams: Pro
   const [check, settings] = await Promise.all([checkMonth(month, await actorEmail()), readSettings()]);
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead title="Pachetul pentru contabil" subtitle="Ce lipsește din lună, zip-ul cu folderul lunii și extrasul, și emailul către contabil — care pleacă doar la „Trimite”." />
+      <PageHead title="Pachetul pentru contabil" info="Emailul către contabil pleacă doar la „Trimite”." />
       {!check.ok ? (
         <Notice tone="error" className="mt-5">
           {check.message}

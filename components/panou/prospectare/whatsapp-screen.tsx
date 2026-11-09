@@ -20,7 +20,7 @@ import { pregatesteFereastra, WhatsAppRand, WhatsAppTrimisaRand } from "./whatsa
 
 /**
  * „WhatsApp azi”: firmele programate azi (la 00:00 sau manual), pe conturi.
- * „Trimite pe WhatsApp” deschide fereastra chiar în clic (după `await`
+ * „Trimite” deschide fereastra chiar în clic (după `await`
  * browserul ar bloca-o), marchează firma pe contul programat și abia apoi
  * trimite fereastra la wa.me, cu mesajul gata. Dacă baza refuză (trimisă deja
  * de altcineva, nu mai e programată), fereastra se închide și motivul apare
@@ -65,7 +65,7 @@ const SETARI_CONTURI = "/admin/prospectare/setari#conturi-whatsapp";
 const ANULARE_MS = 2 * 60 * 1000 - 5000;
 /** O stare locală pe care baza n-o confirmă nici după atâta timp (a schimbat-o altcineva) cedează în fața bazei. */
 const EXPIRA_MS = 20 * 1000;
-const CONEXIUNE = "Conexiunea a căzut și nu știm dacă firma s-a marcat. Lista se reîncarcă: dacă firma e tot de trimis, încearcă din nou.";
+const CONEXIUNE = "Conexiunea a căzut; nu știm dacă firma s-a marcat. Lista se reîncarcă: dacă e tot de trimis, reîncearcă.";
 const BTN_SUS = "h-10 px-3.5 text-[14.5px] sm:h-8 sm:px-3 sm:text-[14px]";
 
 /** Mesajul unei erori, ca propoziție încheiată (ca textul care urmează să înceapă curat). */
@@ -429,7 +429,7 @@ export function WhatsAppScreen({
           firma: firma.nume,
           contNume,
           titlu: `Trimis pe ${contNume}`,
-          detaliu: [firma.nume, contorText, d?.pesteLimita ? "peste limită: mesajul a plecat, dar crește riscul ca WhatsApp să blocheze numărul" : null]
+          detaliu: [firma.nume, contorText, d?.pesteLimita ? "peste limită: crește riscul de blocare" : null]
             .filter(Boolean)
             .join(" · "),
           pesteLimita: d?.pesteLimita,
@@ -446,7 +446,7 @@ export function WhatsAppScreen({
           firma: firma.nume,
           contNume,
           titlu: `Marcat pe ${contNume}, dar WhatsApp nu s-a deschis`,
-          detaliu: `${firma.nume}: browserul a oprit fereastra nouă. Deschide conversația de aici.`,
+          detaliu: `${firma.nume}: browserul a blocat fereastra.`,
           pesteLimita: d?.pesteLimita,
           link,
         });
@@ -470,7 +470,7 @@ export function WhatsAppScreen({
     void (async () => {
       const res = await anuleazaWhatsapp(firmaId).catch(() => ({
         ok: false as const,
-        message: "Conexiunea a căzut și nu știm dacă marcarea s-a anulat. Lista se reîncarcă: verifică unde e firma.",
+        message: "Conexiunea a căzut; nu știm dacă s-a anulat. Lista se reîncarcă: verifică firma.",
       }));
       inCurs.current.delete(firmaId);
 
@@ -500,7 +500,7 @@ export function WhatsAppScreen({
         firmaId,
         firma: nume,
         titlu: "Marcarea s-a anulat",
-        detaliu: `${nume} e din nou de trimis. Dacă WhatsApp e deschis cu mesajul, nu-l mai trimite.`,
+        detaliu: `${nume} e din nou de trimis. Nu trimite mesajul deschis în WhatsApp.`,
       });
       anunta(`Marcarea s-a anulat: ${nume} e din nou de trimis.`);
       router.refresh();
@@ -517,31 +517,31 @@ export function WhatsAppScreen({
   if (eroareCiclu) {
     note.push(
       <InlineNote key="ciclu" tone="apricot">
-        Programarea de la 00:00 nu s-a putut verifica: {fraza(eroareCiclu)} Lista arată doar ce era deja programat. Reîncarcă pagina peste un minut.
+        Programarea de la 00:00 nu s-a verificat: {fraza(eroareCiclu)} Lista poate fi incompletă; reîncarcă peste un minut.
       </InlineNote>
     );
   }
   if (eroareSetari) {
     note.push(
       <InlineNote key="setari" tone="rose">
-        Setările nu s-au citit: {fraza(eroareSetari)} Până se rezolvă, WhatsApp se deschide fără mesajul pregătit.
+        Setările nu s-au citit: {fraza(eroareSetari)} WhatsApp se deschide fără mesaj.
       </InlineNote>
     );
   } else if (!sablon.trim()) {
     note.push(
       <InlineNote key="sablon" tone="apricot" className="flex flex-wrap items-center justify-between gap-2">
-        <p className="min-w-0 flex-1">Șablonul primului mesaj e gol: WhatsApp se deschide fără text. Scrie-l în Setări, la șabloane.</p>
+        <p className="min-w-0 flex-1">Șablonul primului mesaj e gol: WhatsApp se deschide fără text.</p>
         <Link href={SETARI} className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
-          Deschide Setările
+          Scrie șablonul
         </Link>
       </InlineNote>
     );
   } else if (sablon.includes("{utilizator}")) {
     note.push(
       <InlineNote key="utilizator" tone="apricot" className="flex flex-wrap items-center justify-between gap-2">
-        <p className="min-w-0 flex-1">Șablonul conține {"{utilizator}"}, care aici rămâne gol: pe WhatsApp trimiți de pe un cont, nu în numele cuiva. Scoate-l din șablon.</p>
+        <p className="min-w-0 flex-1">Șablonul conține {"{utilizator}"}, care aici rămâne gol. Scoate-l.</p>
         <Link href={SETARI} className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
-          Deschide Setările
+          Corectează șablonul
         </Link>
       </InlineNote>
     );
@@ -549,7 +549,7 @@ export function WhatsAppScreen({
   if (conturi === null) {
     note.push(
       <InlineNote key="conturi" tone="apricot">
-        Conturile nu s-au citit: {fraza(eroareConturi ?? "citirea a căzut")} Limitele lipsesc, dar trimiterea merge, de pe contul programat.
+        Conturile nu s-au citit: {fraza(eroareConturi ?? "citirea a căzut")} Trimiterea merge, fără limite.
       </InlineNote>
     );
   }
@@ -558,8 +558,8 @@ export function WhatsAppScreen({
     note.push(
       <InlineNote key={`inactiv-${c.id}`} tone="apricot" className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="min-w-0 flex-1 basis-60">
-          „{c.nume}” e dezactivat în Setări, dar are {num(deTrimisPe(c.id))} de trimis azi.{" "}
-          {active.length ? "Alege contul de pe care pleacă:" : "Niciun cont nu e activ: activează unul în Setări."}
+          „{c.nume}” e dezactivat, dar are {num(deTrimisPe(c.id))} de trimis azi.{" "}
+          {active.length ? "Pleacă de pe:" : "Niciun cont activ."}
         </p>
         {active.length ? (
           <select
@@ -580,7 +580,7 @@ export function WhatsAppScreen({
           </select>
         ) : (
           <Link href={SETARI_CONTURI} className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
-            Deschide conturile
+            Activează un cont
           </Link>
         )}
       </InlineNote>
@@ -597,16 +597,12 @@ export function WhatsAppScreen({
       <EmptyState
         icon={MessageCircle}
         title="Nimic programat azi pe WhatsApp"
-        text="La 00:00 se programează singure firmele cu cele mai vechi site-uri demo și număr de mobil (și cele care au primit email într-o zi de dinainte), împărțite pe conturile active, cât încape în limita fiecăruia. Ziua se completează și când crește o limită sau apar site-uri noi. Cu „Programează” alegi tu firmele, de mâine încolo."
-        hint={
+        text={conturi !== null && active.length === 0 ? "Niciun cont activ: la 00:00 nu se programează nimic." : undefined}
+        action={
           conturi !== null && active.length === 0 ? (
-            <>
-              Niciun cont WhatsApp nu e activ, deci la 00:00 nu se programează nimic.{" "}
-              <Link href={SETARI_CONTURI} className="underline underline-offset-2 hover:text-foreground">
-                Activează un cont în Setări
-              </Link>
-              .
-            </>
+            <Link href={SETARI_CONTURI} className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
+              Activează un cont
+            </Link>
           ) : undefined
         }
         className="py-10"
@@ -616,8 +612,7 @@ export function WhatsAppScreen({
     lista = (
       <EmptyState
         icon={Send}
-        title="Ai trimis tot ce era programat azi"
-        text="Următoarele firme se programează singure la 00:00. Ce ai trimis e mai jos, în „Trimise azi”."
+        title="Ai trimis tot pentru azi"
         className="py-10"
       />
     );
@@ -629,7 +624,7 @@ export function WhatsAppScreen({
         text={`Celelalte conturi mai au ${num(toateDeTrimis.length)} de trimis azi.`}
         action={
           <button type="button" onClick={() => alegeFiltru("toate")} className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
-            Arată toate conturile
+            Toate conturile
           </button>
         }
         className="py-10"
@@ -657,7 +652,7 @@ export function WhatsAppScreen({
                 !r.firma.telefon
                   ? "Firma nu are telefon în fișă."
                   : blocatInactiv
-                    ? `„${numeCont(r.cont)}” e dezactivat: alege mai sus contul de pe care pleacă.`
+                    ? `„${numeCont(r.cont)}” e dezactivat: alege contul mai sus.`
                     : null
               }
               butonRef={(el) => {
@@ -700,7 +695,7 @@ export function WhatsAppScreen({
               href={SETARI_CONTURI}
               className="-my-2 inline-flex min-h-10 items-center rounded-sm text-[13.5px] text-muted-foreground hover:text-foreground sm:min-h-0 sm:text-[13px]"
             >
-              Conturi și limite, în Setări →
+              Conturi și limite →
             </Link>
           </div>
           {programari && conturiAzi.length ? (
@@ -741,7 +736,7 @@ export function WhatsAppScreen({
           </h2>
           <div id="whatsapp-trimise" hidden={!trimiseDeschis}>
             <p className="border-t border-white/[0.06] px-3 py-2 text-[13.5px] leading-snug text-muted-foreground sm:px-4">
-              „Anulează” merge în primele 2 minute de la trimitere. Conversația se redeschide fără mesaj, ca să nu-l trimiți de două ori.
+              „Anulează” merge 2 minute de la trimitere.
             </p>
             {trimise.length ? (
               <ul className="divide-y divide-white/[0.06] border-t border-white/[0.06]">
@@ -759,7 +754,7 @@ export function WhatsAppScreen({
               </ul>
             ) : (
               <p className="border-t border-white/[0.06] px-3 py-4 text-[14px] text-muted-foreground sm:px-4">
-                Nimic trimis azi{contFiltru ? ` pe ${contFiltru}` : ""}. Ce trimiți apare aici, cu ora și contul.
+                Nimic trimis azi{contFiltru ? ` pe ${contFiltru}` : ""}.
               </p>
             )}
           </div>

@@ -51,7 +51,7 @@ export function AccountPage() {
       reload={reload}
       onLock={() => {
         void vault.lock();
-        notify("Seif blocat acum. Cheia a fost ștearsă din memorie.");
+        notify("Seif blocat.");
       }}
     />
   );

@@ -72,5 +72,5 @@ export async function rematchAction(): Promise<Simple> {
   const result = await rematch(actor);
   revalidatePath(PATH);
   if (!result.ok) return result;
-  return { ok: true, message: `Am verificat ${result.data.checked} rânduri nepotrivite: ${result.data.sure} legate sigur, ${result.data.toConfirm} de confirmat.` };
+  return { ok: true, message: `${result.data.checked} rânduri verificate: ${result.data.sure} legate sigur, ${result.data.toConfirm} de confirmat.` };
 }

@@ -77,7 +77,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
     return (
       <div className="space-y-4">
         <Card padded={false}>
-          <ErrorState title="Campania nu s-a încărcat" text={STORE_FAILURE_MESSAGE[found.reason]} hint="Nu s-a schimbat nimic în conturi — doar citirea a eșuat." />
+          <ErrorState title="Campania nu s-a încărcat" text={STORE_FAILURE_MESSAGE[found.reason]} />
         </Card>
       </div>
     );
@@ -117,7 +117,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <Link href="/admin/ads" className="mb-2 inline-flex items-center gap-1 text-[13px] text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" aria-hidden="true" /> Toate campaniile
+            <ArrowLeft className="h-3 w-3" aria-hidden="true" /> Campanii
           </Link>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className={`${PAGE_TITLE} !leading-tight sm:!text-[25px]`}>{campaign.name}</h1>
@@ -157,7 +157,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       <div className="flex items-start gap-2.5 rounded-xl border border-apricot/20 bg-apricot/[0.06] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#FFD0AC]">
         <PlayCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <p>
-          Campania a fost creată oprită. Aici nu există buton de pornire, de buget sau de licitare — doar platforma le schimbă, la mâna omului. Pauza se pune din{" "}
+          Creată oprită. Pornirea și bugetul: doar din platformă. Pauza: din{" "}
           <Link href={`/admin/ads?cauta=${encodeURIComponent(campaign.name)}`} className="underline underline-offset-4">
             Campanii
           </Link>
@@ -171,25 +171,21 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
 
       {!days.ok ? (
         <Card padded={false}>
-          <ErrorState title="Cifrele nu s-au citit" text={days.message} hint="Nu s-a schimbat nimic în conturi — doar citirea a eșuat." />
+          <ErrorState title="Cifrele nu s-au citit" text={days.message} />
         </Card>
       ) : rows.length === 0 ? (
         <Card padded={false}>
           <EmptyState
             icon={PlayCircle}
             title="Nicio cifră încă"
-            text={
-              paused
-                ? `Campania e oprită, deci n-a cheltuit nimic. După ce o pornești din ${managerName(campaign.platform)}, cifrele vin la sincronizarea zilnică.`
-                : "Cifrele vin la sincronizarea zilnică — sau acum, din „Sincronizează acum” de pe Campanii."
-            }
+            text={paused ? `Oprită, n-a cheltuit nimic. Pornește-o din ${managerName(campaign.platform)}.` : "Vin la sincronizarea zilnică sau din „Sincronizează”, pe Campanii."}
           />
         </Card>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
-              <SectionTitle title="Ultimele 7 zile" hint="față de cele 7 de dinainte" />
+              <SectionTitle title="Ultimele 7 zile" info="Schimbarea e calculată față de cele 7 zile dinainte." />
               <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <KpiStat
                   label="Cheltuială"
@@ -204,23 +200,20 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
                   unit={lastWeek.costPerResult === null ? undefined : splitAmount(lastWeek.costPerResult, currency).unit}
                   delta={deltaOf(lastWeek.costPerResult, weekBefore.costPerResult, "up_bad")}
                 />
-                <KpiStat label="Buget zilnic" value={splitAmount(campaign.dailyBudget, currency).value} unit={splitAmount(campaign.dailyBudget, currency).unit} hint="setat în plan" />
+                <KpiStat label="Buget zilnic" value={splitAmount(campaign.dailyBudget, currency).value} unit={splitAmount(campaign.dailyBudget, currency).unit} />
               </div>
               <dl className="mt-5 grid grid-cols-3 gap-3 border-t border-white/[0.06] pt-4">
                 <div>
                   <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">CTR</dt>
                   <dd className="pu-num mt-1 text-[16px]">{formatPercent(lastWeek.ctr)}</dd>
-                  <dd className="mt-0.5 text-[12.5px] text-muted-foreground">clicuri pe link / afișări</dd>
                 </div>
                 <div>
                   <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">CPC</dt>
                   <dd className="pu-num mt-1 text-[16px]">{formatAmount(lastWeek.cpc, currency)}</dd>
-                  <dd className="mt-0.5 text-[12.5px] text-muted-foreground">cost pe clic pe link</dd>
                 </div>
                 <div>
                   <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">CPM</dt>
                   <dd className="pu-num mt-1 text-[16px]">{formatAmount(lastWeek.cpm, currency)}</dd>
-                  <dd className="mt-0.5 text-[12.5px] text-muted-foreground">cost la 1.000 de afișări</dd>
                 </div>
               </dl>
               <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -240,13 +233,11 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
                   height={130}
                 />
               </div>
-              <p className="mt-3 text-[12.5px] text-muted-foreground">
-                Graficele arată {rows[0] && rows[0].date < chartFrom ? `ultimele ${countOf(CHART_DAYS, "zile")}` : "toată viața campaniei"}.
-              </p>
+              <p className="mt-3 text-[13px] text-muted-foreground">Grafice: {rows[0] && rows[0].date < chartFrom ? `ultimele ${countOf(CHART_DAYS, "zile")}` : "de la creare"}</p>
             </Card>
 
             <Card>
-              <SectionTitle title="De la creare" hint="cumulat, fără reset" />
+              <SectionTitle title="De la creare" />
               <div className="mt-4 space-y-4">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-[13.5px] text-muted-foreground">Cheltuială totală</span>
@@ -274,7 +265,6 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           <Card padded={false} className="overflow-hidden">
             <div className="border-b border-white/[0.06] px-4 py-3">
               <h2 className="text-[15px] font-medium">Zi cu zi</h2>
-              <p className="mt-0.5 text-[13px] text-muted-foreground">toate zilele de la creare, cu totalul</p>
             </div>
             <DaysTable days={fillDays(rows, rows[0].date, today)} currency={currency} resultLabel={names.plural} caption={`Cifrele campaniei ${campaign.name}, pe zile`} />
           </Card>
@@ -283,7 +273,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
 
       {searchSummary ? (
         <Card>
-          <SectionTitle title="Campania, cum a fost trimisă" hint="planul de căutare, exact cum a plecat spre Google" />
+          <SectionTitle title="Campania trimisă" />
           <div className="mt-4 max-w-4xl">
             <SearchPreview summary={searchSummary} operations={null} accountLabel={campaign.adAccount} sent />
           </div>
@@ -293,7 +283,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       {summary ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
           <Card>
-            <SectionTitle title="Reclamele" hint="exact textele fiecăreia, cum au fost trimise" />
+            <SectionTitle title="Reclamele" />
             <AdsPreview summary={summary} rotating={plan.creative.variants === "platform_rotates"} className="mt-4" />
           </Card>
           <SentMaterial
@@ -323,9 +313,8 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               <span aria-hidden="true" className="mr-2 inline-block transition-transform duration-150 group-open:rotate-90">
                 ›
               </span>
-              Planul JSON{search ? ", cu cheile locațiilor găsite de Google" : `, cu cheile găsite de ${PLATFORM_LABEL[campaign.platform]}`}
+              Planul JSON
             </span>
-            <span className="text-[13px] font-normal text-muted-foreground">se deschide aici; „Copiază planul JSON” e în dreapta sus</span>
           </summary>
           <pre className="mt-3 max-h-[28rem] overflow-auto rounded-xl border border-white/[0.08] bg-[#0A0A0E] p-3.5 font-mono text-[12.5px] leading-relaxed text-foreground/80">{planJson}</pre>
           <div className="mt-3">

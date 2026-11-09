@@ -36,10 +36,10 @@ function Unreadable({ block }: { block: AuditBlock<unknown> }) {
   );
 }
 
-function Section({ id, title, hint, children }: { id: string; title: string; hint?: string; children: ReactNode }) {
+function Section({ id, title, info, children }: { id: string; title: string; info?: string; children: ReactNode }) {
   return (
     <Card as="section" className="overflow-hidden p-0" aria-labelledby={id}>
-      <CardHead id={id} title={title} hint={hint} />
+      <CardHead id={id} title={title} info={info} />
       {children}
     </Card>
   );
@@ -52,11 +52,11 @@ export function CautariContAudit({ audit, currency, campaigns }: { audit: Accoun
   return (
     <div className="space-y-3">
       <Card as="section" className="overflow-hidden p-0 sm:p-0" aria-labelledby="semnale">
-        <CardHead id="semnale" title="Probleme găsite" hint={audit.signals.length === 0 ? undefined : `${audit.signals.length} de citit, după gravitate`} />
+        <CardHead id="semnale" title="Probleme găsite" hint={audit.signals.length === 0 ? undefined : audit.signals.length} />
         {audit.signals.length === 0 ? (
           <p className="flex items-center gap-2 px-4 py-4 text-[14px] text-mint">
             <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            Nimic ieșit din comun în ce se poate citi.
+            Nimic ieșit din comun.
           </p>
         ) : (
           <ul className="divide-y divide-white/[0.05]">
@@ -71,13 +71,13 @@ export function CautariContAudit({ audit, currency, campaigns }: { audit: Accoun
         )}
       </Card>
 
-      <Section id="modificari" title="Cine a schimbat ce — ultimele 30 de zile" hint="Google păstrează istoricul detaliat 30 de zile; modificările din Google Ads Editor nu apar aici.">
+      <Section id="modificari" title="Cine a schimbat ce · 30 de zile" info="Google păstrează istoricul detaliat 30 de zile. Modificările din Google Ads Editor nu apar.">
         <Unreadable block={audit.changes} />
         {audit.changes.ok ? (
           <div className="px-4 py-3">
-            <p className="text-[14px] text-foreground/80">
-              {countOf(audit.changes.data.items.length, "modificări")} între {audit.changes.data.from} și {audit.changes.data.to}
-              {audit.changes.data.truncated ? " — doar cele mai noi 10.000, limita Google pe o citire" : ""}.
+            <p className="pu-num text-[14px] text-foreground/80">
+              {countOf(audit.changes.data.items.length, "modificări")} · {audit.changes.data.from} → {audit.changes.data.to}
+              {audit.changes.data.truncated ? " · doar ultimele 10.000 (limita Google)" : ""}
             </p>
             {waves.length > 0 ? (
               <ul className="mt-3 space-y-1.5 text-[14px]">
@@ -94,7 +94,7 @@ export function CautariContAudit({ audit, currency, campaigns }: { audit: Accoun
                   <span aria-hidden="true" className="mr-2 inline-block transition-transform duration-150 group-open:rotate-90">
                     ›
                   </span>
-                  Toate modificările, cele mai noi primele
+                  Toate modificările
                 </summary>
                 <div className="mt-3 max-h-[32rem] overflow-auto rounded-xl border border-white/[0.07]">
                   <table className="w-full min-w-[720px] text-left">
@@ -153,7 +153,7 @@ export function CautariContAudit({ audit, currency, campaigns }: { audit: Accoun
         {audit.billing.ok ? (
           audit.billing.data.setups.length === 0 && audit.billing.data.budgets.length === 0 ? (
             <p className="px-4 py-3 text-[14px] leading-relaxed text-muted-foreground">
-              Google nu întoarce nicio configurare de facturare prin API — de obicei la conturile plătite automat cu cardul. Verifică în Google Ads → Facturare.
+              Nicio configurare prin API (de obicei, plată automată cu cardul). Verifică în Google Ads → Facturare.
             </p>
           ) : (
             <ul className="divide-y divide-white/[0.05] text-[14px] text-foreground/85">

@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
-import { ListChecks, Loader2, RefreshCw, ShieldCheck, Sparkles, Copy } from "lucide-react";
+import { ListChecks, Loader2, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import { countOf } from "@/lib/ads/plan-derive";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "../ui/actions";
+import { Info } from "../ui/info";
 import { Btn, btnClass, Card, Pill, SectionTitle } from "../ui/primitives";
 import { Field } from "../ui/states";
 import { TextInput } from "../ui/select";
-import { PAGE_LEAD, PAGE_TITLE } from "./tone";
+import { PAGE_TITLE } from "./tone";
 import { WorkspacePicker } from "./workspace-picker";
 
 /**
@@ -136,17 +137,14 @@ export function ClaudeHelper({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div className="flex items-center gap-2">
           <h1 className={PAGE_TITLE}>Pentru Claude</h1>
-          <p className={PAGE_LEAD}>
-            Lipește tot în conversație, înainte să ceri planurile. Așa primești JSON care trece verificarea din prima: formatul (și cel al
-            campaniilor de căutare Google), regulile fiecărei platforme și id-urile reale din conturi.
-          </p>
+          <Info>Lipește tot în conversație înainte să ceri planurile: formatul (și cel de căutare Google), regulile platformelor și id-urile reale.</Info>
         </div>
         <div className="flex flex-col items-start gap-1.5 sm:items-end">
           <CopyButton value={all} label="Copiază tot" copiedLabel="Copiat" variant="primary" size="md" />
-          <p className="text-[12.5px] text-muted-foreground">
-            {context.status === "done" ? "Instrucțiuni + contextul conturilor." : "Fără context citit: se copiază doar instrucțiunile."}
+          <p className="text-[13px] text-muted-foreground">
+            {context.status === "done" ? "Instrucțiuni + context" : "Doar instrucțiunile · context necitit"}
           </p>
         </div>
       </div>
@@ -154,8 +152,8 @@ export function ClaudeHelper({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card id="claude-brief">
           <SectionTitle
-            title="Formatul planului și regulile platformelor"
-            hint="lipește-l ca atare · aceleași reguli ca validarea"
+            title="Instrucțiunile"
+            info="Lipește-le ca atare. Aceleași reguli ca validarea din portal."
             action={<Pill tone="lav">{Math.max(1, Math.round(brief.length / 1000))} mii de caractere</Pill>}
           />
           <pre
@@ -172,11 +170,7 @@ export function ClaudeHelper({
 
         <div className="min-w-0 space-y-4">
           <Card>
-            <SectionTitle
-              title="Conturile conectate"
-              hint="verificarea din portal citește aceste ID-uri"
-              action={<ShieldCheck className="h-4 w-4 text-mint" role="img" aria-label="doar citire" />}
-            />
+            <SectionTitle title="Conturile conectate" action={<ShieldCheck className="h-4 w-4 text-mint" role="img" aria-label="doar citire" />} />
 
             <WorkspacePicker workspaces={workspaces} current={current} action={chooseWorkspace} disabled={pending} className="mt-4" />
 
@@ -201,7 +195,7 @@ export function ClaudeHelper({
                   <Field
                     key={workspace.id}
                     label={`${workspace.name} · advertiser_id`}
-                    hint="TikTok nu lasă tokenul să-și listeze conturile — scrie-le o dată, rămân aici."
+                    info="Tokenul TikTok nu-și poate lista conturile. Scrie-le o dată; rămân în browser."
                   >
                     <TextInput
                       id={`tt-${workspace.id}`}
@@ -227,9 +221,7 @@ export function ClaudeHelper({
 
             <div aria-live="polite" className="mt-3 space-y-3">
               {configured.length === 0 ? (
-                <p className="text-[13.5px] leading-relaxed text-muted-foreground">
-                  Niciun spațiu al proprietarului ăstuia nu are token încă. Instrucțiunile merg oricum; id-urile i le dai tu lui Claude.
-                </p>
+                <p className="text-[14px] leading-relaxed text-muted-foreground">Niciun spațiu cu token. Id-urile i le dai tu lui Claude.</p>
               ) : null}
               {context.status === "failed" ? <p className="text-[14px] leading-snug text-rose">{context.message}</p> : null}
               {context.status === "done" ? (
@@ -244,24 +236,20 @@ export function ClaudeHelper({
                 {summary.map((item) => (
                   <li key={item.workspaceId} className="py-2.5">
                     <p className="text-[14px] font-medium">{item.name}</p>
-                    <p className="font-mono text-[12px] text-muted-foreground/80">{accountsLine(item)}</p>
+                    <p className="font-mono text-[13px] text-muted-foreground/80">{accountsLine(item)}</p>
                     {item.notes.map((note) => (
-                      <p key={note} className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
+                      <p key={note} className="mt-1 text-[13px] leading-snug text-muted-foreground">
                         {note}
                       </p>
                     ))}
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground/80">
-                Conturile, paginile și identitățile apar aici după „Citește conturile”. Claude folosește doar id-urile din context — nu le inventează.
-              </p>
-            )}
+            ) : null}
           </Card>
 
           <Card>
-            <SectionTitle title="Acțiuni de conversie și video" hint="numele trebuie scrise exact" />
+            <SectionTitle title="Conversii și video" />
             {context.status === "done" ? (
               <>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -269,7 +257,7 @@ export function ClaudeHelper({
                     <p className="mb-1.5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
                       <ListChecks className="h-3 w-3" aria-hidden="true" /> conversii
                     </p>
-                    <ul className="space-y-1 font-mono text-[12px] text-foreground/75">
+                    <ul className="space-y-1 font-mono text-[13px] text-foreground/75">
                       {summary.map((item) => (
                         <li key={item.workspaceId}>
                           {item.name}: {conversionsLine(item)}
@@ -281,7 +269,7 @@ export function ClaudeHelper({
                     <p className="mb-1.5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
                       <Sparkles className="h-3 w-3" aria-hidden="true" /> video
                     </p>
-                    <ul className="space-y-1 font-mono text-[12px] text-foreground/75">
+                    <ul className="space-y-1 font-mono text-[13px] text-foreground/75">
                       {summary.map((item) => (
                         <li key={item.workspaceId}>
                           {item.name}: {plural(item.videos, "video", "video-uri")}
@@ -292,15 +280,17 @@ export function ClaudeHelper({
                 </div>
                 {googleItems.length > 0 ? (
                   <div className="mt-3 border-t border-white/[0.06] pt-3">
-                    <p className="mb-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">deja în conturile Google</p>
-                    <ul className="space-y-1 font-mono text-[12px] text-foreground/75">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
+                      deja în conturile Google
+                      <Info>Claude nu refolosește numele luate.</Info>
+                    </p>
+                    <ul className="space-y-1 font-mono text-[13px] text-foreground/75">
                       {googleItems.map((item) => (
                         <li key={item.workspaceId}>
                           {item.name}: {plural(item.campaigns, "campanie existentă", "campanii existente")} · {plural(item.negativeLists, "listă de negative", "liste de negative")}
                         </li>
                       ))}
                     </ul>
-                    <p className="mt-1.5 text-[12.5px] leading-snug text-muted-foreground">Claude nu refolosește numele luate.</p>
                   </div>
                 ) : null}
                 <details className="group mt-3 rounded-xl border border-white/[0.07] bg-[#0A0A0E]">
@@ -308,7 +298,7 @@ export function ClaudeHelper({
                     <span aria-hidden="true" className="mr-2 inline-block transition-transform duration-150 group-open:rotate-90">
                       ›
                     </span>
-                    Vezi contextul, cum ajunge la Claude
+                    Contextul, ca text
                   </summary>
                   <pre className="max-h-[320px] overflow-auto whitespace-pre-wrap border-t border-white/[0.06] px-3.5 py-3 font-mono text-[12.5px] leading-relaxed text-foreground/80">
                     {context.text}
@@ -316,27 +306,16 @@ export function ClaudeHelper({
                 </details>
               </>
             ) : (
-              <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">
-                Pixelii sau conversiile, video-urile din bibliotecă și, pe Google, campaniile care există deja apar după „Citește conturile”.
-              </p>
+              <p className="mt-3 text-[14px] text-muted-foreground">Apar după „Citește conturile”.</p>
             )}
           </Card>
 
-          <Card className="border-lav/20 bg-lav/[0.05]">
-            <p className="text-[14px] font-medium text-[#D8CCFF]">După ce primești planurile</p>
-            <ol className="mt-2 space-y-1 text-[13px] leading-relaxed text-[#D8CCFF]/75">
-              <li>
-                <span className="pu-num mr-1.5 text-[#D8CCFF]/55">01</span>Copiază instrucțiunile și contextul, cu un clic, la începutul conversației.
-              </li>
-              <li>
-                <span className="pu-num mr-1.5 text-[#D8CCFF]/55">02</span>Descrie clientul, oferta, publicul, bugetul și platformele. Claude răspunde cu planuri, în JSON.
-              </li>
-              <li>
-                <span className="pu-num mr-1.5 text-[#D8CCFF]/55">03</span>Mai multe campanii (un JSON cu „plans”) se lipesc în „Lot”; una singură, în „Plan nou”. Verificarea îți spune pe rând ce lipsește, iar
-                „Copiază problemele pentru Claude” pregătește răspunsul.
-              </li>
-            </ol>
-            <div className="mt-3 flex gap-2">
+          <Card className="flex flex-wrap items-center justify-between gap-3 border-lav/20 bg-lav/[0.05]">
+            <p className="flex items-center gap-1.5 text-[14.5px] font-medium text-[#D8CCFF]">
+              Răspunsul lui Claude
+              <Info>Un plan merge în „Plan nou”; un JSON cu „plans”, în „Lot”.</Info>
+            </p>
+            <div className="flex gap-2">
               <Link href="/admin/ads/nou" className={btnClass({ variant: "outline", size: "xs" })}>
                 Plan nou
               </Link>
@@ -345,10 +324,6 @@ export function ClaudeHelper({
               </Link>
             </div>
           </Card>
-
-          <p className="flex items-center gap-1.5 px-1 text-[12.5px] text-muted-foreground/60">
-            <Copy className="h-3 w-3" aria-hidden="true" /> „Copiază tot” include instrucțiunile și contextul, într-un singur mesaj.
-          </p>
         </div>
       </div>
     </div>

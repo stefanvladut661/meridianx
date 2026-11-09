@@ -108,7 +108,7 @@ export function CreateResult({
           </div>
           <h2 className="text-[19px] font-semibold">Campanie creată pe pauză</h2>
           <p className="mx-auto mt-2 max-w-md text-[14.5px] leading-relaxed text-muted-foreground">
-            {ads === 1 ? "O reclamă" : countOf(ads, "reclame")} pe pauză. Nu livrează nimic până nu o pornești în {manager}: verific-o acolo și pornește-o când e gata.
+            {ads === 1 ? "O reclamă" : countOf(ads, "reclame")}. Nu livrează până n-o pornești în {manager}.
           </p>
           <div className="mt-4 flex justify-center">
             <Stamp />
@@ -138,13 +138,13 @@ export function CreateResult({
       <div ref={ref} tabIndex={-1} role="alert" className="rounded-xl border border-apricot/25 bg-apricot/[0.07] px-4 py-4 outline-none">
         <p className="flex items-center gap-2 text-[15px] font-medium text-[#FFD0AC]">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          Planul ăsta a fost deja creat.
+          Plan creat deja.
         </p>
         <p className="mt-2 text-[14px] leading-relaxed text-[#FFD0AC]/85">{result.message}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <ExternalButton href={result.duplicate.adsManagerUrl}>Deschide campania existentă</ExternalButton>
           <Btn variant="outline" size="sm" onClick={onCreateAnyway} disabled={pending}>
-            {pending ? "Se creează…" : "Creează încă una, intenționat"}
+            {pending ? "Se creează…" : "Creează încă una"}
           </Btn>
         </div>
       </div>
@@ -156,11 +156,11 @@ export function CreateResult({
       <div ref={ref} tabIndex={-1} role="alert" className="rounded-xl border border-apricot/25 bg-apricot/[0.07] px-4 py-4 outline-none">
         <p className="flex items-center gap-2 text-[15px] font-medium text-[#FFD0AC]">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          Crearea s-a oprit la jumătate. Ce există e pe pauză.
+          Creată pe jumătate. Ce există e pe pauză.
         </p>
         <p className="mt-2 text-[14px] leading-relaxed text-[#FFD0AC]/85">{result.message}</p>
         <p className="mt-2 text-[14px] leading-relaxed text-[#FFD0AC]/85">
-          Completează ce lipsește din {manager} sau șterge campania de acolo și creeaz-o din nou după corectură.
+          Completează în {manager} sau șterge campania și creeaz-o din nou după corectură.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <ExternalButton href={result.partial.adsManagerUrl}>Deschide în {manager}</ExternalButton>

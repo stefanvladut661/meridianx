@@ -39,8 +39,8 @@ export function NisaPill({ nisa, className }: { nisa: Pick<Nisa, "status" | "exp
 export type GrupaNisa = "in_lucru" | "libere" | "terminate";
 
 export const GRUPE: { id: GrupaNisa; titlu: string; gol: string }[] = [
-  { id: "in_lucru", titlu: "În lucru", gol: "Niciun robot nu cercetează acum o nișă." },
-  { id: "libere", titlu: "Libere și expirate", gol: "Nicio nișă liberă: roboții își adaugă singuri altele când o cer." },
+  { id: "in_lucru", titlu: "În lucru", gol: "Niciun robot pe o nișă acum." },
+  { id: "libere", titlu: "Libere și expirate", gol: "Nicio nișă liberă." },
   { id: "terminate", titlu: "Terminate", gol: "Nicio nișă terminată încă." },
 ];
 

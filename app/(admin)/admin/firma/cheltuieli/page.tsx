@@ -21,7 +21,7 @@ export default async function CheltuieliPage({ searchParams }: { searchParams: P
   const expenses = await listExpenses(month);
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead title="Cheltuieli" subtitle="Fă o poză bonului sau urcă PDF-ul facturii. Adminul citește furnizorul, data și suma; tu le verifici. Fișierul ajunge în folderul lunii de pe Drive." />
+      <PageHead title="Cheltuieli" />
       {!expenses.ok ? (
         <Notice tone="error" className="mt-5">
           {expenses.message}

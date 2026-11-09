@@ -80,12 +80,7 @@ export function IstoricScreen({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Istoric</h1>
-          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
-            Jurnalul portalului: ce s-a făcut, pe ce campanie, când (ora României) și cu ce rezultat.
-          </p>
-        </div>
+        <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Istoric</h1>
         <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl options={FILTERS} value={filter} onChange={(value) => setMany({ tip: value === "toate" ? "" : value })} ariaLabel="Filtru istoric" size="sm" />
           <Btn
@@ -124,20 +119,15 @@ export function IstoricScreen({
 
       <Card className="overflow-hidden p-0">
         {failure ? (
-          <ErrorState title="Jurnalul nu poate fi citit" text={`${failure} Acțiunile din platformă nu sunt afectate.`} onRetry={() => window.location.reload()} />
+          <ErrorState title="Jurnalul nu poate fi citit" text={failure} onRetry={() => window.location.reload()} />
         ) : events.length === 0 ? (
           <EmptyState
             icon={HistoryIcon}
             title={filter === "toate" ? "Nimic în jurnal încă" : "Nicio intrare pe filtrul ăsta"}
-            text={
-              filter === "toate"
-                ? "Prima campanie creată, prima pauză sau prima actualizare a cifrelor apar aici, cu cine și când."
-                : "Schimbă filtrul pe „Toate” ca să vezi tot ce s-a întâmplat în portal."
-            }
             action={
               filter === "toate" ? undefined : (
                 <Btn size="sm" variant="outline" onClick={() => setMany({ tip: "" })}>
-                  Vezi tot jurnalul
+                  Vezi tot
                 </Btn>
               )
             }
@@ -166,13 +156,13 @@ export function IstoricScreen({
                     {event.detail ? (
                       <p className={cn("mt-0.5 whitespace-pre-line text-[13px] leading-relaxed", event.tone === "error" ? "text-rose" : event.tone === "warn" ? "text-apricot" : "text-muted-foreground")}>{event.detail}</p>
                     ) : null}
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
                       {event.platform ? <CanalMark platform={event.platform} size="sm" label={false} /> : null}
                       <span>{[target, event.by].filter(Boolean).join(" · ") || "portal"}</span>
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="pu-num text-[12.5px] text-muted-foreground">{dateTimeRo(event.at)}</p>
+                    <p className="pu-num text-[13px] text-muted-foreground">{dateTimeRo(event.at)}</p>
                     <Pill tone={result.tone} className="mt-1">
                       {result.label}
                     </Pill>
@@ -184,8 +174,8 @@ export function IstoricScreen({
         )}
       </Card>
 
-      <p className="flex items-center gap-1.5 px-1 text-[12.5px] text-muted-foreground/60">
-        <PenLine className="h-3 w-3" aria-hidden="true" /> Orele sunt afișate în ora României (Europe/Bucharest). Jurnalul arată ultimele 300 de evenimente.
+      <p className="flex items-center gap-1.5 px-1 text-[13px] text-muted-foreground/70">
+        <PenLine className="h-3 w-3" aria-hidden="true" /> Ultimele 300 de evenimente · ora României
       </p>
     </div>
   );

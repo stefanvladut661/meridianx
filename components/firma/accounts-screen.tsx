@@ -42,7 +42,7 @@ export function AccountsScreen({ accounts, today, actions }: { accounts: ContFir
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="text-[15px] text-dim">
           {accounts.length} conturi
-          {monthly.size > 0 ? ` · abonamente ≈ ${[...monthly.entries()].map(([currency, sum]) => money(sum, currency)).join(" + ")} pe lună` : ""}
+          {monthly.size > 0 ? ` · ≈ ${[...monthly.entries()].map(([currency, sum]) => money(sum, currency)).join(" + ")} / lună` : ""}
           {noTwoFa.length > 0 ? <span className="text-[var(--ap-warn)]"> · {noTwoFa.length} fără 2FA</span> : null}
         </p>
         <div className="flex flex-wrap gap-2">
@@ -73,7 +73,7 @@ export function AccountsScreen({ accounts, today, actions }: { accounts: ContFir
       ) : null}
 
       {accounts.length === 0 ? (
-        <Empty className="mt-4">Niciun cont încă. „Adaugă lista de bază” pune conturile obișnuite (bancă, Oblio, Google, Meta, TikTok, Vercel, Supabase, GitHub, domeniu); apoi le completezi.</Empty>
+        <Empty className="mt-4">Niciun cont încă. Pornește cu „Adaugă lista de bază”.</Empty>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">
@@ -189,7 +189,6 @@ function AccountPanel({
   return (
     <SidePanel
       title={account ? account.nume : "Cont nou"}
-      subtitle="Fără parole și fără chei: doar unde sunt."
       onClose={onClose}
       footer={
         account ? (
@@ -205,7 +204,7 @@ function AccountPanel({
             }
             className="text-[14.5px] text-dim underline underline-offset-4 hover:text-[var(--ap-error)]"
           >
-            Scoate contul din listă
+            Scoate din listă
           </button>
         ) : undefined
       }
@@ -246,14 +245,14 @@ function AccountPanel({
               ))}
             </select>
           </Field>
-          <Field id="ac-adresa" label="Adresa (opțional)" error={fieldError("adresa")}>
+          <Field id="ac-adresa" label="Adresa" error={fieldError("adresa")}>
             <input id="ac-adresa" type="url" value={fields.adresa} onChange={(e) => set("adresa", e.currentTarget.value)} className={inputClass} placeholder="https://" />
           </Field>
         </div>
-        <Field id="ac-cont" label="Contul cu care se intră (opțional)" error={fieldError("cont")} hint="De obicei un email. Nu parola.">
+        <Field id="ac-cont" label="Contul cu care intri" error={fieldError("cont")} hint="Emailul, nu parola.">
           <input id="ac-cont" value={fields.cont} onChange={(e) => set("cont", e.currentTarget.value)} className={inputClass} maxLength={200} />
         </Field>
-        <Field id="ac-cineAreAcces" label="Cine are acces" error={fieldError("cineAreAcces")} hint="Nume sau emailuri, despărțite prin virgulă.">
+        <Field id="ac-cineAreAcces" label="Cine are acces" error={fieldError("cineAreAcces")} hint="Separate prin virgulă.">
           <input id="ac-cineAreAcces" value={fields.cineAreAcces} onChange={(e) => set("cineAreAcces", e.currentTarget.value)} className={inputClass} maxLength={500} />
         </Field>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -264,12 +263,12 @@ function AccountPanel({
               <option value="necunoscut">Nu știu</option>
             </select>
           </Field>
-          <Field id="ac-undeEParola" label="Unde e parola" error={fieldError("undeEParola")} hint="Ex. „managerul de parole → seiful Firmă”.">
+          <Field id="ac-undeEParola" label="Unde e parola" error={fieldError("undeEParola")} hint="Locul, nu parola.">
             <input id="ac-undeEParola" value={fields.undeEParola} onChange={(e) => set("undeEParola", e.currentTarget.value)} className={inputClass} maxLength={200} autoComplete="off" />
           </Field>
         </div>
         <div className="grid gap-3 sm:grid-cols-[1fr_6rem_8rem]">
-          <Field id="ac-abonament" label="Abonament (opțional)" error={fieldError("abonament")}>
+          <Field id="ac-abonament" label="Abonament" error={fieldError("abonament")}>
             <input id="ac-abonament" inputMode="decimal" value={fields.abonament} onChange={(e) => set("abonament", e.currentTarget.value)} className={inputClass} />
           </Field>
           <Field id="ac-moneda" label="Moneda">
@@ -287,10 +286,10 @@ function AccountPanel({
             </select>
           </Field>
         </div>
-        <Field id="ac-reinnoire" label="Data reînnoirii (opțional)" error={fieldError("reinnoire")} hint="Cu ciclul ales, următoarea reînnoire se calculează singură. Alerta apare cu 7 zile înainte.">
+        <Field id="ac-reinnoire" label="Data reînnoirii" error={fieldError("reinnoire")} hint="Alertă cu 7 zile înainte.">
           <input id="ac-reinnoire" type="date" value={fields.reinnoire} onChange={(e) => set("reinnoire", e.currentTarget.value)} className={inputClass} />
         </Field>
-        <Field id="ac-note" label="Note (opțional)" error={fieldError("note")}>
+        <Field id="ac-note" label="Note" error={fieldError("note")}>
           <textarea id="ac-note" rows={2} value={fields.note} onChange={(e) => set("note", e.currentTarget.value)} className={textareaClass} maxLength={1000} />
         </Field>
         {error && !error.field ? <Notice tone="error">{error.message}</Notice> : null}

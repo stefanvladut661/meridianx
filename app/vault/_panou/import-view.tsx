@@ -42,9 +42,9 @@ import { BusyBlock, LabeledInput, PageHead } from "./ui";
  */
 
 const SOURCES = [
-  { id: "csv", title: "CSV", text: "Din Chrome, 1Password, LastPass, KeePass sau Excel. O linie, o intrare.", icon: Table2, accept: ".csv,text/csv,text/plain" },
-  { id: "bitwarden", title: "Bitwarden JSON", text: "Exportul .json necriptat, cu foldere și câmpuri personalizate.", icon: FileJson, accept: ".json,application/json" },
-  { id: "meridian", title: "Export MERIDIAN", text: "Fișierul criptat creat din Export, cu parola lui.", icon: ShieldCheck, accept: ".json,application/json" },
+  { id: "csv", title: "CSV", text: "Chrome, 1Password, LastPass, KeePass, Excel", icon: Table2, accept: ".csv,text/csv,text/plain" },
+  { id: "bitwarden", title: "Bitwarden JSON", text: "Exportul .json necriptat", icon: FileJson, accept: ".json,application/json" },
+  { id: "meridian", title: "Export MERIDIAN", text: "Fișierul din Export, cu parola lui", icon: ShieldCheck, accept: ".json,application/json" },
 ] as const;
 
 type SourceId = (typeof SOURCES)[number]["id"];
@@ -163,7 +163,7 @@ export function ImportView({
       setFileName(null);
       setError(
         parsed.headers.length < 2
-          ? "Fișierul nu arată a CSV: am găsit o singură coloană. Exportul din managerul de parole trebuie să fie CSV sau JSON (Bitwarden)."
+          ? "Fișierul nu arată a CSV: are o singură coloană. Folosește CSV sau JSON Bitwarden."
           : "Fișierul are doar antetul, niciun rând de date."
       );
       return;
@@ -277,11 +277,11 @@ export function ImportView({
     }
   }
 
-  const steps = ["Sursa", "Potrivește coloanele", "Previzualizare și import"];
+  const steps = ["Sursa", "Coloanele", "Previzualizare"];
 
   return (
     <>
-      <PageHead title="Import" text="Trei pași. Secretele se criptează în browser înainte să fie salvate." />
+      <PageHead title="Import" />
 
       <ol className="flex flex-wrap gap-1.5" aria-label="Pașii importului">
         {steps.map((label, i) => (
@@ -316,13 +316,11 @@ export function ImportView({
             {countNoun(outcome.imported, "intrare adăugată", "intrări adăugate")}
             {outcome.imported !== outcome.planned ? ` din ${outcome.planned} planificate` : ""}
             {outcome.skippedDuplicates ? `, ${countNoun(outcome.skippedDuplicates, "dublură sărită", "dubluri sărite")}` : ""}
-            {outcome.clientsCreated ? `, ${countNoun(outcome.clientsCreated, "client nou", "clienți noi")}` : ""}. Criptarea s-a făcut local.
+            {outcome.clientsCreated ? `, ${countNoun(outcome.clientsCreated, "client nou", "clienți noi")}` : ""}.
           </p>
-          <p className="mx-auto mt-2 max-w-md text-[12.5px] leading-relaxed text-muted-foreground/80">
-            {source?.kind === "items" && source.label === "export MERIDIAN"
-              ? "Fișierul de export rămâne criptat; îl poți păstra."
-              : "Fișierul importat rămâne pe calculatorul tău, în clar. Șterge-l."}
-          </p>
+          {source?.kind === "items" && source.label === "export MERIDIAN" ? null : (
+            <p className="mx-auto mt-2 max-w-md text-[13px] leading-relaxed text-apricot">Fișierul importat e în clar pe calculator. Șterge-l.</p>
+          )}
           <Btn size="sm" variant="outline" className="mt-4" onClick={reset}>
             Importă alt fișier
           </Btn>
@@ -331,7 +329,7 @@ export function ImportView({
         <Card>
           {step === 0 && (
             <>
-              <SectionTitle title="De unde imporți" hint="alegi o singură sursă" />
+              <SectionTitle title="De unde imporți" />
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 {SOURCES.map((s) => (
                   <button
@@ -343,7 +341,7 @@ export function ImportView({
                   >
                     <s.icon className={cn("h-4 w-4", sourceId === s.id ? "text-mint" : "text-foreground/50")} aria-hidden="true" />
                     <p className="mt-2 text-[14px] font-medium">{s.title}</p>
-                    <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">{s.text}</p>
+                    <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">{s.text}</p>
                   </button>
                 ))}
               </div>
@@ -361,7 +359,7 @@ export function ImportView({
               >
                 <Upload className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 <span className="mt-2 text-[14px]">{fileName ?? "Trage fișierul aici sau apasă"}</span>
-                <span className="mt-0.5 text-[12px] text-muted-foreground">CSV, JSON, maximum 5 MB · se citește aici, în browser</span>
+                <span className="mt-0.5 text-[13px] text-muted-foreground">CSV sau JSON · max. 5 MB</span>
                 <input type="file" className="sr-only" accept={selectedSource.accept} onChange={onFile} />
               </label>
 
@@ -372,7 +370,7 @@ export function ImportView({
                   aria-expanded={pasteOpen}
                   className="text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 >
-                  {pasteOpen ? "Ascunde câmpul de lipit" : "sau lipește textul (CSV / JSON)"}
+                  {pasteOpen ? "Ascunde" : "sau lipește textul"}
                 </button>
                 {pasteOpen ? (
                   <div className="mt-2">
@@ -407,7 +405,13 @@ export function ImportView({
             <>
               <SectionTitle
                 title={pendingExport ? "Parola fișierului" : table ? "Potrivește coloanele" : "Potrivește intrările"}
-                hint={pendingExport ? "fișierul e criptat cu parola lui de export" : table ? "capul de tabel din fișier" : "câmpurile sunt recunoscute automat"}
+                info={
+                  source
+                    ? table
+                      ? "Coloanele nerecunoscute devin câmpuri cu numele lor. „Parolă” și „Cod 2FA” devin secrete."
+                      : "Parolele și codurile 2FA rămân secrete; restul câmpurilor rămân ca în fișier."
+                    : undefined
+                }
               />
 
               {pendingExport ? (
@@ -456,12 +460,6 @@ export function ImportView({
 
               {source ? (
                 <>
-                  <InlineNote tone="neutral" className="mt-3">
-                    {table
-                      ? "Coloanele nerecunoscute devin câmpuri cu numele lor, nu se pierde nimic. Câmpurile „Parolă” și „Cod 2FA” devin secrete și se criptează."
-                      : "Parolele și codurile 2FA rămân secrete și se criptează la import; restul câmpurilor se păstrează cum sunt în fișier."}
-                  </InlineNote>
-
                   <p className={cn("mt-4", "text-[12px] uppercase tracking-[0.12em] text-muted-foreground")}>În ce client ajung</p>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {hasGroupColumn ? (
@@ -472,7 +470,7 @@ export function ImportView({
                         className={cn("rounded-xl border p-3 text-left transition-colors", clientMode === "column" ? "border-mint/40 bg-mint/[0.07]" : "border-white/[0.09] hover:border-white/20")}
                       >
                         <p className="text-[14px] font-medium">Din {groupLabel}</p>
-                        <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">
+                        <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">
                           {plan ? `${countNoun(plan.groups.length, "client", "clienți")}${plan.groups.length ? `: ${plan.groups.slice(0, 4).join(", ")}${plan.groups.length > 4 ? "…" : ""}` : ""}` : ""}
                           {plan?.items.some((item) => !item.empty && !item.group) ? ` · rândurile fără folder ajung în „${FALLBACK_CLIENT}”` : ""}
                         </p>
@@ -485,7 +483,6 @@ export function ImportView({
                       className={cn("rounded-xl border p-3 text-left transition-colors", clientMode === "single" ? "border-mint/40 bg-mint/[0.07]" : "border-white/[0.09] hover:border-white/20")}
                     >
                       <p className="text-[14px] font-medium">Toate într-un singur client</p>
-                      <p className="mt-0.5 text-[12px] leading-snug text-muted-foreground">Alegi clientul sau creezi unul nou.</p>
                     </button>
                   </div>
                   {clientMode === "single" ? (
@@ -524,7 +521,6 @@ export function ImportView({
             <>
               <SectionTitle
                 title="Previzualizare"
-                hint="dublurile sunt marcate; secretele rămân ascunse"
                 action={plan.duplicates > 0 ? <Pill tone="apricot">{countNoun(plan.duplicates, "dublură", "dubluri")}</Pill> : <Pill tone="mint">fără dubluri</Pill>}
               />
               <p className="mt-2 text-[12.5px] text-muted-foreground">
@@ -542,7 +538,7 @@ export function ImportView({
                     <li key={item.row} className={cn("flex items-center gap-3 px-3 py-2.5", skipped && "opacity-50")}>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[14px]">{item.payload.title}</p>
-                        <p className="truncate text-[12px] text-muted-foreground">
+                        <p className="truncate text-[13px] text-muted-foreground">
                           {client} · {KIND_LABEL[item.payload.kind]}
                           {username ? ` · ${username}` : ""}
                           {hasSecret ? " · ••••••••" : ""}
@@ -560,21 +556,21 @@ export function ImportView({
                     </li>
                   );
                 })}
-                {plan.items.length > PREVIEW_ROWS ? <li className="px-3 py-2 text-[12px] text-muted-foreground">… încă {plan.items.length - PREVIEW_ROWS}</li> : null}
+                {plan.items.length > PREVIEW_ROWS ? <li className="px-3 py-2 text-[13px] text-muted-foreground">… încă {plan.items.length - PREVIEW_ROWS}</li> : null}
               </ul>
 
               {plan.duplicates > 0 ? (
                 <label className="mt-3 flex cursor-pointer items-center gap-2 text-[13.5px] text-muted-foreground">
                   <input type="checkbox" checked={includeDuplicates} onChange={(event) => setIncludeDuplicates(event.target.checked)} className="accent-[#C6B5FF]" />
-                  Importă și dublurile (același client, titlu și utilizator)
+                  Importă și dublurile (același client, titlu, utilizator)
                 </label>
               ) : null}
 
               {progress ? (
                 <div className="mt-4" role="status">
                   <ProgressBar value={(progress.done / (progress.total || 1)) * 100} tone="mint" />
-                  <p className="pu-num mt-1.5 text-[12px] text-muted-foreground">
-                    Se importă… {progress.done} din {progress.total} · criptate local, în loturi
+                  <p className="pu-num mt-1.5 text-[13px] text-muted-foreground">
+                    Se importă… {progress.done} din {progress.total}
                   </p>
                 </div>
               ) : null}

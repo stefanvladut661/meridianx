@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Rândurile compacte din „WhatsApp azi”: un rând pe firmă (nume, număr fără 0,
- * oraș, cont), mesajul pe o singură linie cu „vezi tot”, „Trimite pe WhatsApp”
+ * oraș, cont), mesajul pe o singură linie cu „vezi tot”, „Trimite”
  * și copierile mici. La 360 px un rând are ~92 px: pe un telefon de 800 px
  * încap 6–7 firme între bara de sus și meniul de jos.
  */
@@ -99,7 +99,7 @@ function CopiazaMic({
 }
 
 /**
- * O firmă de trimis. Pe telefon: numele și numărul cu „Trimite pe WhatsApp” în
+ * O firmă de trimis. Pe telefon: numele și numărul cu „Trimite” în
  * dreapta, apoi mesajul pe o linie cu „vezi tot” și copierile. De la `sm`, tot
  * rândul pe o singură linie, cu butonul principal la capăt.
  */
@@ -166,7 +166,7 @@ export function WhatsAppRand({
           })}
         >
           <MessageCircle className="hidden h-4 w-4 sm:block" aria-hidden="true" />
-          {lucru === "anulare" ? "Se anulează…" : "Trimite pe WhatsApp"}
+          {lucru === "anulare" ? "Se anulează…" : "Trimite"}
           <span className="sr-only"> către {firma.nume}</span>
         </button>
 
@@ -194,7 +194,7 @@ export function WhatsAppRand({
               </button>
             </>
           ) : (
-            <p className="min-w-0 flex-1 truncate text-[14px] leading-5 text-muted-foreground">Fără mesaj pregătit: WhatsApp se deschide gol.</p>
+            <p className="min-w-0 flex-1 truncate text-[14px] leading-5 text-muted-foreground">Fără mesaj pregătit.</p>
           )}
           <span className="ml-auto flex shrink-0 gap-1">
             {firma.telefon ? <CopiazaMic valoare={numarScurt(firma.telefon)} eticheta="Nr." descriere={`copiază numărul ${numarAfisat(firma.telefon)}, fără 0`} anunt="Numărul copiat, fără 0 în față." onCopiat={onCopiat} /> : null}

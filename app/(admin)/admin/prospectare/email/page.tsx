@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InlineNote } from "@/components/panou/ui/actions";
-import { dateTimeRo, num, timeRo } from "@/components/panou/ui/format";
+import { num, timeRo } from "@/components/panou/ui/format";
 import { Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { PageHead } from "@/components/panou/prospectare/page-head";
 import { MailboxTable } from "@/components/panou/prospectare/email-casute";
@@ -78,17 +78,16 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
 
       {!ciclu.ok ? (
         <InlineNote tone="rose">
-          Distribuția de azi nu s-a putut porni: {ciclu.message} Ce vezi la „Programate” poate fi incomplet; reîncarcă pagina peste un minut.
+          Distribuția de azi nu a pornit: {ciclu.message} „Programate” poate fi incomplet; reîncarcă peste un minut.
         </InlineNote>
       ) : null}
 
       <Card>
         <SectionTitle
           title="Căsuțe de email azi"
-          hint="Trimise azi, limita fiecărei adrese și starea încălzirii"
           action={
             <Link href="/admin/prospectare/setari" className="rounded-sm text-[13px] text-muted-foreground hover:text-foreground">
-              Plafoane în Setări →
+              Plafoane →
             </Link>
           }
         />
@@ -98,10 +97,16 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
       <Card>
         <SectionTitle
           title="Programate azi și mâine, pe căsuțe"
+          info={
+            <>
+              Trimise = cerute azi de robot. Netrimisele se întorc în distribuție la 00:00. „Mâine”: doar manualele; restul se pun la 00:00, cele mai vechi site-uri
+              primele, până la limita căsuței{plafon === null ? null : <> (fără limită proprie: plafonul de încălzire, {num(plafon)} pe zi)</>}.
+            </>
+          }
           hint={
             t
-              ? `Azi: ${num(t.azi)} programate${t.capacitate === null ? "" : ` din ${num(t.capacitate)} posibile`} · ${num(t.trimise)} trimise · ${num(t.ramase)} rămase. Mâine: ${num(t.maine)} programate manual.`
-              : "Ce a pus distribuția de la 00:00 pe fiecare căsuță"
+              ? `azi ${num(t.azi)}${t.capacitate === null ? "" : ` din ${num(t.capacitate)}`} · ${num(t.trimise)} trimise · ${num(t.ramase)} rămase · mâine ${num(t.maine)}${ciclu.ok ? ` · rulat la ${timeRo(ciclu.data.rulat_la)}` : ""}`
+              : undefined
           }
         />
         <div className="mt-3">
@@ -113,26 +118,20 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
             <EroareCitire title="Fără căsuțe, programările nu se pot împărți" message={casute.ok ? "" : casute.message} className="py-8" />
           )}
         </div>
-        <p className="mt-3 border-t border-border pt-3 text-[13px] leading-relaxed text-muted-foreground">
-          {ciclu.ok ? `Distribuția de azi a rulat la ${timeRo(ciclu.data.rulat_la)}. ` : null}
-          Trimise = cerute azi de robot de pe căsuță; ce rămâne netrimis se întoarce în distribuție la 00:00. Mâine apar doar programările manuale: restul le pune distribuția la
-          00:00, de la cele mai vechi site-uri, până la limita fiecărei căsuțe
-          {plafon === null ? null : <> (fără limită proprie: plafonul de încălzire, {num(plafon)} pe zi)</>}.
-          {!setari.ok ? ` Plafonul de încălzire nu s-a citit: ${setari.message}` : null}
-        </p>
+        {!setari.ok ? <p className="mt-3 border-t border-border pt-3 text-[13.5px] text-muted-foreground">Plafonul de încălzire nu s-a citit: {setari.message}</p> : null}
       </Card>
 
       <Card>
         <SectionTitle
           title="Programate de mâine încolo"
-          hint={viitoare.ok ? `${cate(viitoare.data.length, "programare", "programări")} · se anulează până în ziua lor` : undefined}
+          hint={viitoare.ok ? cate(viitoare.data.length, "programare", "programări") : undefined}
         />
         <div className="mt-3">
           {viitoare.ok ? (
             <ProgramariViitoare
               canal="email"
               programari={viitoare.data}
-              gol="Nimic programat manual de mâine încolo. Cu „Programează” (sus) alegi firmele și ziua; altfel, la 00:00 distribuția le pune singură pe căsuțe, de la cele mai vechi site-uri."
+              gol="Nimic programat manual."
             />
           ) : (
             <EroareCitire title="Programările viitoare nu s-au putut citi" message={viitoare.message} className="py-8" />
@@ -143,7 +142,7 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
       <Card>
         <SectionTitle
           title="Trimise pe fiecare căsuță"
-          hint={peZile.ok ? `${cate(peZile.data.total, "email trimis", "emailuri trimise")} în total, de la primul până azi` : "Totalul și fiecare zi, pe căsuță"}
+          hint={peZile.ok ? `${cate(peZile.data.total, "email", "emailuri")} în total` : undefined}
         />
         <div className="mt-3">
           {peZile.ok ? (
@@ -159,7 +158,7 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
           <div id="trimise" className="scroll-mt-20 space-y-3 border-b border-border px-4 py-3">
             <SectionTitle
               title="Emailuri trimise"
-              hint={emailuri.ok ? `${cate(emailuri.data.length, "mesaj", "mesaje")}${aleasa ? ` de pe ${aleasa}` : ", de pe toate căsuțele"} · cele mai noi primele` : undefined}
+              hint={emailuri.ok ? `${cate(emailuri.data.length, "mesaj", "mesaje")}${aleasa ? ` de pe ${aleasa}` : ""}` : undefined}
             />
             {peZile.ok && peZile.data.casute.length > 0 ? <FiltruCasute casute={peZile.data.casute} total={peZile.data.total} aleasa={aleasa} /> : null}
           </div>
@@ -171,15 +170,15 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
             <EroareCitire title="Lista emailurilor nu s-a încărcat" message={emailuri.message} />
           )}
           {emailuri.ok && peZile.ok && !aleasa && emailuri.data.length !== peZile.data.total ? (
-            <p className="border-t border-border px-4 py-2.5 text-[12px] text-muted-foreground">
-              Lista are {cate(emailuri.data.length, "mesaj", "mesaje")}, contoarele căsuțelor {num(peZile.data.total)}: contoarele vin de la căsuțe, lista din activitatea firmelor.
+            <p className="border-t border-border px-4 py-2.5 text-[13px] text-muted-foreground">
+              Lista: {num(emailuri.data.length)} · contoarele căsuțelor: {num(peZile.data.total)} (surse diferite)
             </p>
           ) : null}
         </Card>
 
         <div className="space-y-4">
           <Card>
-            <SectionTitle title="Ultimele 14 zile" hint="Mesaje trimise și răspunsuri primite, pe toate căsuțele" />
+            <SectionTitle title="Ultimele 14 zile" />
             <div className="mt-3">{istoric.ok ? <EmailGrafic zile={istoric.data} /> : <EroareCitire title="Istoricul nu s-a putut citi" message={istoric.message} className="py-8" />}</div>
           </Card>
 
@@ -187,7 +186,8 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
             <div className="border-b border-border px-4 py-3">
               <SectionTitle
                 title="Răspunsuri"
-                hint={raspunsuri.ok ? `${cate(raspunsuri.data.length, "răspuns primit", "răspunsuri primite")} în ultimele 14 zile${pozitive ? ` · ${cate(pozitive, "pozitiv", "pozitive")}` : ""}` : undefined}
+                info="Le raportează roboții din căsuțe. Un „NU” mută firma singur la „Nu contacta”."
+                hint={raspunsuri.ok ? `${cate(raspunsuri.data.length, "răspuns", "răspunsuri")} în 14 zile${pozitive ? ` · ${cate(pozitive, "pozitiv", "pozitive")}` : ""}` : undefined}
               />
             </div>
             {raspunsuri.ok ? (
@@ -197,9 +197,6 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
             ) : (
               <EroareCitire title="Răspunsurile nu s-au putut citi" message={raspunsuri.message} />
             )}
-            <p className="border-t border-border px-4 py-2.5 text-[12px] text-muted-foreground">
-              Răspunsurile le raportează roboții din căsuțe. Un „NU” mută firma singur la „Nu contacta” și o oprește pe toate canalele. Ultima actualizare: {dateTimeRo(acum)}.
-            </p>
           </Card>
         </div>
       </div>

@@ -265,7 +265,7 @@ export function CampaignsScreen({
           title={hint}
           onClick={() => setSort((current) => (current.key === key ? { key, dir: current.dir === "asc" ? "desc" : "asc" } : { key, dir: key === "name" || key === "status" || key === "cost" ? "asc" : "desc" }))}
           className={cn(
-            "inline-flex items-center gap-1 rounded text-[11.5px] font-medium uppercase tracking-[0.14em] transition-colors hover:text-foreground",
+            "inline-flex items-center gap-1 rounded text-[12px] font-medium uppercase tracking-[0.14em] transition-colors hover:text-foreground",
             active ? "text-foreground" : "text-muted-foreground",
             align === "right" && "flex-row-reverse"
           )}
@@ -373,7 +373,7 @@ export function CampaignsScreen({
             {removedHere > 0 ? (
               <label className="ml-auto flex items-center gap-2">
                 <input type="checkbox" checked={showRemoved} onChange={(event) => setShowRemoved(event.currentTarget.checked)} className="h-3.5 w-3.5 accent-[#C6B5FF]" />
-                Arată și cele șterse ({removedHere})
+                Arată șterse ({removedHere})
               </label>
             ) : null}
           </div>
@@ -393,7 +393,7 @@ export function CampaignsScreen({
               icon={PauseCircle}
               disabled={pausable.length === 0}
               onClick={() => setPauseIds(pausable.map((entity) => entity.id))}
-              title={pausable.length === 0 ? "Niciun rând bifat nu cheltuie acum, sau platforma lui nu are încă pauza în portal." : undefined}
+              title={pausable.length === 0 ? "Niciun rând bifat nu se poate pune pe pauză." : undefined}
             >
               Pune pe pauză{pausable.length > 0 ? ` (${pausable.length})` : ""}
             </Btn>
@@ -404,7 +404,7 @@ export function CampaignsScreen({
         ) : null}
 
         {rows.length === 0 ? (
-          <EmptyState icon={Megaphone} title={emptyText} text="Schimbă clientul, canalul sau perioada din bara de sus, ori creează primul plan." />
+          <EmptyState icon={Megaphone} title={emptyText} />
         ) : (
           <>
             {/* Desktop și tabletă: tabelul dens, ca în Ads Manager. */}
@@ -429,7 +429,7 @@ export function CampaignsScreen({
                     {sortButton("budget", "Buget")}
                     {sortButton("spend", "Cheltuit")}
                     {sortButton("results", "Rezultate", "apel, lead sau formular — ce numără campania")}
-                    {showCalls ? sortButton("calls", "Apeluri notate", "notate de mână, în Apeluri") : null}
+                    {showCalls ? sortButton("calls", "Apeluri", "notate de mână") : null}
                     {sortButton("cost", "Cost / rez.", "cost per rezultat")}
                     {sortButton("impressions", "Afișări")}
                     {sortButton("clicks", "Clickuri")}
@@ -570,7 +570,7 @@ export function CampaignsScreen({
                     </dl>
                     {showCalls && calls[entity.id]?.total ? (
                       <p className="mt-1.5 text-[13.5px] text-foreground/85">
-                        <span className="text-muted-foreground">Apeluri notate:</span> {calls[entity.id].total} · {callBreakdown(calls[entity.id])}
+                        <span className="text-muted-foreground">Apeluri:</span> {calls[entity.id].total} · {callBreakdown(calls[entity.id])}
                       </p>
                     ) : null}
                     <div className="mt-2.5 flex items-center justify-between gap-2">

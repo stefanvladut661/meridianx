@@ -101,7 +101,7 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
     }
     if (!intreg(limita, 0, 1000)) e.limita = "Limita pe zi: între 0 și 1000.";
     const numeDublura = n ? toate.find((c) => c.id !== cont?.id && c.nume.trim().toLowerCase() === n.toLowerCase()) : undefined;
-    if (!e.nume && numeDublura) e.nume = `Există deja un cont „${numeDublura.nume}”: alege alt nume, ca să le deosebești pe telefon.`;
+    if (!e.nume && numeDublura) e.nume = `Există deja un cont „${numeDublura.nume}”: alege alt nume.`;
     return e;
   };
 
@@ -123,7 +123,7 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
         setErori({ [campDinMesaj(result.message)]: result.message });
         return;
       }
-      notify(cont ? result.message : `${result.message} Apare acum în „WhatsApp azi”.`);
+      notify(result.message);
       router.refresh();
       onGata();
     });
@@ -131,15 +131,10 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
 
   return (
     <form onSubmit={salveaza} noValidate aria-busy={pending}>
-      <h2 className="text-[18px] font-semibold">{cont ? `Editează ${cont.nume}` : "Adaugă un cont WhatsApp"}</h2>
-      <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted-foreground">
-        {cont
-          ? "Numele și numărul se schimbă și pe telefoanele care l-au ales. Firmele trimise deja de pe el rămân pe el."
-          : "Contul apare imediat în „WhatsApp azi”, ca buton de ales."}
-      </p>
+      <h2 className="text-[18px] font-semibold">{cont ? `Editează ${cont.nume}` : "Adaugă cont WhatsApp"}</h2>
 
       <div className="mt-4 space-y-3">
-        <CampCont id={`${id}-nume`} label="Nume" hint="Cum îl recunoașteți pe telefon, ex. „Cont 4” sau „Telefonul de birou”." eroare={erori.nume}>
+        <CampCont id={`${id}-nume`} label="Nume" eroare={erori.nume}>
           {(descriere) => (
             <input
               id={`${id}-nume`}
@@ -157,7 +152,7 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
           )}
         </CampCont>
 
-        <CampCont id={`${id}-telefon`} label="Număr" hint="Mobilul pe care e instalat WhatsApp-ul contului." eroare={erori.telefon}>
+        <CampCont id={`${id}-telefon`} label="Număr" eroare={erori.telefon}>
           {(descriere) => (
             <input
               id={`${id}-telefon`}
@@ -178,7 +173,7 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
           )}
         </CampCont>
 
-        <CampCont id={`${id}-limita`} label="Limită pe zi" hint="Doar avertisment: la limită, contorul se face portocaliu, dar mesajul pleacă oricum." eroare={erori.limita}>
+        <CampCont id={`${id}-limita`} label="Limită pe zi" hint="Doar avertisment: mesajul pleacă oricum." eroare={erori.limita}>
           {(descriere) => (
             <input
               id={`${id}-limita`}
@@ -276,8 +271,8 @@ export function SetariConturi({ conturi, eroare }: { conturi: ContWhatsapp[] | n
     }));
     setLucru(null);
     if (!result.ok) notify(`${cont.nume}: ${result.message}`, "error");
-    else if (activ) notify(`${cont.nume} e activ: apare din nou în „WhatsApp azi”.`);
-    else notify(`${cont.nume} e dezactivat: nu mai apare în „WhatsApp azi”. Firmele trimise de pe el rămân pe el.`, "warn");
+    else if (activ) notify(`${cont.nume} e activ.`);
+    else notify(`${cont.nume} e dezactivat; firmele trimise de pe el rămân pe el.`, "warn");
     router.refresh();
   };
 
@@ -285,7 +280,14 @@ export function SetariConturi({ conturi, eroare }: { conturi: ContWhatsapp[] | n
     <Card id="conturi-whatsapp" className="scroll-mt-24">
       <SectionTitle
         title="Conturi WhatsApp"
-        hint="Numerele de pe care trimiteți din „WhatsApp azi”. Fiecare cont e un buton acolo, cu contorul lui de azi."
+        info="Limita pe zi e doar avertisment. Un cont dezactivat dispare din „WhatsApp azi”; nu se șterge, ca firmele trimise de pe el să-și păstreze contul."
+        hint={
+          conturi && conturi.length
+            ? active === toate.length
+              ? `${num(active)} ${active === 1 ? "activ" : "active"}`
+              : `${num(active)} active din ${num(toate.length)}`
+            : undefined
+        }
         action={
           conturi !== null ? (
             <Btn size="sm" variant="outline" icon={Plus} className={TAP_SM} onClick={() => setDialog(null)}>
@@ -301,21 +303,17 @@ export function SetariConturi({ conturi, eroare }: { conturi: ContWhatsapp[] | n
         <div className="mt-4 flex flex-col items-start gap-3 rounded-xl border border-dashed border-white/[0.1] px-4 py-5">
           <p className="flex items-start gap-2 text-[14.5px] leading-relaxed text-muted-foreground">
             <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-lav" aria-hidden="true" />
-            Niciun cont încă. Adaugă primul număr de pe care trimiteți WhatsApp: fără cont, nicio firmă nu se poate marca în „WhatsApp azi”.
+            Niciun cont încă: „WhatsApp azi” nu poate marca nimic.
           </p>
           <Btn size="sm" variant="primary" icon={Plus} className={TAP_SM} onClick={() => setDialog(null)}>
-            Adaugă primul cont
+            Adaugă cont
           </Btn>
         </div>
       ) : (
         <>
-          <p className="mt-3 text-[13.5px] text-muted-foreground sm:text-[13px]">
-            {active === toate.length ? `${num(active)} ${active === 1 ? "cont activ" : "conturi active"}.` : `${num(active)} active din ${num(toate.length)}.`}{" "}
-            Limita pe zi e doar un avertisment. Un cont dezactivat dispare din „WhatsApp azi”; nu se șterge, ca firmele trimise de pe el să-și păstreze contul.
-          </p>
           {active === 0 ? (
             <InlineNote tone="apricot" className="mt-3">
-              Niciun cont activ: în „WhatsApp azi” nicio firmă nu se poate marca până nu activezi unul.
+              Niciun cont activ: „WhatsApp azi” nu poate marca nimic.
             </InlineNote>
           ) : null}
           <ul className="mt-3 divide-y divide-white/[0.06] rounded-xl border border-white/[0.07]">
@@ -331,7 +329,7 @@ export function SetariConturi({ conturi, eroare }: { conturi: ContWhatsapp[] | n
         onOpenChange={(open) => {
           if (!open) setDialog(undefined);
         }}
-        label={dialog ? `Editează ${dialog.nume}` : "Adaugă un cont WhatsApp"}
+        label={dialog ? `Editează ${dialog.nume}` : "Adaugă cont WhatsApp"}
       >
         {dialog !== undefined ? <FormularCont cont={dialog} toate={toate} onGata={() => setDialog(undefined)} /> : null}
       </Modal>

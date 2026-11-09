@@ -35,7 +35,7 @@ export function VaultGate({ children, onPending }: { children: ReactNode; onPend
   // „Seiful e deschis”: o singură dată, la trecerea în deblocat.
   const previous = useRef(phase.kind);
   useEffect(() => {
-    if (previous.current !== "unlocked" && phase.kind === "unlocked") notify("Seiful e deschis. Cheia există doar în acest browser.");
+    if (previous.current !== "unlocked" && phase.kind === "unlocked") notify("Seif deschis.");
     previous.current = phase.kind;
   }, [phase.kind, notify]);
 
@@ -139,10 +139,10 @@ function VaultBar() {
           icon={LogOut}
           onClick={() => {
             void vault.lock();
-            notify("Seif blocat. Cheia a fost ștearsă din memorie.");
+            notify("Seif blocat.");
           }}
         >
-          Blochează acum
+          Blochează
         </Btn>
       </span>
     </div>

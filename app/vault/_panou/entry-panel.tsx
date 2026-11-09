@@ -124,8 +124,7 @@ export function EntryPanel({
             <div>
               <p className="font-medium">Intrarea e ilizibilă</p>
               <p className="mt-1 text-[#FFD0AC]/80">
-                {entry.reason} Rândul există pe server, dar nu se poate decripta cu cheia seifului: a fost alterat sau scris cu altă cheie. Nu se editează. Spune-i echipei înainte
-                să o muți în coș.
+                {entry.reason} Nu se editează. Spune-i echipei înainte s-o muți în coș.
               </p>
               <p className="mt-2 font-mono text-[12px] text-[#FFD0AC]/70">id {entry.id}</p>
             </div>
@@ -133,7 +132,7 @@ export function EntryPanel({
         </div>
       ) : ok ? (
         <div className="px-4 py-2">
-          {ok.payload.fields.length === 0 ? <p className="py-6 text-center text-[13.5px] text-muted-foreground">Intrarea nu are câmpuri. Adaugă unul din editare.</p> : null}
+          {ok.payload.fields.length === 0 ? <p className="py-6 text-center text-[13.5px] text-muted-foreground">Niciun câmp. Adaugă din editare.</p> : null}
           {ok.payload.fields.map((field, index) => (
             <VaultField key={`${entry.id}:${entry.version}:${index}`} field={field} />
           ))}
@@ -150,7 +149,7 @@ export function EntryPanel({
 
       <div className="flex items-center gap-2 border-t border-white/[0.06] bg-white/[0.015] px-4 py-2.5">
         <Lock className="h-3 w-3 text-mint" aria-hidden="true" />
-        <p className="text-[12px] leading-tight text-muted-foreground">Criptat local. Serverul vede doar text cifrat.</p>
+        <p className="text-[12.5px] leading-tight text-muted-foreground">Criptat local</p>
         <Btn size="xs" variant="ghost" className="ml-auto" icon={Lock} onClick={onLock}>
           Blochează
         </Btn>
@@ -161,12 +160,7 @@ export function EntryPanel({
         onOpenChange={setDeleteOpen}
         title="Muți intrarea în coș?"
         description={`${title} · ${clientName}`}
-        consequence={
-          <>
-            Intrarea dispare din listă, dar rămâne în coș. Nu există ștergere definitivă în interfață.
-            {lastOfClient ? <> E ultima intrare a clientului {clientName}: dispare și el din listă, iar la restaurare revin împreună.</> : null}
-          </>
-        }
+        consequence={lastOfClient ? <>E ultima intrare a clientului {clientName}: dispare și el din listă până la restaurare.</> : undefined}
         confirmLabel="Mută în coș"
         onConfirm={async () => {
           setError(null);

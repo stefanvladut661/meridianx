@@ -92,7 +92,7 @@ export function ApeluriScreen({
     }
     const data = result.data;
     if (rezultat === "numar_gresit") {
-      const text = `${firma.nume}: număr greșit. Firma se întoarce în distribuție, doar pentru email.`;
+      const text = `${firma.nume}: număr greșit, rămâne doar pentru email.`;
       setAnunt({ text, ton: "rose" });
       notify(text, "warn");
     } else if (data?.revenit) {
@@ -102,9 +102,9 @@ export function ApeluriScreen({
     } else if (rezultat === "interesat") {
       const mesaj = umpleSablon(setari.dupaApel, firma, nume);
       if (!firma.telefon || !firma.este_mobil) {
-        notify(`${firma.nume} e marcată interesată. Numărul e fix, fără WhatsApp: trimite-i site-ul demo pe altă cale.`);
+        notify(`${firma.nume}: interesată. Număr fix: trimite demo-ul pe altă cale.`);
       } else if (!mesaj) {
-        notify(`${firma.nume} e marcată interesată. Șablonul de WhatsApp după apel e gol: scrie-l în Setări.`, "warn");
+        notify(`${firma.nume}: interesată. Șablonul de după apel e gol: scrie-l în Setări.`, "warn");
       } else {
         // Ca în prototip: WhatsApp se deschide singur cu mesajul de după apel.
         // Întâi fereastra (browserul o permite doar imediat după clic), apoi activitatea.
@@ -113,20 +113,20 @@ export function ApeluriScreen({
           fereastra.opener = null;
           const scris = await continuaPeWhatsapp(linie.id);
           if (scris.ok) {
-            notify(`${firma.nume} e marcată interesată. WhatsApp s-a deschis cu mesajul pregătit; în activitate: continuare apel pe WhatsApp.`);
+            notify(`${firma.nume}: interesată. WhatsApp s-a deschis cu mesajul.`);
           } else {
-            notify(`${firma.nume}: WhatsApp s-a deschis, dar continuarea nu s-a scris în activitate. ${scris.message}`, "error");
+            notify(`${firma.nume}: WhatsApp s-a deschis, dar continuarea nu s-a notat. ${scris.message}`, "error");
           }
         } else {
-          notify(`${firma.nume} e marcată interesată. Browserul n-a deschis WhatsApp singur: apasă „WhatsApp după apel” la firmă, în Terminate.`, "warn");
+          notify(`${firma.nume}: interesată. Browserul a blocat WhatsApp: apasă „WhatsApp după apel” în Terminate.`, "warn");
         }
       }
     } else if (rezultat === "nu_raspunde") {
-      notify(`Încercarea ${data?.incercari ?? linie.incercari + 1} notată pentru ${firma.nume}: firma se întoarce în distribuție.`);
+      notify(`${firma.nume}: încercarea ${data?.incercari ?? linie.incercari + 1} notată.`);
     } else if (rezultat === "suna_inapoi") {
-      notify(extra.sunaInapoiLa ? `${firma.nume} e la „Sună înapoi”: ${momentRo(extra.sunaInapoiLa)}.` : "Adăugată la „Sună înapoi” cu data aleasă.");
+      notify(extra.sunaInapoiLa ? `${firma.nume} e la „Sună înapoi”: ${momentRo(extra.sunaInapoiLa)}.` : "Adăugată la „Sună înapoi”.");
     } else {
-      notify(`${firma.nume}: nu vrea. Firma e „Nu contacta” și nu mai primește nimic.`);
+      notify(`${firma.nume}: nu vrea, marcată „Nu contacta”.`);
     }
     router.refresh();
   };
@@ -135,7 +135,7 @@ export function ApeluriScreen({
   const dupaApel = async (linie: ListaCuFirma): Promise<void> => {
     const scris = await continuaPeWhatsapp(linie.id);
     if (!scris.ok) {
-      notify(`${linie.firma.nume}: continuarea pe WhatsApp nu s-a scris în activitate. ${scris.message}`, "error");
+      notify(`${linie.firma.nume}: continuarea pe WhatsApp nu s-a notat. ${scris.message}`, "error");
     } else if (!scris.data?.deja) {
       notify(`${linie.firma.nume}: ${mic(scris.message)}`);
     }
@@ -159,16 +159,13 @@ export function ApeluriScreen({
         actions={toate.length ? <VcfButton firme={toate.map((r) => r.firma)} numeFisier={`apeluri-${cine}-${azi}.vcf`} /> : null}
       />
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <UserSwitch value={cine} className={COMUTATOR_TAP} />
-        <span className="text-[13.5px] text-muted-foreground sm:text-[13px]">Fiecare vede doar lista lui.</span>
-      </div>
+      <UserSwitch value={cine} className={COMUTATOR_TAP} />
 
       <NepotrivireUtilizator cine={cine} salvat={salvat} />
 
       {eroareSetari ? (
         <InlineNote tone="rose">
-          Setările nu s-au citit: {eroareSetari} Până se rezolvă, lista merge fără script și fără mesaj pregătit.
+          Setările nu s-au citit: {eroareSetari} Lista merge fără script și mesaj.
         </InlineNote>
       ) : null}
 
@@ -181,7 +178,7 @@ export function ApeluriScreen({
             </p>
           </div>
           <p className="text-[13.5px] text-muted-foreground sm:text-[13px]">
-            {deSunat.length === 0 ? "Lista e golită" : `rămân ${num(deSunat.length)} de sunat`} · ce nu suni azi se întoarce în distribuție la 00:00
+            {deSunat.length === 0 ? "Lista e golită" : `rămân ${num(deSunat.length)} de sunat`}
           </p>
         </div>
         <ProgressBar className="mt-2.5" value={toate.length ? (sunate / toate.length) * 100 : 0} tone="sky" />
@@ -236,7 +233,6 @@ export function ApeluriScreen({
               <EmptyState
                 icon={Phone}
                 title="Nicio firmă de sunat azi"
-                text="Importă din rezervă firmele cu site gata care n-au primit niciun contact, cele mai vechi site-uri primele. Rămân pe telefon, în lista ta, până la 00:00."
                 action={
                   <Btn size="sm" variant="primary" icon={CloudDownload} onClick={deschideImport} className={TAP_SM}>
                     Importă din rezervă
@@ -254,7 +250,7 @@ export function ApeluriScreen({
         ) : tab === "inapoi" ? (
           inapoi.length === 0 ? (
             <Card>
-              <EmptyState icon={CalendarClock} title="Nimeni nu așteaptă să fie sunat înapoi" text="Când alegi „Sună înapoi”, firma apare aici, cu data și ora alese." />
+              <EmptyState icon={CalendarClock} title="Nimeni de sunat înapoi" />
             </Card>
           ) : (
             <ul className="space-y-3">
@@ -279,7 +275,6 @@ export function ApeluriScreen({
             <EmptyState
               icon={CircleCheck}
               title="Nicio firmă terminată încă"
-              text="Aici apar firmele cu rezultat: interesat, nu vrea sau număr greșit. „Nu vrea” trece la „Nu contacta”; cu număr greșit, firma se întoarce în distribuție doar pentru email."
             />
           </Card>
         ) : (

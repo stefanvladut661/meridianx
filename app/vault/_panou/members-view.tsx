@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { KeyRound, RefreshCw, ShieldCheck, UserCheck, UserX } from "lucide-react";
+import { KeyRound, RefreshCw, UserCheck, UserX } from "lucide-react";
 import type { VaultMember, VaultMeta } from "@/lib/vault/members";
 import { Btn, Card, Pill, SectionTitle } from "@/components/panou/ui/primitives";
 import { ConfirmDialog, InlineNote } from "@/components/panou/ui/actions";
 import { ErrorState, LoadingRows } from "@/components/panou/ui/states";
+import { Info } from "@/components/panou/ui/info";
 import { useToast } from "@/components/panou/ui/toast";
 import { dateRo, relativeRo } from "@/components/panou/ui/format";
 import { describeError } from "./errors";
@@ -66,7 +67,7 @@ export function MembersView({
     try {
       await api.approve(target);
       await reload();
-      notify(`${target.email} are acum acces la seif.`);
+      notify(`${target.email} are acces.`);
     } catch (cause) {
       setActionError(describeError(cause, "Aprobarea a eșuat dintr-un motiv necunoscut. Reîncarcă lista și încearcă din nou."));
     } finally {
@@ -81,7 +82,7 @@ export function MembersView({
       await api.remove(target);
       if (target.wrappedDek) setRemovedActive(target.email);
       await reload();
-      notify(target.wrappedDek ? `${target.email} a fost eliminat. Rotește cheia din Contul meu.` : `Cererea lui ${target.email} a fost respinsă.`);
+      notify(target.wrappedDek ? `${target.email} eliminat. Rotește cheia din Contul meu.` : `${target.email}: cerere respinsă.`);
     } catch (cause) {
       setActionError(describeError(cause, "Eliminarea a eșuat dintr-un motiv necunoscut. Reîncarcă lista și încearcă din nou."));
     } finally {
@@ -106,9 +107,11 @@ export function MembersView({
     <>
       <PageHead
         title="Membri"
-        text="Cine are cheia pentru acest seif. Aprobarea e manuală, mereu."
         action={
           <div className="flex flex-wrap items-center gap-2">
+            <Info label="Membru nou">
+              Contul se creează în Supabase → Authentication → Users, cu parolă temporară. Membrul se activează la <code>/vault/activare</code> și apare aici în așteptare.
+            </Info>
             {pending.length > 0 ? (
               <Pill tone="apricot" dot>
                 {pending.length} în așteptare
@@ -141,8 +144,7 @@ export function MembersView({
         {actionError ? <InlineNote tone="rose">{actionError}</InlineNote> : null}
         {removedActive ? (
           <InlineNote tone="apricot">
-            {removedActive} a avut cheia de date în memorie. Eliminarea nu rotește cheia singură: <Link href="/vault/cont" className="underline underline-offset-2">rotește-o din Contul meu</Link>, ca ce se scrie de acum să nu
-            se mai deschidă cu ea.
+            {removedActive} a avut cheia de date. <Link href="/vault/cont" className="underline underline-offset-2">Rotește cheia</Link> din Contul meu.
           </InlineNote>
         ) : null}
       </div>
@@ -170,7 +172,7 @@ export function MembersView({
                       {row.email}
                       {isSelf ? <span className="ml-2 text-[12.5px] text-muted-foreground">(tu)</span> : null}
                     </p>
-                    <p className="text-[12px] text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground">
                       {isActive ? "activ" : "cerere"} din {dateRo(row.createdAt)}
                       {isActive && row.approvedBy === row.id ? " · fondator" : isActive && row.approvedBy ? ` · aprobat de ${emailOf(row.approvedBy)}` : ""}
                       {isActive ? ` · actualizat ${relativeRo(row.updatedAt)}` : ""}
@@ -194,19 +196,12 @@ export function MembersView({
             })}
           </ul>
         )}
-        <p className="border-t border-white/[0.06] px-4 py-3 text-[12.5px] leading-relaxed text-muted-foreground">
-          Un membru nou se adaugă din Supabase → Authentication → Users, cu o parolă temporară. Își activează contul la{" "}
-          <Link href="/vault/activare" className="underline underline-offset-2 hover:text-foreground">
-            Activează seiful
-          </Link>
-          , apoi apare aici în așteptare.
-        </p>
       </Card>
 
       <Card>
         <SectionTitle
           title="Codul de recuperare"
-          hint="se afișează o singură dată, la regenerare"
+          info="Regenerează-l dacă hârtia s-a pierdut sau a văzut-o cine nu trebuia. Ține-l offline, nu în seif."
           action={
             <Btn size="sm" variant="outline" icon={KeyRound} disabled={!meta || busyId === "rotate"} onClick={() => setRotateOpen(true)}>
               {busyId === "rotate" ? "Se regenerează…" : "Regenerează"}
@@ -222,28 +217,14 @@ export function MembersView({
               : `regenerat de ${meta.recoveryRotations} ${meta.recoveryRotations === 1 ? "dată" : "ori"}, ultima dată ${dateRo(meta.updatedAt)}`}
           </p>
         ) : null}
-        <InlineNote tone="apricot" className="mt-3">
-          Codul vechi nu mai funcționează după regenerare. Ține-l offline, nu în seif. Codul deschide seiful fără parola master: dacă hârtia s-a pierdut sau a văzut-o cine nu trebuia, regenerează-l.
-        </InlineNote>
       </Card>
-
-      <InlineNote tone="neutral">
-        <span className="flex items-start gap-1.5">
-          <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" />
-          Un membru aprobat primește cheia în browserul lui, nu pe server. Eliminarea nu rotește cheia singură: după ce scoți un membru activ, rotește cheia din Contul meu.
-        </span>
-      </InlineNote>
 
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(value) => !value && setRemoving(null)}
         title={removing?.wrappedDek ? `Elimini pe ${removing.email}?` : `Respingi cererea lui ${removing?.email ?? ""}?`}
-        description={removing?.wrappedDek ? "Accesul dispare la următoarea deblocare. Rândurile rămân lizibile pentru ceilalți." : "Cererea dispare. Contul Supabase rămâne; poate cere din nou."}
-        consequence={
-          removing?.wrappedDek
-            ? "Ce a văzut până acum a văzut: cheia de date nu se rotește singură. După eliminare, rotește cheia din Contul meu, ca ce se scrie de acum să nu se mai deschidă cu ea."
-            : undefined
-        }
+        description={removing?.wrappedDek ? "Accesul dispare la următoarea deblocare." : "Contul rămâne; poate cere din nou."}
+        consequence={removing?.wrappedDek ? "Cheia nu se rotește singură: rotește-o apoi din Contul meu." : undefined}
         confirmLabel={removing?.wrappedDek ? "Elimină membrul" : "Respinge cererea"}
         onConfirm={async () => {
           if (removing) await remove(removing);
@@ -255,8 +236,7 @@ export function MembersView({
         onOpenChange={setRotateOpen}
         tone="primary"
         title="Regenerezi codul de recuperare?"
-        description="Se generează un cod nou, afișat o singură dată, imediat."
-        consequence="Codul actual nu va mai deschide nimic. Notează-l pe cel nou înainte să închizi fereastra."
+        consequence="Codul actual nu va mai deschide nimic, iar cel nou se afișează o singură dată."
         confirmLabel="Regenerează"
         onConfirm={regenerate}
       />
@@ -265,7 +245,7 @@ export function MembersView({
         code={code}
         onConfirm={() => {
           setCode(null);
-          notify("Cod salvat. Nu îl păstra în seif.");
+          notify("Cod nou activ.");
         }}
       />
     </>

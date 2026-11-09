@@ -45,7 +45,7 @@ export function UnfinishedJobs({ jobs, continueJob }: { jobs: UnfinishedJob[]; c
                     {createdByEmail ? ` · ${createdByEmail}` : ""}
                   </p>
                   <p className={view.status === "failed" ? "mt-1 text-[13.5px] text-rose" : "mt-1 text-[13.5px] text-foreground/80"}>
-                    {view.status === "failed" ? `Oprită: ${view.message ?? "eroare"}` : (view.message ?? "Neterminată — fereastra s-a închis în timpul creării.")}
+                    {view.status === "failed" ? `Oprită: ${view.message ?? "eroare"}` : (view.message ?? "Neterminată: pagina s-a închis în timpul creării.")}
                   </p>
                 </div>
                 {resumable && !live && !result ? (
@@ -72,7 +72,7 @@ export function UnfinishedJobs({ jobs, continueJob }: { jobs: UnfinishedJob[]; c
               ) : null}
               {result ? (
                 <p role="status" className={result.ok ? "mt-2 text-[14px] text-mint" : "mt-2 text-[14px] text-rose"}>
-                  {result.ok ? "Creată, pe pauză. O găsești în Campanii după următoarea actualizare." : result.message}
+                  {result.ok ? "Creată pe pauză. Apare în Campanii la următoarea actualizare." : result.message}
                 </p>
               ) : null}
             </Card>

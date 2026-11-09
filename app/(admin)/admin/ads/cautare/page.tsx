@@ -85,10 +85,8 @@ export default async function SearchPlanPage({ searchParams }: { searchParams: P
       <CautariHeader active="campanii" cont={cont} workspaces={workspaces} currentWorkspaceId={currentId} />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[13.5px] text-muted-foreground">
-          {client && view?.ok && hasGoogleAccount
-            ? `${items.length === 1 ? "O campanie de căutare" : `${items.length} campanii de căutare`} · ${client.name} · portalul le creează pe pauză`
-            : "Campaniile de căutare ale clientului ales sus · portalul le creează pe pauză"}
+        <p className="pu-num text-[14px] text-muted-foreground">
+          {client && view?.ok && hasGoogleAccount ? `${items.length === 1 ? "O campanie" : `${items.length} campanii`} · ${client.name}` : null}
         </p>
         <div className="flex gap-2">
           <Link href="/admin/ads/lot" className={btnClass({ size: "sm", variant: "outline" })}>
@@ -109,11 +107,10 @@ export default async function SearchPlanPage({ searchParams }: { searchParams: P
         <Card className="p-0">
           <EmptyState
             icon={SearchIcon}
-            title="Niciun client încă"
-            text="Campaniile de căutare se leagă de un client și de contul lui Google. Adaugă clientul, apoi contul."
+            title="Niciun client"
             action={
               <Link href="/admin/ads/clienti" className={btnClass({ size: "sm", variant: "outline" })}>
-                Adaugă primul client
+                Adaugă client
               </Link>
             }
           />
@@ -123,24 +120,23 @@ export default async function SearchPlanPage({ searchParams }: { searchParams: P
           <EmptyState
             icon={SearchIcon}
             title={`${client.name} n-are cont Google`}
-            text="Leagă contul Google Ads al clientului ca să-i vezi aici campaniile de căutare. Planul de căutare de mai jos merge și fără, pe contul scris în plan."
+            text="Planul de mai jos merge și fără, pe contul din plan."
             action={
               <Link href="/admin/ads/clienti" className={btnClass({ size: "sm", variant: "outline" })}>
-                Leagă un cont
+                Leagă contul
               </Link>
             }
           />
         </Card>
       ) : viewError ? (
         <Card className="p-0">
-          <ErrorState title="Campaniile nu se pot citi" text={viewError} hint="Planul de căutare de mai jos merge în continuare." />
+          <ErrorState title="Campaniile nu se pot citi" text={viewError} />
         </Card>
       ) : items.length === 0 ? (
         <Card className="p-0">
           <EmptyState
             icon={SearchIcon}
             title="Nicio campanie de căutare"
-            text="Lipește un plan cu cuvinte cheie, grupuri și anunțuri text. Îl verificăm pe cont înainte de creare."
             action={
               <a href="#plan-de-cautare" className={btnClass({ size: "sm", variant: "primary" })}>
                 Lipește un plan
@@ -153,9 +149,9 @@ export default async function SearchPlanPage({ searchParams }: { searchParams: P
           <CautariCampaniiLista items={items.slice(0, SHOWN)} period={period} />
           {items.length > SHOWN ? (
             <p className="px-1 text-[13px] text-muted-foreground">
-              Se văd primele {SHOWN} din {items.length}.{" "}
+              {SHOWN} din {items.length} ·{" "}
               <Link href={`/admin/ads?client=${client.id}&canal=google`} className="underline underline-offset-4 hover:text-foreground">
-                Toate, în Campanii
+                Vezi toate
               </Link>
             </p>
           ) : null}
@@ -165,11 +161,11 @@ export default async function SearchPlanPage({ searchParams }: { searchParams: P
       <section id="plan-de-cautare" aria-labelledby="plan-de-cautare-titlu" className="scroll-mt-24 space-y-4 pt-4">
         <SectionTitle
           title={<span id="plan-de-cautare-titlu">Plan de căutare</span>}
-          hint="Un plan = un cont Google Ads = mai multe campanii de căutare, cu grupurile, cuvintele cheie, negativele, anunțurile și materialele lor. Portalul le citește, găsește conflictele și le creează pe toate odată — oprite."
+          info="Un plan = un cont Google Ads, cu mai multe campanii. Se creează toate odată, pe pauză."
         />
         {current && current.platform !== "google" ? (
           <InlineNote tone="apricot" className="max-w-2xl">
-            Lucrezi în {current.name}. Planurile de căutare se creează în Google Ads: treci în Meridian · Google sau Clienți · Google din selectorul „Spațiu” de sus.
+            Lucrezi în {current.name}. Doar pe Google: alege Meridian · Google sau Clienți · Google din „Spațiu”, sus.
           </InlineNote>
         ) : null}
         <CautariPlanEditor workspaces={workspaces} currentWorkspaceId={currentId} actions={{ checkPlan: checkSearchPlan, createPaused: createSearchPlan }} />

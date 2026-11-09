@@ -54,7 +54,7 @@ export function RecoveryCodeBox({ code }: { code: string }) {
     <div>
       <style>{PRINT_CSS}</style>
       <div id={PRINT_ID}>
-        <p className="hidden text-[13.5px] print:block">MERIDIAN · Vault · cod de recuperare. Păstrează-l pe hârtie, într-un loc sigur. Cine îl are poate deschide seiful.</p>
+        <p className="hidden text-[13.5px] print:block">MERIDIAN · Vault · cod de recuperare. Cine îl are poate deschide seiful.</p>
         <ol
           aria-label="Codul de recuperare, opt grupuri"
           className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-mint/25 bg-mint/[0.07] px-3 py-4 text-center font-mono text-[16px] tracking-[0.16em] text-[#B4F2CD] sm:grid-cols-4 sm:text-[17px]"
@@ -66,7 +66,7 @@ export function RecoveryCodeBox({ code }: { code: string }) {
           ))}
         </ol>
       </div>
-      <p className="mt-2 text-[12px] text-muted-foreground">200 de biți · Crockford base32 · fără I, L, O, U · liniuțele și literele mici nu contează la introducere</p>
+      <p className="mt-2 text-[12px] text-muted-foreground">200 de biți · Crockford base32 · fără I, L, O, U</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {isClipboardSupported() ? (
           <Btn size="sm" variant="outline" icon={copied === "ok" ? Check : Copy} onClick={() => void copy()}>
@@ -93,7 +93,7 @@ export function RecoveryWarning({ children }: { children?: ReactNode }) {
       <span className="flex items-start gap-1.5">
         <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         <span>
-          {children ?? "Ține codul pe hârtie, offline, nu în seif și nu într-o captură de ecran. Cine îl are poate deschide seiful fără parola master. Dacă îl pierzi, îl poți regenera doar cât timp seiful e deschis."}
+          {children ?? "Pe hârtie, offline: e singura cale înapoi fără parola master și deschide seiful oricui îl are."}
         </span>
       </span>
     </InlineNote>
@@ -107,7 +107,7 @@ export function RecoveryWarning({ children }: { children?: ReactNode }) {
 export function RecoveryCodeDialog({
   code,
   title = "Codul nou de recuperare",
-  description = "Se afișează o singură dată. Notează-l acum.",
+  description = "Se afișează o singură dată.",
   confirmLabel = "L-am salvat",
   onConfirm,
 }: {
@@ -147,7 +147,7 @@ export function RecoveryCodeDialog({
           <RecoveryWarning />
           <label className="mt-3 flex items-start gap-2 text-[13px] text-muted-foreground">
             <input type="checkbox" checked={saved} onChange={(event) => setSaved(event.target.checked)} className="mt-0.5 accent-[#8FE3B0]" />
-            L-am notat într-un loc sigur, în afara seifului. Știu că nu se mai afișează.
+            L-am notat în afara seifului. Nu se mai afișează.
           </label>
           <div className="mt-4 flex justify-end">
             <Btn variant="primary" size="sm" disabled={!saved} onClick={onConfirm}>

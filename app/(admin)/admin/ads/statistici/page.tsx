@@ -5,7 +5,7 @@ import { PLATFORMS } from "@/lib/ads/constants";
 import { daysBetween, deltaOf, formatAmount, formatCount, formatPercent, type DayFigures, type Direction } from "@/lib/ads/metrics";
 import { clientsForRequest, readClientView, readEntityDays } from "@/lib/ads/model/read";
 import { readSelection } from "@/lib/ads/model/selection.server";
-import { CHANNEL_LABEL, PERIOD_LABEL } from "@/lib/ads/model/selection";
+import { PERIOD_LABEL } from "@/lib/ads/model/selection";
 import { resultsOf } from "@/lib/ads/model/results";
 import { resultText, rowFigures, totalsByCurrency, type RowFigures } from "@/lib/ads/model/rows";
 import type { EntityRow } from "@/lib/ads/model/types";
@@ -17,7 +17,7 @@ import { DeltaChip } from "@/components/panou/ads/delta-chip";
 import { StatusPill } from "@/components/panou/ads/status-pill";
 import { StatsFilters } from "@/components/panou/ads/stats-filters";
 import { SyncBar } from "@/components/panou/ads/sync-bar";
-import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
+import { PAGE_TITLE } from "@/components/panou/ads/tone";
 import { Card, Pill, SectionTitle, btnClass } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { syncClientAction } from "../clienti/actions";
@@ -37,14 +37,20 @@ const AGAINST: Record<string, string> = {
   "luna-trecuta": "față de luna dinainte",
 };
 
-const PERIOD_SHORT: Record<string, string> = { "7": "7 zile", "30": "30 de zile", "90": "90 de zile", luna: "luna aceasta", "luna-trecuta": "luna trecută" };
-
 function Change({ current, previous, direction }: { current: number | null; previous: number | null; direction: Direction }) {
   const delta = deltaOf(current, previous, direction);
   return delta.percent === null ? <span className="text-muted-foreground">—</span> : <DeltaChip delta={delta} />;
 }
 
-const TH = "px-3 py-2.5 text-[11.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
+/** Antetul coloanelor de schimbare: „Δ” pe ecran, cuvintele întregi pentru cititorul de ecran. */
+const DELTA_HEAD = (
+  <>
+    <span aria-hidden="true">Δ</span>
+    <span className="sr-only">față de perioada dinainte</span>
+  </>
+);
+
+const TH = "px-3 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
 
 /**
  * /admin/ads/statistici — perioada aleasă sus, pe zile și pe canale, comparată
@@ -55,15 +61,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const selection = await readSelection(params);
   const clients = await clientsForRequest();
 
-  const shell = (children: React.ReactNode, options?: { subtitle?: string; right?: React.ReactNode }) => (
+  const shell = (children: React.ReactNode, right?: React.ReactNode) => (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className={PAGE_TITLE}>Statistici</h1>
-          <p className={PAGE_LEAD}>Cheltuiala și rezultatele, pe zile. Săgețile ← → schimbă ziua selectată.</p>
-          {options?.subtitle ? <p className="mt-1.5 text-[13px] text-muted-foreground">{options.subtitle}</p> : null}
-        </div>
-        {options?.right}
+        <h1 className={PAGE_TITLE}>Statistici</h1>
+        {right}
       </div>
       {children}
     </div>
@@ -72,7 +74,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   if (!clients.ok) {
     return shell(
       <Card padded={false}>
-        <ErrorState title="Statisticile nu s-au încărcat" text={clients.message} hint="Cifrele de mai jos ar fi incomplete, așa că nu le afișăm." />
+        <ErrorState title="Statisticile nu s-au încărcat" text={clients.message} />
       </Card>
     );
   }
@@ -81,11 +83,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       <Card padded={false}>
         <EmptyState
           icon={BarChart3}
-          title="Statisticile apar după primul client"
-          text="Adaugă un client și leagă-i conturile: portalul îi aduce cifrele în fiecare dimineață."
+          title="Niciun client încă"
           action={
             <Link href="/admin/ads/clienti" className={btnClass({ variant: "primary", size: "sm" })}>
-              Adaugă primul client
+              Adaugă client
             </Link>
           }
         />
@@ -94,7 +95,6 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   }
 
   const client = clients.data.find((item) => item.id === selection.clientId) ?? clients.data[0];
-  const subtitle = `${client.name} · ${PERIOD_LABEL[selection.period]} · ${CHANNEL_LABEL[selection.channel]}`;
   const sync = (
     <SyncBar
       clientId={client.id}
@@ -108,9 +108,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   if (!view.ok) {
     return shell(
       <Card padded={false}>
-        <ErrorState title="Statisticile nu s-au încărcat" text={view.message} hint="Cifrele de mai jos ar fi incomplete, așa că nu le afișăm." />
+        <ErrorState title="Statisticile nu s-au încărcat" text={view.message} />
       </Card>,
-      { subtitle, right: sync }
+      sync
     );
   }
 
@@ -125,11 +125,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       <Card padded={false}>
         <EmptyState
           icon={BarChart3}
-          title="Nicio cifră pe filtrele astea"
-          text="Nicio cheltuială în perioada aleasă. Alege o perioadă mai lungă sus sau apasă „Sincronizează acum” dacă știi că au rulat campanii."
+          title="Nicio cheltuială în perioada aleasă"
+          text="Alege o perioadă mai lungă sau sincronizează."
         />
       </Card>,
-      { subtitle, right: sync }
+      sync
     );
   }
 
@@ -176,8 +176,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         current={current}
         previous={before}
         against={AGAINST[selection.period]}
-        periodLabel={PERIOD_SHORT[selection.period]}
-        emptyHint="Alege în panoul fiecărei campanii ce se numără ca rezultat (apel, lead sau formular)."
+        emptyHint="Alege rezultatul în panoul fiecărei campanii."
       />
 
       {channels.length > 1 ? (
@@ -205,10 +204,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
                         {index === 0 ? (
                           <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                             <ChannelMark platform={platform} size="sm" />
-                            <span className="text-[12.5px] text-muted-foreground">{count === 1 ? "o campanie" : `${count} campanii`} cu cheltuială</span>
+                            <span className="text-[13px] text-muted-foreground">{count === 1 ? "o campanie" : `${count} campanii`} cu cheltuială</span>
                           </span>
                         ) : (
-                          <span className="pl-9 text-[12.5px] text-muted-foreground">în {total.currency}</span>
+                          <span className="pl-9 text-[13px] text-muted-foreground">în {total.currency}</span>
                         )}
                       </th>
                       <td className="pu-num px-3 py-2.5 text-right">{formatAmount(total.spend, total.currency)}</td>
@@ -229,7 +228,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <Card>
           <SectionTitle
             title="Cheltuiala pe zi"
-            hint={`${PERIOD_SHORT[selection.period]}, ${mainCurrency}${current.length > 1 ? " · doar campaniile în această monedă" : ""}`}
+            hint={current.length > 1 ? mainCurrency : undefined}
+            info={current.length > 1 ? `Doar campaniile în ${mainCurrency}. Lei și euro nu se adună.` : undefined}
             action={<Pill tone="neutral">{formatAmount(periodSpend, mainCurrency)}</Pill>}
           />
           {!days.ok ? <p className="mt-2 text-[14px] text-rose">{days.message}</p> : null}
@@ -240,14 +240,13 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <Card>
           <SectionTitle
             title="Rezultatele pe zi"
-            hint="axă separată, ca să nu inducă în eroare"
             action={measuredAny ? <Pill tone="neutral">{formatCount(periodResults)}</Pill> : undefined}
           />
           <div className="mt-3">
             {measuredAny ? (
               <DayChart title="Rezultate pe zi" name="Rezultate" color="#FFB27A" days={series.map((day) => ({ date: day.date, value: day.results }))} unit={{ type: "count" }} />
             ) : (
-              <p className="py-10 text-center text-[14px] text-muted-foreground">Rezultatele pe zi apar când măcar o campanie numără un rezultat.</p>
+              <p className="py-10 text-center text-[14px] text-muted-foreground">Nicio campanie nu numără rezultate.</p>
             )}
           </div>
         </Card>
@@ -258,7 +257,6 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
       <Card padded={false} className="overflow-hidden">
         <div className="border-b border-white/[0.06] px-4 py-3">
           <h2 className="text-[15px] font-medium">Pe campanii</h2>
-          <p className="mt-0.5 text-[13px] text-muted-foreground">față de perioada dinainte</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-left">
@@ -266,11 +264,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               <tr className="border-b border-white/[0.06]">
                 <th scope="col" className={`${TH} pl-4`}>Campanie</th>
                 <th scope="col" className={`${TH} text-right`}>Cheltuit</th>
-                <th scope="col" className={`${TH} text-right`}>față de înainte</th>
+                <th scope="col" className={`${TH} text-right`}>{DELTA_HEAD}</th>
                 <th scope="col" className={`${TH} text-right`}>Rezultate</th>
-                <th scope="col" className={`${TH} text-right`}>față de înainte</th>
+                <th scope="col" className={`${TH} text-right`}>{DELTA_HEAD}</th>
                 <th scope="col" className={`${TH} text-right`}>Cost / rez.</th>
-                <th scope="col" className={`${TH} pr-4 text-right`}>față de înainte</th>
+                <th scope="col" className={`${TH} pr-4 text-right`}>{DELTA_HEAD}</th>
               </tr>
             </thead>
             <tbody>
@@ -307,9 +305,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           </table>
         </div>
       </Card>
-
-      <p className="px-1 text-[12.5px] text-muted-foreground/60">Cheltuiala se citește din platformă, nu se recalculează. Lei și euro nu se adună: fiecare monedă are rândul ei.</p>
     </>,
-    { subtitle, right: <div className="flex flex-wrap items-end gap-3">{<StatsFilters currencies={currencies} current={mainCurrency} />}{sync}</div> }
+    <div className="flex flex-wrap items-end gap-3">
+      <StatsFilters currencies={currencies} current={mainCurrency} />
+      {sync}
+    </div>
   );
 }

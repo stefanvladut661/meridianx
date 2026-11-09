@@ -72,7 +72,7 @@ export async function saveSettingsAction(raw: unknown): Promise<SettingsResult> 
   });
   if (!result.ok) return { ok: false, message: result.message };
   revalidatePath("/admin/postari", "layout");
-  return { ok: true, message: folderName && driveFolder !== current.data.driveFolderId ? `Salvat. Folderul principal e „${folderName}”.` : "Salvat." };
+  return { ok: true, message: folderName && driveFolder !== current.data.driveFolderId ? `Setări salvate. Folder: „${folderName}”.` : "Setări salvate." };
 }
 
 /**
@@ -85,14 +85,14 @@ export async function checkDriveAction(): Promise<SettingsResult> {
   if (!actor) return { ok: false, message: SESSION_EXPIRED };
   const current = await readSettings();
   if (!current.ok) return { ok: false, message: current.message };
-  if (!current.data.driveFolderId) return { ok: false, message: "Folderul principal nu e ales. Lipește adresa lui, salvează setările și testează din nou." };
+  if (!current.data.driveFolderId) return { ok: false, message: "Folderul nu e ales. Lipește adresa, salvează, apoi testează." };
   const check = await checkRoot(current.data.driveFolderId);
   if (!check.ok) return { ok: false, message: check.message };
   const root = await resolveFolder("");
   const listing = root.ok ? await listFolder(root.data) : null;
   if (listing?.ok) {
     const lots = listing.data.subfolders.length;
-    return { ok: true, message: `Folderul „${check.data.name}” răspunde. ${lots} ${lots === 1 ? "lot" : "loturi"} și ${listing.data.clips.length} ${listing.data.clips.length === 1 ? "clip" : "clipuri"} la rădăcină.` };
+    return { ok: true, message: `„${check.data.name}” răspunde: ${lots} ${lots === 1 ? "lot" : "loturi"}, ${listing.data.clips.length} ${listing.data.clips.length === 1 ? "clip" : "clipuri"}.` };
   }
-  return { ok: true, message: `Folderul „${check.data.name}” răspunde.` };
+  return { ok: true, message: `„${check.data.name}” răspunde.` };
 }

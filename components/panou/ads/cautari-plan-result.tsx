@@ -52,8 +52,7 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
               </div>
               <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">
                 {single ? "O campanie" : countOf(result.campaigns.length, "campanii")}, {counted(result.counts.adGroups, "grup", "grupuri")},{" "}
-                {counted(result.counts.keywords, "cuvânt cheie", "cuvinte cheie")} și {counted(result.counts.ads, "anunț", "anunțuri")} — toate oprite. Nu livrează nimic până nu le
-                pornești tu, în Google Ads.
+                {counted(result.counts.keywords, "cuvânt cheie", "cuvinte cheie")}, {counted(result.counts.ads, "anunț", "anunțuri")}.
               </p>
             </div>
           </div>
@@ -63,7 +62,7 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
               Deschide în Google Ads
             </ExternalButton>
             <Link href="/admin/ads" className={btnClass({ variant: "outline", size: "sm" })}>
-              Lista de campanii
+              Campaniile
             </Link>
           </div>
 
@@ -86,7 +85,7 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
             ))}
           </ul>
           <p className="mt-3 border-t border-white/[0.06] pt-3 font-mono text-[12px] text-muted-foreground">
-            {counted(result.counts.operations, "operație", "operații")} într-o singură cerere · {counted(result.counts.negatives, "negativ", "negative")} ·{" "}
+            {counted(result.counts.operations, "operație", "operații")} · {counted(result.counts.negatives, "negativ", "negative")} ·{" "}
             {counted(result.counts.assets, "material", "materiale")}
           </p>
         </Card>
@@ -100,13 +99,13 @@ export function CautariPlanResult({ result }: { result: SearchCreateResponse }) 
         <Card className="border-apricot/25 bg-apricot/[0.035]">
           <p className="flex items-center gap-2 text-[15px] font-semibold text-[#FFD0AC]">
             <AlertTriangle className="h-4 w-4" aria-hidden="true" />
-            Planul ăsta a fost deja creat.
+            Plan deja creat.
           </p>
           <p className="mt-2 text-[14px] leading-relaxed text-foreground/80">{result.message}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <ExternalButton href={result.duplicate.adsManagerUrl}>Deschide campaniile existente</ExternalButton>
+            <ExternalButton href={result.duplicate.adsManagerUrl}>Deschide în Google Ads</ExternalButton>
             <Link href={`/admin/ads/${result.duplicate.recordId}`} className={btnClass({ variant: "outline", size: "sm" })}>
-              Fișa din portal
+              Fișa campaniei
             </Link>
           </div>
         </Card>

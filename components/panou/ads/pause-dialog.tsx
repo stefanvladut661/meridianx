@@ -64,9 +64,7 @@ export function PauseDialog({
 
       {!result ? (
         <>
-          <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">
-            Se oprește cheltuiala. Nimic nu se șterge, bugetele rămân cum sunt, iar repornirea o faci tu, din platformă.
-          </p>
+          <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">Cheltuiala se oprește. Repornirea se face doar din platformă.</p>
           <ul className="mt-4 max-h-64 divide-y divide-white/[0.05] overflow-y-auto rounded-xl border border-white/[0.07]">
             {entities.map((entity) => (
               <li key={entity.id} className="flex items-center justify-between gap-3 px-3 py-2 text-[14px]">
@@ -84,8 +82,7 @@ export function PauseDialog({
         <div role="status" className="mt-3 grid gap-3 text-[14.5px] leading-relaxed">
           {result.paused.length > 0 ? (
             <p className="rounded-xl border border-mint/25 bg-mint/[0.07] px-3.5 py-3 text-[14px] text-[#B4F2CD]">
-              {result.paused.length === 1 ? `„${result.paused[0].name}” e pe pauză.` : `${result.paused.length} rânduri sunt pe pauză.`} Se vede imediat în tabel; platforma o confirmă la
-              următoarea actualizare.
+              {result.paused.length === 1 ? `„${result.paused[0].name}” e pe pauză.` : `${result.paused.length} rânduri sunt pe pauză.`}
             </p>
           ) : null}
           {result.skipped.length > 0 ? (

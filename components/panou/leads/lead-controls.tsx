@@ -97,7 +97,7 @@ export function NotesControl({ leadId, notes }: { leadId: string; notes: string 
   }, [leadId, saved]);
 
   useEffect(() => {
-    if (state.ok) notify("Notițele au fost salvate.");
+    if (state.ok) notify("Note salvate.");
   }, [state, notify]);
 
   const dirty = draft !== saved;
@@ -115,12 +115,12 @@ export function NotesControl({ leadId, notes }: { leadId: string; notes: string 
         maxLength={NOTES_MAX}
         onChange={(event) => setDraft(event.target.value)}
         rows={4}
-        placeholder="Ce a spus la telefon, ce urmează, cine sună."
+        placeholder="Ce a spus, ce urmează, cine sună."
         className="w-full resize-y rounded-xl border border-white/[0.1] bg-white/[0.03] p-3 text-[14px] leading-relaxed outline-none placeholder:text-muted-foreground/60 focus:border-lav/50"
       />
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[12px] text-muted-foreground">
-          {draft.length.toLocaleString("ro-RO")} / 10.000 caractere
+          {draft.length.toLocaleString("ro-RO")} / 10.000
           {dirty ? (
             <Pill tone="apricot" className="ml-2">
               nesalvat
@@ -134,7 +134,7 @@ export function NotesControl({ leadId, notes }: { leadId: string; notes: string 
             </Btn>
           ) : null}
           <Btn type="submit" size="sm" variant="primary" disabled={!dirty || pending}>
-            {pending ? "Se salvează…" : "Salvează notițele"}
+            {pending ? "Se salvează…" : "Salvează notele"}
           </Btn>
         </div>
       </div>
@@ -188,8 +188,8 @@ export function DeleteControl({
         open={open}
         onOpenChange={onOpenChange}
         title={`Ștergi lead-ul ${leadName}?`}
-        description={`${leadMeta}. Dispare din listă, din statistici și din export.`}
-        consequence="Acțiunea e definitivă: datele de contact, notele interne și istoricul se pierd, iar clientul nu mai poate fi recuperat din panou."
+        description={leadMeta}
+        consequence={`Definitiv: contactul, notele și istoricul se pierd. Doar pentru spam sau teste; un lead pierdut se marchează „${statusLabel("lost")}”.`}
         confirmLabel="Șterge definitiv"
         requirePhrase="șterge"
         onConfirm={() => {

@@ -27,14 +27,19 @@ export function Info({ children, label = "Detalii", className }: { children: Rea
     const onPointer = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) setOpen(null);
     };
+    // Esc închide doar „i”-ul: prins în faza de captură pe window și oprit acolo,
+    // ca panoul sau dialogul din spate (cu ciorna lui) să nu se închidă și el.
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(null);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(null);
     };
     document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     return () => {
       document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
     };
   }, [open]);
 

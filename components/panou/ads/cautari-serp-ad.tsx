@@ -128,7 +128,7 @@ function TextList({ title, items, max }: { title: string; items: Array<{ text: s
               <span className="pu-num w-5 shrink-0 text-right font-mono text-[12px] text-muted-foreground">{index + 1}</span>
               <span className="min-w-0 flex-1 text-foreground/90 [overflow-wrap:anywhere]">{item.text}</span>
               {item.pin !== null ? (
-                <span className="shrink-0 rounded-md border border-white/[0.09] bg-white/[0.05] px-1.5 font-mono text-[11.5px] text-foreground/75">fixat {item.pin}</span>
+                <span className="shrink-0 rounded-md border border-white/[0.09] bg-white/[0.05] px-1.5 font-mono text-[12px] text-foreground/75">fixat {item.pin}</span>
               ) : null}
               <span className={cn("pu-num shrink-0 font-mono text-[12px]", length > max ? "text-rose" : "text-muted-foreground")}>
                 {length}/{max}

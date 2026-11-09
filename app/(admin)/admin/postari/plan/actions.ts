@@ -15,7 +15,7 @@ export type VerifyResponse = VerifyResult | { ok: false; message: string; line: 
 export async function verifyPlanAction(text: unknown): Promise<VerifyResponse> {
   const actor = await actorEmail();
   if (!actor) return { ok: false, message: SESSION_EXPIRED, line: null, column: null, schema: [] };
-  if (typeof text !== "string" || text.length > MAX_TEXT) return { ok: false, message: "Planul e prea mare (cel mult 400 KB de text).", line: null, column: null, schema: [] };
+  if (typeof text !== "string" || text.length > MAX_TEXT) return { ok: false, message: "Planul e prea mare (max. 400 KB).", line: null, column: null, schema: [] };
   const result = await verifyPlan(text, { probeBudgetMs: PROBE_BUDGET_MS });
   if (result.ok && result.pending === 0) {
     await logEvent({
@@ -34,8 +34,8 @@ export type ApproveResponse = { ok: true; rows: number; posts: number; instagram
 export async function approvePlanAction(text: unknown, expected: unknown): Promise<ApproveResponse> {
   const actor = await actorEmail();
   if (!actor) return { ok: false, message: SESSION_EXPIRED };
-  if (typeof text !== "string" || text.length > MAX_TEXT) return { ok: false, message: "Planul e prea mare (cel mult 400 KB de text)." };
-  if (!Array.isArray(expected) || expected.length > 500 || !expected.every((value) => value === null || typeof value === "string")) return { ok: false, message: "Previzualizarea nu s-a trimis întreagă. Verifică planul din nou." };
+  if (typeof text !== "string" || text.length > MAX_TEXT) return { ok: false, message: "Planul e prea mare (max. 400 KB)." };
+  if (!Array.isArray(expected) || expected.length > 500 || !expected.every((value) => value === null || typeof value === "string")) return { ok: false, message: "Previzualizarea n-a ajuns întreagă. Verifică planul din nou." };
   const result = await approvePlan(text, actor, expected as (string | null)[]);
   if (!result.ok) {
     await logEvent({ actor, zona: "plan", actiune: "aprobare refuzată", rezultat: "eroare", mesaj: result.message });

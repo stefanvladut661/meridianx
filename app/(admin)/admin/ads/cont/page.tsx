@@ -64,7 +64,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <div className="space-y-4">
         {header}
         <InlineNote className="max-w-2xl">
-          Lucrezi în {summary.name}. Contul se întreține doar în spațiile Google: treci în Meridian · Google sau Clienți · Google din selectorul „Spațiu” de mai sus.
+          Lucrezi în {summary.name}. Doar pe Google: alege Meridian · Google sau Clienți · Google din „Spațiu”, sus.
         </InlineNote>
       </div>
     );
@@ -74,7 +74,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <div className="space-y-4">
         {header}
         <InlineNote className="max-w-2xl">
-          Spațiul {summary.name} nu are cheie: setează {summary.tokenEnv} în Vercel și fă redeploy. Pașii: lib/ads/README.md → „Google — contul de serviciu”.
+          Spațiul {summary.name} nu are cheie: setează {summary.tokenEnv} în Vercel, apoi redeploy. Pașii: lib/ads/README.md → „Google — contul de serviciu”.
         </InlineNote>
       </div>
     );
@@ -112,7 +112,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </ul>
         ) : !accountsError ? (
           <InlineNote className="max-w-2xl">
-            Cheia nu vede încă niciun cont. Adaugă contul de serviciu {serviceAccountEmail(workspace) ?? ""} ca utilizator în contul clientului sau în MCC-ul agenției (README → „Faza 11”), apoi revino aici.
+            Cheia nu vede niciun cont. Adaugă {serviceAccountEmail(workspace) ?? "contul de serviciu"} ca utilizator în contul clientului sau în MCC-ul agenției (README → „Faza 11”).
           </InlineNote>
         ) : null}
       </div>
@@ -127,8 +127,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         {picker}
         <InlineNote className="max-w-2xl">
           {account?.manager
-            ? `${account.info.name} e un cont manager (MCC). Alege contul clientului de sub el.`
-            : `Cheia spațiului nu vede contul ${accountParam}. Adaugă contul de serviciu ${serviceAccountEmail(workspace) ?? ""} în contul clientului sau în MCC-ul de deasupra lui (Admin → Acces și securitate).`}
+            ? `${account.info.name} e un cont manager; alege contul clientului.`
+            : `Cheia spațiului nu vede contul ${accountParam}. Adaugă ${serviceAccountEmail(workspace) ?? "contul de serviciu"} în contul clientului sau în MCC-ul lui (Admin → Acces și securitate).`}
         </InlineNote>
       </div>
     );
@@ -163,12 +163,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <div className="min-w-0 space-y-4">
           <ContHeadline
             info={info}
-            hint={`Audit · cont existent, doar citire + pauză · ${info.state} · ${info.manager ? `văzut prin managerul ${formatCustomerId(info.manager)}` : "văzut direct"}`}
+            hint={`${info.state} · ${info.manager ? `prin managerul ${formatCustomerId(info.manager)}` : "acces direct"}`}
+            note="Cont existent: doar citire, pauză și negative. Portalul nu pornește, nu șterge și nu schimbă bugete."
           >
             <div className="grid grid-cols-3 gap-3">
               <Stat label="Campanii" value={campaigns.length} />
               {audit ? <Stat label="Probleme" value={audit.signals.length} tone="dim" /> : <Stat label="Active" value={active.length} tone="dim" />}
-              <Stat label="Buget / zi" value={accountMoney(dailyBudget, info.currency)} tone="dim" hint={active.length > 0 ? "doar campaniile active" : undefined} />
+              <Stat label="Buget / zi" value={accountMoney(dailyBudget, info.currency)} tone="dim" hint={active.length > 0 ? "doar active" : undefined} />
             </div>
           </ContHeadline>
 

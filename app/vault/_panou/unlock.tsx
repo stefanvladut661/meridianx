@@ -43,7 +43,7 @@ export function UnlockScreen() {
     const emailValue = String(form.get("email") ?? "").trim();
     const master = String(form.get("master") ?? "");
     if (!emailValue) {
-      setFieldError("Completează emailul contului de seif.");
+      setFieldError("Completează emailul.");
       return;
     }
     if (!master) {
@@ -66,9 +66,6 @@ export function UnlockScreen() {
           </Pill>
         </div>
         <h1 className="mt-5 text-[20px] font-semibold">Seiful e încuiat</h1>
-        <p className="mt-1.5 text-[14px] leading-relaxed text-muted-foreground">
-          Parola master deschide cheia în browser. Serverul nu o vede niciodată și nu o poate recupera.
-        </p>
 
         <div aria-live="polite">
           {vault.notice ? <InlineNote tone="neutral" className="mt-4">{vault.notice}</InlineNote> : null}
@@ -78,7 +75,7 @@ export function UnlockScreen() {
 
         {busy ? (
           <div className="mt-5">
-            <BusyBlock label={STEP_LABEL[busy.step]} detail={busy.step === "deriving" ? `${argonDetail} · durează câteva secunde, intenționat` : undefined} startedAt={busy.startedAt} />
+            <BusyBlock label={STEP_LABEL[busy.step]} detail={busy.step === "deriving" ? argonDetail : undefined} startedAt={busy.startedAt} />
           </div>
         ) : (
           <form onSubmit={onSubmit} className="mt-5 space-y-3" noValidate>
@@ -111,7 +108,7 @@ export function UnlockScreen() {
             Recuperează cu codul
           </Link>
           <Link href="/vault/activare" className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-            Prima intrare? Activează seiful
+            Activează contul
           </Link>
         </div>
       </Card>

@@ -65,7 +65,7 @@ const filtreSchema = z.object({
 
 const importSchema = z.object({
   // Doar lista de apeluri se importă; WhatsApp-ul are lista lui, continuă.
-  canal: z.literal("telefon", "Doar lista de apeluri se importă: WhatsApp-ul are lista lui, continuă."),
+  canal: z.literal("telefon", "Doar lista de apeluri se importă."),
   numar: z.coerce.number().int("Câte firme: un număr întreg.").min(1, "Alege cel puțin o firmă.").max(500, "Cel mult 500 de firme odată."),
   filtre: filtreSchema,
 });
@@ -98,8 +98,8 @@ export async function importaLista(input: unknown): Promise<ActionResult<{ adaug
   if (!result.ok) return { ok: false, message: result.message };
   gata();
   const n = result.data.adaugate ?? 0;
-  if (n === 0) return { ok: false, message: "Nicio firmă din rezervă nu se potrivește filtrelor. Cele programate pe email sau WhatsApp nu intră în apeluri până la 00:00." };
-  return { ok: true, message: `${n} ${n === 1 ? "firmă adăugată" : "firme adăugate"} în lista ta de apeluri, cele mai vechi site-uri primele. Rămân pe telefon până la 00:00.`, data: { adaugate: n } };
+  if (n === 0) return { ok: false, message: "Nicio firmă din rezervă pe aceste filtre. Cele programate pe email sau WhatsApp intră abia după 00:00." };
+  return { ok: true, message: `${n} ${n === 1 ? "firmă adăugată" : "firme adăugate"} în lista ta de apeluri.`, data: { adaugate: n } };
 }
 
 const rezultatSchema = z.object({
@@ -126,15 +126,15 @@ export async function seteazaRezultat(input: unknown): Promise<ActionResult<{ re
   const r = result.data;
   const rez = parsed.data.rezultat;
   const message = r.doar_email
-    ? "Număr greșit: firma se întoarce în distribuție, doar pentru email."
+    ? "Număr greșit: firma rămâne doar pentru email."
     : r.revenit
-      ? `Nu a răspuns (încercarea ${r.incercari}): nu contează ca un contact, firma se întoarce în distribuție.`
+      ? `Nu răspunde (încercarea ${r.incercari}): firma se întoarce în distribuție.`
       : rez === "nu_vrea"
-        ? "Nu vrea: firma e „Nu contacta” și nu mai primește nimic."
+        ? "Nu vrea: firma e „Nu contacta”."
         : rez === "interesat"
           ? "Interesat: firma rămâne pe telefon."
           : rez === "suna_inapoi"
-            ? "Sună înapoi: firma rămâne pe telefon și trece în lista zilei următoare."
+            ? "Sună înapoi: firma trece în lista de mâine."
             : "Rezultat salvat.";
   return { ok: true, message, data: { revenit: r.revenit, doarEmail: Boolean(r.doar_email), incercari: r.incercari } };
 }
@@ -192,7 +192,7 @@ export async function trimiteWhatsapp(input: unknown): Promise<ActionResult<What
   return {
     ok: true,
     message: r.peste_limita
-      ? `Trimis pe ${r.cont_nume}. Atenție: contul are ${r.trimise_azi} mesaje azi, peste limita de ${r.limita}.`
+      ? `Trimis pe ${r.cont_nume}: ${r.trimise_azi} azi, peste limita de ${r.limita}.`
       : `Trimis pe ${r.cont_nume} (${r.trimise_azi}/${r.limita} azi).`,
     data: { nr: r.nr, cont: r.cont, contNume: r.cont_nume, trimiseAzi: r.trimise_azi, limita: r.limita, pesteLimita: r.peste_limita },
   };
@@ -229,7 +229,7 @@ export async function continuaPeWhatsapp(listaId: unknown): Promise<ActionResult
   gata();
   return {
     ok: true,
-    message: result.data.deja ? "Continuarea pe WhatsApp era deja în activitate." : "Scris în activitate: continuare apel pe WhatsApp.",
+    message: result.data.deja ? "Continuarea pe WhatsApp era deja notată." : "Continuarea pe WhatsApp e notată în activitate.",
     data: { deja: result.data.deja },
   };
 }
@@ -258,7 +258,7 @@ export async function schimbaEtapa(input: unknown): Promise<ActionResult> {
   if (!result.ok) return { ok: false, message: result.message };
   gata();
   const mesaje: Record<string, string> = {
-    nu_contacta: "Marcată „Nu contacta”: iese din toate listele și nu mai primește niciun mesaj.",
+    nu_contacta: "Marcată „Nu contacta”: iese din toate listele.",
     interesat: "Mutată la Interesați.",
     client: "Marcată Client.",
     respins: "Marcată Respins.",
@@ -333,7 +333,7 @@ export async function comutaRobot(input: unknown): Promise<ActionResult> {
   gata();
   return {
     ok: true,
-    message: parsed.data.activ ? `${data.nume} e activ din nou.` : `${data.nume} e dezactivat: la următoarea cerere primește 401, iar firma lui trece la alt robot când expiră rezervarea.`,
+    message: parsed.data.activ ? `${data.nume} e activ din nou.` : `${data.nume} e dezactivat; firma lui trece la alt robot când expiră rezervarea.`,
   };
 }
 
@@ -372,7 +372,7 @@ export async function salveazaLimite(input: unknown): Promise<ActionResult> {
     .eq("id", 1);
   if (error) return { ok: false, message: failure(error).message };
   gata();
-  return { ok: true, message: "Limitele sunt salvate." };
+  return { ok: true, message: "Limite salvate." };
 }
 
 // ---------------------------------------------------------------------------
@@ -461,7 +461,7 @@ export async function nisaAdmin(input: unknown): Promise<ActionResult> {
   });
   if (!result.ok) return { ok: false, message: result.message };
   gata();
-  return { ok: true, message: d.actiune === "adauga" ? `„${result.data.nisa} · ${result.data.zona}” e pe tablă, liberă.` : `„${result.data.nisa} · ${result.data.zona}” e liberă: o poate lua orice robot.` };
+  return { ok: true, message: d.actiune === "adauga" ? `„${result.data.nisa} · ${result.data.zona}” adăugată, liberă.` : `„${result.data.nisa} · ${result.data.zona}” eliberată.` };
 }
 
 const sablonSchema = z.object({
@@ -482,7 +482,7 @@ export async function salveazaSablon(input: unknown): Promise<ActionResult> {
     .eq("id", 1);
   if (error) return { ok: false, message: failure(error).message };
   gata();
-  return { ok: true, message: "Șablonul e salvat." };
+  return { ok: true, message: "Șablon salvat." };
 }
 
 const casutaSchema = z.object({
@@ -592,7 +592,7 @@ export async function anuleazaProgramari(input: unknown): Promise<ActionResult<{
   if (anulate === 0) return { ok: false, message: "Nimic de anulat: programările de azi (sau deja folosite) nu se mai anulează." };
   return {
     ok: true,
-    message: `${anulate} ${anulate === 1 ? "programare anulată" : "programări anulate"}; firmele se întorc în rezervă.${refuzate ? ` ${refuzate} erau deja pe azi sau folosite.` : ""}`,
+    message: `${anulate} ${anulate === 1 ? "programare anulată" : "programări anulate"}, înapoi în rezervă.${refuzate ? ` ${refuzate} erau deja pe azi sau folosite.` : ""}`,
     data: { anulate, refuzate },
   };
 }

@@ -62,7 +62,7 @@ export function SettingsForm({
             id="set-serieFactura"
             label="Seria facturilor din Oblio"
             error={fieldError("serieFactura")}
-            hint={series.length > 0 ? "Seriile de factură din contul Oblio." : seriesError ? `N-am putut citi seriile din Oblio (${seriesError}); scrie numele exact.` : "Numele seriei, exact ca în Oblio (Setări → Serii)."}
+            hint={series.length > 0 ? undefined : seriesError ? `N-am putut citi seriile din Oblio (${seriesError}); scrie numele exact.` : "Exact ca în Oblio (Setări → Serii)."}
           >
             {series.length > 0 ? (
               <select id="set-serieFactura" value={values.serieFactura} onChange={(e) => set("serieFactura", e.currentTarget.value)} className={inputClass}>
@@ -77,11 +77,11 @@ export function SettingsForm({
               <input id="set-serieFactura" value={values.serieFactura} onChange={(e) => set("serieFactura", e.currentTarget.value)} className={inputClass} maxLength={20} />
             )}
           </Field>
-          <Field id="set-emailContabil" label="Emailul contabilului" error={fieldError("emailContabil")} hint="Aici pleacă pachetul lunar, după „Trimite”.">
+          <Field id="set-emailContabil" label="Emailul contabilului" error={fieldError("emailContabil")}>
             <input id="set-emailContabil" type="email" value={values.emailContabil} onChange={(e) => set("emailContabil", e.currentTarget.value)} className={inputClass} maxLength={200} />
           </Field>
         </div>
-        <Field id="set-emailRezumat" label="Emailul pentru rezumatul de dimineață" error={fieldError("emailRezumat")} hint="Pleacă doar în zilele cu alerte (facturi întârziate, contracte care se termină, pachetul contabilului, abonamente, ciorne). Gol = fără rezumat.">
+        <Field id="set-emailRezumat" label="Emailul pentru rezumatul de dimineață" error={fieldError("emailRezumat")} hint="Doar în zilele cu alerte. Gol = fără rezumat.">
           <input id="set-emailRezumat" value={values.emailRezumat} onChange={(e) => set("emailRezumat", e.currentTarget.value)} className={inputClass} placeholder="tu@exemplu.ro" />
         </Field>
       </section>
@@ -90,10 +90,10 @@ export function SettingsForm({
         <h2 id="drive-set" className="text-[16px] font-semibold text-bone">
           Folderul de pe Drive
         </h2>
-        <Field id="set-driveRadacina" label="Folderul rădăcină (adresa sau id-ul)" error={fieldError("driveRadacina")} hint="Folderul cu câte un subfolder pe lună. Gol = adminul nu scrie nimic pe Drive.">
+        <Field id="set-driveRadacina" label="Folderul rădăcină (adresa sau id-ul)" error={fieldError("driveRadacina")} hint="Gol = nimic pe Drive.">
           <input id="set-driveRadacina" value={values.driveRadacina} onChange={(e) => set("driveRadacina", e.currentTarget.value)} className={inputClass} placeholder="https://drive.google.com/drive/folders/…" />
         </Field>
-        <Field id="set-driveModelLuna" label="Numele folderului lunii" error={fieldError("driveModelLuna")} hint="{luna} = „aprilie”, {an} = „2026”, {ll} = „04”. Ex.: „{luna} {an}” → „aprilie 2026”.">
+        <Field id="set-driveModelLuna" label="Numele folderului lunii" error={fieldError("driveModelLuna")} hint="{luna} = aprilie · {an} = 2026 · {ll} = 04">
           <input id="set-driveModelLuna" value={values.driveModelLuna} onChange={(e) => set("driveModelLuna", e.currentTarget.value)} className={inputClass} maxLength={80} />
         </Field>
       </section>
@@ -105,7 +105,7 @@ export function SettingsForm({
       ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
-          {pending ? "Se salvează…" : "Salvează setările"}
+          {pending ? "Se salvează…" : "Salvează"}
         </button>
         <p role="status" className="text-[14.5px] text-dim">
           {saved ? <span className="text-[var(--ap-ok)]">Salvat.</span> : settings.updatedAt ? `Ultima schimbare: ${dateTimeLabel(settings.updatedAt)}${settings.updatedBy ? `, ${settings.updatedBy}` : ""}` : null}

@@ -80,7 +80,7 @@ export function AccountView({
       setCurrent("");
       setNext("");
       setConfirm("");
-      notify("Parola master a fost schimbată. Cheile tale au fost refăcute; codul de recuperare rămâne valabil.");
+      notify("Parola master schimbată. Codul de recuperare rămâne valabil.");
     } catch (cause) {
       // Erorile de autentificare (ex. „Parola master actuală e greșită.”) sunt deja scrise pentru om.
       setPassError(describeError(cause, cause instanceof Error && cause.message ? cause.message : "Schimbarea parolei a eșuat dintr-un motiv necunoscut."));
@@ -125,7 +125,7 @@ export function AccountView({
       const result = await api.reencrypt((done, total) => setReencrypt({ state: "running", done, total }));
       setReencrypt({ state: "done", ...result });
       await Promise.all([refresh(), reload()]);
-      if (result.skipped === 0) notify("Toate rândurile au fost re-criptate cu cheia curentă.");
+      if (result.skipped === 0) notify("Toate rândurile sunt pe cheia curentă.");
     } catch (cause) {
       setRingError(describeError(cause, "Re-criptarea s-a oprit dintr-un motiv necunoscut. O poți relua."));
       setReencrypt({ state: "idle" });
@@ -152,7 +152,7 @@ export function AccountView({
     try {
       for (const { member } of status.missing) await api.grant(member);
       await refresh();
-      notify("Cheile lipsă au fost acordate.");
+      notify("Chei acordate.");
     } catch (cause) {
       setRingError(describeError(cause, "Cheile nu s-au putut acorda. Încearcă din nou."));
     } finally {
@@ -162,15 +162,19 @@ export function AccountView({
 
   return (
     <>
-      <PageHead title="Contul meu" text="Parola master și inelul de chei. Aici se schimbă și se rotește." />
+      <PageHead title="Contul meu" />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <SectionTitle title="Schimbă parola master" hint="parola veche nu se păstrează" />
+          <SectionTitle
+            title="Parola master"
+            hint={email ?? undefined}
+            info="Nu se resetează prin email: dacă o uiți, rămâne doar codul de recuperare. Datele și codul nu se schimbă."
+          />
           <form onSubmit={changePassword} noValidate className="mt-3 space-y-3">
             <LabeledInput label="Parola master actuală" type="password" value={current} onChange={(event) => setCurrent(event.target.value)} autoComplete="current-password" disabled={step !== null} />
             <LabeledInput
-              label={`Parola nouă (min. ${MIN_MASTER_LENGTH} caractere)`}
+              label="Parola nouă"
               type="password"
               value={next}
               onChange={(event) => setNext(event.target.value)}
@@ -199,15 +203,12 @@ export function AccountView({
               {step ? "Se schimbă…" : "Schimbă parola"}
             </Btn>
           </form>
-          <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
-            {email ? `${email} · ` : ""}Din parola master ies cheile tale; datele și codul de recuperare rămân aceleași. Nu se resetează prin email: dacă o uiți, singura cale e codul de recuperare.
-          </p>
         </Card>
 
         <Card>
           <SectionTitle
             title="Cheia de date"
-            hint="inelul de chei, aici se vede"
+            info="Rotația schimbă cheia, nu datele. Cheile vechi rămân în inel, pentru istoric. Rotește după ce elimini un membru activ."
             action={
               status ? (
                 <Pill tone="mint" dot>
@@ -226,14 +227,14 @@ export function AccountView({
               <span className="truncate font-mono">{status ? (status.current ? `${dateRo(status.current.createdAt)} · ${emailOf(status.current.createdBy)}` : "nicio rotație") : "…"}</span>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-[13.5px]">
-              <span className="text-muted-foreground">Rânduri criptate cu chei vechi</span>
+              <span className="text-muted-foreground">Rânduri pe chei vechi</span>
               <span className="pu-num">{stale === null ? "…" : stale}</span>
             </div>
           </div>
 
           {status?.ownMissing.length ? (
             <InlineNote tone="rose" className="mt-3">
-              Ție îți {status.ownMissing.length === 1 ? "lipsește o cheie rotită" : `lipsesc ${status.ownMissing.length} chei rotite`}. Rândurile scrise cu ele apar ca ilizibile până ți le acordă un membru activ.
+              Îți {status.ownMissing.length === 1 ? "lipsește o cheie rotită" : `lipsesc ${status.ownMissing.length} chei rotite`}: rândurile lor apar ilizibile până le primești de la un membru activ.
             </InlineNote>
           ) : null}
 
@@ -242,7 +243,7 @@ export function AccountView({
               {status.missing.map(({ member, dekIds }) => (
                 <li key={member.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                   <span className="min-w-0 truncate text-[13.5px]">{member.email}</span>
-                  <span className="text-[12px] text-muted-foreground">{countNoun(dekIds.length, "cheie lipsă", "chei lipsă")}</span>
+                  <span className="text-[13px] text-muted-foreground">{countNoun(dekIds.length, "cheie lipsă", "chei lipsă")}</span>
                 </li>
               ))}
             </ul>
@@ -255,7 +256,7 @@ export function AccountView({
               {rotating ? "Se rotește…" : "Rotește cheia"}
             </Btn>
             <Btn size="sm" variant="outline" icon={RefreshCw} onClick={() => void startReencrypt()} disabled={running || !stale}>
-              {running ? "Se re-criptează…" : stale ? `Re-criptează rândurile vechi (${stale})` : "Re-criptează rândurile vechi"}
+              {running ? "Se re-criptează…" : stale ? `Re-criptează (${stale})` : "Re-criptează"}
             </Btn>
             <Btn size="sm" variant="ghost" icon={ShieldCheck} onClick={() => void grantAll()} disabled={granting || !status?.missing.length}>
               {granting ? "Se acordă…" : "Acordă cheile lipsă"}
@@ -265,30 +266,27 @@ export function AccountView({
           {reencrypt.state === "running" ? (
             <div className="mt-3" role="status">
               <ProgressBar value={(reencrypt.done / (reencrypt.total || 1)) * 100} tone="mint" />
-              <p className="pu-num mt-1.5 text-[12px] text-muted-foreground">
-                {reencrypt.done} din {reencrypt.total} rânduri re-criptate
+              <p className="pu-num mt-1.5 text-[13px] text-muted-foreground">
+                {reencrypt.done} din {reencrypt.total} re-criptate
               </p>
             </div>
           ) : null}
           {reencrypt.state === "done" ? (
-            <p className="mt-3 flex items-start gap-1.5 text-[12px] text-muted-foreground" role="status">
+            <p className="mt-3 flex items-start gap-1.5 text-[13px] text-muted-foreground" role="status">
               <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" />
               {countNoun(reencrypt.done, "rând re-criptat", "rânduri re-criptate")}
-              {reencrypt.skipped ? ` · ${countNoun(reencrypt.skipped, "rând sărit", "rânduri sărite")} (modificate între timp sau ilizibile): reia re-criptarea` : " · totul e pe cheia nouă"}.
+              {reencrypt.skipped ? ` · ${countNoun(reencrypt.skipped, "rând sărit", "rânduri sărite")} (modificate sau ilizibile). Reia re-criptarea` : " · totul e pe cheia nouă"}.
             </p>
           ) : null}
 
-          <InlineNote tone="neutral" className="mt-3">
-            Rotația nu schimbă datele, doar cheia care le deschide. Nimic nu se pierde: cheile vechi rămân în inel, ca istoricul să se poată citi. Rotește după ce elimini un membru activ.
-          </InlineNote>
         </Card>
 
         <Card className="lg:col-span-2">
-          <SectionTitle title="Sesiune" hint="cheia stă doar în memoria acestui tab" />
+          <SectionTitle title="Sesiune" />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[13px] leading-relaxed text-muted-foreground">Blocare automată după 15 minute fără activitate. La blocare, cheia dispare, iar clipboardul este golit.</p>
+            <p className="text-[13.5px] text-muted-foreground">Auto-blocare după 15 minute fără activitate.</p>
             <Btn size="sm" variant="danger" icon={Lock} onClick={onLock}>
-              Blochează acum
+              Blochează
             </Btn>
           </div>
         </Card>
@@ -298,8 +296,7 @@ export function AccountView({
         open={rotateOpen}
         onOpenChange={setRotateOpen}
         title="Rotești cheia de date?"
-        description="Se generează o cheie nouă, sigilată pentru membrii activi, și un cod de recuperare nou."
-        consequence="Codul de recuperare vechi nu mai deschide seiful; cel nou se afișează o singură dată. Apoi toate rândurile se re-criptează aici, în browser. Rândurile și istoricul vechi rămân lizibile."
+        consequence="Codul de recuperare vechi nu mai deschide seiful, iar cel nou se afișează o singură dată."
         confirmLabel="Rotește cheia"
         onConfirm={rotate}
       />
@@ -307,8 +304,8 @@ export function AccountView({
       <RecoveryCodeDialog
         code={newCode}
         title="Codul nou de recuperare"
-        description="Cheia s-a rotit. Codul vechi nu mai funcționează. Se afișează o singură dată."
-        confirmLabel="L-am notat, re-criptează rândurile"
+        description="Codul vechi nu mai funcționează. Acesta se afișează o singură dată."
+        confirmLabel="Re-criptează rândurile"
         onConfirm={() => {
           setNewCode(null);
           void startReencrypt();

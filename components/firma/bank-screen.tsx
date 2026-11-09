@@ -6,6 +6,7 @@ import type { ColumnMap } from "@/lib/firma/csv";
 import type { ImportOutcome, ImportRow, StatementPreview, Tranzactie } from "@/lib/firma/incasari";
 import { dateTimeLabel, dayLabel, money, monthLabel } from "@/lib/firma/format";
 import { cn } from "@/lib/utils";
+import { Info } from "@/components/panou/ui/info";
 import { IconExternal, IconUpload } from "./icons";
 import { Empty, Field, inputClass, Notice, Tag, tdClass, thClass, type Tone } from "./ui";
 
@@ -62,7 +63,7 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
 
   return (
     <>
-      {!oblio ? <Notice tone="warn" className="mt-5">Oblio nu e legat: potrivirile se fac, dar încasările nu se pot marca în Oblio până nu legi cheile.</Notice> : null}
+      {!oblio ? <Notice tone="warn" className="mt-5">Oblio nelegat: potrivirile merg, dar încasările nu se marchează în Oblio.</Notice> : null}
       <ImportCard actions={actions} onImported={() => router.refresh()} />
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
@@ -92,12 +93,12 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
 
       {pendingLines.length > 0 ? (
         <section aria-labelledby="de-confirmat" className="mt-5">
-          <h2 id="de-confirmat" className="text-[16px] font-semibold text-bone">
-            De confirmat ({pendingLines.length})
-          </h2>
-          <p className="mt-0.5 text-[14.5px] text-dim">
-            Încasări fără factură sigură — alege factura (încasarea se marchează în Oblio) — și plăți fără document — alege cheltuiala urcată. Ce nu ține de o factură sau un bon (dobânzi, comisioane, taxe) ignoră.
-          </p>
+          <div className="flex items-center gap-2">
+            <h2 id="de-confirmat" className="text-[16px] font-semibold text-bone">
+              De confirmat ({pendingLines.length})
+            </h2>
+            <Info>Încasare: alegi factura și se marchează încasată în Oblio. Plată: alegi cheltuiala. Dobânzile, comisioanele și taxele le ignori.</Info>
+          </div>
           <ul className="mt-3 grid gap-2">
             {pendingLines.map((line) => (
               <ConfirmRow
@@ -118,10 +119,10 @@ export function BankScreen({ data, month, oblio, actions }: { data: BankData; mo
 
       <section aria-labelledby="randuri" className="mt-7">
         <h2 id="randuri" className="text-[16px] font-semibold text-bone">
-          Rândurile din {monthLabel(month)}
+          Rândurile
         </h2>
         {data.lines.length === 0 ? (
-          <Empty className="mt-3">Niciun rând din {monthLabel(month)}. Urcă exportul CSV din BT Go mai sus.</Empty>
+          <Empty className="mt-3">Niciun rând în {monthLabel(month)}. Urcă exportul CSV mai sus.</Empty>
         ) : (
           <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-char">
             <table className="ads-table min-w-full border-collapse">
@@ -279,7 +280,7 @@ function ConfirmRow({
           }
           className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[15px]"
         >
-          {incoming ? "Ignoră (nu e o factură)" : "Ignoră (n-are document)"}
+          Ignoră
         </button>
         {message ? (
           <span role="status" className={cn("text-[14.5px]", message.tone === "ok" ? "text-[var(--ap-ok)]" : "text-[var(--ap-error)]")}>
@@ -369,10 +370,12 @@ function ImportCard({ actions, onImported }: { actions: BankActions; onImported:
   const header = preview?.rows[headerRow] ?? [];
   return (
     <section aria-labelledby="import" className="mt-5 rounded-xl border border-dashed border-hair-strong bg-[var(--ap-side)] p-4">
-      <h2 id="import" className="text-[16px] font-semibold text-bone">
-        Importă exportul din BT Go
-      </h2>
-      <p className="mt-0.5 text-[14.5px] text-dim">În BT Go: Conturi → Tranzacții → Export, format CSV. Aceleași rânduri importate de două ori nu se dublează.</p>
+      <div className="flex items-center gap-2">
+        <h2 id="import" className="text-[16px] font-semibold text-bone">
+          Importă exportul din BT Go
+        </h2>
+        <Info>În BT Go: Conturi → Tranzacții → Export, CSV. Rândurile importate de două ori nu se dublează.</Info>
+      </div>
       <input ref={input} id="urca-extras" type="file" accept=".csv,text/csv,text/plain" className="sr-only" onChange={(event) => pick(event.currentTarget.files)} />
       <label htmlFor="urca-extras" className="btn btn-light mt-3 cursor-pointer !min-h-10 !px-4 !py-2 !text-[15px]">
         <IconUpload size={16} />
@@ -383,16 +386,14 @@ function ImportCard({ actions, onImported }: { actions: BankActions; onImported:
         <div className="mt-4 grid gap-3">
           {preview.known && !editing ? (
             <Notice tone="ok">
-              Format recunoscut: „{preview.known.nume}”. Coloanele alese data trecută se aplică singure.{" "}
+              Format recunoscut: „{preview.known.nume}”.{" "}
               <button type="button" onClick={() => setEditing(true)} className="underline underline-offset-4">
                 Schimbă coloanele
               </button>
             </Notice>
           ) : (
             <>
-              <p className="text-[15px] text-bone">
-                Prima dată alegi tu ce e în fiecare coloană (am propus după numele din antet — verifică). Alegerea se ține minte pentru exporturile cu același antet.
-              </p>
+              <p className="text-[15px] text-bone">Verifică coloanele propuse. Alegerea se ține minte.</p>
               <div className="grid gap-3 sm:grid-cols-3">
                 <Field id="imp-antet" label="Rândul antetului (de la 1)">
                   <input id="imp-antet" type="number" min={1} max={30} value={headerRow + 1} onChange={(e) => setHeaderRow(Math.max(0, Number(e.currentTarget.value) - 1))} className={inputClass} />

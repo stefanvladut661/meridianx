@@ -95,18 +95,17 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
           <EmptyState
             icon={SearchX}
             title={`Pagina ${pagina} e goală`}
-            text={`Filtrele astea au ${firmeCuNumar(firme.data.total)}, pe ${pagini === 1 ? "o singură pagină" : `${pagini} pagini`}.`}
+            text={`${firmeCuNumar(firme.data.total)}, pe ${pagini === 1 ? "o pagină" : `${pagini} pagini`}.`}
             action={
               <Link href={cu(filtruQ)} className={btnClass({ variant: "outline", size: "sm" })}>
-                Mergi la prima pagină
+                Prima pagină
               </Link>
             }
           />
         ) : areFiltre ? (
           <EmptyState
             icon={Building2}
-            title="Nicio firmă pentru filtrele alese"
-            text="Scoate un filtru sau caută după alt nume. Căutarea merge pe nume, domeniu, email, telefon și #nr."
+            title="Nicio firmă pe aceste filtre"
             action={
               <Link href={cu(ordineQ)} className={btnClass({ variant: "outline", size: "sm" })}>
                 Curăță filtrele
@@ -116,8 +115,8 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
         ) : (
           <EmptyState
             icon={Building2}
-            title="Încă nu e niciun site publicat"
-            text="Aici apar firmele al căror site e terminat, publicat și verificat, fiecare cu numărul lui de site. Pe cele fără site le găsești căutând după nume sau alegând o etapă."
+            title="Niciun site publicat încă"
+            text="Firmele fără site: caută după nume sau alege o etapă."
             action={
               <Link href="/admin/prospectare/roboti" className={btnClass({ variant: "outline", size: "sm" })}>
                 Vezi roboții

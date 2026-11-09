@@ -26,10 +26,7 @@ export default async function FacturiPage({ searchParams }: { searchParams: Prom
 
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead
-        title="Facturi"
-        subtitle="Adminul pregătește ciornele din contracte; tu le corectezi și le aprobi. Abia aprobarea le emite în Oblio și le trimite în e-Factura. Anularea și stornarea se fac în Oblio, de tine."
-      />
+      <PageHead title="Facturi" info="Abia aprobarea emite factura în Oblio și o trimite în e-Factura. Anularea și stornarea se fac în Oblio." />
       {!invoices.ok ? (
         <Notice tone="error" className="mt-5">
           {invoices.message}

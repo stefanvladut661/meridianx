@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarClock, Loader2 } from "lucide-react";
 import { cautaProgramabile, programeaza } from "@/app/(admin)/admin/prospectare/actions";
 import { InlineNote } from "@/components/panou/ui/actions";
+import { Info } from "@/components/panou/ui/info";
 import { Modal } from "@/components/panou/ui/modal";
 import { btnClass } from "@/components/panou/ui/primitives";
 import { Field, inputClass } from "@/components/panou/ui/states";
@@ -229,11 +230,12 @@ function DialogProgramare({
 
   return (
     <div className="flex max-h-[min(88vh,52rem)] flex-col">
-      <div className="space-y-1 border-b border-border px-5 pb-4 pt-5 sm:px-6">
+      <div className="flex items-center gap-2 border-b border-border px-5 pb-4 pt-5 sm:px-6">
         <h2 className="text-[18px] font-semibold">{CANAL_TEXT[canal].titlu}</h2>
-        <p className="text-[14px] leading-relaxed text-muted-foreground">
-          Din rezervă, cele mai vechi site-uri primele. Cel mai devreme mâine; ce nu încape în limita zilei trece în zilele următoare, {CANAL_TEXT[canal].pe}. Se anulează până în ziua ei.
-        </p>
+        <Info label="Cum se programează">
+          Din rezervă, cele mai vechi site-uri primele. Cel mai devreme mâine; ce nu încape în limita zilei trece pe zilele următoare, {CANAL_TEXT[canal].pe}. Se anulează până
+          în ziua ei.
+        </Info>
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
@@ -244,7 +246,7 @@ function DialogProgramare({
           {canal === "whatsapp" ? (
             <Field label="Contul" className="sm:col-span-2">
               <select className={inputClass()} value={String(cont)} onChange={(e) => setCont(e.target.value === "egal" ? "egal" : Number(e.target.value))}>
-                <option value="egal">Împarte egal pe conturile active</option>
+                <option value="egal">Egal pe conturile active</option>
                 {conturi.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.nume} · {c.telefon} · {c.limita_zi}/zi
@@ -318,8 +320,8 @@ function DialogProgramare({
               <input type="date" className={inputClass()} value={filtre.gata_pana ?? ""} min={filtre.gata_de || undefined} onChange={(e) => seteaza("gata_pana", e.target.value)} />
             </Field>
           </div>
-          <Field label="Caută după nume sau domeniu">
-            <input type="search" className={inputClass()} value={filtre.cauta ?? ""} placeholder="ex. instal, rent a car" onChange={(e) => seteaza("cauta", e.target.value)} />
+          <Field label="Caută">
+            <input type="search" className={inputClass()} value={filtre.cauta ?? ""} placeholder="nume sau domeniu" onChange={(e) => seteaza("cauta", e.target.value)} />
           </Field>
           {filtrate ? (
             <button type="button" className="rounded-sm text-[13.5px] text-muted-foreground underline underline-offset-2 hover:text-foreground" onClick={() => setFiltre({})}>
@@ -350,7 +352,7 @@ function DialogProgramare({
             </p>
           ) : !incarc && total === 0 ? (
             <p className="px-3 py-4 text-[14px] text-muted-foreground">
-              Nicio firmă din rezervă nu se potrivește. {filtrate ? "Schimbă filtrele sau șterge-le." : "Când roboții publică site-uri noi, apar aici."}
+              Nicio firmă din rezervă nu se potrivește.{filtrate ? " Schimbă filtrele." : ""}
             </p>
           ) : (
             <ul className="max-h-[22rem] divide-y divide-border overflow-y-auto">
@@ -391,7 +393,7 @@ function DialogProgramare({
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3.5 sm:px-6">
         <p className="text-[14px] text-muted-foreground" aria-live="polite">
-          {alese.size === 0 ? "Bifează firmele sau „Alege toate”." : `${num(alese.size)} ${alese.size === 1 ? "firmă aleasă" : "firme alese"}, pentru ${ziRo(zi)}`}
+          {alese.size === 0 ? "Nicio firmă aleasă." : `${num(alese.size)} ${alese.size === 1 ? "firmă aleasă" : "firme alese"}, pentru ${ziRo(zi)}`}
         </p>
         <div className="flex gap-2">
           <button type="button" className={btnClass({ variant: "ghost", size: "sm" })} onClick={onInchide}>

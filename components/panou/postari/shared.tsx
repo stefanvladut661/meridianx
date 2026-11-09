@@ -5,6 +5,7 @@ import { STARE_LABEL } from "@/lib/postari/coada-shared";
 import type { Issue, Platforma } from "@/lib/postari/limite";
 import { PLATFORMA_LABEL } from "@/lib/postari/limite";
 import { cn } from "@/lib/utils";
+import { Info } from "../ui/info";
 import { Pill, type PillTone } from "../ui/primitives";
 
 /**
@@ -13,16 +14,14 @@ import { Pill, type PillTone } from "../ui/primitives";
  * lista de probleme. Fără stare de client: merg și din pagini de server.
  */
 
-/** Antetul unui ecran: titlu, eticheta de stare, o frază, acțiunile din dreapta (ca la „Coada” din prototip). */
-export function ScreenHead({ title, badge, text, actions, className }: { title: ReactNode; badge?: ReactNode; text?: ReactNode; actions?: ReactNode; className?: string }) {
+/** Antetul unui ecran: titlu, eticheta de stare, explicația sub „i”, acțiunile din dreapta (ca la „Coada” din prototip). */
+export function ScreenHead({ title, badge, info, actions, className }: { title: ReactNode; badge?: ReactNode; info?: ReactNode; actions?: ReactNode; className?: string }) {
   return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-3", className)}>
-      <div className="min-w-0">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">{title}</h1>
-          {badge}
-        </div>
-        {text ? <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">{text}</p> : null}
+    <div className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">{title}</h1>
+        {info ? <Info>{info}</Info> : null}
+        {badge}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
@@ -72,14 +71,13 @@ export function ClipTile({ platform, durationMs, className }: { platform: Platfo
 
 /** Ce fel de postare e și ce înseamnă pentru om: Reel, Trial Reel (cu absolvirea), ciornă TikTok. */
 export function postKind(post: Pick<PostView, "platforma" | "optiuni">): { kind: string; notes: string[] } {
-  if (post.platforma === "tiktok") return { kind: "Ciornă TikTok", notes: ["ajunge în ciorne; o publici din aplicație"] };
+  if (post.platforma === "tiktok") return { kind: "Ciornă TikTok", notes: ["o publici din aplicație"] };
   const options = post.optiuni;
   const notes: string[] = [];
   if (options.tip === "trial_reel") {
-    notes.push(options.absolvire === "automat" ? "trece singur la urmăritori dacă merge bine" : "îl treci tu la urmăritori, din aplicație");
-    notes.push("întâi la cei care nu te urmăresc");
+    notes.push(options.absolvire === "automat" ? "trece singur la urmăritori" : "îl treci tu la urmăritori");
   } else {
-    notes.push(options.in_feed === false ? "doar la Reels, fără feed" : "apare și în feed");
+    notes.push(options.in_feed === false ? "fără feed" : "și în feed");
   }
   if (typeof options.coperta_ms === "number") notes.push(`copertă la ${(options.coperta_ms / 1000).toLocaleString("ro-RO", { maximumFractionDigits: 1 })} s`);
   return { kind: options.tip === "trial_reel" ? "Trial Reel" : "Reel", notes };
@@ -127,4 +125,4 @@ export const PLAN_DRAFT_KEY = "meridian_postari_plan";
 export const PLAN_SOURCE_KEY = "meridian_postari_plan_sursa";
 
 export type ActionResult = { ok: true; message: string } | { ok: false; message: string };
-export const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Reîncarcă pagina și încearcă din nou.";
+export const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Reîncarcă pagina și reîncearcă.";

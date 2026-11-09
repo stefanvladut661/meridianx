@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { clientsForRequest } from "@/lib/ads/model/read";
 import { readSelection } from "@/lib/ads/model/selection.server";
-import { CHANNEL_LABEL, PERIOD_LABEL } from "@/lib/ads/model/selection";
 import { CALLS_MIGRATION_MISSING, campaignChoices, readCalls } from "@/lib/ads/model/calls";
 import { todayInBucharest } from "@/lib/ads/metrics";
 import { ApeluriScreen, type CallCampaign } from "@/components/panou/ads/apeluri-screen";
@@ -32,21 +31,15 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
   if (!clients.ok || clients.data.length === 0) {
     return (
       <div className="space-y-4">
-        <div>
-          <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Apeluri</h1>
-          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
-            Apelurile venite de pe reclame, notate de mână. Platformele știu doar că cineva a apăsat „Sună”; ce a ieșit din apel știi tu.
-          </p>
-        </div>
+        <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Apeluri</h1>
         <Card className="p-0">
           {clients.ok ? (
             <EmptyState
               icon={Building2}
               title="Niciun client încă"
-              text="Un apel se notează la un client. Adaugă-l întâi, cu conturile lui."
               action={
                 <Link href="/admin/ads/clienti" className={btnClass({ variant: "primary", size: "sm" })}>
-                  Adaugă primul client
+                  Adaugă client
                 </Link>
               }
             />
@@ -80,7 +73,6 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
         campaigns={choices}
         calls={calls.ok ? calls.data : []}
         defaults={{ clientId: client.id, channel: platform, today: todayInBucharest() }}
-        scope={{ client: client.name, period: PERIOD_LABEL[selection.period], channel: platform ? CHANNEL_LABEL[platform] : null }}
         missing={missing}
         actions={{ add: addCallAction, remove: deleteCallAction }}
       />

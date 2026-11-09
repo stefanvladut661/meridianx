@@ -2,9 +2,8 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Phone, Save } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 import { salveazaSablon } from "@/app/(admin)/admin/prospectare/actions";
-import { InlineNote } from "@/components/panou/ui/actions";
 import { timeRo } from "@/components/panou/ui/format";
 import { Btn, Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { inputClass } from "@/components/panou/ui/states";
@@ -24,21 +23,17 @@ type Stare = { ton: "ok" | "eroare"; text: string } | null;
 
 const VARIABILE: { v: string; ce: string }[] = [
   { v: "{nume_firma}", ce: "numele firmei" },
-  { v: "{persoana_contact}", ce: "persoana de contact (dacă lipsește, salutul rămâne fără nume)" },
+  { v: "{persoana_contact}", ce: "persoana de contact (lipsă: salut fără nume)" },
   { v: "{link_demo}", ce: "linkul site-ului demo" },
   { v: "{oras}", ce: "orașul firmei" },
-  { v: "{utilizator}", ce: "cine sună: Ștefan sau Vlăduț, din comutatorul de la Apeluri (în primul mesaj WhatsApp rămâne gol)" },
+  { v: "{utilizator}", ce: "cine sună, din comutatorul de la Apeluri (gol în primul mesaj WhatsApp)" },
 ];
 const CUNOSCUTE = new Set(VARIABILE.map((x) => x.v));
 
 const SABLOANE: { cheie: Cheie; label: string; hint: string }[] = [
-  {
-    cheie: "sablon_whatsapp_primul",
-    label: "WhatsApp — primul mesaj",
-    hint: "Mesajul din lista de WhatsApp. Fiecare firmă îl primește o singură dată, de pe contul ales.",
-  },
-  { cheie: "sablon_whatsapp_dupa_apel", label: "WhatsApp — după apel „Interesat”", hint: "Se deschide automat când marchezi o firmă interesată la telefon." },
-  { cheie: "sablon_script_apel", label: "Script de apel", hint: "Se vede pliabil pe fiecare card din Apeluri azi." },
+  { cheie: "sablon_whatsapp_primul", label: "WhatsApp — primul mesaj", hint: "Din „WhatsApp azi”, o dată pe firmă." },
+  { cheie: "sablon_whatsapp_dupa_apel", label: "WhatsApp — după apel „Interesat”", hint: "Se deschide singur la „Interesat”." },
+  { cheie: "sablon_script_apel", label: "Script de apel", hint: "Pe fiecare card din „Apeluri azi”." },
 ];
 
 const MIN = 10;
@@ -89,7 +84,7 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
           return;
         }
       }
-      notify(schimbate.length === 1 ? "Șablonul e salvat." : "Șabloanele sunt salvate.");
+      notify(schimbate.length === 1 ? "Șablon salvat." : "Șabloane salvate.");
       setStare({ ton: "ok", text: `Salvat la ${timeRo(new Date())}.` });
       router.refresh();
     });
@@ -97,11 +92,11 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
 
   return (
     <Card>
-      <SectionTitle title="Șabloane de mesaj" hint="Variabilele se înlocuiesc automat pentru fiecare firmă" />
+      <SectionTitle title="Șabloane de mesaj" info="Variabilele se înlocuiesc pentru fiecare firmă. Mesajele pleacă manual, din telefonul vostru: portalul doar pregătește textul." />
       <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Variabile">
         {VARIABILE.map((x) => (
           <li key={x.v}>
-            <code className="rounded-md border border-border bg-secondary px-1.5 py-0.5 font-mono text-[12px] text-muted-foreground" title={x.ce}>
+            <code className="rounded-md border border-border bg-secondary px-1.5 py-0.5 font-mono text-[13px] text-muted-foreground" title={x.ce}>
               {x.v}
             </code>
             <span className="sr-only">: {x.ce}</span>
@@ -156,16 +151,16 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
                 ) : null}
                 {faraUtilizator(s.cheie) && valoare.includes("{utilizator}") ? (
                   <p className="mt-1 text-[13px] text-apricot">
-                    {"{utilizator}"} rămâne gol aici: pe WhatsApp trimiteți de pe un cont, nu în numele cuiva. Scoate-l din mesaj.
+                    {"{utilizator}"} rămâne gol aici. Scoate-l din mesaj.
                   </p>
                 ) : null}
                 {gresite.length ? (
                   <p className="mt-1 text-[13px] text-apricot">
-                    {gresite.length === 1 ? "Variabilă necunoscută" : "Variabile necunoscute"}: {gresite.join(", ")}. Rămân așa, ca text, în mesaj.
+                    {gresite.length === 1 ? "Variabilă necunoscută" : "Variabile necunoscute"}: {gresite.join(", ")}. Rămân ca text în mesaj.
                   </p>
                 ) : null}
                 <div className="mt-2 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] px-3 py-2.5">
-                  <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Exemplu · firmă inventată ({EXEMPLU.nume})</p>
+                  <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Exemplu · {EXEMPLU.nume}</p>
                   <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-relaxed text-foreground/85">
                     {umpleSablon(valoare, EXEMPLU, faraUtilizator(s.cheie) ? "" : utilizator) || <span className="text-muted-foreground">Șablonul e gol.</span>}
                   </p>
@@ -174,11 +169,6 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
             );
           })}
         </div>
-
-        <InlineNote tone="neutral" className="mt-4 flex items-start gap-2">
-          <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          Mesajele pleacă manual, din telefonul vostru. Portalul doar pregătește textul și linkul, nu trimite singur.
-        </InlineNote>
 
         <div className="mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-border pt-3">
           <p aria-live="polite" className={cn("text-[13px]", stare?.ton === "eroare" ? "text-rose" : "text-muted-foreground")}>

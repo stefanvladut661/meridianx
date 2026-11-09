@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Panou, SumaPeMoneda } from "@/lib/firma/panou";
 import { dayLabel, money, monthLabel } from "@/lib/firma/format";
 import { cn } from "@/lib/utils";
+import { Info } from "@/components/panou/ui/info";
 import { Empty, Tag, tdClass, thClass } from "./ui";
 
 /** Sumele pe monede: „1.200,00 lei + 300,00 €”, sau `null` → „—” (fără date nu e 0). */
@@ -27,11 +28,11 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
   return (
     <div className="mt-5 grid gap-6">
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Tile label={`Facturat în ${label}`} value={sums(data.facturat)} hint="facturile emise în lună" />
-        <Tile label={`Încasat în ${label}`} value={data.incasat ? sums(data.incasat.sume) || "—" : "—"} hint={data.incasat ? (data.incasat.sursa === "extras" ? "din extras, plățile legate de facturi" : "din Oblio (ultima încasare în lună)") : "importă extrasul lunii"} tone="ok" />
-        <Tile label="De încasat" value={sums(data.deIncasat)} hint="facturi emise, în termen" />
-        <Tile label="Întârziat" value={sums(data.intarziat)} hint="scadența a trecut" tone="error" />
-        <Tile label={`Cheltuieli în ${label}`} value={sums(data.cheltuieli)} hint="bonurile și facturile urcate" />
+        <Tile label={`Facturat în ${label}`} value={sums(data.facturat)} />
+        <Tile label={`Încasat în ${label}`} value={data.incasat ? sums(data.incasat.sume) || "—" : "—"} hint={data.incasat ? (data.incasat.sursa === "extras" ? "din extras" : "din Oblio") : "importă extrasul"} tone="ok" />
+        <Tile label="De încasat" value={sums(data.deIncasat)} hint="în termen" />
+        <Tile label="Întârziat" value={sums(data.intarziat)} tone="error" />
+        <Tile label={`Cheltuieli în ${label}`} value={sums(data.cheltuieli)} />
       </ul>
 
       <section aria-labelledby="alerte">
@@ -39,7 +40,7 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
           Alerte {data.alerte.length > 0 ? `(${data.alerte.length})` : ""}
         </h2>
         {data.alerte.length === 0 ? (
-          <Empty className="mt-3">Nimic nu cere atenție: nicio factură întârziată, niciun contract la final, pachetul contabilului trimis, nicio reînnoire în 7 zile, nicio ciornă de aprobat.</Empty>
+          <Empty className="mt-3">Nimic nu cere atenție.</Empty>
         ) : (
           <ul className="mt-3 divide-y divide-hair rounded-xl border border-hair bg-char">
             {data.alerte.map((alert, index) => (
@@ -58,15 +59,17 @@ export function DashboardScreen({ data, lastDigest }: { data: Panou; lastDigest:
             ? lastDigest.trimis
               ? `Ultimul rezumat pe email: ${dayLabel(lastDigest.zi)}, ${lastDigest.alerte} ${lastDigest.alerte === 1 ? "alertă" : "alerte"}, către ${lastDigest.catre}.`
               : `Rezumatul din ${dayLabel(lastDigest.zi)} n-a plecat: ${lastDigest.mesaj ?? "motiv necunoscut"}.`
-            : "Rezumatul de dimineață pleacă pe email doar în zilele cu alerte (adresa se pune în Setări; jobul se programează în vercel.json)."}
+            : "Niciun rezumat pe email încă. Adresa se pune în Setări."}
         </p>
       </section>
 
       <section aria-labelledby="reclame">
-        <h2 id="reclame" className="text-[16px] font-semibold text-bone">
-          Banii pe reclame, pe client — {label}
-        </h2>
-        <p className="mt-0.5 text-[14.5px] text-dim">Din portalul de reclame, ce au cheltuit platformele pentru fiecare client legat. Îi plătește clientul direct; nu se facturează.</p>
+        <div className="flex items-center gap-2">
+          <h2 id="reclame" className="text-[16px] font-semibold text-bone">
+            Banii pe reclame, pe client
+          </h2>
+          <Info>Cheltuit de platforme pentru clienții legați din Reclame. Îi plătește clientul direct: nu se facturează.</Info>
+        </div>
         {data.reclame && data.reclame.length > 0 ? (
           <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-char">
             <table className="ads-table min-w-full border-collapse">

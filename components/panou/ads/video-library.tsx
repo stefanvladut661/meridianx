@@ -57,7 +57,7 @@ export function VideoLibrary({
             : { status: "failed", message: result.message }
         );
       } catch {
-        setState({ status: "failed", message: "Biblioteca nu s-a putut încărca: serverul n-a răspuns. Încearcă din nou." });
+        setState({ status: "failed", message: "Serverul n-a răspuns. Încearcă din nou." });
       }
     });
   };
@@ -65,14 +65,14 @@ export function VideoLibrary({
   if (state.status !== "open" || state.account !== adAccount) {
     return (
       <div>
-        <Btn variant="outline" size="sm" icon={Film} onClick={open} disabled={!adAccount || pending} aria-describedby={`${legendId}-hint`}>
-          {pending ? "Se încarcă biblioteca…" : "Alege din biblioteca contului"}
+        <Btn variant="outline" size="sm" icon={Film} onClick={open} disabled={!adAccount || pending} aria-describedby={adAccount ? undefined : `${legendId}-hint`}>
+          {pending ? "Se încarcă…" : "Alege din bibliotecă"}
         </Btn>
-        <p id={`${legendId}-hint`} className="mt-2 text-[13px] leading-snug text-muted-foreground">
-          {adAccount
-            ? `Video-urile din ${adAccount}, cele mai noi primele.`
-            : "Scrie întâi contul de reclame — biblioteca e a contului."}
-        </p>
+        {adAccount ? null : (
+          <p id={`${legendId}-hint`} className="mt-2 text-[13px] leading-snug text-muted-foreground">
+            Scrie întâi contul de reclame.
+          </p>
+        )}
         {state.status === "failed" ? (
           <p role="alert" className={cn("mt-2 text-[14px] leading-snug", ERROR_TEXT)}>
             {state.message}
@@ -97,20 +97,20 @@ export function VideoLibrary({
             onClick={() => setState({ status: "closed" })}
             className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
           >
-            Închide lista
+            Închide
           </button>
         </div>
       </div>
 
       {state.videos.length === 0 ? (
         <p className="mt-3 rounded-xl border border-dashed border-white/[0.12] px-4 py-5 text-[14px] leading-relaxed text-foreground/75">
-          Contul n-are încă niciun video. Urcă unul din portal („Fișier nou”) sau din{" "}
+          Contul n-are niciun video. Urcă unul din portal sau din{" "}
           {platform === "tiktok"
             ? "biblioteca de creative din TikTok Ads Manager"
             : platform === "google"
               ? "YouTube Studio (public sau nelistat) ori Google Ads → Materiale"
               : "Ads Manager → Media library"}
-          , apoi apasă Reîncarcă.
+          , apoi Reîncarcă.
         </p>
       ) : (
         <div className="mt-3 grid max-h-[26rem] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
@@ -152,7 +152,7 @@ export function VideoLibrary({
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px]">{video.title ?? "Video fără titlu"}</span>
-                  <span className={cn("block font-mono text-[12px]", video.ready ? "text-muted-foreground" : WARNING_TEXT)}>
+                  <span className={cn("block font-mono text-[12.5px]", video.ready ? "text-muted-foreground" : WARNING_TEXT)}>
                     {[
                       duration,
                       video.createdAt ? date.format(new Date(video.createdAt)) : null,
@@ -170,7 +170,7 @@ export function VideoLibrary({
       )}
       {state.truncated ? (
         <p className="mt-2 text-[13px] text-muted-foreground">
-          Se văd cele mai noi {state.videos.length}. Pentru unul mai vechi, scrie id-ul direct.
+          Doar cele mai noi {state.videos.length}. Pentru altul, scrie id-ul.
         </p>
       ) : null}
     </fieldset>

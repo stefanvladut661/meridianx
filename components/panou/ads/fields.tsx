@@ -4,6 +4,7 @@ import { createContext, useContext, useId, useState, type ReactNode } from "reac
 import { asArray, getIn } from "@/lib/ads/plan-path";
 import type { PlanProblem } from "@/lib/ads/plan-validate";
 import { cn } from "@/lib/utils";
+import { Info } from "../ui/info";
 import { ERROR_TEXT, FIELD, FIELD_INVALID, LABEL, WARNING_TEXT } from "./tone";
 
 /**
@@ -125,6 +126,7 @@ export function TextField({
   placeholder,
   mono,
   hint,
+  info,
   className,
   multiline,
   counter,
@@ -135,6 +137,8 @@ export function TextField({
   placeholder?: string;
   mono?: boolean;
   hint?: ReactNode;
+  /** Explicația, sub „i” lângă etichetă. */
+  info?: ReactNode;
   className?: string;
   multiline?: boolean;
   /** Număr de caractere afișat lângă etichetă, cu pragul peste care se taie. */
@@ -167,10 +171,13 @@ export function TextField({
 
   return (
     <div className={cn("min-w-0", className)}>
-      <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className={LABEL}>
-          {label}
-        </label>
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <label htmlFor={id} className={LABEL}>
+            {label}
+          </label>
+          {info ? <Info>{info}</Info> : null}
+        </span>
         {counter ? (
           <span
             className={cn(
@@ -208,12 +215,14 @@ export function NumberField({
   label,
   suffix,
   hint,
+  info,
   className,
 }: {
   path: string;
   label: string;
   suffix?: string;
   hint?: ReactNode;
+  info?: ReactNode;
   className?: string;
 }) {
   const field = useFieldState(path);
@@ -234,9 +243,12 @@ export function NumberField({
 
   return (
     <div className={cn("min-w-0", className)}>
-      <label htmlFor={id} className={LABEL}>
-        {label}
-      </label>
+      <span className="flex items-center gap-1.5">
+        <label htmlFor={id} className={LABEL}>
+          {label}
+        </label>
+        {info ? <Info>{info}</Info> : null}
+      </span>
       <div className="relative mt-1.5">
         <input
           id={id}
@@ -282,6 +294,7 @@ export function SelectField({
   options,
   placeholder = "— alege —",
   hint,
+  info,
   className,
 }: {
   path: string;
@@ -289,6 +302,7 @@ export function SelectField({
   options: ReadonlyArray<readonly [string, string]>;
   placeholder?: string;
   hint?: ReactNode;
+  info?: ReactNode;
   className?: string;
 }) {
   const field = useFieldState(path);
@@ -298,9 +312,12 @@ export function SelectField({
 
   return (
     <div className={cn("min-w-0", className)}>
-      <label htmlFor={id} className={LABEL}>
-        {label}
-      </label>
+      <span className="flex items-center gap-1.5">
+        <label htmlFor={id} className={LABEL}>
+          {label}
+        </label>
+        {info ? <Info>{info}</Info> : null}
+      </span>
       <select
         id={id}
         value={current}
@@ -330,6 +347,7 @@ export function SelectField({
 /**
  * Comutator pentru un boolean. `dangerWhenOn`: pornit înseamnă că
  * platforma poate schimba materialul — se vede, nu doar se citește.
+ * `body`: ce face, sub „i” lângă titlu.
  */
 export function ToggleField({
   path,
@@ -352,10 +370,12 @@ export function ToggleField({
   return (
     <div className="flex items-start justify-between gap-4 py-3">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-[14.5px] font-medium text-foreground">
-          {title}
-        </label>
-        {body ? <p className="mt-0.5 text-[13.5px] leading-snug text-muted-foreground">{body}</p> : null}
+        <span className="flex items-center gap-1.5">
+          <label htmlFor={id} className="text-[14.5px] font-medium text-foreground">
+            {title}
+          </label>
+          {body ? <Info>{body}</Info> : null}
+        </span>
         <FieldMessages id={`${id}-msg`} errors={field.errors} warnings={field.warnings} />
       </div>
       <div className="flex shrink-0 items-center gap-2.5">

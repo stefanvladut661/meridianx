@@ -8,7 +8,7 @@ import { listWorkspaces } from "@/lib/ads/workspaces.server";
 import { PIXEL_ID as SITE_META_PIXEL_ID } from "@/lib/meta-pixel";
 import { TIKTOK_PIXEL_ID as SITE_TIKTOK_PIXEL_CODE } from "@/lib/tiktok-pixel";
 import { CreateWizard } from "@/components/panou/ads/create-wizard";
-import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
+import { PAGE_TITLE } from "@/components/panou/ads/tone";
 import { Card, btnClass } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
 import { checkPlan, chooseWorkspace, createPausedCampaign, materialUploadStatus, sendMaterialToAccount } from "../actions";
@@ -40,7 +40,6 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
           ← Planuri
         </Link>
         <h1 className={`mt-2 ${PAGE_TITLE}`}>Creează ghidat</h1>
-        <p className={PAGE_LEAD}>Același plan, în pași scurți, cu reclama vizibilă în timp ce o compui. Portalul nu pornește nimic: campania o pornești tu, din platformă.</p>
       </div>
       <Link href="/admin/ads/nou" className={btnClass({ variant: "outline", size: "sm" })}>
         Importă JSON
@@ -56,11 +55,10 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
           {clients.ok ? (
             <EmptyState
               icon={Users}
-              title="Niciun client încă"
-              text="O campanie se creează în contul unui client. Adaugă-l întâi, cu conturile lui."
+              title="Niciun client"
               action={
                 <Link href="/admin/ads/clienti" className={btnClass({ variant: "primary", size: "sm" })}>
-                  Adaugă primul client
+                  Adaugă client
                 </Link>
               }
             />

@@ -23,6 +23,7 @@ import {
 import { Btn, Card, Pill, SegmentedControl, Stat, type PillTone } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
 import { ConfirmDialog, InlineNote } from "@/components/panou/ui/actions";
+import { Info } from "@/components/panou/ui/info";
 import { Modal } from "@/components/panou/ui/modal";
 import { SoftSelect, TextInput } from "@/components/panou/ui/select";
 import { useToast } from "@/components/panou/ui/toast";
@@ -59,11 +60,6 @@ const CHANNEL_ORDER: Platform[] = ["meta", "google", "tiktok"];
 
 const RESULT_TONE: Record<CallResult, PillTone> = { intrebare: "neutral", programat: "lav", semnat: "mint" };
 const RESULT_BAR: Record<CallResult, string> = { intrebare: "bg-white/25", programat: "bg-lav", semnat: "bg-mint" };
-const RESULT_HINT: Record<CallResult, string> = {
-  intrebare: "a întrebat de preț sau de program",
-  programat: "o întâlnire, o filmare, o vizionare",
-  semnat: "contract sau comandă",
-};
 
 const LABEL = "text-[12.5px] uppercase tracking-[0.12em] text-muted-foreground";
 const TEXTAREA =
@@ -141,7 +137,7 @@ function NoteForm({
       }
       const text = `Apel notat${clientId !== defaults.clientId ? ` la ${clientName}` : ""}.`;
       notify(text);
-      setStatus({ tone: "ok", text: `${text} Poți nota următorul.` });
+      setStatus({ tone: "ok", text });
       setSaved((count) => count + 1);
       setResult("");
       setNote("");
@@ -162,7 +158,6 @@ function NoteForm({
       <h2 id={`${id}-titlu`} className="text-[17px] font-semibold">
         Notează un apel
       </h2>
-      <p className="text-[13.5px] text-muted-foreground">Cineva a sunat de pe o reclamă. Zece secunde, și din telefon.</p>
 
       <div className="mt-4 space-y-3">
         <div className="grid items-end gap-3 sm:grid-cols-2">
@@ -220,18 +215,18 @@ function NoteForm({
 
         <div data-field="entityId">
           <SoftSelect
-            label="Legătură cu o campanie (dacă știi)"
+            label="Campania (opțional)"
             value={entityId || "none"}
             onChange={(value) => setEntityId(value === "none" ? "" : value)}
             options={[
-              { value: "none", label: "Nu știu / fără campanie" },
+              { value: "none", label: "Fără campanie" },
               ...choices.map((campaign) => ({
                 value: campaign.id,
                 label: `${channel === "" || channel === UNKNOWN_CHANNEL ? `${PLATFORM_LABEL[campaign.platform]} · ` : ""}${campaign.name}${campaign.removed ? " (ștearsă)" : ""}`,
               })),
             ]}
           />
-          {choices.length === 0 ? <p className="mt-1 text-[12.5px] text-muted-foreground">Clientul n-are campanii citite pe canalul ăsta. Apelul se notează și fără.</p> : null}
+          {choices.length === 0 ? <p className="mt-1 text-[13px] text-muted-foreground">Nicio campanie pe canalul ăsta.</p> : null}
           {fieldError("entityId")}
         </div>
 
@@ -239,7 +234,7 @@ function NoteForm({
           <legend className={LABEL}>Ce a ieșit</legend>
           <div className="mt-1.5 grid gap-2 sm:grid-cols-3">
             {CALL_RESULTS.map((option, index) => (
-              <label key={option} className={cn(chip(result === option, Boolean(errors.result)), "min-h-14 flex-col items-start justify-center gap-0 py-2")}>
+              <label key={option} className={chip(result === option, Boolean(errors.result))}>
                 <input
                   {...(index === 0 ? { "data-field": "result" } : {})}
                   type="radio"
@@ -250,7 +245,6 @@ function NoteForm({
                   className="sr-only"
                 />
                 <span>{CALL_RESULT_LABEL[option]}</span>
-                <span className="text-[12.5px] font-normal text-muted-foreground">{RESULT_HINT[option]}</span>
               </label>
             ))}
           </div>
@@ -312,7 +306,7 @@ function CallCard({ call, onDelete }: { call: CallRow; onDelete: (call: CallRow)
                 {call.campaignName ?? "campania"}
               </Link>
             ) : (
-              <span>Nu e legat de nicio campanie</span>
+              <span>fără campanie</span>
             )}
             <span>·</span>
             <span>notat de {call.createdByEmail ?? "—"}</span>
@@ -336,7 +330,6 @@ export function ApeluriScreen({
   campaigns,
   calls,
   defaults,
-  scope,
   missing,
   actions,
 }: {
@@ -344,8 +337,6 @@ export function ApeluriScreen({
   campaigns: CallCampaign[];
   calls: CallRow[];
   defaults: { clientId: string; channel: Platform | null; today: string };
-  /** „Termo Exemplu · ultimele 7 zile · Meta” — ce arată lista. */
-  scope: { client: string; period: string; channel: string | null };
   missing: string | null;
   actions: ApeluriActions;
 }) {
@@ -366,12 +357,7 @@ export function ApeluriScreen({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Apeluri</h1>
-          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
-            Apelurile venite de pe reclame, notate de mână. Platformele știu doar că cineva a apăsat „Sună”; ce a ieșit din apel știi tu.
-          </p>
-        </div>
+        <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Apeluri</h1>
         <div className="flex flex-wrap items-center gap-2">
           {calls.length > 0 ? (
             <SegmentedControl
@@ -402,7 +388,7 @@ export function ApeluriScreen({
       {total.total > 0 ? (
         <Card>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Stat className="col-span-2 sm:col-span-1" label="Apeluri" value={total.total} hint={`${scope.client} · ${scope.period.toLowerCase()}${scope.channel ? ` · ${scope.channel}` : ""}`} />
+            <Stat className="col-span-2 sm:col-span-1" label="Apeluri" value={total.total} />
             <Stat label="Programate" value={total.byResult.programat} tone="dim" />
             <Stat label="Semnate" value={total.byResult.semnat} tone="dim" />
           </div>
@@ -412,12 +398,16 @@ export function ApeluriScreen({
               total.byResult[result] > 0 ? <span key={result} className={RESULT_BAR[result]} style={{ width: `${(total.byResult[result] / total.total) * 100}%` }} /> : null
             )}
           </div>
-          <p className="mt-2 text-[13px] text-muted-foreground">
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
             {callBreakdown(total)}
-            {unlinked > 0
-              ? ` · ${unlinked === total.total ? "niciunul nu e legat de o campanie" : `${unlinked} din ${total.total} nu sunt legate de o campanie`}; în Campanii, coloana „Apeluri notate” le numără doar pe cele legate`
-              : ""}
-            .
+            {unlinked > 0 ? (
+              <>
+                {` · ${unlinked === total.total ? "toate" : `${unlinked} din ${total.total}`} fără campanie`}
+                <Info label="Apeluri fără campanie" className="ml-1.5">
+                  În Campanii, coloana „Apeluri” le numără doar pe cele legate de o campanie.
+                </Info>
+              </>
+            ) : null}
           </p>
         </Card>
       ) : null}
@@ -427,11 +417,6 @@ export function ApeluriScreen({
           <EmptyState
             icon={PhoneCall}
             title={calls.length === 0 ? "Niciun apel notat" : `Niciun apel „${CALL_RESULT_LABEL[filter as CallResult].toLowerCase()}”`}
-            text={
-              calls.length === 0
-                ? "Când sună cineva de pe o reclamă, notează-l: ziua, de unde a aflat și ce a ieșit. Platformele numără clicul pe „Sună”; doar tu știi ce s-a vorbit."
-                : "Alege „Toate” ca să vezi apelurile din perioada asta, indiferent de rezultat."
-            }
             action={
               calls.length === 0 ? (
                 <Btn size="sm" variant="primary" icon={Plus} disabled={Boolean(missing)} onClick={() => setWriting(true)}>
@@ -439,7 +424,7 @@ export function ApeluriScreen({
                 </Btn>
               ) : (
                 <Btn size="sm" variant="outline" onClick={() => setMany({ doar: "" })}>
-                  Vezi toate apelurile
+                  Vezi toate
                 </Btn>
               )
             }
@@ -474,7 +459,7 @@ export function ApeluriScreen({
         onOpenChange={(open) => !open && setDeleting(null)}
         title="Ștergi nota apelului?"
         description={deleting ? `${formatDay(deleting.calledOn, true)} · ${deleting.platform ? PLATFORM_LABEL[deleting.platform] : "canal necunoscut"} · ${CALL_RESULT_LABEL[deleting.result]}` : ""}
-        consequence="Apelul dispare din listă și din numărătoarea campaniei. Nu se poate anula; îl poți nota din nou de mână."
+        consequence="Dispare din listă și din numărătoarea campaniei. Nu se poate anula."
         confirmLabel="Șterge nota"
         onConfirm={async () => {
           if (!deleting) return;
@@ -483,7 +468,7 @@ export function ApeluriScreen({
             notify(`Nota n-a fost ștearsă. ${removed.message}`, "error");
             return;
           }
-          notify("Nota a fost ștearsă.");
+          notify("Notă ștearsă.");
           router.refresh();
         }}
       />

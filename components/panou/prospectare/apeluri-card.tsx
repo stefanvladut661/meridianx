@@ -107,7 +107,6 @@ function AlegeOra({ onSalveaza, onRenunta }: { onSalveaza: (iso: string) => void
       }}
     >
       <h2 className="text-[17px] font-semibold">Când sunăm înapoi?</h2>
-      <p className="mt-1 text-[14px] text-muted-foreground sm:text-[13.5px]">Alege data și ora. Firma apare în tabul „Sună înapoi” până atunci.</p>
       <div className="mt-4">
         <Field label="Data și ora" hint="Ora României.">
           <input
@@ -265,38 +264,33 @@ export function CallCard({
                   rel="noreferrer"
                   className={btnClass({ variant: "outline", size: "sm", className: cn(TAP_SM, "col-span-2 gap-1.5") })}
                 >
-                  Deschide site-ul demo
+                  Deschide demo
                   <ExternalLink className="h-4 w-4" aria-hidden="true" />
                 </a>
               ) : null}
             </div>
-            {!firma.este_mobil ? <p className="w-full text-[13.5px] text-muted-foreground sm:text-[12.5px]">Număr fix: după „Interesat” nu se poate continua pe WhatsApp.</p> : null}
+            {!firma.este_mobil ? <p className="w-full text-[13.5px] text-muted-foreground sm:text-[13px]">Număr fix: fără WhatsApp după apel.</p> : null}
           </div>
         ) : (
           <p className="mt-3 rounded-xl border border-rose/25 bg-rose/[0.07] px-3 py-2 text-[14px] text-[#FFC2CE]">
-            Firma nu are telefon în fișă. Marchează „Număr greșit”: iese din listă și rămâne doar pentru email.
+            Fără telefon în fișă: marchează „Număr greșit”.
           </p>
         )}
 
         <div className="mt-2 sm:mt-3 sm:space-y-1.5">
-          <Dezvaluire titlu="Script scurt">
+          <Dezvaluire titlu="Script">
             {script ? (
               <TextPregatit>{script}</TextPregatit>
             ) : (
-              <p className="text-[14px] text-muted-foreground sm:text-[13px]">Scriptul de apel e gol: scrie-l în Setări, la șabloane.</p>
+              <p className="text-[14px] text-muted-foreground sm:text-[13px]">Scriptul e gol: scrie-l în Setări.</p>
             )}
           </Dezvaluire>
           {whatsapp ? (
-            <Dezvaluire titlu="Mesaj WhatsApp după „Interesat”">
+            <Dezvaluire titlu="Mesaj după „Interesat”">
               {mesajDupaApel ? (
-                <>
-                  <TextPregatit>{mesajDupaApel}</TextPregatit>
-                  <p className="mt-2 text-[14px] leading-snug text-muted-foreground sm:text-[13px]">
-                    Se deschide pe WhatsApp când apeși „Interesat”. Firma rămâne pe canalul Telefon; în activitate apare „Continuare apel pe WhatsApp”.
-                  </p>
-                </>
+                <TextPregatit>{mesajDupaApel}</TextPregatit>
               ) : (
-                <p className="text-[14px] text-muted-foreground sm:text-[13px]">Șablonul de după apel e gol: scrie-l în Setări, la șabloane.</p>
+                <p className="text-[14px] text-muted-foreground sm:text-[13px]">Șablonul e gol: scrie-l în Setări.</p>
               )}
             </Dezvaluire>
           ) : null}
@@ -327,7 +321,7 @@ export function CallCard({
 
         {linie.rezultat === "nu_raspunde" ? (
           <p className="mt-2 text-[14px] leading-snug text-[#FFD0AC] sm:text-[13px]">
-            N-a răspuns: firma e înapoi în distribuție, încercările rămân notate. O poți suna din nou azi; dacă răspunde, rămâne pe telefon.
+            N-a răspuns: înapoi în distribuție. O poți suna din nou azi.
           </p>
         ) : null}
 
@@ -336,15 +330,15 @@ export function CallCard({
             type="button"
             disabled={pending}
             onClick={() => setConfirmGresit(true)}
-            className="inline-flex min-h-11 items-center gap-1 text-[14px] text-muted-foreground underline-offset-2 hover:text-rose hover:underline disabled:opacity-45 sm:min-h-0 sm:text-[12.5px]"
+            className="inline-flex min-h-11 items-center gap-1 text-[14px] text-muted-foreground underline-offset-2 hover:text-rose hover:underline disabled:opacity-45 sm:min-h-0 sm:text-[13px]"
           >
             <Flag className="h-3 w-3" aria-hidden="true" /> Număr greșit
           </button>
-          {pending ? <Spinner label="Se salvează rezultatul" /> : null}
+          {pending ? <Spinner label="Se salvează…" /> : null}
         </div>
 
         <div className="mt-2 sm:mt-3">
-          <Field label="Notă pentru firmă" hint={salvareNota ? "Se salvează nota…" : undefined}>
+          <Field label="Notă" hint={salvareNota ? "Se salvează…" : undefined}>
             <textarea
               value={nota}
               onChange={(event) => setNota(event.target.value)}
@@ -373,7 +367,7 @@ export function CallCard({
         onOpenChange={setConfirmGresit}
         title="Număr greșit?"
         description={telefon ? `${firma.nume}, ${numarAfisat(telefon)}.` : firma.nume}
-        consequence="Firma iese din listă și se întoarce în distribuție doar pentru email: nu mai primește WhatsApp și nu mai intră la apeluri. Fără un email valid, nu mai primește nimic."
+        consequence="Iese din listă și rămâne doar pentru email. Fără email valid, nu mai primește nimic."
         confirmLabel="Da, număr greșit"
         onConfirm={() => onRezultat(linie, "numar_gresit", { nota: notaNesalvata() })}
       />

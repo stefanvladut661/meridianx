@@ -65,7 +65,7 @@ export interface ClipRowData {
 function Verdict({ label, issues, probed, blocked }: { label: string; issues: { nivel: string }[]; probed: boolean; blocked: boolean }) {
   if (!probed) {
     return (
-      <span title={`${label}: necitit încă. Apasă „Citește clipurile”.`}>
+      <span title={`${label}: necitit`}>
         <Pill tone="neutral">
           <Minus className="h-3 w-3" aria-hidden="true" /> {label}
           <span className="sr-only">: necitit</span>
@@ -152,7 +152,7 @@ export function ClipsLot({
         <div className="flex flex-wrap items-center gap-2">
           {running ? (
             <button type="button" onClick={() => (stop.current = true)} className="text-[13px] text-muted-foreground underline underline-offset-2 hover:text-foreground">
-              Oprește după clipul ăsta
+              Oprește
             </button>
           ) : null}
           {unread.length > 0 ? (
@@ -167,16 +167,14 @@ export function ClipsLot({
       </div>
       <p role="status" aria-live="polite" className="border-b border-white/[0.05] px-4 py-2 text-[12.5px] text-muted-foreground">
         {running
-          ? `${running.done} din ${running.total} citite.`
+          ? `${running.done} din ${running.total} citite`
           : onDrive === 0
-            ? "Niciun clip din manifest nu e în folder."
-            : unread.length === 0
-              ? `Toate cele ${onDrive} clipuri sunt citite din fișier.`
-              : `${onDrive - unread.length} din ${onDrive} citite din fișier. Fiecare clip se descarcă o singură dată.`}
+            ? "Niciun clip în folder"
+            : `${onDrive - unread.length} din ${onDrive} citite`}
       </p>
 
       {rows.length === 0 ? (
-        <EmptyState icon={Film} title="Niciun clip în lot" text="Folderul n-are clipuri MP4 sau MOV. Terminalul de reclame le pune aici, lângă manifest.json." />
+        <EmptyState icon={Film} title="Niciun clip în lot" text="Folderul n-are MP4 sau MOV." />
       ) : (
         <ul className="divide-y divide-white/[0.05]">
           {rows.map((row) => {
@@ -193,7 +191,7 @@ export function ClipsLot({
                 <div className="min-w-0 flex-1 basis-44">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="break-all font-mono text-[13.5px]">{row.name}</p>
-                    <span className={cn("text-[12px]", clip?.probed ? "text-muted-foreground" : "text-muted-foreground/70")}>
+                    <span className={cn("text-[13px]", clip?.probed ? "text-muted-foreground" : "text-muted-foreground/70")}>
                       {clip ? (clip.summary ?? (clip.size !== null ? `${mb(clip.size)} · necitit` : "necitit")) : manifest?.durataS ? `${manifest.durataS} s în manifest` : ""}
                     </span>
                     {!clip ? <Pill tone="rose">lipsește din folder</Pill> : null}
@@ -235,7 +233,7 @@ export function ClipsLot({
 
       <div className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-2.5 text-[12.5px] text-muted-foreground">
         <Film className="h-3 w-3 shrink-0" aria-hidden="true" />
-        Fiecare clip vertical 9:16, sub {storageLimitMb} MB pentru Instagram. Ce nu e compatibil e marcat — nu se strecoară în plan.
+        9:16 · sub {storageLimitMb} MB pentru Instagram
       </div>
     </Card>
   );

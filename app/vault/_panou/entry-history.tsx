@@ -29,7 +29,7 @@ export interface HistoryApi {
 const REVEAL_MS = 30 * 1000;
 const MASK = "••••••••";
 
-const LINK_BUTTON = "shrink-0 rounded border border-white/[0.1] px-1.5 py-0.5 text-[11.5px] text-muted-foreground hover:text-foreground";
+const LINK_BUTTON = "shrink-0 rounded border border-white/[0.1] px-1.5 py-0.5 text-[12px] text-muted-foreground hover:text-foreground";
 
 export function EntryHistory({
   entry,
@@ -89,7 +89,7 @@ export function EntryHistory({
     try {
       await api.restoreVersion(entry, version);
       await onRestored();
-      notify("Versiune restaurată. S-a creat o versiune nouă, nimic nu s-a pierdut.");
+      notify("Versiune restaurată.");
     } catch (cause) {
       setError(describeError(cause, "Restaurarea a eșuat. Încearcă din nou."));
     }
@@ -105,7 +105,7 @@ export function EntryHistory({
         className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground disabled:cursor-default disabled:hover:text-muted-foreground"
       >
         <History className="h-3.5 w-3.5" aria-hidden="true" /> Istoric versiuni ({previous})
-        {previous === 0 ? <span className="text-muted-foreground/70">· prima versiune, nimic înainte</span> : null}
+        {previous === 0 ? <span className="text-muted-foreground/70">· prima versiune</span> : null}
       </button>
 
       {open ? (
@@ -114,7 +114,6 @@ export function EntryHistory({
           {loading && !versions ? <Spinner label="Se decriptează versiunile" /> : null}
           {versions ? (
             <>
-              <p className="mb-2 text-[12px] text-muted-foreground">Fiecare versiune apare ca diferență față de cea de acum: „atunci → acum”.</p>
               <ol className="space-y-2">
                 {versions.map((version) => {
                   const shown = revealed?.version === version.version;
@@ -138,7 +137,7 @@ export function EntryHistory({
                                   : `${changes.length} ${changes.length === 1 ? "diferență" : "diferențe"}`}
                             </span>
                           </p>
-                          <p className="text-[11.5px] text-muted-foreground">
+                          <p className="text-[12.5px] text-muted-foreground">
                             {emailOf(version.createdBy)} · {dateTimeRo(version.createdAt)}
                           </p>
                         </div>
@@ -177,7 +176,7 @@ export function EntryHistory({
                           >
                             {shown ? "Ascunde secretele" : "Arată secretele"}
                           </button>
-                          {shown ? <span className="text-[11.5px] text-apricot">se ascund singure în {left}s</span> : null}
+                          {shown ? <span className="text-[12.5px] text-apricot">se ascund în {left}s</span> : null}
                         </div>
                       ) : null}
                     </li>
@@ -194,7 +193,7 @@ export function EntryHistory({
         onOpenChange={(value) => !value && setRestoring(null)}
         tone="primary"
         title={`Restaurezi v${restoring?.version ?? ""}?`}
-        description="Conținutul de acum rămâne în istoric. Versiunea aleasă devine versiunea curentă, ca una nouă."
+        description="Conținutul de acum rămâne în istoric."
         confirmLabel={`Restaurează v${restoring?.version ?? ""}`}
         onConfirm={async () => {
           if (restoring) await restore(restoring);

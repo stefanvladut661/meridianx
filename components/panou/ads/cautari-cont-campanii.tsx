@@ -112,7 +112,7 @@ export function CautariContCampanii({
         notify(response.message, "error");
       }
     } catch {
-      setResult({ ok: false, message: "Serverul n-a răspuns. Nu se știe dacă pauza a plecat: reîncarcă pagina și uită-te la status." });
+      setResult({ ok: false, message: "Serverul n-a răspuns. Nu se știe dacă pauza a plecat: reîncarcă pagina și verifică statusul." });
     }
   };
 
@@ -121,11 +121,10 @@ export function CautariContCampanii({
       <Card className="p-0">
         <EmptyState
           icon={PauseCircle}
-          title="Contul n-are nicio campanie"
-          text="Prima se face dintr-un plan de căutare — creat întreg, oprit, gata de verificat în Google Ads."
+          title="Nicio campanie"
           action={
             <Link href="/admin/ads/cautare" className={btnClass({ variant: "primary", size: "sm" })}>
-              Deschide planul de căutare
+              Plan de căutare
             </Link>
           }
         />
@@ -153,7 +152,7 @@ export function CautariContCampanii({
             value={status}
             onChange={setStatus}
             options={[
-              { value: "all", label: "Toate (și cele șterse)" },
+              { value: "all", label: "Toate, cu șterse" },
               { value: "ENABLED", label: "Active" },
               { value: "PAUSED", label: "Pe pauză" },
               { value: "REMOVED", label: "Șterse" },
@@ -167,11 +166,10 @@ export function CautariContCampanii({
             options={(Object.keys(SORT_LABEL) as Sort[]).map((item) => ({ value: item, label: SORT_LABEL[item] }))}
           />
         </div>
-        <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground" aria-live="polite">
+        <p className="pu-num mt-3 text-[14px] leading-relaxed text-muted-foreground" aria-live="polite">
           <strong className="font-semibold text-foreground">{counted(shown.length, "campanie", "campanii")}</strong>
-          {" — "}
-          {totals.active} active, {totals.paused} pe pauză, {totals.removed} șterse. În 30 de zile: {money(totals.cost30)}, {number.format(totals.conversions30)} conversii. De la început:{" "}
-          {money(totals.costAll)}.{totals.active > 0 ? ` Bugetul zilnic al celor active: ${money(totals.budget)}.` : ""}
+          {` · ${totals.active} active · ${totals.paused} pe pauză · ${totals.removed} șterse · 30 z: ${money(totals.cost30)}, ${number.format(totals.conversions30)} conv. · total: ${money(totals.costAll)}`}
+          {totals.active > 0 ? ` · ${money(totals.budget)}/zi active` : ""}
         </p>
       </Card>
 
@@ -196,7 +194,10 @@ export function CautariContCampanii({
       ) : null}
 
       <Card className="overflow-hidden p-0 sm:p-0">
-        <CardHead title="Campanii și acțiuni permise" hint="cont existent: doar pauză și negative" />
+        <CardHead
+          title="Campanii"
+          info="Cifre live din Google Ads, în moneda contului. „Total” = tot istoricul păstrat de Google. Buget, licitare și pornire: doar din Google Ads."
+        />
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-left">
             <caption className="sr-only">Campaniile contului {account.name}, cu cifrele pe 30 de zile și de la început</caption>
@@ -313,9 +314,6 @@ export function CautariContCampanii({
             </tbody>
           </table>
         </div>
-        <p className="border-t border-white/[0.06] px-4 py-2.5 text-[12.5px] text-muted-foreground">
-          Cifrele vin acum din Google Ads, în moneda contului; „de la început” = tot istoricul păstrat de Google. Alte modificări nu sunt permise din portal: bugetul, licitarea și pornirea se schimbă doar în Google Ads.
-        </p>
       </Card>
 
       <div className="sticky bottom-[84px] z-10 flex flex-col gap-3 rounded-2xl border border-white/[0.09] bg-[#121216]/95 px-4 py-3 backdrop-blur-md sm:flex-row sm:items-center lg:bottom-4">
@@ -324,8 +322,8 @@ export function CautariContCampanii({
         </Btn>
         <p className="text-[13.5px] leading-snug text-muted-foreground">
           {selected.size === 0
-            ? "Bifează campaniile active pe care vrei să le oprești. Pauza oprește cheltuiala; repornirea se face din Google Ads."
-            : `${counted(selected.size, "campanie aleasă", "campanii alese")} · ${money(chosenCost)} cheltuiți în ultimele 30 de zile.`}
+            ? "Bifează campaniile active."
+            : `${counted(selected.size, "campanie aleasă", "campanii alese")} · ${money(chosenCost)} în 30 de zile`}
         </p>
       </div>
 
@@ -334,7 +332,7 @@ export function CautariContCampanii({
         onOpenChange={setConfirming}
         tone="primary"
         title={`Pui pe pauză ${counted(chosen.length, "campanie", "campanii")}?`}
-        description={`Se opresc acum, în contul ${account.name}. Bugetele, licitările și anunțurile rămân cum sunt; le repornești din Google Ads.`}
+        description={`Se opresc acum, în ${account.name}. Restul rămâne neschimbat; repornești din Google Ads.`}
         confirmLabel={`Pune pe pauză ${counted(chosen.length, "campanie", "campanii")}`}
         onConfirm={runPause}
       >
@@ -346,7 +344,7 @@ export function CautariContCampanii({
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[14px] text-foreground/80">În total, {money(chosenCost)} cheltuiți în ultimele 30 de zile.</p>
+        <p className="mt-3 text-[14px] text-foreground/80">Total: {money(chosenCost)} în 30 de zile.</p>
       </ConfirmDialog>
     </section>
   );

@@ -37,7 +37,7 @@ export default async function SetariPage() {
 
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead title="Setări" subtitle="Ce se alege din admin. Cheile (Oblio, Google, emailul) stau doar în Vercel; aici vezi doar dacă sunt puse." />
+      <PageHead title="Setări" info="Cheile (Oblio, Google, email) stau doar în Vercel." />
       <section aria-labelledby="legaturi" className="mt-5 max-w-3xl">
         <h2 id="legaturi" className="text-[16px] font-semibold text-bone">
           Legăturile

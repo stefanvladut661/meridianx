@@ -114,7 +114,7 @@ export function CautariContNegative({
   return (
     <section aria-labelledby="negative-cont" className="grid gap-4 2xl:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] 2xl:items-start">
       <Card className="min-w-0 space-y-5 p-4 sm:p-5">
-        <SectionTitle title={<span id="negative-cont">Negative pe campaniile existente</span>} hint="Doar campanii de căutare. Nimic nu pleacă spre Google fără previzualizare." />
+        <SectionTitle title={<span id="negative-cont">Negative</span>} info="Doar campanii de căutare. Nimic nu pleacă spre Google fără previzualizare." />
 
         <fieldset>
           <legend className={legendClass}>Ce faci</legend>
@@ -125,7 +125,7 @@ export function CautariContNegative({
               </RadioRow>
             ))}
           </div>
-          {lists.length === 0 ? <p className="mt-2 text-[13px] text-muted-foreground">Contul n-are liste comune de negative active.</p> : null}
+          {lists.length === 0 ? <p className="mt-2 text-[13.5px] text-muted-foreground">Nicio listă comună activă.</p> : null}
         </fieldset>
 
         {mode !== "campaigns" && lists.length > 0 ? (
@@ -144,7 +144,7 @@ export function CautariContNegative({
         {mode !== "link" ? (
           <div>
             <label htmlFor="negative-text" className={legendClass}>
-              Negativele, câte unul pe rând
+              Negative, unul pe rând
             </label>
             <textarea
               id="negative-text"
@@ -155,8 +155,8 @@ export function CautariContNegative({
               placeholder={'angajari\n"locuri de munca"\n[pret gratuit]'}
               className={cn(textareaClass, "mt-1.5 h-44 font-mono text-[13.5px] leading-[1.6]")}
             />
-            <p id="negative-notatie" className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
-              Fără semne = potrivire amplă; între ghilimele = frază; între paranteze drepte = exactă. Rândurile goale se sar.
+            <p id="negative-notatie" className="mt-1.5 font-mono text-[13px] text-muted-foreground">
+              amplă · &quot;frază&quot; · [exactă]
             </p>
           </div>
         ) : null}
@@ -164,7 +164,7 @@ export function CautariContNegative({
         <fieldset>
           <legend className={legendClass}>{mode === "campaigns" ? "Pe campaniile" : mode === "list" ? "Și leagă lista de campaniile (opțional)" : "De campaniile"}</legend>
           {campaigns.length === 0 ? (
-            <p className="mt-2 text-[14px] text-muted-foreground">Contul n-are campanii de căutare.</p>
+            <p className="mt-2 text-[14px] text-muted-foreground">Nicio campanie de căutare.</p>
           ) : (
             <ul className="mt-2 max-h-72 divide-y divide-white/[0.05] overflow-auto rounded-xl border border-white/[0.07]">
               {campaigns.map((item) => {
@@ -196,12 +196,12 @@ export function CautariContNegative({
         </div>
         <p className="text-[13px] leading-snug text-muted-foreground" aria-live="polite">
           {previewing
-            ? "Portalul citește cuvintele cheie ale campaniilor, caută conflictele și trimite totul la Google fără să schimbe nimic…"
+            ? "Se verifică în Google, fără să se schimbe nimic…"
             : preview && !fresh
-              ? "Ai schimbat ceva de la previzualizare: previzualizează din nou."
+              ? "Ai schimbat ceva: previzualizează din nou."
               : fresh?.ok
-                ? `Gata de trimis: ${counted(fresh.operations, "operație", "operații")}, exact ce vezi alături.`
-                : "Întâi previzualizarea: nimic nu pleacă spre Google fără ea."}
+                ? `Gata: ${counted(fresh.operations, "operație", "operații")}, exact ce vezi alături.`
+                : "Previzualizează întâi."}
         </p>
       </Card>
 
@@ -227,11 +227,7 @@ export function CautariContNegative({
           <NegativePreview preview={fresh} />
         ) : !result && !failure ? (
           <Card className="p-0">
-            <EmptyState
-              icon={ShieldOff}
-              title="Previzualizarea apare aici"
-              text="Ce se adaugă și unde, ce era deja acolo, ce cuvinte cheie active ar bloca negativele noi — înainte să plece ceva spre Google."
-            />
+            <EmptyState icon={ShieldOff} title="Previzualizarea apare aici" />
           </Card>
         ) : null}
       </div>

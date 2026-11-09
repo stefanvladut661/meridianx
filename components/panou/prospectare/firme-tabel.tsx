@@ -25,8 +25,8 @@ const clasaScor = (scor: number | null) => (scor === null || scor < 60 ? "text-m
 
 /** Grupele ordinii implicite (migrarea 37): eticheta rândului cu care începe fiecare grupă. */
 const GRUPE: Record<number, string> = {
-  1: "Cu site, încă necontactate",
-  2: "Cu site, contactate (email și/sau WhatsApp) sau închise",
+  1: "Cu site, necontactate",
+  2: "Cu site, contactate sau închise",
   3: "Fără site publicat",
 };
 
@@ -70,7 +70,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
     <>
       {/* Derularea e în tabel, cu antetul fix; regiunea se poate focaliza ca să se deruleze și de la tastatură.
           `relative`: textele pentru cititoarele de ecran (absolute) rămân în regiune și nu lărgesc pagina. */}
-      <div className="relative hidden max-h-[calc(100dvh-13rem)] min-h-[240px] overflow-auto lg:block" tabIndex={0} role="region" aria-label="Tabelul firmelor, cu derulare în interior">
+      <div className="relative hidden max-h-[calc(100dvh-13rem)] min-h-[240px] overflow-auto lg:block" tabIndex={0} role="region" aria-label="Tabelul firmelor">
         <table className="w-full min-w-[1180px] border-separate border-spacing-0 text-left text-[13.5px]">
           <caption className="sr-only">Firmele din filtrele curente. Numele firmei deschide fișa cu detalii și cronologie.</caption>
           <thead>
@@ -131,7 +131,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                   >
                     <td className={cn(TD, "border-l text-center")}>
                       {f.nr_site === null ? (
-                        <span className="text-muted-foreground" title="Site-ul nu e încă publicat și verificat">
+                        <span className="text-muted-foreground" title="Site nepublicat">
                           —
                         </span>
                       ) : (
@@ -155,7 +155,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                           </>
                         ) : null}
                       </Link>
-                      <p className="truncate text-[12px] text-muted-foreground">
+                      <p className="truncate text-[13px] text-muted-foreground">
                         <span className="pu-num" title="Numărul de cercetare">
                           #{f.nr}
                         </span>

@@ -87,8 +87,7 @@ export function Totp({ value }: { value: string }) {
   if (!config) {
     return (
       <p className="text-[13.5px] text-rose">
-        Seed-ul nu e valid: aștept base32 (ex. <code className="font-mono">JBSW Y3DP …</code>) sau un link{" "}
-        <code className="font-mono">otpauth://totp/…</code>.
+        Seed invalid: aștept base32 (<code className="font-mono">JBSW Y3DP …</code>) sau <code className="font-mono">otpauth://totp/…</code>.
       </p>
     );
   }
@@ -118,7 +117,7 @@ export function Totp({ value }: { value: string }) {
         </button>
       ) : null}
       {config.issuer || config.account ? (
-        <span className="basis-full text-[12px] text-muted-foreground">
+        <span className="basis-full text-[13px] text-muted-foreground">
           {[config.issuer, config.account].filter(Boolean).join(" · ")}
           {config.algorithm !== "SHA-1" || config.digits !== 6 || config.period !== 30
             ? ` · ${config.algorithm} · ${config.digits} cifre · ${config.period} s`
@@ -176,9 +175,9 @@ export function VaultField({ field }: { field: EntryField }) {
         ) : (
           <p className={cn("mt-1 break-all text-[14px]", longText ? "whitespace-pre-wrap text-muted-foreground" : "font-mono text-foreground/85")}>{field.value}</p>
         )}
-        {revealed ? <p className="mt-1 text-[11.5px] text-apricot">se ascunde singur în {left}s</p> : null}
+        {revealed ? <p className="mt-1 text-[12.5px] text-apricot">se ascunde în {left}s</p> : null}
         {copied === "failed" ? (
-          <p className="mt-1 text-[11.5px] text-rose" role="status">
+          <p className="mt-1 text-[12.5px] text-rose" role="status">
             Browserul n-a lăsat copierea. Arată valoarea și copiaz-o cu mâna.
           </p>
         ) : null}

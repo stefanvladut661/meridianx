@@ -54,7 +54,7 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         <InlineNote className="max-w-2xl">
           {workspace?.platform === "google"
             ? `Spațiul ${summary.name} nu are cheie: setează ${summary.tokenEnv} în Vercel.`
-            : `Lucrezi în ${summary.name}. Termenii de căutare sunt doar pe Google: treci în Meridian · Google sau Clienți · Google din selectorul „Spațiu” de mai sus.`}
+            : `Lucrezi în ${summary.name}. Doar pe Google: alege Meridian · Google sau Clienți · Google din „Spațiu”, sus.`}
         </InlineNote>
       </div>
     );
@@ -120,10 +120,7 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
       {header}
       {picker}
 
-      <ContHeadline
-        info={info}
-        hint="Ce au scris oamenii în Google înainte să vadă anunțurile. Portalul propune negative după regulile contului și nu adaugă nimic fără bifa ta."
-      >
+      <ContHeadline info={info} note="Negativele se adaugă doar după bifa ta și previzualizare.">
         <CautariTermeniFiltre
           base={`/admin/ads/termeni?cont=${info.id}`}
           days={days}

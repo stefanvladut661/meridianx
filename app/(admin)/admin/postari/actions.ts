@@ -22,7 +22,7 @@ export async function setQueueAction(running: boolean, reason: unknown): Promise
   if (!result.ok) return result;
   await logEvent({ actor, zona: "coada", actiune: running ? "coadă pornită" : "coadă oprită", rezultat: "ok", mesaj: running ? "Postările pleacă din nou la orele din plan." : motiv });
   revalidatePath("/admin/postari", "layout");
-  return { ok: true, message: running ? "Coada merge. Postările pleacă la orele din plan." : "Coada e oprită. Nimic nu pleacă până o pornești." };
+  return { ok: true, message: running ? "Coada e pornită." : "Coada e oprită." };
 }
 
 export async function removePostAction(id: unknown): Promise<ActionResult> {
@@ -34,7 +34,7 @@ export async function removePostAction(id: unknown): Promise<ActionResult> {
   const post = result.data;
   await logEvent({ actor, zona: "coada", actiune: "scoasă din coadă", tinta: id, rezultat: "ok", mesaj: `„${post.fisier}” pe ${PLATFORMA_LABEL[post.platforma]} (${momentLabel(post.programataLa)}).` });
   revalidatePath("/admin/postari", "layout");
-  return { ok: true, message: `„${post.fisier}” e scoasă din coadă și nu mai pleacă pe ${PLATFORMA_LABEL[post.platforma]}.` };
+  return { ok: true, message: `„${post.fisier}” e scoasă din coadă (${PLATFORMA_LABEL[post.platforma]}).` };
 }
 
 export async function retryPostAction(id: unknown): Promise<ActionResult> {
@@ -46,7 +46,7 @@ export async function retryPostAction(id: unknown): Promise<ActionResult> {
   const post = result.data;
   await logEvent({ actor, zona: "coada", actiune: "repusă în coadă", tinta: id, rezultat: "ok", mesaj: `„${post.fisier}” pe ${PLATFORMA_LABEL[post.platforma]}: pleacă la rularea următoare.` });
   revalidatePath("/admin/postari", "layout");
-  return { ok: true, message: `„${post.fisier}” e din nou în coadă și pleacă la rularea următoare (cel mult 5 minute), sau acum, cu „Rulează acum”.` };
+  return { ok: true, message: `„${post.fisier}” e din nou în coadă. Pleacă în max. 5 minute.` };
 }
 
 /** „Rulează acum”: o rulare a cozii, fără să aștepți Supabase Cron. Pleacă doar ce e deja la timp. */
@@ -57,9 +57,17 @@ export async function runNowAction(): Promise<ActionResult> {
   revalidatePath("/admin/postari", "layout");
   if (!result.ok) return result;
   const s = result.summary;
-  if (s.coadaOprita) return { ok: true, message: "Coada e oprită: rularea n-a luat nimic. Pornește coada întâi." };
-  if (s.luate === 0) return { ok: true, message: `Nimic de trimis acum: nicio postare nu e la timp.${s.intarziate ? ` ${s.intarziate} rămase în urmă au fost marcate eșuate.` : ""}` };
-  return { ok: true, message: `Rulare terminată: ${s.luate} luate, ${s.publicate} publicate, ${s.ciorne} în ciorne, ${s.asteapta} în așteptare, ${s.reincercari} de reîncercat, ${s.esuate} eșuate${s.amanate ? `, ${s.amanate} continuă la rularea următoare` : ""}.` };
+  if (s.coadaOprita) return { ok: true, message: "Coada e oprită. Pornește-o întâi." };
+  if (s.luate === 0) return { ok: true, message: `Nimic de trimis acum.${s.intarziate ? ` ${s.intarziate} întârziate, marcate eșuate.` : ""}` };
+  const parts = [
+    s.publicate ? `${s.publicate} publicate` : null,
+    s.ciorne ? `${s.ciorne} în ciorne` : null,
+    s.asteapta ? `${s.asteapta} în așteptare` : null,
+    s.reincercari ? `${s.reincercari} de reîncercat` : null,
+    s.esuate ? `${s.esuate} eșuate` : null,
+    s.amanate ? `${s.amanate} continuă la rularea următoare` : null,
+  ].filter(Boolean);
+  return { ok: true, message: `Rulare terminată: ${s.luate} luate${parts.length ? ` · ${parts.join(" · ")}` : ""}.` };
 }
 
 /** Ce s-a întâmplat cu o postare, în ordine, pentru panoul ei din coadă. */

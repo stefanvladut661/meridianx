@@ -76,7 +76,7 @@ export default async function ApeluriPage({ searchParams }: { searchParams: Prom
           title="Programate de mâine încolo"
           hint={
             viitoare.ok
-              ? `${cate(ale.length, "firmă", "firme")} pentru ${UTILIZATORI[cine]}${aleCeluilalt ? ` · ${UTILIZATORI[celalalt]} are ${num(aleCeluilalt)}` : ""} · intră în „Apeluri azi” la 00:00, în ziua lor; se anulează până atunci`
+              ? `${cate(ale.length, "firmă", "firme")} pentru ${UTILIZATORI[cine]}${aleCeluilalt ? ` · ${UTILIZATORI[celalalt]} are ${num(aleCeluilalt)}` : ""}`
               : undefined
           }
         />
@@ -85,7 +85,7 @@ export default async function ApeluriPage({ searchParams }: { searchParams: Prom
             <ProgramariViitoare
               canal="telefon"
               programari={ale}
-              gol={`Nimic programat pentru ${UTILIZATORI[cine]} de mâine încolo. Apelurile nu se programează singure: cu „Programează” (lângă import) alegi firmele și ziua, iar în ziua aleasă ele intră în lista ta la 00:00${setari.ok ? `, cel mult ${num(setari.data.apeluri_pe_zi)} pe zi` : ""}.`}
+              gol={`Nimic programat pentru ${UTILIZATORI[cine]}.`}
             />
           ) : (
             <EroareCitire title="Programările nu s-au putut citi" message={viitoare.message} className="py-8" />

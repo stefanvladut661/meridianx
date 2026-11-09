@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Tone } from "@/lib/firma/tone";
 import { cn } from "@/lib/utils";
+import { Info } from "@/components/panou/ui/info";
 
 /**
  * Bucățile comune ale ecranelor modulului: titlul paginii, câmpurile,
@@ -15,11 +16,15 @@ export const labelClass = "block text-[14.5px] font-medium text-bone";
 export const thClass = "whitespace-nowrap px-3 py-2 text-left text-[13.5px] font-semibold uppercase tracking-[0.06em] text-dim";
 export const tdClass = "px-3 py-2.5 align-top text-[15px] text-bone";
 
-export function PageHead({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
+/** Titlul paginii. `info`: regula care previne o greșeală, sub „i” lângă titlu. */
+export function PageHead({ title, subtitle, info, actions }: { title: string; subtitle?: ReactNode; info?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-[1.5rem] font-semibold tracking-tight text-bone">{title}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[1.5rem] font-semibold tracking-tight text-bone">{title}</h1>
+          {info ? <Info>{info}</Info> : null}
+        </div>
         {subtitle ? <p className="mt-0.5 max-w-3xl text-[15px] text-dim">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

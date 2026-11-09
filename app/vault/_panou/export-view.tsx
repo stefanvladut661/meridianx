@@ -31,7 +31,7 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
   if (!snapshot) {
     return (
       <>
-        <PageHead title="Export" text="Doar criptat, cu o parolă separată de parola master. Fișierul nu conține istoric și nu conține coșul." />
+        <PageHead title="Export" />
         <Card padded={false} className="overflow-hidden">
           {error ? <ErrorState title="Seiful nu s-a încărcat" text={error} onRetry={() => void reload()} /> : <LoadingRows rows={3} cols={3} />}
         </Card>
@@ -67,7 +67,7 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
       setDone({ name, entries: plain.entries.length, clients: plain.clients.length });
       setPass("");
       setConfirm("");
-      notify("Export criptat descărcat. Ține parola separat.");
+      notify("Export descărcat.");
     } catch (cause) {
       setFailure(describeError(cause, "Exportul a eșuat dintr-un motiv necunoscut. Încearcă din nou."));
     } finally {
@@ -77,11 +77,15 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
 
   return (
     <>
-      <PageHead title="Export" text="Doar criptat, cu o parolă separată de parola master. Fișierul nu conține istoric și nu conține coșul." />
+      <PageHead title="Export" />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card>
-          <SectionTitle title="Parola de export" hint="alta decât parola master" action={<Pill tone="mint">XChaCha20-Poly1305</Pill>} />
+          <SectionTitle
+            title="Parola de export"
+            info="Alta decât parola master. Nu o trimite pe același canal cu fișierul."
+            action={<Pill tone="mint">XChaCha20-Poly1305</Pill>}
+          />
           <form onSubmit={onSubmit} noValidate>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <LabeledInput
@@ -113,7 +117,7 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
             <InlineNote tone="apricot" className="mt-4">
               <span className="flex items-start gap-1.5">
                 <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
-                Fără parola de export, fișierul nu se mai poate deschide, nici cu codul de recuperare. Nu o trimite pe același canal cu fișierul.
+                Fără parola de export, fișierul nu se mai deschide, nici cu codul de recuperare.
               </span>
             </InlineNote>
 
@@ -128,8 +132,8 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
             ) : null}
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-4">
-              <p className="text-[12.5px] text-muted-foreground">
-                {countNoun(readable, "intrare", "intrări")}, {countNoun(snapshot.clients.length, "client", "clienți")}, fără istoric, fără coș.
+              <p className="text-[13px] text-muted-foreground">
+                {countNoun(readable, "intrare", "intrări")}, {countNoun(snapshot.clients.length, "client", "clienți")}.
                 {unreadable > 0 ? ` ${countNoun(unreadable, "intrare ilizibilă rămâne", "intrări ilizibile rămân")} pe dinafară.` : ""}
               </p>
               <Btn type="submit" size="sm" variant="primary" icon={Download} disabled={!strong || !match || busySince !== null || readable === 0}>
@@ -139,29 +143,25 @@ export function ExportView({ snapshot, error, reload }: { snapshot: VaultSnapsho
 
             {done ? (
               <InlineNote tone="mint" className="mt-3">
-                <strong className="font-semibold">{done.name}</strong> e descărcat: {countNoun(done.entries, "intrare", "intrări")}, {countNoun(done.clients, "client", "clienți")}. Conține doar date criptate, niciun secret în clar. Pune-l
-                undeva unde nu e laptopul (un disc, un cloud) și ține parola separat de el.
+                <strong className="font-semibold">{done.name}</strong> descărcat: {countNoun(done.entries, "intrare", "intrări")}, {countNoun(done.clients, "client", "clienți")}. Ține parola separat de fișier.
               </InlineNote>
             ) : null}
           </form>
         </Card>
 
         <Card className="pu-sealed">
-          <SectionTitle title="Ce intră în fișier" />
+          <SectionTitle title="Ce intră în fișier" info="Se reimportă din Import, cu parola lui, în orice seif." />
           <ul className="mt-3 space-y-2 text-[13.5px] text-muted-foreground">
             <li className="flex items-center gap-2">
               <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" /> {countNoun(readable, "intrare activă", "intrări active")}, cu toate câmpurile
             </li>
             <li className="flex items-center gap-2">
-              <Lock className="h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" /> criptare XChaCha20-Poly1305, cheie din parola de export (Argon2id)
+              <Lock className="h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" /> cheie Argon2id din parola de export
             </li>
-            <li className="flex items-center gap-2 text-muted-foreground/60">— fără istoric de versiuni</li>
-            <li className="flex items-center gap-2 text-muted-foreground/60">— fără coșul de ștergeri</li>
+            <li className="flex items-center gap-2 text-muted-foreground/60">— fără istoric</li>
+            <li className="flex items-center gap-2 text-muted-foreground/60">— fără coș</li>
             <li className="flex items-center gap-2 text-muted-foreground/60">— fără membri sau chei</li>
           </ul>
-          <p className="mt-4 border-t border-white/[0.07] pt-3 text-[12px] leading-relaxed text-muted-foreground/70">
-            Fișierul se importă înapoi din Import, cu parola lui, în acest seif sau în altul, oricând.
-          </p>
         </Card>
       </div>
     </>

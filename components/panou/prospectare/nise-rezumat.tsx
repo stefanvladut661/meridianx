@@ -29,21 +29,21 @@ export function NiseRezumat({ rezumat, nise }: { rezumat: RezumatNise | null; ni
     <Card>
       <h2 className="sr-only">Rezumat</h2>
       <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 xl:grid-cols-5">
-        <Stat label="În lucru" value={num(pe.rezervate)} hint="nișe rezervate, cu semn de viață în 24 h" />
+        <Stat label="În lucru" value={num(pe.rezervate)} />
         <Stat
           label="Libere"
           value={num(pe.libere)}
-          hint={expirate > 0 ? <span className="text-[#FFC79C]">din care {num(expirate)} expirate</span> : "le poate lua orice robot"}
+          hint={expirate > 0 ? <span className="text-[#FFC79C]">din care {num(expirate)} expirate</span> : undefined}
         />
-        <Stat label="Terminate" value={num(pe.terminate)} hint="cercetate până la capăt" tone="dim" />
+        <Stat label="Terminate" value={num(pe.terminate)} tone="dim" />
         <Stat
           label="Firme evaluate"
           value={rezumat ? num(evaluate) : "—"}
           hint={
             !rezumat ? (
-              "rezumatul nu s-a putut citi"
+              "nu s-a citit"
             ) : evaluate === 0 ? (
-              "nicio firmă evaluată încă"
+              "niciuna încă"
             ) : (
               <>
                 <span className="mt-0.5 flex h-1.5 w-full max-w-[160px] overflow-hidden rounded-full bg-white/[0.08]" aria-hidden="true">
@@ -60,7 +60,7 @@ export function NiseRezumat({ rezumat, nise }: { rezumat: RezumatNise | null; ni
         <Stat
           label="Coada de construcție"
           value={rezumat ? num(rezumat.coada_constructie) : "—"}
-          hint={rezumat ? "firme eligibile, gata pentru site-ul demo" : "rezumatul nu s-a putut citi"}
+          hint={rezumat ? undefined : "nu s-a citit"}
           className="col-span-2 sm:col-span-1"
         />
       </div>

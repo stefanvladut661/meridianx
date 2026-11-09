@@ -139,17 +139,25 @@ export function ProgressBar({ value, tone = "lav", className }: { value: number;
   );
 }
 
-/** Câmp de formular. `hint`: un rând scurt sub câmp, doar dacă e de neocolit; `info`: explicația, sub „i” lângă etichetă. */
+/**
+ * Câmp de formular. `hint`: un rând scurt sub câmp, doar dacă e de neocolit;
+ * `info`: explicația, sub „i”, în dreapta etichetei. „i”-ul stă în afara
+ * <label>: înăuntru, clicul pe etichetă l-ar deschide pe el în loc să ducă în câmp.
+ */
 export function Field({ label, children, hint, info, className }: { label: ReactNode; children: ReactNode; hint?: ReactNode; info?: ReactNode; className?: string }) {
-  return (
-    <label className={cn("block", className)}>
-      <span className="flex items-center gap-1.5">
-        <span className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
-        {info ? <Info>{info}</Info> : null}
-      </span>
+  const field = (
+    <label className={cn("block", info ? undefined : className)}>
+      <span className={cn("block text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground", info && "pr-6")}>{label}</span>
       <div className="mt-1.5">{children}</div>
       {hint ? <span className="mt-1 block text-[13px] text-muted-foreground/80">{hint}</span> : null}
     </label>
+  );
+  if (!info) return field;
+  return (
+    <div className={cn("relative", className)}>
+      {field}
+      <Info className="absolute right-0 top-0">{info}</Info>
+    </div>
   );
 }
 

@@ -23,7 +23,7 @@ import { BusyBlock, LABEL_CLASS, LabeledInput } from "./ui";
 
 const MIN_MASTER_LENGTH = 12;
 
-function PageIntro({ title, text, back }: { title: string; text: string; back: boolean }) {
+function PageIntro({ title, back }: { title: string; back: boolean }) {
   return (
     <div>
       {back ? (
@@ -32,7 +32,6 @@ function PageIntro({ title, text, back }: { title: string; text: string; back: b
         </Link>
       ) : null}
       <h1 className={cn("text-[22px] font-semibold leading-none sm:text-[26px]", back && "mt-2")}>{title}</h1>
-      <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{text}</p>
     </div>
   );
 }
@@ -66,11 +65,7 @@ export function ActivateFlow() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <PageIntro
-        title="Activează seiful"
-        text="Prima intrare. Alegi parola master, apoi primești codul de recuperare o singură dată (sau aprobarea unui membru, dacă seiful există deja)."
-        back={phase.kind === "locked"}
-      />
+      <PageIntro title="Activează contul" back={phase.kind === "locked"} />
 
       <ol className="flex flex-wrap gap-1.5" aria-label="Pașii activării">
         {labels.map((label, i) => (
@@ -123,7 +118,7 @@ function ActivateForm({ email, onEmail }: { email: string; onEmail: (value: stri
         <p className="text-[14.5px] font-medium">Parola master nu se poate reseta</p>
       </div>
       <InlineNote tone="rose" className="mt-3">
-        Dacă o uiți și pierzi și codul de recuperare, datele din seif nu mai pot fi deschise de nimeni. Nici noi nu le putem recupera.
+        Fără ea și fără codul de recuperare, datele nu le mai deschide nimeni.
       </InlineNote>
       <div aria-live="polite">
         {vault.notice ? <InlineNote tone="neutral" className="mt-3">{vault.notice}</InlineNote> : null}
@@ -132,15 +127,14 @@ function ActivateForm({ email, onEmail }: { email: string; onEmail: (value: stri
       <form onSubmit={onSubmit} noValidate className="mt-3 space-y-3">
         <LabeledInput label="Email" type="email" value={email} onChange={(event) => onEmail(event.target.value)} autoComplete="username" spellCheck={false} mono={false} placeholder="numele@firma.ro" />
         <LabeledInput
-          label="Parola temporară (primită de la echipă)"
+          label="Parola temporară"
           type="password"
           value={temp}
           onChange={(event) => setTemp(event.target.value)}
           autoComplete="current-password"
-          hint="Contul îl creează echipa din Supabase → Authentication → Users. Parola asta se înlocuiește acum."
         />
         <LabeledInput
-          label={`Parolă master (min. ${MIN_MASTER_LENGTH} caractere)`}
+          label="Parolă master"
           type="password"
           value={pass}
           onChange={(event) => setPass(event.target.value)}
@@ -155,9 +149,7 @@ function ActivateForm({ email, onEmail }: { email: string; onEmail: (value: stri
           autoComplete="new-password"
           error={confirm && pass !== confirm ? "parolele nu se potrivesc" : null}
         />
-        <p className="text-[12px] leading-relaxed text-muted-foreground">
-          Contul devine dedicat seifului: după activare intră doar prin parola master. Dacă aceeași adresă intră și în /admin, folosește altă adresă aici.
-        </p>
+        <p className="text-[13px] leading-relaxed text-muted-foreground">Activarea înlocuiește parola Supabase: nu folosi adresa de /admin.</p>
         <Btn type="submit" variant="primary" className="w-full justify-center" disabled={!canContinue} icon={KeyRound}>
           Activează contul
         </Btn>
@@ -172,14 +164,14 @@ function KeysMissingCard({ replacing }: { replacing: boolean }) {
     <Card className="pu-sealed">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[14.5px] font-medium">{replacing ? "Cheile se refac" : "Sesiune deschisă. Cheile lipsesc."}</p>
-        <Pill tone="neutral" className="font-mono text-[11.5px]">
+        <Pill tone="neutral" className="font-mono text-[12px]">
           {vault.member?.email}
         </Pill>
       </div>
       <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
         {replacing
-          ? "Cererea ta era în așteptare cu chei împachetate cu parola veche. Se generează altele, cu parola de acum; cererea rămâne în așteptare."
-          : "Se generează acum perechea ta de chei. Dacă seiful e gol, îl inițializezi tu și primești codul de recuperare. Dacă există deja, cererea ta ajunge la un membru activ."}
+          ? "Chei noi, cu parola de acum. Cererea rămâne în așteptare."
+          : "Seif gol: îl inițializezi și primești codul de recuperare. Altfel, cererea ajunge la un membru activ."}
       </p>
       <div aria-live="polite">{vault.error ? <InlineNote tone="rose" className="mt-3">{vault.error}</InlineNote> : null}</div>
       <Btn variant="primary" className="mt-4 w-full justify-center" icon={KeyRound} onClick={() => void vault.registerKeys()}>
@@ -201,14 +193,13 @@ function RecoveryCodeCard({ code }: { code: string }) {
         <p className="text-[14.5px] font-medium">Codul tău de recuperare</p>
         <Pill tone="apricot">o singură afișare</Pill>
       </div>
-      <p className="mt-1 text-[13px] text-muted-foreground">Seiful a fost inițializat. Notează codul pe hârtie, nu într-o captură de ecran: e singura cale înapoi dacă parola master se pierde.</p>
       <div className="mt-3">
         <RecoveryCodeBox code={code} />
       </div>
       <RecoveryWarning />
       <label className="mt-3 flex items-start gap-2 text-[13px] text-muted-foreground">
         <input type="checkbox" checked={saved} onChange={(event) => setSaved(event.target.checked)} className="mt-0.5 accent-[#8FE3B0]" />
-        L-am salvat într-un loc sigur, în afara seifului. Știu că nu se mai afișează.
+        L-am notat în afara seifului. Nu se mai afișează.
       </label>
       <Btn variant="primary" className="mt-3 w-full justify-center" icon={CheckCircle2} disabled={!saved} onClick={() => vault.acknowledgeRecoveryCode()}>
         Intră în seif
@@ -227,11 +218,11 @@ function PendingCard() {
           <p className="text-[15px] font-medium">În așteptare</p>
         </div>
         <Pill tone="apricot" dot>
-          cererea a ajuns la echipă
+          cerere trimisă
         </Pill>
       </div>
       <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
-        Un membru activ trebuie să-ți aprobe accesul din lista de membri, ca să primești cheia. Nu se întâmplă automat. Până atunci nu vezi nimic, nici măcar numele clienților. Poți lăsa fila deschisă și verifica din nou.
+        Un membru activ te aprobă din Membri.
       </p>
       <p className="mt-2 font-mono text-[12.5px] text-muted-foreground">{vault.member?.email}</p>
       <div aria-live="polite">{vault.error ? <InlineNote tone="rose" className="mt-3">{vault.error}</InlineNote> : null}</div>
@@ -256,7 +247,7 @@ export function RecoverFlow() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <PageIntro title="Recuperare" text="Cu codul de recuperare, fără parola master." back={phase.kind === "locked"} />
+      <PageIntro title="Recuperare" back={phase.kind === "locked"} />
       {entering ? <CodeEntry /> : <RecoverSteps />}
     </div>
   );
@@ -267,10 +258,10 @@ function RecoverSteps() {
   const items: { title: ReactNode; text: ReactNode }[] = [
     {
       title: "Ceri o parolă temporară",
-      text: "Cineva din echipă îți setează o parolă temporară din Supabase → Authentication → Users. Nimeni nu poate vedea sau reseta parola master veche.",
+      text: "De la echipă, din Supabase → Authentication → Users.",
     },
-    { title: "Activezi contul cu ea", text: "Alegi o parolă master nouă. Cheile tale din seif sunt încă împachetate cu cea veche, așa că seiful îți cere codul." },
-    { title: "Introduci codul de recuperare", text: "Codul de pe hârtie deschide cheia de date și îți reface cheile cu parola nouă. Datele nu se ating." },
+    { title: "Activezi contul cu ea", text: "Alegi o parolă master nouă." },
+    { title: "Introduci codul de recuperare", text: "Îți reface cheile. Datele nu se ating." },
   ];
   return (
     <Card className="pu-sealed">
@@ -290,7 +281,7 @@ function RecoverSteps() {
         ))}
       </ol>
       <InlineNote tone="neutral" className="mt-4">
-        Fără codul de pe hârtie nu se poate: un membru activ te elimină din Membri și te reinvită, iar primești chei noi.
+        Fără cod: un membru activ te elimină și te reinvită.
       </InlineNote>
       <Link href="/vault/activare" className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-lav px-4 text-[15px] font-medium text-[#171222] transition-colors hover:bg-[#D4C7FF]">
         <KeyRound className="h-4 w-4" aria-hidden="true" />
@@ -323,16 +314,16 @@ function CodeEntry() {
           <p className="text-[15px] font-medium">Cheile lipsesc</p>
         </div>
         <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
-          Fără codul de recuperare, cheile tale nu se mai pot deschide: sunt împachetate cu parola veche. Datele rămân criptate pe server, dar contul ăsta nu le mai poate citi.
+          Fără cod, cheile tale rămân închise sub parola veche.
         </p>
         <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
           <p className="text-[12.5px] uppercase tracking-[0.12em] text-muted-foreground">Ce poți face</p>
           <ul className="mt-1.5 space-y-1.5 text-[13.5px] text-foreground/80">
             <li className="flex items-start gap-1.5">
-              <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" /> Un membru activ te elimină din Membri și te reinvită: primești chei noi și vezi din nou tot.
+              <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" /> Un membru activ te elimină și te reinvită: primești chei noi.
             </li>
             <li className="flex items-start gap-1.5">
-              <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" /> Dacă erai singurul membru activ, seiful rămâne închis. Exact de asta codul se notează pe hârtie.
+              <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-mint" aria-hidden="true" /> Dacă erai singurul membru activ, seiful rămâne închis.
             </li>
           </ul>
         </div>
@@ -349,9 +340,7 @@ function CodeEntry() {
   return (
     <Card className="pu-sealed">
       <p className="text-[14.5px] font-medium">Cheile nu se deschid cu parola asta</p>
-      <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">
-        Parola master pe care tocmai ai ales-o e nouă, dar cheile tale din seif sunt împachetate cu cea veche. Codul de recuperare deschide seiful și îți reface cheile cu parola de acum. Datele nu se ating.
-      </p>
+      <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">Sunt încă sub parola veche. Codul le reface cu cea nouă.</p>
       <p className="mt-2 font-mono text-[12.5px] text-muted-foreground">{vault.member?.email}</p>
       <div aria-live="polite">{vault.error ? <InlineNote tone="rose" className="mt-3">{vault.error}</InlineNote> : null}</div>
       <form
@@ -376,14 +365,11 @@ function CodeEntry() {
           spellCheck={false}
           autoFocus
         />
-        <p className="mt-1.5 text-[12px] text-muted-foreground">8 grupuri de 5. Liniuțele, spațiile și literele mici nu contează.</p>
+        <p className="mt-1.5 text-[13px] text-muted-foreground">8 grupuri de 5 · liniuțele și literele mici nu contează</p>
         <Btn type="submit" variant="primary" className="mt-4 w-full justify-center" icon={KeyRound} disabled={code.trim().length < 8}>
           Recuperează accesul
         </Btn>
       </form>
-      <InlineNote tone="neutral" className="mt-3">
-        Codul deschide cheia de date singur, fără parola veche: de asta se ține pe hârtie, offline. Cheile tale se refac cu parola master de acum.
-      </InlineNote>
       <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-white/[0.07] pt-3 text-[13px]">
         <button type="button" onClick={() => setMissing(true)} className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
           Nu am codul

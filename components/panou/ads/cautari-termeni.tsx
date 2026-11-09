@@ -12,6 +12,7 @@ import { reasonLabel } from "@/lib/ads/google/terms/proposals";
 import type { Proposal, TermRow } from "@/lib/ads/google/terms/types";
 import { Btn, Card, Pill } from "@/components/panou/ui/primitives";
 import { CopyButton, InlineNote } from "@/components/panou/ui/actions";
+import { Info } from "@/components/panou/ui/info";
 import { EmptyState, Field } from "@/components/panou/ui/states";
 import { TextInput } from "@/components/panou/ui/select";
 import { dateTimeRo, dayMonthRo } from "@/components/panou/ui/format";
@@ -174,7 +175,7 @@ export function CautariTermeni({
         setChecked(new Set());
         setMarked([]);
         setPreview(null);
-        notify(`${counted(response.operations, "operație trimisă", "operații trimise")}: negativele sunt în cont.`);
+        notify(`Negative adăugate · ${counted(response.operations, "operație", "operații")}.`);
         router.refresh();
       } else if (response.recheck) setPreview(null);
     } catch {
@@ -199,7 +200,7 @@ export function CautariTermeni({
       const response = await actions.sync({ workspace, adAccount: account.id });
       setSyncMessage({ ok: response.ok, text: response.message });
       if (response.ok) {
-        notify("Termenii sunt sincronizați.");
+        notify("Termeni sincronizați.");
         router.refresh();
       }
     } catch {
@@ -215,7 +216,7 @@ export function CautariTermeni({
       const response = await actions.saveRules({ workspace, adAccount: account.id, words, costThreshold: value, syncEnabled });
       setRulesMessage(response.ok ? { ok: true, text: `Salvat: ${counted(response.words, "cuvânt", "cuvinte")} de exclus, pragul ${money(value)}.` } : { ok: false, text: response.message });
       if (response.ok) {
-        notify("Regulile contului sunt salvate.");
+        notify("Reguli salvate.");
         router.refresh();
       }
     } catch {
@@ -234,9 +235,9 @@ export function CautariTermeni({
       <Card as="section" aria-labelledby="sincronizare-termeni" className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-4">
         <div className="min-w-0">
           <h2 id="sincronizare-termeni" className="text-[15px] font-medium">
-            {terms.length === 0 ? "Niciun termen în perioada asta" : `${counted(terms.length, "termen", "termeni")} în ultimele ${period.days} zile`}
+            {terms.length === 0 ? "Niciun termen în perioada asta" : `${counted(terms.length, "termen", "termeni")} · ${counted(period.days, "zi", "zile")}`}
           </h2>
-          <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+          <p className="pu-num mt-1 text-[13.5px] leading-relaxed text-muted-foreground">
             {terms.length > 0 ? `${money(totals.cost)} · ${totals.clicks} clicuri · ${Math.round(totals.conversions * 100) / 100} conversii · ` : ""}
             {rules.lastSyncedAt ? `sincronizat ${dateTimeRo(rules.lastSyncedAt)}` : "nesincronizat încă"}
           </p>
@@ -248,7 +249,7 @@ export function CautariTermeni({
           ) : null}
         </div>
         <Btn variant="outline" size="sm" icon={syncing ? Loader2 : RefreshCw} onClick={runSync} disabled={syncing} className="shrink-0">
-          {syncing ? "Se sincronizează…" : "Sincronizează termenii acum"}
+          {syncing ? "Se sincronizează…" : "Sincronizează"}
         </Btn>
       </Card>
 
@@ -259,7 +260,7 @@ export function CautariTermeni({
             <CardHead
               id="propuneri"
               title={`Propuneri de negative · ${proposals.length}`}
-              hint="După regulile contului: cuvinte de exclus, cost fără conversii, căutări ale altei campanii."
+              info="După regulile contului: cuvinte de exclus, cost fără conversii, căutări ale altei campanii."
               action={
                 proposals.length > 0 ? (
                   <Btn
@@ -278,8 +279,8 @@ export function CautariTermeni({
                 title="Nimic de propus"
                 text={
                   terms.length === 0
-                    ? "Termenii apar după prima sincronizare (zilnic, sau acum, cu butonul de sus) și după ce campaniile rulează."
-                    : "Niciun termen nu se potrivește regulilor contului. Adaugă cuvinte de exclus mai jos sau coboară pragul de cost."
+                    ? "Termenii apar după prima sincronizare."
+                    : "Niciun termen nu atinge regulile. Adaugă cuvinte de exclus sau coboară pragul, mai jos."
                 }
                 className="py-10"
               />
@@ -331,11 +332,12 @@ export function CautariTermeni({
             <CardHead
               id="toti-termenii"
               title="Termeni de căutare"
-              hint="Ce au scris oamenii înainte să dea clic. Marchează ca negativ ce nu are sens."
               action={<Pill tone="apricot">{items.length} negative alese</Pill>}
             />
             {terms.length === 0 ? (
-              <p className="px-4 py-6 text-[14px] text-muted-foreground">Niciun termen sincronizat în perioada asta ({period.from} – {period.to}).</p>
+              <p className="px-4 py-6 text-[14px] text-muted-foreground">
+                Niciun termen între {period.from} și {period.to}.
+              </p>
             ) : (
               <div className="max-h-[40rem] overflow-auto">
                 <table className="w-full min-w-[980px] text-left">
@@ -362,7 +364,7 @@ export function CautariTermeni({
                         <tr key={`${term.campaignId}-${term.adGroupId}-${term.term}`} className={cn("border-b border-white/[0.04] align-top text-[14px] last:border-0", isMarked && "bg-rose/[0.04]")}>
                           <th scope="row" className="py-2.5 pl-4 pr-3 font-normal">
                             <span className={cn("font-mono text-[13px] [overflow-wrap:break-word]", isMarked && "line-through opacity-60")}>{term.term}</span>
-                            <span className="block text-[12px] text-muted-foreground">
+                            <span className="block text-[13px] text-muted-foreground">
                               {term.campaignName} › {term.adGroupName}
                             </span>
                           </th>
@@ -397,26 +399,31 @@ export function CautariTermeni({
                 </table>
               </div>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-4 py-3">
-              <p className="text-[12.5px] text-muted-foreground">
-                Negativele se aplică pe campanie sau într-o listă comună, după previzualizare. Nu afectează bugetul.
-                {terms.length > 500 ? ` Primii 500 de termeni după cost, din ${terms.length}.` : ""}
-              </p>
-              {items.length > 0 ? <CopyButton value={copyValue} label="Copiază lista de negative" size="xs" /> : null}
-            </div>
+            {terms.length > 500 || items.length > 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-4 py-3">
+                <p className="pu-num text-[13px] text-muted-foreground">{terms.length > 500 ? `Primii 500 după cost, din ${terms.length}.` : null}</p>
+                {items.length > 0 ? <CopyButton value={copyValue} label="Copiază negativele" size="xs" /> : null}
+              </div>
+            ) : null}
           </Card>
 
           {/* Regulile */}
           <Card as="section" aria-labelledby="reguli" className="p-4 sm:p-5">
-            <h2 id="reguli" className="text-[16px] font-semibold tracking-[-0.01em]">
-              Regulile propunerilor, pentru contul ăsta
-            </h2>
-            <p className="mt-1 max-w-2xl text-[14px] leading-relaxed text-muted-foreground">
-              Se țin în baza portalului, nu în cod.{rules.updatedByEmail ? ` Ultima modificare: ${rules.updatedByEmail}.` : ""}
-              {!rules.exists ? " Contul n-are încă reguli: se folosesc valorile implicite." : ""}
-            </p>
+            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+              <h2 id="reguli" className="text-[16px] font-semibold tracking-[-0.01em]">
+                Regulile propunerilor
+              </h2>
+              {!rules.exists ? (
+                <span className="text-[14px] text-muted-foreground">valori implicite</span>
+              ) : rules.updatedByEmail ? (
+                <span className="text-[14px] text-muted-foreground">modificate de {rules.updatedByEmail}</span>
+              ) : null}
+            </div>
             <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
-              <Field label="Cuvinte de exclus — câte unul pe rând" hint="Un termen care conține cuvântul (cu sau fără diacritice) devine propunere: negativ amplu (sau de frază, la mai multe cuvinte).">
+              <Field
+                label="Cuvinte de exclus, unul pe rând"
+                info="Un termen care conține cuvântul (cu sau fără diacritice) devine propunere: negativ amplu, sau de frază la mai multe cuvinte."
+              >
                 <textarea
                   id="cuvinte-excluse"
                   value={words}
@@ -427,12 +434,12 @@ export function CautariTermeni({
                 />
               </Field>
               <div className="space-y-4">
-                <Field label={`Pragul de cost fără conversii (${account.currency})`} hint="0 = fără propuneri după cost.">
+                <Field label={`Prag cost fără conversii (${account.currency})`} info="0 = fără propuneri după cost.">
                   <TextInput id="prag-cost" inputMode="decimal" value={threshold} onChange={(event) => setThreshold(event.target.value)} className="font-mono" />
                 </Field>
                 <label className="flex items-center gap-3 text-[14px] text-foreground/85">
                   <input type="checkbox" checked={syncEnabled} onChange={(event) => setSyncEnabled(event.target.checked)} className={checkClass} />
-                  Sincronizează termenii zilnic
+                  Sincronizare zilnică
                 </label>
                 <Btn variant="primary" size="sm" onClick={runSave} disabled={saving}>
                   {saving ? "Se salvează…" : "Salvează regulile"}
@@ -450,11 +457,11 @@ export function CautariTermeni({
         {/* Negativele alese: destinația, previzualizarea, adăugarea */}
         <div className="min-w-0 space-y-3 xl:sticky xl:top-20">
           <Card as="section" aria-labelledby="alese" className="space-y-4 p-4 sm:p-4">
-            <div>
+            <div className="flex items-center gap-2">
               <h2 id="alese" className="text-[15px] font-medium">
                 Negative de trimis · {items.length}
               </h2>
-              <p className="text-[12.5px] text-muted-foreground">Propunerile bifate și termenii marcați. Nimic nu se adaugă fără bifă.</p>
+              <Info label="Ce se trimite">Propunerile bifate și termenii marcați. Nimic nu se adaugă fără previzualizare.</Info>
             </div>
 
             {marked.length > 0 ? (
@@ -463,7 +470,7 @@ export function CautariTermeni({
                   <li key={item.id} className="flex items-center gap-2 px-3 py-2">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-mono text-[13px]">{keywordNotation({ text: item.term, match: item.match })}</p>
-                      <p className="truncate text-[12px] text-muted-foreground">pe „{item.campaignName}”</p>
+                      <p className="truncate text-[13px] text-muted-foreground">pe „{item.campaignName}”</p>
                     </div>
                     <MatchSelect
                       id={`mm-${item.id}`}
@@ -515,12 +522,12 @@ export function CautariTermeni({
             </div>
             <p className="text-[13px] leading-snug text-muted-foreground" aria-live="polite">
               {items.length === 0
-                ? "Bifează propunerile sau marchează termeni în tabel."
+                ? "Bifează propuneri sau marchează termeni."
                 : preview && !fresh
-                  ? "Ai schimbat bifele, potrivirile sau destinația: previzualizează din nou."
+                  ? "Ai schimbat ceva: previzualizează din nou."
                   : fresh?.ok
-                    ? `Gata de trimis: ${counted(fresh.operations, "operație", "operații")}.`
-                    : "Întâi previzualizarea: conflictele cu cuvintele active și verificarea la Google."}
+                    ? `Gata: ${counted(fresh.operations, "operație", "operații")}.`
+                    : "Previzualizează întâi."}
             </p>
             {problem ? (
               <div role="alert">
@@ -530,7 +537,7 @@ export function CautariTermeni({
             {added ? (
               <div role={added.ok ? "status" : "alert"} className="space-y-2">
                 <InlineNote tone={added.ok ? "mint" : "rose"}>
-                  {added.ok ? `${counted(added.operations, "operație trimisă", "operații trimise")}: negativele sunt în cont.` : added.message}
+                  {added.ok ? `Negative adăugate · ${counted(added.operations, "operație", "operații")}.` : added.message}
                 </InlineNote>
                 {added.ok && added.journalWarning ? <InlineNote tone="apricot">{added.journalWarning}</InlineNote> : null}
               </div>

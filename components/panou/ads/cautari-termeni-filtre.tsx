@@ -35,8 +35,8 @@ export function CautariTermeniFiltre({
           value={String(days)}
           onChange={(value) => go(Number(value), campaignId)}
           options={[
-            { value: "7", label: "Ultimele 7 zile" },
-            { value: "30", label: "Ultimele 30 de zile" },
+            { value: "7", label: "7 zile" },
+            { value: "30", label: "30 de zile" },
           ]}
         />
       </div>

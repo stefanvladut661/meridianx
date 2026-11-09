@@ -184,7 +184,7 @@ export function FirmeFiltre({
             type="search"
             value={text}
             onChange={(event) => scrie(event.target.value)}
-            placeholder="Caută după nume, domeniu, email, telefon sau #nr"
+            placeholder="Nume, domeniu, email, telefon, #nr"
             className="pl-8"
             aria-label="Caută firme (și cele fără site)"
             maxLength={80}
@@ -236,7 +236,7 @@ export function FirmeExport({ href, total }: { href: string; total: number | nul
   if (!total) {
     return (
       <Btn size="sm" variant="primary" icon={Download} disabled>
-        Export Excel <span className="font-normal opacity-70">(CSV)</span>
+        Export Excel
       </Btn>
     );
   }
@@ -244,11 +244,11 @@ export function FirmeExport({ href, total }: { href: string; total: number | nul
     <a
       href={href}
       className={btnClass({ variant: "primary", size: "sm" })}
-      title="Exact firmele din filtre, toate paginile. CSV cu diacritice și „;” ca separator: se deschide direct în Excel."
-      onClick={() => notify(`Export pornit: ${firmeCuNumar(total)}, exact ce e filtrat.`)}
+      title="Firmele din filtre, toate paginile (CSV)"
+      onClick={() => notify(`Export pornit: ${firmeCuNumar(total)}.`)}
     >
       <Download className="h-4 w-4" aria-hidden="true" />
-      Export Excel <span className="font-normal opacity-70">(CSV)</span>
+      Export Excel
     </a>
   );
 }

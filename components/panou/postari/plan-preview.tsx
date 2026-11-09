@@ -19,7 +19,7 @@ function PlatformPills({ post }: { post: PreviewPost }) {
           <Pill tone="rose">
             Instagram ·{" "}
             {post.instagram.tip === "trial_reel"
-              ? `Trial Reel, ${post.instagram.absolvire === "automat" ? "trece singur la urmăritori" : "îl treci tu la urmăritori"}`
+              ? `Trial Reel, ${post.instagram.absolvire === "automat" ? "automat" : "manual"}`
               : post.instagram.inFeed
                 ? "Reel"
                 : "Reel, fără feed"}
@@ -27,7 +27,7 @@ function PlatformPills({ post }: { post: PreviewPost }) {
         </span>
       ) : null}
       {post.tiktok ? (
-        <span title="Ajunge în ciornele din aplicația TikTok; îl publici tu, cu descrierea copiată din admin.">
+        <span title="Ajunge în ciorne; îl publici tu, din aplicație.">
           <Pill tone="sky">TikTok · în ciorne</Pill>
         </span>
       ) : null}
@@ -45,12 +45,12 @@ function PostCard({ post, fus }: { post: PreviewPost; fus: string }) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2">
             <span className="pu-num text-[16px]">{post.ora ? zonedParts(new Date(post.ora), fus).time : "fără oră"}</span>
-            <span className="text-[12px] text-muted-foreground">
+            <span className="text-[13px] text-muted-foreground">
               {post.sursaOra === "slot" ? "slot" : post.sursaOra === "fixa" ? "oră fixă" : ""} · postarea {post.index + 1}
             </span>
           </div>
           <p className="mt-0.5 break-all font-mono text-[13px]">{post.fisier}</p>
-          <p className="text-[12px] text-muted-foreground">{post.clip?.summary ?? (post.fileId ? "necitit încă" : "nu e în folder")}</p>
+          <p className="text-[13px] text-muted-foreground">{post.clip?.summary ?? (post.fileId ? "necitit" : "nu e în folder")}</p>
           <div className="mt-2">
             <PlatformPills post={post} />
           </div>
@@ -62,13 +62,13 @@ function PostCard({ post, fus }: { post: PreviewPost; fus: string }) {
           <HashtagText text={post.caption} className="text-[14.5px] leading-relaxed" />
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <ProgressBar value={(post.stats.chars / CAPTION_LIMIT) * 100} tone={post.stats.chars > CAPTION_LIMIT ? "rose" : "lav"} className="max-w-[160px]" />
-            <span className="text-[12px] text-muted-foreground">
+            <span className="text-[13px] text-muted-foreground">
               {post.stats.chars} / {CAPTION_LIMIT} caractere · {post.stats.hashtags} {post.stats.hashtags === 1 ? "hashtag" : "hashtag-uri"}
             </span>
           </div>
         </div>
       ) : (
-        <p className="mt-3 text-[13px] text-muted-foreground">Fără descriere în plan.</p>
+        <p className="mt-3 text-[13px] text-muted-foreground">Fără descriere.</p>
       )}
 
       <IssueList issues={post.issues} className="mt-2.5" />

@@ -12,7 +12,7 @@ import { UNKNOWN_CHANNEL, callDayProblem, callFormSchema, type CallFormInput } f
  * ajunge la Meta, Google sau TikTok. Fiecare acțiune își reverifică sesiunea.
  */
 
-const SESSION_EXPIRED = "Sesiunea a expirat. Reîncarcă pagina și intră din nou în panou.";
+const SESSION_EXPIRED = "Sesiunea a expirat. Reîncarcă pagina și intră din nou.";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Failure = { ok: false; message: string; field?: string };
@@ -38,8 +38,8 @@ export async function addCallAction(input: CallFormInput): Promise<{ ok: true; i
   if (call.entityId) {
     const campaign = await campaignOfClient(admin, call.entityId, call.clientId);
     if (!campaign.ok) return campaign;
-    if (!campaign.data) return { ok: false, message: "Campania aleasă nu e a clientului ăstuia. Alege-o din nou.", field: "entityId" };
-    if (platform && campaign.data.platform !== platform) return { ok: false, message: "Campania aleasă e pe alt canal decât cel bifat.", field: "entityId" };
+    if (!campaign.data) return { ok: false, message: "Campania nu e a acestui client. Alege alta.", field: "entityId" };
+    if (platform && campaign.data.platform !== platform) return { ok: false, message: "Campania e pe alt canal decât cel bifat.", field: "entityId" };
     // Campania își știe canalul.
     platform = campaign.data.platform;
   }

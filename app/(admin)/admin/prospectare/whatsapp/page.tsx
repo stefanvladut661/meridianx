@@ -19,10 +19,10 @@ import { utilizatorCurent } from "@/lib/prospectare/utilizator";
 export const metadata: Metadata = { title: "WhatsApp azi — MERIDIAN Prospectare", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-/** „o firmă”, „5 firme”, „20 de firme”. */
+/** „1 firmă”, „5 firme”, „20 de firme”. */
 function firme(n: number): string {
   const rest = n % 100;
-  if (n === 1) return "O firmă";
+  if (n === 1) return "1 firmă";
   return rest >= 20 || (rest === 0 && n !== 0) ? `${n.toLocaleString("ro-RO")} de firme` : `${n.toLocaleString("ro-RO")} firme`;
 }
 
@@ -73,11 +73,7 @@ export default async function WhatsAppPage() {
       <Card as="section" aria-labelledby="whatsapp-viitoare">
         <SectionTitle
           title={<span id="whatsapp-viitoare">Programate de mâine încolo</span>}
-          hint={
-            viitoare.ok && viitoare.data.length
-              ? `${firme(viitoare.data.length)} pe WhatsApp, pe zile. Le poți anula până în ziua lor: se întorc în rezervă.`
-              : "Pe zile, cu anulare până în ziua lor"
-          }
+          hint={viitoare.ok && viitoare.data.length ? firme(viitoare.data.length) : undefined}
         />
         <div className="mt-3">
           {viitoare.ok ? (

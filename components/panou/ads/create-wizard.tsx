@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
-import { AlertTriangle, ArrowLeft, ArrowRight, Film, Link2, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Film, Link2, Sparkles } from "lucide-react";
 import {
   CURRENCIES,
   MAX_VIDEOS,
@@ -25,6 +25,7 @@ import { aspectLabel, durationLabel, type MaterialRow, type MaterialUploadRow } 
 import type { AccountSummary } from "@/lib/ads/model/types";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "../ui/actions";
+import { Info } from "../ui/info";
 import { Btn, Card, Pill, SegmentedControl, Stamp, btnClass } from "../ui/primitives";
 import { EmptyState } from "../ui/states";
 import { AdsPreview } from "./ads-preview";
@@ -43,7 +44,7 @@ import {
   PlatformFields,
 } from "./plan-form";
 import { ProblemList } from "./problem-list";
-import { ERROR_TEXT, LABEL, OK_TEXT, ROW_ERROR } from "./tone";
+import { ERROR_TEXT, OK_TEXT, ROW_ERROR } from "./tone";
 
 /**
  * „Creează ghidat” (v2): o campanie pe pași — canal → obiectiv → public și
@@ -72,12 +73,12 @@ export interface WizardActions {
 }
 
 const STEPS = [
-  { key: "canal", title: "Canal", hint: "Contul în care se creează campania.", prefixes: ["format", "channel", "workspace", "ad_account"] },
-  { key: "obiectiv", title: "Obiectiv", hint: "Ce urmărește campania.", prefixes: ["campaign.name", "campaign.objective", "conversion", "destination"] },
-  { key: "public", title: "Public și buget", hint: "Cine o vede și cât poți cheltui pe zi.", prefixes: ["audience", "campaign.daily_budget", "campaign.currency", "campaign"] },
-  { key: "reclame", title: "Reclame", hint: "Clipurile din Materiale, textele și butonul.", prefixes: ["creative", "meta", "tiktok", "google"] },
-  { key: "previzualizare", title: "Previzualizare", hint: "Exact ce va livra.", prefixes: [] as string[] },
-  { key: "verificare", title: "Verificare", hint: "Verificare pe conturile reale, apoi crearea pe pauză.", prefixes: [] as string[] },
+  { key: "canal", title: "Canal", prefixes: ["format", "channel", "workspace", "ad_account"] },
+  { key: "obiectiv", title: "Obiectiv", prefixes: ["campaign.name", "campaign.objective", "conversion", "destination"] },
+  { key: "public", title: "Public și buget", prefixes: ["audience", "campaign.daily_budget", "campaign.currency", "campaign"] },
+  { key: "reclame", title: "Reclame", prefixes: ["creative", "meta", "tiktok", "google"] },
+  { key: "previzualizare", title: "Previzualizare", prefixes: [] as string[] },
+  { key: "verificare", title: "Verificare", prefixes: [] as string[] },
 ] as const;
 
 /** Ultimul pas în care se scrie ceva; peste el nu se reia nimic după un refresh. */
@@ -87,11 +88,11 @@ const LAST = STEPS.length - 1;
 const PREVIEW_STEP = LAST - 1;
 
 const OBJECTIVE_HINT: Record<Objective, string> = {
-  leads: "Oameni care îți lasă datele: formular pe site sau în platformă. Cere pixelul.",
-  traffic: "Clicuri spre pagină. Platforma caută oamenii care dau clic, nu pe cei care cumpără.",
-  sales: "Cumpărături pe site, măsurate cu pixelul.",
-  video_views: "Oameni care se uită la video. Bun pentru încălzirea publicului.",
-  awareness: "Cât mai mulți oameni din public, de mai multe ori.",
+  leads: "Formular pe site sau în platformă · cu pixel",
+  traffic: "Clicuri spre pagină, nu cumpărători",
+  sales: "Cumpărături pe site · cu pixel",
+  video_views: "Vizionări · încălzește publicul",
+  awareness: "Cât mai mulți oameni, de mai multe ori",
 };
 
 const PLACEMENTS: { value: Placement; label: string }[] = [
@@ -104,7 +105,7 @@ const UTM_SOURCE: Record<Platform, string> = { meta: "facebook", tiktok: "tiktok
 const UTM_MEDIUM: Record<Platform, string> = { meta: "paid_social", tiktok: "paid_social", google: "paid_video" };
 const STORAGE_KEY = "meridian_ads_wizard";
 const POLL_MS = 3000;
-const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Nu s-a trimis nimic spre platformă. Încearcă din nou.";
+const UNREACHABLE = "Serverul n-a răspuns (rețea sau sesiune). Nu s-a trimis nimic. Încearcă din nou.";
 
 function slug(text: string): string {
   return text
@@ -375,7 +376,7 @@ export function CreateWizard({
   const next = () => {
     setAttempted((current) => new Set(current).add(step));
     if (step === 0 && !account) {
-      setNotice("Alege contul în care se creează campania.");
+      setNotice("Alege contul.");
       return;
     }
     if (step === LAST_EDIT && picked.length === 0) {
@@ -526,8 +527,7 @@ export function CreateWizard({
       <Card padded={false}>
         <EmptyState
           icon={Link2}
-          title={`${client.name} n-are încă niciun cont de reclame legat.`}
-          text="Campania se creează într-un cont al clientului. Leagă-i contul din pagina Clienți, apoi revino aici."
+          title={`${client.name} n-are cont legat`}
           action={
             <Link href="/admin/ads/clienti" className={btnClass({ variant: "primary", size: "sm" })}>
               Leagă un cont
@@ -563,20 +563,20 @@ export function CreateWizard({
     (step < LAST
       ? `Pasul ${step + 1} din ${STEPS.length}.`
       : created
-        ? "Creată. Campania e oprită; o pornești din platformă."
+        ? "Creată pe pauză."
         : checking
           ? preparing
-            ? `Video-urile ajung în contul de reclame; ${checkLabel} le procesează. Nu închide pagina.`
-            : `${checkLabel} caută contul, pixelul, video-urile și fiecare nume din targetare…`
+            ? `Video-urile se trimit în cont; ${checkLabel} le procesează. Nu închide pagina.`
+            : `${checkLabel} verifică contul, pixelul, video-urile și targetarea…`
           : creating
-            ? "Se creează campania, grupul și reclamele, una câte una. Nu închide pagina."
+            ? "Se creează campania, grupul și reclamele. Nu închide pagina."
             : totalErrors > 0
-              ? "Corectează întâi ce e mai sus."
+              ? "Corectează ce e mai sus."
               : freshCheck?.ok
                 ? `Se creează în ${freshCheck.account?.name ?? "contul ales"}: 1 campanie, 1 grup, ${adsCount ?? "0 reclame"} — toate oprite.`
                 : check
-                  ? "Planul s-a schimbat sau verificarea a găsit ceva de corectat. Verifică din nou."
-                  : "Întâi verificarea pe contul real: video-urile ajung în cont, apoi se verifică totul fără să se creeze nimic.");
+                  ? "Planul s-a schimbat sau are ceva de corectat. Verifică din nou."
+                  : "Verifică pe contul real. Video-urile se trimit întâi în cont.");
 
   return (
     <div className="space-y-4">
@@ -623,9 +623,6 @@ export function CreateWizard({
             <h2 ref={heading} tabIndex={-1} className="text-[16px] font-semibold tracking-[-0.01em] outline-none">
               {step + 1}. {STEPS[step].title}
             </h2>
-            <p className="mt-1 text-[14px] text-muted-foreground">
-              {step === 0 ? `Contul lui ${client.name} în care se creează campania. Clientul îl schimbi din bara de sus.` : STEPS[step].hint}
-            </p>
           </div>
 
           <PlanFormProvider value={{ draft: draft ?? {}, update, errors: shownErrors, warnings: shownWarnings }}>
@@ -659,7 +656,7 @@ export function CreateWizard({
                                   <span className="block font-mono text-[12px] text-muted-foreground">
                                     {item.adAccount} · {item.currency ?? "—"}
                                   </span>
-                                  {blocked ? <span className="mt-1 block text-[12.5px] text-apricot">Spațiul n-are token: {space?.tokenEnv ?? "tokenul"} lipsește în Vercel.</span> : null}
+                                  {blocked ? <span className="mt-1 block text-[13px] text-apricot">Fără token: {space?.tokenEnv ?? "tokenul"} lipsește în Vercel.</span> : null}
                                 </span>
                               </label>
                             );
@@ -667,7 +664,6 @@ export function CreateWizard({
                         </div>
                       </fieldset>
                     ))}
-                    <p className="text-[13px] leading-relaxed text-muted-foreground">Toate cele trei creează campania oprită. Diferă doar în platforma unde o pornești.</p>
                   </div>
                 </Section>
               ) : null}
@@ -676,7 +672,7 @@ export function CreateWizard({
                 <>
                   <Section>
                     <fieldset>
-                      <legend className={cn(LABEL, "mb-2")}>Ce vrei de la campanie</legend>
+                      <legend className="sr-only">Obiectivul campaniei</legend>
                       <div className="grid gap-2 sm:grid-cols-2">
                         {OBJECTIVES.map((objective) => {
                           const selected = getIn(draft ?? {}, "campaign.objective") === objective;
@@ -691,7 +687,7 @@ export function CreateWizard({
                             >
                               <input id={objective === "leads" ? fieldId("campaign.objective") : undefined} type="radio" name="obiectiv" className="sr-only" checked={selected} onChange={() => chooseObjective(objective)} />
                               {OBJECTIVE_LABEL[objective]}
-                              <span className="mt-0.5 block text-[12.5px] leading-snug text-muted-foreground">{OBJECTIVE_HINT[objective]}</span>
+                              <span className="mt-0.5 block text-[13px] leading-snug text-muted-foreground">{OBJECTIVE_HINT[objective]}</span>
                             </label>
                           );
                         })}
@@ -702,11 +698,11 @@ export function CreateWizard({
                     </div>
                   </Section>
                   {getIn(draft ?? {}, "conversion") !== undefined ? (
-                    <Section title="Ce se numără">
+                    <Section title="Conversia">
                       <ConversionFields platform={platform} />
                     </Section>
                   ) : null}
-                  <Section title="Unde ajunge omul">{summary ? <DestinationFields summary={summary} /> : null}</Section>
+                  <Section title="Destinația">{summary ? <DestinationFields summary={summary} /> : null}</Section>
                 </>
               ) : null}
 
@@ -717,10 +713,9 @@ export function CreateWizard({
                   </Section>
                   <Section title="Bugetul">
                     <BudgetFields />
-                    {summary?.monthly ? <p className="mt-2 text-[13.5px] text-muted-foreground">{summary.monthly}, dacă rulează toată luna.</p> : null}
-                    {workspace ? (
-                      <p className="mt-1 text-[13px] text-muted-foreground">
-                        Plafonul spațiului {workspace.name}: {capText} pe zi.
+                    {summary?.monthly || workspace ? (
+                      <p className="pu-num mt-2 text-[13.5px] text-muted-foreground">
+                        {[summary?.monthly, workspace ? `plafon ${workspace.name}: ${capText}/zi` : null].filter(Boolean).join(" · ")}
                       </p>
                     ) : null}
                   </Section>
@@ -731,18 +726,19 @@ export function CreateWizard({
                 <>
                   <Section
                     title={
-                      <>
-                        Video-urile, din Materiale <span className="font-normal text-muted-foreground">· {chosen.length} din cel mult {MAX_VIDEOS}</span>
-                      </>
+                      <span className="inline-flex items-center gap-1.5">
+                        Video-uri din Materiale <span className="pu-num font-normal text-muted-foreground">· {chosen.length}/{MAX_VIDEOS}</span>
+                        <Info>O reclamă pentru fiecare video × text, în același grup.</Info>
+                      </span>
                     }
                     aside={
-                      <Link href="/admin/ads/materiale" className="text-[13px] text-lav hover:underline">
-                        Urcă un video nou
+                      <Link href="/admin/ads/materiale" className="text-[13.5px] text-lav hover:underline">
+                        Urcă video
                       </Link>
                     }
                   >
                     {listed.length === 0 ? (
-                      <p className="text-[14px] leading-relaxed text-muted-foreground">Niciun material pentru {client.name} încă. Urcă video-ul în Materiale, apoi revino: pașii făcuți rămân.</p>
+                      <p className="text-[14px] leading-relaxed text-muted-foreground">Niciun material pentru {client.name}. Pașii făcuți rămân.</p>
                     ) : (
                       <ul className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
                         {listed.map((material) => {
@@ -767,8 +763,8 @@ export function CreateWizard({
                                   <input type="checkbox" checked={selected} onChange={() => toggleMaterial(material.id)} disabled={!selected && chosen.length >= MAX_VIDEOS} className="mt-0.5 h-4 w-4 shrink-0 accent-lav" />
                                   <span className="min-w-0">
                                     <span className="block break-words text-[14px] font-medium leading-snug">{material.name}</span>
-                                    <span className="block text-[12px] text-muted-foreground">{[durationLabel(material.durationSeconds), aspectLabel(material.width, material.height)].filter(Boolean).join(" · ") || "—"}</span>
-                                    <span className={cn("block text-[12px]", inAccount ? OK_TEXT : "text-muted-foreground")}>{inAccount ? "deja în contul ăsta" : "se trimite în cont la verificare"}</span>
+                                    <span className="block text-[13px] text-muted-foreground">{[durationLabel(material.durationSeconds), aspectLabel(material.width, material.height)].filter(Boolean).join(" · ") || "—"}</span>
+                                    <span className={cn("block text-[13px]", inAccount ? OK_TEXT : "text-muted-foreground")}>{inAccount ? "în cont" : "se trimite la verificare"}</span>
                                   </span>
                                 </span>
                               </label>
@@ -777,8 +773,6 @@ export function CreateWizard({
                         })}
                       </ul>
                     )}
-                    {chosen.length === 0 ? <p className="mt-2 text-[12.5px] text-muted-foreground">Fără video, reclama nu livrează: alege cel puțin unul ca să continui.</p> : null}
-                    {chosen.length > 1 ? <p className="mt-2 text-[13px] text-muted-foreground">Cu mai multe video-uri, se face câte o reclamă pentru fiecare video × text, în același grup.</p> : null}
                   </Section>
                   <Section title="Textele și butonul">
                     <div className="space-y-5">
@@ -793,7 +787,6 @@ export function CreateWizard({
                   <Section>
                     <details className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-3.5">
                       <summary className="cursor-pointer text-[14px] font-medium">Îmbunătățiri automate · toate oprite</summary>
-                      <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">Un testimonial filmat nu se lasă rescris de platformă. Le pornești doar știind ce fac.</p>
                       <div className="mt-3">
                         <EnhancementsFields platform={platform} />
                       </div>
@@ -811,7 +804,7 @@ export function CreateWizard({
                     </p>
                     <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                       Pentru oameni de {summary.age}, {summary.gender}, din {summary.places.length > 0 ? joinRo(summary.places) : "—"}. {summary.ads.length === 1 ? "O reclamă" : countOf(summary.ads.length, "reclame")}
-                      {summary.cta ? ` cu butonul „${summary.cta}”` : ""}. Totul se creează oprit; o pornești tu, din {PLATFORM_LABEL[platform]}.
+                      {summary.cta ? ` cu butonul „${summary.cta}”` : ""}.
                     </p>
                   </Section>
                   {previewCreative ? (
@@ -819,13 +812,11 @@ export function CreateWizard({
                       <div className="flex flex-col items-center gap-3">
                         {platform !== "google" ? <SegmentedControl options={PLACEMENTS} value={placement} onChange={setPlacement} ariaLabel="Amplasare" /> : null}
                         <CreativePreview creative={previewCreative} platform={platform} placement={placement} brand={client.name} className="w-full max-w-[300px]" />
-                        <p className="max-w-sm text-center text-[12.5px] leading-relaxed text-muted-foreground">
-                          Așa o vede omul. Textul și butonul sunt exact cele din plan{platform === "google" ? "; Google își arată reclama în YouTube, Discover și Gmail, deci macheta e orientativă" : ""}.
-                        </p>
+                        {platform === "google" ? <p className="max-w-sm text-center text-[13px] leading-relaxed text-muted-foreground">Machetă orientativă: Google o arată în YouTube, Discover și Gmail.</p> : null}
                       </div>
                     </Section>
                   ) : null}
-                  <Section title="Reclamele care se creează">
+                  <Section title="Reclamele">
                     <AdsPreview summary={summary} rotating={getIn(plan ?? {}, "creative.variants") === "platform_rotates"} />
                   </Section>
                 </>
@@ -851,7 +842,7 @@ export function CreateWizard({
                     </div>
                   </Section>
 
-                  <Section title="Video-urile în contul de reclame">
+                  <Section title="Video-uri în cont">
                     <ul className="space-y-1.5 text-[14px]">
                       {picked.map((material) => {
                         const state = readyIds.has(material.id) ? { phase: "ready" as const } : (states[material.id] ?? { phase: "waiting" as const });
@@ -878,7 +869,7 @@ export function CreateWizard({
                   {totalErrors > 0 ? (
                     <Section>
                       <div className="space-y-2">
-                        <p className={cn("text-[14.5px] font-semibold", ERROR_TEXT)}>{totalErrors === 1 ? "Un lucru" : countOf(totalErrors, "lucruri")} de corectat înainte de verificare</p>
+                        <p className={cn("text-[14.5px] font-semibold", ERROR_TEXT)}>{totalErrors === 1 ? "Un lucru" : countOf(totalErrors, "lucruri")} de corectat</p>
                         {allErrors
                           .filter((problem) => !/^creative\.videos?(\.\d+)?$/.test(problem.path))
                           .slice(0, 12)
@@ -935,7 +926,6 @@ export function CreateWizard({
                   <Section>
                     <details className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-3.5">
                       <summary className="cursor-pointer text-[14px] font-medium">Planul, în JSON</summary>
-                      <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">Același format ca la „Importă JSON”. Îl poți duce acolo ca să-l corectezi de mână sau să-l dai mai departe.</p>
                       <pre className="mt-3 max-h-80 overflow-auto rounded-xl border border-white/[0.1] bg-[#0A0A0E] p-3 font-mono text-[12.5px] leading-relaxed text-foreground/80">{JSON.stringify(plan, null, 2)}</pre>
                       <Btn size="sm" variant="outline" className="mt-3" onClick={openInEditor}>
                         Deschide în „Importă JSON”
@@ -991,17 +981,14 @@ export function CreateWizard({
               {previewCreative && platform ? (
                 <>
                   <CreativePreview creative={previewCreative} platform={platform} placement="Feed" brand={client.name} />
-                  {!previewCreative.headline && !previewCreative.body ? <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">Titlul și textul apar aici pe măsură ce le scrii, la pasul Reclame.</p> : null}
-                  {platform === "google" ? <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">Macheta e orientativă: Google își arată reclama în YouTube, Discover și Gmail.</p> : null}
+                  {!previewCreative.headline && !previewCreative.body ? <p className="mt-2 text-[13px] text-muted-foreground">Textele vin la pasul Reclame.</p> : null}
+                  {platform === "google" ? <p className="mt-2 text-[13px] text-muted-foreground">Machetă orientativă.</p> : null}
                 </>
               ) : (
-                <p className="rounded-xl border border-dashed border-white/[0.1] px-3 py-6 text-center text-[13.5px] leading-relaxed text-muted-foreground">Alege contul, iar reclama apare aici și se completează pe măsură ce o scrii.</p>
+                <p className="rounded-xl border border-dashed border-white/[0.1] px-3 py-6 text-center text-[14px] text-muted-foreground">Alege contul.</p>
               )}
             </div>
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-white/[0.07] px-2.5 py-2">
-              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" />
-              <p className="text-[12px] leading-tight text-muted-foreground">Se creează oprită. Pornirea e în platformă.</p>
-            </div>
+            <Stamp className="mt-3">Se creează pe pauză</Stamp>
             <dl className="mt-4 space-y-2 border-t border-white/[0.06] pt-3 text-[13.5px]">
               <div className="flex items-baseline justify-between gap-3">
                 <dt className="text-muted-foreground">Contul</dt>
@@ -1037,7 +1024,7 @@ export function CreateWizard({
         onOpenChange={setConfirmOpen}
         title="Creezi campania pe pauză?"
         description={`${planName || "(fără nume)"} · ${platform ? PLATFORM_LABEL[platform] : ""} · ${summary?.objective ?? "(fără obiectiv)"}`}
-        consequence={`Se creează o campanie oprită, cu ${summary?.budget ?? "buget necunoscut"}${capText ? `; plafonul spațiului ${workspace?.name ?? ""} este ${capText} pe zi` : ""}. În cont: 1 campanie, 1 grup, ${adsCount ?? "0 reclame"} — toate oprite. Pornirea rămâne la tine, în platformă.`}
+        consequence={`Campanie oprită, buget ${summary?.budget ?? "necunoscut"}${capText ? `. Plafonul spațiului ${workspace?.name ?? ""}: ${capText}/zi` : ""}. În cont: 1 campanie, 1 grup, ${adsCount ?? "0 reclame"}, toate oprite. O pornești tu, din platformă.`}
         confirmLabel="Creează pe pauză"
         tone="primary"
         onConfirm={() => runCreate(false)}

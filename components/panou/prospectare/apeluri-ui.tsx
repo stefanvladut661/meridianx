@@ -87,7 +87,7 @@ export function Taburi<T extends string>({
   );
 }
 
-/** Text ascuns sub un buton („Script scurt”, „Mesaj după apel”), ca în CallCard din prototip. */
+/** Text ascuns sub un buton („Script”, „Mesaj după „Interesat””), ca în CallCard din prototip. */
 export function Dezvaluire({ titlu, children, className }: { titlu: ReactNode; children: ReactNode; className?: string }) {
   const [deschis, setDeschis] = useState(false);
   const id = useId();
@@ -122,8 +122,7 @@ export function NepotrivireUtilizator({ cine, salvat }: { cine: Utilizator; salv
   return (
     <InlineNote tone="apricot" className="flex flex-wrap items-center justify-between gap-2">
       <p className="min-w-0 flex-1">
-        Vezi lista lui {UTILIZATORI[cine]} din adresă, dar comutatorul e pe {UTILIZATORI[salvat]}: ce imporți intră în lista lui {UTILIZATORI[salvat]}, iar
-        rezultatele apar ca date de {UTILIZATORI[salvat]}.
+        Vezi lista lui {UTILIZATORI[cine]}, dar lucrezi ca {UTILIZATORI[salvat]}: importul și rezultatele merg pe {UTILIZATORI[salvat]}.
       </p>
       <Btn
         size="sm"

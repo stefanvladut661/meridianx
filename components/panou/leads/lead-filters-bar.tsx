@@ -177,7 +177,7 @@ export function LeadFiltersBar({
             <a
               href={exportHref}
               className={btnClass({ variant: "outline", size: "sm" })}
-              onClick={() => notify(`Export pornit: ${leadCount(filtered)}, exact ce vezi în filtru.`)}
+              onClick={() => notify(`Export pornit: ${leadCount(filtered)}.`)}
             >
               <Download className="h-4 w-4" aria-hidden="true" />
               Exportă CSV
@@ -186,8 +186,8 @@ export function LeadFiltersBar({
         </div>
       </div>
 
-      <p className="mt-2 text-[12.5px] text-muted-foreground/70" aria-live="polite">
-        {totalAll === null || filtered === totalAll ? `${leadCount(filtered)} în total` : `${filtered} din ${leadCount(totalAll)} se potrivesc filtrului`}
+      <p className="mt-2 text-[13px] text-muted-foreground" aria-live="polite">
+        {totalAll === null || filtered === totalAll ? leadCount(filtered) : `${filtered} din ${leadCount(totalAll)}`}
       </p>
     </form>
   );

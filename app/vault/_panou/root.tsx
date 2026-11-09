@@ -56,9 +56,9 @@ function SetupNotice() {
           title="Vault-ul nu e configurat"
           text={
             <>
-              Vault-ul vorbește direct cu Supabase din browser. Completează în <code className="font-mono text-foreground/80">.env.local</code> variabilele{" "}
-              <code className="font-mono text-foreground/80">NEXT_PUBLIC_SUPABASE_URL</code> și <code className="font-mono text-foreground/80">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, apoi repornește serverul. Apoi aplică
-              migrările 3 și 4 în SQL editor.
+              Completează în <code className="font-mono text-foreground/80">.env.local</code>{" "}
+              <code className="font-mono text-foreground/80">NEXT_PUBLIC_SUPABASE_URL</code> și <code className="font-mono text-foreground/80">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, repornește serverul și aplică
+              migrările 3 și 4.
             </>
           }
         />

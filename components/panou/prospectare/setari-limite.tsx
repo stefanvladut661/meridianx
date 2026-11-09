@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Bot, Loader2, Mail, Save } from "lucide-react";
 import { salveazaLimite, seteazaCasuta } from "@/app/(admin)/admin/prospectare/actions";
 import { timeRo } from "@/components/panou/ui/format";
+import { Info } from "@/components/panou/ui/info";
 import { Btn, Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { inputClass } from "@/components/panou/ui/states";
 import { useToast } from "@/components/panou/ui/toast";
@@ -53,6 +54,7 @@ function Camp({
   id,
   label,
   hint,
+  info,
   value,
   onChange,
   min,
@@ -62,6 +64,7 @@ function Camp({
   id: string;
   label: string;
   hint?: string;
+  info?: string;
   value: string;
   onChange: (v: string) => void;
   min: number;
@@ -70,9 +73,12 @@ function Camp({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-        {label}
-      </label>
+      <span className="flex items-center gap-1.5">
+        <label htmlFor={id} className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          {label}
+        </label>
+        {info ? <Info label="Ce înseamnă">{info}</Info> : null}
+      </span>
       <input
         id={id}
         type="number"
@@ -188,7 +194,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
         mesaje.push(casuteSchimbate.length === 1 ? `${c.adresa}: ${result.message}` : "");
       }
       if (casuteSchimbate.length > 1) mesaje.push(`${casuteSchimbate.length} căsuțe actualizate.`);
-      notify(mesaje.filter(Boolean).join(" ") || "Limitele sunt salvate.");
+      notify(mesaje.filter(Boolean).join(" ") || "Limite salvate.");
       setStare({ ton: "ok", text: `Salvat la ${timeRo(new Date())}.` });
       router.refresh();
     });
@@ -196,7 +202,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
 
   return (
     <Card>
-      <SectionTitle title="Limite" hint="Se aplică de la următoarea rulare a zilei" />
+      <SectionTitle title="Limite" info="Se aplică de la următoarea rulare a zilei." />
       <form onSubmit={salveaza} noValidate aria-busy={pending}>
         <div className="mt-4 grid gap-6 lg:grid-cols-2 lg:gap-4">
           <fieldset className="min-w-0 space-y-3">
@@ -208,7 +214,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
             <Camp
               id="scor"
               label="Scor minim pentru coada de construcție"
-              hint="Roboții construiesc doar firme cu cel puțin acest scor și cu email sau mobil."
+              info="Roboții construiesc doar firme cu cel puțin acest scor și cu email sau mobil."
               value={scor}
               onChange={(v) => {
                 setScor(v);
@@ -222,7 +228,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
             <Camp
               id="apeluri"
               label="Apeluri pe zi, pe om"
-              hint="Câte firme intră în lista unui om într-o zi, la programarea manuală. Ce nu încape trece în zilele următoare. Importul în „Apeluri azi” nu ține cont de ea."
+              info="Câte firme intră pe zi în lista unui om, la programare; restul trece pe zilele următoare. Importul în „Apeluri azi” nu ține cont de ea."
               value={apeluri}
               onChange={(v) => {
                 setApeluri(v);
@@ -232,15 +238,12 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
               max={500}
               eroare={erori.apeluri}
             />
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
-              „Nu răspunde” nu scoate firma după un număr de încercări: nu e contact, firma se întoarce în distribuție, iar încercările doar se numără în fișa ei.
-            </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <Camp
                 id="rezervare"
                 label="Rezervarea, în ore"
-                hint="Cât ține un robot o firmă până o poate lua altul."
+                info="Cât ține un robot o firmă până o poate lua altul."
                 value={rezervare}
                 onChange={(v) => {
                   setRezervare(v);
@@ -253,7 +256,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
               <Camp
                 id="cereri"
                 label="Cereri pe minut, pe robot"
-                hint="Peste ea, robotul primește 429 și așteaptă un minut."
+                info="Peste ea, robotul primește 429 și așteaptă un minut."
                 value={cereri}
                 onChange={(v) => {
                   setCereri(v);
@@ -274,7 +277,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
             <Camp
               id="plafon"
               label="Plafon de încălzire"
-              hint="Emailuri pe zi pentru o căsuță fără limită proprie: la 00:00, distribuția îi programează cel mult atâtea. 0 = căsuțele fără limită proprie nu trimit."
+              info="Emailuri pe zi pentru o căsuță fără limită proprie. 0 = căsuțele fără limită proprie nu trimit."
               value={plafon}
               onChange={(v) => {
                 setPlafon(v);
@@ -287,7 +290,7 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
             {casute === null ? (
               <EroareCitire title="Căsuțele nu s-au putut citi" message={eroareCasute ?? "Căsuțele nu s-au putut citi."} className="py-6" />
             ) : casute.length === 0 ? (
-              <p className="pt-1 text-[13.5px] leading-relaxed text-muted-foreground">Nicio căsuță încă. O căsuță apare aici după primul email trimis de pe ea; apoi îi poți pune plafonul.</p>
+              <p className="pt-1 text-[13.5px] leading-relaxed text-muted-foreground">Nicio căsuță încă: apare după primul email trimis.</p>
             ) : (
               <ul className="space-y-2 pt-1">
                 {casute.map((c, i) => {
@@ -342,8 +345,8 @@ export function SetariLimite({ setari, casute, eroareCasute }: { setari: Limite;
                 })}
               </ul>
             )}
-            <p id="casute-h" className="pt-1 text-[12.5px] leading-relaxed text-muted-foreground">
-              Limita căsuței: câte emailuri i se programează pe zi. Gol = plafonul de încălzire; 0 = nu trimite. Fără bifa „trimite”, căsuța e oprită din admin și nu primește programări.
+            <p id="casute-h" className="pt-1 text-[13px] leading-relaxed text-muted-foreground">
+              Gol = plafonul · 0 = nu trimite · fără „trimite” = oprită
             </p>
           </fieldset>
         </div>

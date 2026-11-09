@@ -23,13 +23,13 @@ export async function connectInstagramAction(raw: unknown): Promise<AccountResul
   const problem = keyProblem();
   if (problem) return { ok: false, message: problem };
   const token = typeof raw === "string" ? raw.trim() : "";
-  if (!/^[A-Za-z0-9_.|-]{20,2000}$/.test(token)) return { ok: false, message: "Asta nu arată a token Instagram. Copiază-l întreg din panoul Meta (Generate token), fără spații." };
+  if (!/^[A-Za-z0-9_.|-]{20,2000}$/.test(token)) return { ok: false, message: "Nu arată a token Instagram. Copiază-l întreg din panoul Meta, fără spații." };
 
   let me: { userId: string; username: string | null };
   try {
     me = await getMe(token);
   } catch (error) {
-    if (error instanceof IgError && (error.code === 190 || error.status === 400 || error.status === 401)) return { ok: false, message: "Instagram nu primește tokenul (expirat, revocat sau copiat pe jumătate). Generează altul în panoul Meta și lipește-l din nou." };
+    if (error instanceof IgError && (error.code === 190 || error.status === 400 || error.status === 401)) return { ok: false, message: "Instagram refuză tokenul (expirat, revocat sau incomplet). Generează altul în panoul Meta." };
     return { ok: false, message: verdict(error).message };
   }
   try {
@@ -37,14 +37,14 @@ export async function connectInstagramAction(raw: unknown): Promise<AccountResul
     await publishingLimit(me.userId, token);
   } catch (error) {
     const v = verdict(error);
-    return { ok: false, message: v.kind === "token" ? "Tokenul e bun, dar nu are permisiunea de publicare (instagram_business_content_publish). Bifează-o în panoul Meta, generează tokenul din nou și lipește-l aici." : v.message };
+    return { ok: false, message: v.kind === "token" ? "Tokenul n-are permisiunea instagram_business_content_publish. Bifeaz-o în panoul Meta și generează altul." : v.message };
   }
 
   const saved = await saveAccount({ platforma: "instagram", contId: me.userId, nume: me.username ? `@${me.username}` : null, token, tokenExpiraLa: new Date(Date.now() + DASHBOARD_TOKEN_MS).toISOString(), actor });
   if (!saved.ok) return saved;
   await logEvent({ actor, zona: "conturi", actiune: "Instagram conectat", tinta: "instagram", rezultat: "ok", mesaj: `${me.username ? `@${me.username}` : "Contul"} (id ${me.userId}). Tokenul e salvat criptat și se reînnoiește singur.` });
   revalidatePath("/admin/postari", "layout");
-  return { ok: true, message: `Instagram e conectat${me.username ? ` ca @${me.username}` : ""}. Tokenul se reînnoiește singur, săptămânal.` };
+  return { ok: true, message: `Instagram e conectat${me.username ? ` ca @${me.username}` : ""}.` };
 }
 
 export async function disconnectAction(platform: unknown): Promise<AccountResult> {
@@ -61,5 +61,5 @@ export async function disconnectAction(platform: unknown): Promise<AccountResult
   const label = platform === "instagram" ? "Instagram" : "TikTok";
   await logEvent({ actor, zona: "conturi", actiune: `${label} deconectat`, tinta: platform, rezultat: "ok", mesaj: `Tokenul ${label} a fost șters din admin. Postările ${label} așteaptă până la reconectare.` });
   revalidatePath("/admin/postari", "layout");
-  return { ok: true, message: `${label} e deconectat. Postările ${label} așteaptă până îl conectezi din nou.` };
+  return { ok: true, message: `${label} e deconectat.` };
 }

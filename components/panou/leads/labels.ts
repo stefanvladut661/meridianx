@@ -131,7 +131,7 @@ export function describeEvent(event: LeadEvent): HistoryEntry {
       const length = typeof payload.length === "number" ? payload.length : null;
       return {
         ...base,
-        what: "Notițe interne actualizate",
+        what: "Note actualizate",
         who: actor ?? "Panou",
         detail: length !== null ? `${length.toLocaleString("ro-RO")} caractere` : undefined,
       };
@@ -140,8 +140,8 @@ export function describeEvent(event: LeadEvent): HistoryEntry {
       const notification = isOutcome(payload.notification) ? payload.notification : null;
       const confirmation = isOutcome(payload.confirmation) ? payload.confirmation : null;
       const mails: NonNullable<HistoryEntry["mails"]> = [];
-      if (notification) mails.push({ label: "notificare către tine", outcome: MAIL_OUTCOME_LABEL[notification], tone: MAIL_OUTCOME_TONE[notification] });
-      if (confirmation) mails.push({ label: "confirmare către client", outcome: MAIL_OUTCOME_LABEL[confirmation], tone: MAIL_OUTCOME_TONE[confirmation] });
+      if (notification) mails.push({ label: "notificare", outcome: MAIL_OUTCOME_LABEL[notification], tone: MAIL_OUTCOME_TONE[notification] });
+      if (confirmation) mails.push({ label: "confirmare client", outcome: MAIL_OUTCOME_LABEL[confirmation], tone: MAIL_OUTCOME_TONE[confirmation] });
       return {
         ...base,
         what: "Emailuri trimise",
@@ -167,7 +167,7 @@ export function describeEvent(event: LeadEvent): HistoryEntry {
         ...base,
         what: "Cerere identică ignorată",
         who: "Sistem",
-        detail: "aceeași trimitere, în câteva minute: nu s-a creat un al doilea lead",
+        detail: "trimisă de două ori; un singur lead",
       };
     default: {
       const keys = Object.keys(payload);

@@ -138,8 +138,8 @@ export function EntityPanel({
         {/* „289 de lead-uri” încape întreg, pe două rânduri dacă trebuie — nu tăiat. */}
         <dd className={cn("pu-num mt-1 font-medium leading-snug", value.length > 11 ? "text-[15px]" : "text-[18px]")}>{value}</dd>
         {delta && delta.percent !== null ? (
-          <dd className="mt-1 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground">
-            <DeltaChip delta={delta} /> față de înainte
+          <dd className="mt-1">
+            <DeltaChip delta={delta} />
           </dd>
         ) : null}
       </div>
@@ -194,7 +194,7 @@ export function EntityPanel({
                 Pune pe pauză
               </Btn>
             ) : (
-              <p className="text-[13px] text-muted-foreground">Pauza pe {PLATFORM_LABEL[entity.platform]} din portal vine într-o fază următoare.</p>
+              <p className="text-[13px] text-muted-foreground">Pauza pe {PLATFORM_LABEL[entity.platform]}: doar din platformă.</p>
             )
           ) : null}
           {manager ? (
@@ -241,12 +241,15 @@ export function EntityPanel({
 
         {entity.level === "campaign" ? (
           <section aria-labelledby="rezultat-titlu">
-            <SectionTitle title={<span id="rezultat-titlu">Ce se numără ca rezultat</span>} />
+            <SectionTitle
+              title={<span id="rezultat-titlu">Rezultatul numărat</span>}
+              info={catalog.length > 0 ? "Grupurile și reclamele campaniei numără același lucru. Implicitul vine din ce optimizează campania." : undefined}
+            />
             {catalog.length === 0 ? (
               <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">
                 {account?.measured === false
-                  ? `Contul n-are nicio conversie configurată, deci rezultatele sunt „nemăsurat”. ${entity.platform === "google" ? "Le poți crea din Căutări → Conversii." : `Configurează-le în ${PLATFORM_LABEL[entity.platform]}.`}`
-                  : "Catalogul conversiilor apare după prima actualizare a contului."}
+                  ? `Contul n-are conversii. ${entity.platform === "google" ? "Creează-le din Căutări → Conversii." : `Configurează-le în ${PLATFORM_LABEL[entity.platform]}.`}`
+                  : "Conversiile apar după prima sincronizare a contului."}
               </p>
             ) : (
               <>
@@ -266,10 +269,9 @@ export function EntityPanel({
                   options={[
                     { value: "", label: `Implicit${!entity.resultChosen && chosen ? ` — ${chosen.label}` : !entity.resultChosen ? " — nemăsurat" : ""}` },
                     ...catalog.map((entry) => ({ value: entry.key, label: `${entry.label} (${RESULT_KIND_LABEL[entry.kind].toLowerCase()})` })),
-                    { value: NO_RESULT, label: "Nemăsurat (nu număra nimic)" },
+                    { value: NO_RESULT, label: "Nemăsurat" },
                   ]}
                 />
-                <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">Grupurile și reclamele campaniei numără același lucru. Implicitul vine din ce optimizează campania.</p>
                 {resultError ? <p role="alert" className="mt-1 text-[13.5px] text-rose">{resultError}</p> : null}
               </>
             )}
@@ -285,7 +287,7 @@ export function EntityPanel({
         ) : null}
 
         <section aria-labelledby="setari-titlu">
-          <SectionTitle title={<span id="setari-titlu">Setări <span className="font-normal text-muted-foreground">(doar citire)</span></span>} />
+          <SectionTitle title={<span id="setari-titlu">Setări</span>} />
           <dl className="mt-3 divide-y divide-white/[0.05] rounded-xl border border-white/[0.07] text-[14px]">
             {settings.map(([label, value]) => (
               <div key={label} className="flex justify-between gap-4 px-3 py-2">
@@ -311,7 +313,7 @@ export function EntityPanel({
           {entity.portalCampaignId ? (
             <p className="mt-3">
               <Link href={`/admin/ads/${entity.portalCampaignId}`} className={btnClass({ variant: "outline", size: "sm" })}>
-                Planul trimis din portal
+                Planul trimis
               </Link>
             </p>
           ) : null}
@@ -322,7 +324,7 @@ export function EntityPanel({
             <SectionTitle title={<span id="copii-titlu">{CHILD_LABEL[entity.level]} <span className="font-normal text-muted-foreground">({descendants.length})</span></span>} />
             {descendants.length === 0 ? (
               <p className="mt-2 text-[14px] text-muted-foreground">
-                {entity.platform === "google" && entity.kind === "PERFORMANCE_MAX" ? "Performance Max n-are grupuri de reclame: cifrele sunt doar pe campanie." : "Niciunul citit din cont."}
+                {entity.platform === "google" && entity.kind === "PERFORMANCE_MAX" ? "Performance Max n-are grupuri." : "Niciunul citit din cont."}
               </p>
             ) : (
               <ul className="mt-3 divide-y divide-white/[0.05] rounded-xl border border-white/[0.07]">
@@ -346,7 +348,7 @@ export function EntityPanel({
           </section>
         ) : null}
 
-        <p className="text-[13px] text-muted-foreground">Citit din cont {dateTimeRo(entity.lastSeenAt)}. Portalul nu schimbă nimic aici în afară de pauză.</p>
+        <p className="text-[13px] text-muted-foreground">Citit din cont {dateTimeRo(entity.lastSeenAt)}</p>
       </div>
     </div>
   );

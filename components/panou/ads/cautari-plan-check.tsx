@@ -7,6 +7,7 @@ import type { ResolvedName } from "@/lib/ads/types";
 import { countOf } from "@/lib/ads/plan-derive";
 import { Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { InlineNote } from "@/components/panou/ui/actions";
+import { Info } from "@/components/panou/ui/info";
 import { cn } from "@/lib/utils";
 import { PlanProbleme, jumpTo } from "./cautari-plan-probleme";
 
@@ -79,7 +80,7 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
         title={<span id="search-check">Ce a găsit Google</span>}
         hint={
           <span className={stale ? "text-apricot" : undefined}>
-            {stale ? `Verificat la ${time} · planul s-a schimbat de atunci` : `Verificat la ${time} · nu s-a creat nimic`}
+            {stale ? `${time} · plan schimbat de atunci` : `${time} · nimic creat`}
           </span>
         }
       />
@@ -91,7 +92,7 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
               {check.account.name}
               <span className="ml-2 font-mono text-[12.5px] text-muted-foreground">
                 {check.account.currency} · {check.account.state}
-                {check.manager ? ` · prin managerul ${check.manager}` : " · văzut direct"}
+                {check.manager ? ` · prin managerul ${check.manager}` : " · acces direct"}
               </span>
             </>
           ) : (
@@ -100,11 +101,11 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
         </Row>
         <Row label="Crearea" tone={check.ok ? "ok" : "error"}>
           {check.operations === 0 ? (
-            "Nimic trimis la Google încă: întâi corecturile de mai jos, apoi „Verifică din nou” trimite tot planul cu validateOnly."
+            "Nimic trimis încă: corectează mai jos, apoi „Verifică din nou”."
           ) : (
             <>
-              {countOf(check.operations, "operații")} trimise la Google cu <span className="font-mono text-[13px]">validateOnly</span>
-              {check.ok ? " — Google le-ar accepta pe toate. Nu s-a creat nimic." : " — nu s-a creat nimic."}
+              {countOf(check.operations, "operații")} trimise cu <span className="font-mono text-[13px]">validateOnly</span>
+              {check.ok ? " · Google le acceptă pe toate. Nimic creat." : " · nimic creat."}
             </>
           )}
         </Row>
@@ -151,7 +152,10 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
       </dl>
 
       <div className="mt-4 space-y-4 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3.5">
-        <p className="text-[13px] leading-snug text-muted-foreground">Locațiile și limbile, cum le-a înțeles Google. Asta intră în campanie, nu textul din plan.</p>
+        <p className="flex items-center gap-1.5 text-[12px] uppercase tracking-[0.14em] text-muted-foreground">
+          Locații și limbi, după Google
+          <Info label="Locații și limbi">Asta intră în campanie, nu textul din plan.</Info>
+        </p>
         {check.campaigns.map((campaign) => (
           <div key={campaign.key} className="space-y-2.5">
             <h4 className="text-[14px] font-medium">{campaign.name}</h4>
@@ -177,7 +181,7 @@ export function CautariPlanCheck({ check, stale }: { check: SearchCheck; stale: 
           <InlineNote tone="mint">
             <span className="flex items-center gap-2">
               <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              Totul se potrivește. Planul se poate crea — oprit.
+              Totul se potrivește. Se poate crea pe pauză.
             </span>
           </InlineNote>
         ) : null}

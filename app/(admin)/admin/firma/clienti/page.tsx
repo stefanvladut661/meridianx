@@ -24,7 +24,7 @@ export default async function ClientiPage({ searchParams }: { searchParams: Prom
 
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead title="Clienți" subtitle="Datele firmei, persoanele de contact și contractele: abonamentul pe perioade, ziua emiterii și scadența. Bugetul de reclame e doar recomandat — nu se facturează." />
+      <PageHead title="Clienți" info="Bugetul de reclame e doar recomandat: nu se facturează." />
       {!clients.ok ? (
         <Notice tone="error" className="mt-5">
           {clients.message}

@@ -54,7 +54,7 @@ export function EmailRaspunsuri({ raspunsuri, acum }: { raspunsuri: RaspunsEmail
   };
 
   if (raspunsuri.length === 0) {
-    return <EmptyState icon={Reply} title="Niciun răspuns încă" text="Aici apar răspunsurile, împărțite în pozitive, refuzuri și mesaje automate." />;
+    return <EmptyState icon={Reply} title="Niciun răspuns încă" />;
   }
 
   return (
@@ -74,12 +74,12 @@ export function EmailRaspunsuri({ raspunsuri, acum }: { raspunsuri: RaspunsEmail
               </Link>
               <span className={cn("rounded-full border px-2 py-0.5 text-[12px] font-medium", meta.cls)}>{meta.label}</span>
             </div>
-            <p className="mt-1 break-words text-[13px] leading-relaxed text-muted-foreground">{r.extras ? `„${r.extras}”` : "Fără extras: deschide mesajul în Gmail."}</p>
+            <p className="mt-1 break-words text-[13px] leading-relaxed text-muted-foreground">{r.extras ? `„${r.extras}”` : "Fără extras."}</p>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <time dateTime={r.la} title={dateTimeRo(r.la)} className="text-[12px] text-muted-foreground">
+              <time dateTime={r.la} title={dateTimeRo(r.la)} className="text-[13px] text-muted-foreground">
                 {relativeRo(r.la, acum)}
               </time>
-              {r.casuta ? <span className="min-w-0 break-all text-[12px] text-muted-foreground">· {r.casuta}</span> : null}
+              {r.casuta ? <span className="min-w-0 break-all text-[13px] text-muted-foreground">· {r.casuta}</span> : null}
               <StageBadge etapa={etapa} className="px-2 py-0 text-[12px]" />
               <span className="ml-auto flex flex-wrap items-center gap-1.5">
                 <a href={linkGmail(r)} target="_blank" rel="noreferrer" className={btnClass({ variant: "outline", size: "xs" })}>

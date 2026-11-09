@@ -66,7 +66,7 @@ export function NiseAdauga({ nisaRef }: { nisaRef: RefObject<HTMLInputElement | 
       <h2 id="nisa-adauga-titlu" className="text-[16px] font-semibold tracking-[-0.01em]">
         Adaugă nișă
       </h2>
-      <p id="nisa-adauga-ajutor" className="mt-1 text-[14px] text-muted-foreground">
+      <p id="nisa-adauga-ajutor" className="sr-only">
         Apare liberă pe tablă. Primul robot care o cere o rezervă.
       </p>
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">

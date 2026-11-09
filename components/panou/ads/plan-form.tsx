@@ -47,6 +47,7 @@ import { UTM_KEYS } from "@/lib/ads/plan-derive";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import type { LibraryResponse, UploadActions } from "@/lib/ads/types";
 import { cn } from "@/lib/utils";
+import { Info } from "../ui/info";
 import { Btn, Pill, type PillTone } from "../ui/primitives";
 import {
   FieldMessages,
@@ -90,12 +91,16 @@ function Section({
   prefixes,
   children,
   aside,
+  info,
 }: {
   title: string;
   /** Căile care aparțin secțiunii — din ele se calculează starea. */
   prefixes: string[];
   children: ReactNode;
+  /** O cifră scurtă pe rândul titlului. */
   aside?: ReactNode;
+  /** Explicația, sub „i” lângă titlu. */
+  info?: ReactNode;
 }) {
   const { errors, warnings } = usePlanForm();
   const headingId = useId();
@@ -118,14 +123,17 @@ function Section({
   return (
     <section aria-labelledby={headingId} className="py-5 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-        <h3 id={headingId} className="text-[12.5px] font-medium uppercase tracking-[0.14em] text-foreground/85">
-          {title}
-        </h3>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h3 id={headingId} className="text-[13px] font-medium uppercase tracking-[0.14em] text-foreground/85">
+            {title}
+          </h3>
+          {info ? <Info>{info}</Info> : null}
+          {aside ? <span className="pu-num text-[13.5px] text-muted-foreground">{aside}</span> : null}
+        </div>
         <Pill tone={state.tone} dot>
           {state.label}
         </Pill>
       </div>
-      {aside ? <div className="mt-1.5 text-[13px] leading-snug text-muted-foreground">{aside}</div> : null}
       <div className="mt-3 min-w-0 space-y-4">{children}</div>
     </section>
   );
@@ -288,19 +296,24 @@ function NamedListEditor({
   itemLabel,
   addLabel,
   emptyText,
+  info,
 }: {
   path: string;
   label: string;
   itemLabel: string;
   addLabel: string;
   emptyText: string;
+  info?: ReactNode;
 }) {
   const { draft, update } = usePlanForm();
   const items = asArray(getIn(draft, path));
 
   return (
     <div>
-      <p className={LABEL}>{label}</p>
+      <span className="flex items-center gap-1.5">
+        <span className={LABEL}>{label}</span>
+        {info ? <Info>{info}</Info> : null}
+      </span>
       <PathMessages path={path} />
       {items.length === 0 ? <p className="mt-2 text-[14px] text-muted-foreground">{emptyText}</p> : null}
       <ol className="mt-2 space-y-3">
@@ -506,16 +519,12 @@ function VideoEntry({
               path={`${path}.video_id`}
               label={number === null ? "Id video" : `Id video ${number}`}
               mono
-              hint={
-                loadLibrary
-                  ? "Din biblioteca de media a contului de reclame — scris aici sau ales din listă."
-                  : "Din biblioteca de media a contului de reclame. Lista se poate deschide după ce spațiul are token."
-              }
+              info={loadLibrary ? undefined : "Din biblioteca contului. Lista apare când spațiul are token."}
             />
             {uploaded && uploaded.id === asString(getIn(draft, `${path}.video_id`)) ? (
               <p className={cn("flex items-center gap-2 text-[14px]", OK_TEXT)}>
                 <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-mint" />
-                Urcat acum: {uploaded.fileName} — {PLATFORM_LABEL[platform]} l-a procesat, e în biblioteca contului.
+                Urcat: {uploaded.fileName} · procesat de {PLATFORM_LABEL[platform]}
               </p>
             ) : null}
             {loadLibrary ? <VideoLibrary load={loadLibrary} platform={platform} path={path} /> : null}
@@ -536,7 +545,7 @@ function VideoEntry({
               path={`${path}.file_name`}
               label="Numele fișierului (opțional)"
               mono
-              hint="Fișierul se urcă de aici după ce spațiul are token."
+              info="Fișierul se urcă de aici când spațiul are token."
             />
           )
         ) : null}
@@ -570,18 +579,18 @@ function VideosEditor({
     return (
       <div className="space-y-3">
         <VideoEntry path="creative.video" number={null} platform={platform} loadLibrary={loadLibrary} upload={upload} />
-        <AddButton
-          onClick={() => {
-            const next = { ...creative, videos: [creative.video ?? blank, blank] };
-            delete (next as Record<string, unknown>).video;
-            update("creative", next);
-          }}
-        >
-          încă un video
-        </AddButton>
-        <p className="text-[13px] leading-snug text-muted-foreground">
-          Cu mai multe video-uri, se face câte o reclamă pentru fiecare video × text, în același set.
-        </p>
+        <div className="flex items-center gap-1.5">
+          <AddButton
+            onClick={() => {
+              const next = { ...creative, videos: [creative.video ?? blank, blank] };
+              delete (next as Record<string, unknown>).video;
+              update("creative", next);
+            }}
+          >
+            încă un video
+          </AddButton>
+          <Info>O reclamă pentru fiecare video × text, în același set.</Info>
+        </div>
       </div>
     );
   }
@@ -630,8 +639,8 @@ export function AudienceFields({ platform }: { platform: Platform }) {
       <PathMessages path="audience" />
       <LocationsEditor platform={platform} />
       <Grid className="@md:grid-cols-3">
-        <NumberField path="audience.age_min" label="Vârsta de la" hint="Implicit 18" />
-        <NumberField path="audience.age_max" label="până la" hint="65 = 65 și peste" />
+        <NumberField path="audience.age_min" label="Vârsta de la" info="Implicit 18." />
+        <NumberField path="audience.age_max" label="până la" info="65 = 65 și peste." />
         <SelectField
           path="audience.gender"
           label="Gen"
@@ -645,7 +654,8 @@ export function AudienceFields({ platform }: { platform: Platform }) {
         label="Interese"
         itemLabel="Interesul"
         addLabel="interes"
-        emptyText="Fără interese: publicul e doar locație, vârstă și limbă."
+        emptyText="Fără interese."
+        info="Interesele, comportamentele, orașele și limbile fără id se caută după nume la verificare. Vezi ce a găsit platforma înainte de creare."
       />
       <NamedListEditor
         path="audience.behaviors"
@@ -654,10 +664,6 @@ export function AudienceFields({ platform }: { platform: Platform }) {
         addLabel="comportament"
         emptyText="Fără comportamente."
       />
-      <p className="text-[13px] leading-snug text-muted-foreground">
-        Interesele, comportamentele, orașele și limbile fără id se caută după nume la verificarea pe
-        platformă, iar portalul îți arată ce a găsit înainte să creeze ceva.
-      </p>
     </>
   );
 }
@@ -696,7 +702,7 @@ export function DestinationFields({ summary }: { summary: PlanSummary }) {
         </div>
       </div>
       <div>
-        <p className={LABEL}>Unde ajunge omul după clic</p>
+        <p className={LABEL}>Adresa finală</p>
         <p className="mt-1.5 break-all rounded-lg border border-white/[0.1] bg-[#0A0A0E] px-3 py-2 font-mono text-[13px] leading-relaxed text-foreground/85">
           {summary.finalUrl ?? "—"}
         </p>
@@ -724,7 +730,7 @@ export function CreativeTextFields({ platform }: { platform: Platform }) {
           onChange={(value) => update("creative.thumbnail", value === "auto" ? "auto" : { url: "" })}
         />
       ) : (
-        <p className="text-[14px] leading-snug text-muted-foreground">Copertă: cea propusă de platformă, pentru fiecare video.</p>
+        <p className="text-[14px] leading-snug text-muted-foreground">Copertă: propusă de platformă.</p>
       )}
       <PathMessages path="creative.thumbnail" />
       {asRecord(thumbnail) ? <TextField path="creative.thumbnail.url" label="Adresa imaginii" mono placeholder="https://…" /> : null}
@@ -753,7 +759,7 @@ export function CreativeTextFields({ platform }: { platform: Platform }) {
             max={MAX_TEXT_VARIANTS}
             counter={platform === "google" ? { limit: GOOGLE_HEADLINE_MAX, hard: true } : { limit: META_HEADLINE_VISIBLE }}
             addLabel="titlu"
-            emptyText={platform === "google" ? "Fără titlu — Google cere cel puțin unul." : "Fără titlu."}
+            emptyText={platform === "google" ? "Fără titlu. Google cere cel puțin unul." : "Fără titlu."}
           />
           <TextListField
             path="creative.descriptions"
@@ -762,7 +768,7 @@ export function CreativeTextFields({ platform }: { platform: Platform }) {
             max={MAX_TEXT_VARIANTS}
             counter={platform === "google" ? { limit: GOOGLE_DESCRIPTION_MAX, hard: true } : undefined}
             addLabel="descriere"
-            emptyText={platform === "google" ? "Fără descriere — Google cere cel puțin una." : "Fără descriere."}
+            emptyText={platform === "google" ? "Fără descriere. Google cere cel puțin una." : "Fără descriere."}
           />
         </>
       ) : (
@@ -773,7 +779,7 @@ export function CreativeTextFields({ platform }: { platform: Platform }) {
           path="creative.cta"
           label="Butonul"
           options={(Object.keys(CTA_LABEL) as Array<keyof typeof CTA_LABEL>).map((cta) => [cta, `${CTA_LABEL[cta]} · ${cta}`] as const)}
-          hint="Textul exact îl pune platforma, în limba celui care vede reclama."
+          info="Textul exact îl pune platforma, în limba celui care vede reclama."
         />
         <SelectField
           path="creative.variants"
@@ -805,13 +811,13 @@ export function PlatformFields({ platform }: { platform: Platform }) {
             path="meta.dsa_beneficiary"
             label="Beneficiar (DSA)"
             placeholder="implicit: setarea contului"
-            hint="Firma care beneficiază de reclamă. Obligatoriu în UE."
+            info="Firma care beneficiază de reclamă. Obligatoriu în UE."
           />
           <TextField
             path="meta.dsa_payor"
             label="Plătitor (DSA)"
             placeholder="implicit: setarea contului"
-            hint="Cine plătește reclama. Apare pe reclamă, ca beneficiarul."
+            info="Cine plătește reclama. Apare pe reclamă."
           />
         </Grid>
         <CheckboxGrid
@@ -868,14 +874,14 @@ export function PlatformFields({ platform }: { platform: Platform }) {
             path="google.business_name"
             label="Numele firmei"
             placeholder="MERIDIAN"
-            hint={`Apare pe reclamă. Cel mult ${GOOGLE_BUSINESS_NAME_MAX} de caractere.`}
+            info={`Apare pe reclamă. Cel mult ${GOOGLE_BUSINESS_NAME_MAX} de caractere.`}
           />
           <TextField
             path="google.logo_url"
             label="Sigla (adresă https)"
             mono
             placeholder="https://…/sigla.png"
-            hint="Pătrată, minim 128×128, PNG sau JPEG. Portalul o urcă în cont."
+            info="Pătrată, minim 128×128, PNG sau JPEG. Portalul o urcă în cont."
           />
         </Grid>
         <RadioRow
@@ -930,7 +936,7 @@ export function PlatformFields({ platform }: { platform: Platform }) {
   );
 }
 
-const PLATFORM_SECTION_ASIDE: Partial<Record<Platform, string>> = {
+const PLATFORM_SECTION_INFO: Partial<Record<Platform, string>> = {
   google: "Campanie Demand Gen: reclame video pe YouTube, Discover și Gmail.",
 };
 
@@ -998,7 +1004,7 @@ export function PlanForm({
             label={platform === "meta" ? "Contul de reclame" : platform === "google" ? "Contul Google Ads" : "Advertiser id"}
             placeholder={platform === "meta" ? "act_…" : platform === "google" ? "123-456-7890" : "cifre"}
             mono
-            hint="Se verifică la creare: trebuie să fie un cont la care are acces tokenul spațiului."
+            info="Trebuie să fie un cont la care are acces tokenul spațiului."
           />
         </Grid>
         {mismatch && planWorkspace ? (
@@ -1018,7 +1024,7 @@ export function PlanForm({
       <Section
         title="Campania"
         prefixes={["campaign"]}
-        aside={summary.monthly ? `${summary.monthly}, dacă rulează toată luna.` : null}
+        aside={summary.monthly}
       >
         <PathMessages path="campaign" />
         <TextField path="campaign.name" label="Nume în Ads Manager" />
@@ -1046,7 +1052,7 @@ export function PlanForm({
               onClick={() => update("conversion", undefined)}
               className="text-[13.5px] text-muted-foreground underline underline-offset-4 hover:text-foreground"
             >
-              Scoate secțiunea — obiectivul nu o folosește
+              Scoate conversia (nefolosită)
             </button>
           ) : null}
         </Section>
@@ -1062,14 +1068,14 @@ export function PlanForm({
         <CreativeTextFields platform={platform} />
       </Section>
 
-      <Section title={PLATFORM_LABEL[platform]} prefixes={[platform]} aside={PLATFORM_SECTION_ASIDE[platform]}>
+      <Section title={PLATFORM_LABEL[platform]} prefixes={[platform]} info={PLATFORM_SECTION_INFO[platform]}>
         <PlatformFields platform={platform} />
       </Section>
 
       <Section
         title="Îmbunătățiri automate"
         prefixes={[`${platform}.enhancements`]}
-        aside="Toate oprite implicit. Un testimonial filmat nu se lasă rescris de platformă."
+        info="Toate oprite implicit. Un testimonial filmat nu se lasă rescris de platformă."
       >
         <EnhancementsFields platform={platform} />
       </Section>

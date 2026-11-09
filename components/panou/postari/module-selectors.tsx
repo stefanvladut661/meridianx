@@ -15,7 +15,7 @@ export function PostariSelectors({ className }: { className?: string }) {
   const active = pathname === "/admin/postari";
 
   return (
-    <div className={"flex items-center gap-2 " + (className ?? "")} title={active ? undefined : "Filtrul de platformă lucrează în Coadă."}>
+    <div className={"flex items-center gap-2 " + (className ?? "")} title={active ? undefined : "Filtrează doar Coada."}>
       <SoftSelect
         ariaLabel="Platformă"
         value={active ? get("platforma", "toate") : "toate"}

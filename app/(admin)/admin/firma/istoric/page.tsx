@@ -19,7 +19,7 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
 
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead title="Istoric" subtitle="Tot ce a făcut adminul firmei — de tine sau de joburile programate — cu rezultatul fiecărei acțiuni. Ultimele 300." />
+      <PageHead title="Istoric" info="Ultimele 300 de acțiuni, ale tale și ale joburilor programate." />
       <nav aria-label="Zona" className="mt-5 flex flex-wrap gap-1.5">
         <Link href="/admin/firma/istoric" aria-current={zona === null ? "page" : undefined} className={cn("rounded-lg border px-3 py-1.5 text-[15px]", zona === null ? "border-[var(--md-a1)] bg-[var(--ap-accent-soft)] text-[var(--ap-accent-ink)]" : "border-hair-strong text-bone/80 hover:bg-[var(--ap-hover)]")}>
           Toate
@@ -41,7 +41,7 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
           {history.message}
         </Notice>
       ) : history.data.length === 0 ? (
-        <Empty className="mt-5">Nicio acțiune încă{zona ? ` în ${ZONA_LABEL[zona]}` : ""}. Ce faci în modul apare aici, cu rezultatul.</Empty>
+        <Empty className="mt-5">Nicio acțiune încă{zona ? ` în ${ZONA_LABEL[zona]}` : ""}.</Empty>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">

@@ -11,26 +11,26 @@ import { Card } from "../ui/primitives";
 const STEPS: { title: string; body: string; code?: string }[] = [
   {
     title: "Creează proiectul Supabase",
-    body: "Din consola Supabase, proiect nou, regiunea cea mai apropiată de clienți (Frankfurt).",
+    body: "Regiunea Frankfurt.",
   },
   {
-    title: "Rulează AMBELE migrări, în ordine",
-    body: "Conținutul fișierelor, în SQL Editor. Prima creează tabelele leads și lead_events, enum-urile, indexurile și politicile RLS. A doua adaugă updated_at, triggerul și indexurile de panou: fără ea, panoul nu poate citi lead-urile.",
+    title: "Rulează ambele migrări, în ordine",
+    body: "În SQL Editor. Fără a doua, panoul nu citește lead-urile.",
     code: "supabase/migrations/00000000000001_leads.sql\nsupabase/migrations/00000000000002_lead_activity.sql",
   },
   {
     title: "Completează variabilele de mediu",
-    body: "Copiază .env.example în .env.local și pune valorile din Project Settings → API. Cheia de service role NU are prefix NEXT_PUBLIC și nu trebuie să ajungă niciodată în client.",
+    body: ".env.example → .env.local, cu valorile din Project Settings → API. Cheia service role: fără NEXT_PUBLIC, niciodată în client.",
     code: "NEXT_PUBLIC_SUPABASE_URL · NEXT_PUBLIC_SUPABASE_ANON_KEY · SUPABASE_SERVICE_ROLE_KEY",
   },
   {
-    title: "Pornește intrarea cu Google și trece-te pe listă",
-    body: "Panoul se deschide doar cu Google. În Supabase: Authentication → Sign In / Providers → Google, cu un client OAuth de tip Web din Google Cloud, și adresa /admin/auth/callback la Redirect URLs. Apoi pune adresa ta Google în ADMIN_EMAILS: fără listă, orice cont Google care intră ar vedea toate lead-urile.",
+    title: "Pornește intrarea cu Google",
+    body: "Supabase → Authentication → Providers → Google (client OAuth Web) și /admin/auth/callback la Redirect URLs. Pune-ți adresa în ADMIN_EMAILS: fără listă, orice cont Google vede lead-urile.",
     code: "ADMIN_EMAILS · /admin/auth/callback",
   },
   {
     title: "Pornește emailurile",
-    body: "Cheie Resend, domeniu verificat, adresa pe care vin notificările. Fără ele, lead-urile se salvează, dar nu află nimeni de ele.",
+    body: "Cheie Resend, domeniu verificat, adresa notificărilor. Fără ele, nu află nimeni de lead-uri.",
     code: "RESEND_API_KEY · RESEND_FROM_EMAIL · LEAD_NOTIFICATION_EMAIL",
   },
 ];
@@ -53,9 +53,6 @@ export function LeadsSetupCard() {
           <WifiOff className="h-5 w-5 text-apricot" aria-hidden="true" />
         </div>
         <h1 className="text-[19px] font-semibold">Baza de date nu e configurată</h1>
-        <p className="mt-2 max-w-sm text-[14.5px] leading-relaxed text-muted-foreground">
-          Panoul poate citi lead-urile doar după ce conexiunea la bază e completată. Lipsesc adresa bazei și cheile de acces. Cinci pași, o singură dată.
-        </p>
         <div className="mt-4 w-full max-w-sm rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 text-left font-mono text-[13px] text-muted-foreground">
           {envStatus().map((variable) => (
             <p key={variable.name} className="break-all">
@@ -81,7 +78,7 @@ export function LeadsSetupCard() {
       </ol>
 
       <p className="mt-4 text-[13.5px] leading-relaxed text-muted-foreground">
-        După ce ai completat fișierul, repornește serverul: variabilele de mediu se citesc la pornire. La final, <code className="font-mono text-foreground">/api/health</code> îți confirmă că toate sunt legate.
+        Apoi repornește serverul și verifică la <code className="font-mono text-foreground">/api/health</code>.
       </p>
     </Card>
   );

@@ -28,7 +28,7 @@ export async function changeStatus(
   formData: FormData
 ): Promise<PanelState> {
   const user = await getAdminUser();
-  if (!user) return { error: "Sesiunea a expirat. Reautentifică-te.", ok: null };
+  if (!user) return { error: "Sesiunea a expirat. Intră din nou.", ok: null };
 
   const id = String(formData.get("id") ?? "");
   /* Statusul vine pe două căi: câmpul ascuns pe care îl setează clicul
@@ -59,7 +59,7 @@ export async function saveNotes(
   formData: FormData
 ): Promise<PanelState> {
   const user = await getAdminUser();
-  if (!user) return { error: "Sesiunea a expirat. Reautentifică-te.", ok: null };
+  if (!user) return { error: "Sesiunea a expirat. Intră din nou.", ok: null };
 
   const id = String(formData.get("id") ?? "");
   const notes = String(formData.get("notes") ?? "");
@@ -95,7 +95,7 @@ export async function removeLead(
   formData: FormData
 ): Promise<PanelState> {
   const user = await getAdminUser();
-  if (!user) return { error: "Sesiunea a expirat. Reautentifică-te.", ok: null };
+  if (!user) return { error: "Sesiunea a expirat. Intră din nou.", ok: null };
 
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "Lead lipsă.", ok: null };
@@ -104,13 +104,13 @@ export async function removeLead(
   // există în formular abia în pasul „sigur?”, deci un submit rătăcit
   // din primul pas nu poate șterge nimic.
   if (formData.get("confirm") !== "da") {
-    return { error: "Confirmă ștergerea înainte.", ok: null };
+    return { error: "Confirmă ștergerea.", ok: null };
   }
 
   const result = await deleteLead(id);
   if (!result.ok) {
     if (result.reason === "not_found") {
-      return { error: "Lead-ul nu mai există — poate l-a șters altcineva.", ok: null };
+      return { error: "Lead-ul nu mai există (poate l-a șters un coleg).", ok: null };
     }
     return { error: "Nu s-a putut șterge. Încearcă din nou.", ok: null };
   }

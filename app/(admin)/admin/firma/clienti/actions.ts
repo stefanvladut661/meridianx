@@ -70,7 +70,7 @@ export async function saveContractAction(clientId: string, contractId: string | 
   const parsed = contractSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, ...firstIssue(parsed.error) };
   const periods = parsed.data.preturi.map((price) => ({ deLa: `${price.deLa}-01`, panaLa: price.panaLa === "" ? null : `${price.panaLa}-28` }));
-  if (overlappingPrices(periods)) return { ok: false, field: "preturi", message: "Două prețuri acoperă aceeași lună. Fiecare lună trebuie să aibă un singur preț." };
+  if (overlappingPrices(periods)) return { ok: false, field: "preturi", message: "Două prețuri acoperă aceeași lună: lasă unul singur pe lună." };
   const result = await saveContract(clientId, contractId, parsed.data);
   await logEvent({
     actor,

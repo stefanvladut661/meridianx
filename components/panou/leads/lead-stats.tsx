@@ -1,4 +1,5 @@
 import type { LeadStats } from "@/lib/supabase/types";
+import { Info } from "../ui/info";
 import { Card, Pill, Stat } from "../ui/primitives";
 import { delta, num, pct } from "../ui/format";
 import { STATUS_COLORS, STATUS_ORDER, statusLabel } from "./labels";
@@ -16,7 +17,7 @@ function Sources({ sources, hasFilters }: { sources: LeadSourcesSummary; hasFilt
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h3 className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">Surse</h3>
         <p className="text-[13px] text-muted-foreground/70">
-          {hasFilters ? `în filtrul curent: ${leadCount(sources.total)}` : `toate cele ${leadCount(sources.total)}`} · după utm_source și utm_campaign
+          {hasFilters ? `în filtru: ${leadCount(sources.total)}` : leadCount(sources.total)}
           {sources.truncated ? " · primele 5.000" : ""}
         </p>
       </div>
@@ -36,7 +37,7 @@ function Sources({ sources, hasFilters }: { sources: LeadSourcesSummary; hasFilt
                 </p>
               </div>
               <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground" title={group.campaign ?? undefined}>
-                {direct ? "intrare directă sau formular fără parametri" : (group.campaign ?? "fără campanie")}
+                {direct ? "fără parametri UTM" : (group.campaign ?? "fără campanie")}
               </p>
               <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/[0.07]" aria-hidden="true">
                 <div className={direct ? "h-full rounded-full bg-white/30" : "h-full rounded-full bg-lav"} style={{ width: `${Math.max(share, 2)}%` }} />
@@ -74,7 +75,6 @@ export function LeadStatsCard({ stats, sources, hasFilters }: { stats: LeadStats
             <span className="pu-num text-[30px] font-medium leading-none">{num(total)}</span>
           </div>
           <p className="mt-2 text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">Total</p>
-          <p className="mt-1.5 text-[13.5px] text-muted-foreground">toate lead-urile din bază</p>
         </div>
         <div className="p-4 sm:p-5">
           <p className="text-[12.5px] uppercase tracking-[0.14em] text-muted-foreground">Video / Software</p>
@@ -87,14 +87,25 @@ export function LeadStatsCard({ stats, sources, hasFilters }: { stats: LeadStats
           </div>
         </div>
         <div className="p-4 sm:p-5">
-          <Stat label="Cer fonduri" value={num(stats.funded)} unit={`${Math.round((stats.funded / (total || 1)) * 100)}%`} hint="clienți care vor finanțare" />
+          <Stat label="Cer fonduri" value={num(stats.funded)} unit={`${Math.round((stats.funded / (total || 1)) * 100)}%`} />
         </div>
         <div className="p-4 sm:p-5">
           {/* Definiția reală din getLeadStats: au trecut de „Nou” și nu sunt „Pierdut”. */}
           <Stat
             label="Rată de calificare"
             value={stats.qualificationRate === null ? "—" : pct(rate, 0)}
-            hint={stats.qualificationRate === null ? "încă niciun lead" : `${num(stats.qualified)} din ${num(total)} au trecut de „${statusLabel("new")}” și nu sunt „${statusLabel("lost")}”`}
+            hint={
+              stats.qualificationRate === null ? (
+                "încă niciun lead"
+              ) : (
+                <>
+                  {num(stats.qualified)} din {num(total)}{" "}
+                  <Info label="Cum se calculează">
+                    Au trecut de „{statusLabel("new")}” și nu sunt „{statusLabel("lost")}”.
+                  </Info>
+                </>
+              )
+            }
           />
         </div>
       </div>

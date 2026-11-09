@@ -55,14 +55,14 @@ export function ClientPanel({
   if (loading) {
     return (
       <SidePanel title="Clientul" onClose={onClose}>
-        <p className="text-[15px] text-dim">Se încarcă clientul…</p>
+        <p className="text-[15px] text-dim">Se încarcă…</p>
       </SidePanel>
     );
   }
 
   const footer = client ? (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      {archiveError ? <p className="text-[14.5px] text-[var(--ap-error)]">{archiveError}</p> : <span className="text-[14px] text-dim">Arhiva păstrează facturile și istoricul.</span>}
+      {archiveError ? <p className="text-[14.5px] text-[var(--ap-error)]">{archiveError}</p> : <span />}
       <button
         type="button"
         disabled={archiving}
@@ -76,13 +76,13 @@ export function ClientPanel({
         }
         className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[14.5px]"
       >
-        {client.arhivatLa ? "Scoate din arhivă" : "Arhivează clientul"}
+        {client.arhivatLa ? "Scoate din arhivă" : "Arhivează"}
       </button>
     </div>
   ) : null;
 
   return (
-    <SidePanel title={client ? client.nume : "Client nou"} subtitle={client ? (client.cui ? `CUI ${client.cui}` : "fără CUI") : "Datele firmei — le poți lua din Oblio, după CUI."} onClose={onClose} footer={footer}>
+    <SidePanel title={client ? client.nume : "Client nou"} subtitle={client ? (client.cui ? `CUI ${client.cui}` : "fără CUI") : undefined} onClose={onClose} footer={footer}>
       <section aria-labelledby="date-firma">
         <h3 id="date-firma" className={sectionTitle}>
           Datele firmei
@@ -214,10 +214,10 @@ function ClientForm({ client, oblio, actions, onSaved }: { client: Client | null
       ) : null}
       <div className="flex items-center gap-3">
         <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
-          {pending ? "Se salvează…" : client ? "Salvează datele" : "Adaugă clientul"}
+          {pending ? "Se salvează…" : client ? "Salvează" : "Adaugă clientul"}
         </button>
         <p role="status" className="text-[14.5px] text-[var(--ap-ok)]">
-          {saved ? "Salvat." : fromOblio ? <span className="text-dim">Date luate din Oblio — verifică-le și salvează.</span> : null}
+          {saved ? "Salvat." : fromOblio ? <span className="text-dim">Din Oblio: verifică și salvează.</span> : null}
         </p>
       </div>
     </form>
@@ -241,7 +241,7 @@ function OblioLookup({
   const [pending, start] = useTransition();
 
   if (!oblio) {
-    return <p className="rounded-lg bg-[var(--ap-side)] px-3 py-2 text-[14.5px] text-dim">Oblio nu e legat încă: completează datele de mână. Pașii pentru legare sunt în README, la „Oblio”.</p>;
+    return <p className="rounded-lg bg-[var(--ap-side)] px-3 py-2 text-[14.5px] text-dim">Oblio nelegat: completează de mână.</p>;
   }
 
   const run = () =>
@@ -254,17 +254,18 @@ function OblioLookup({
         return;
       }
       setResults(result.clients);
-      if (result.clients.length === 0) setMessage("Oblio n-are niciun client cu datele astea. Completează de mână sau caută altfel.");
+      if (result.clients.length === 0) setMessage("Niciun rezultat în Oblio.");
     });
 
   return (
     <div className="rounded-lg border border-hair bg-[var(--ap-side)] p-3">
       <label htmlFor="oblio-cauta" className="text-[14.5px] font-medium text-bone">
-        Caută în Oblio (CUI sau nume)
+        Caută în Oblio
       </label>
       <div className="mt-1 flex gap-2">
         <input
           id="oblio-cauta"
+          placeholder="CUI sau nume"
           value={query}
           onChange={(event) => setQuery(event.currentTarget.value)}
           onKeyDown={(event) => {
@@ -380,7 +381,7 @@ function ContactsSection({ client, actions, onChanged }: { client: Client; actio
             <Field id="contact-nume" label="Numele" error={error?.field === "nume" ? error.message : null}>
               <input id="contact-nume" value={form.nume} onChange={(e) => setForm({ ...form, nume: e.currentTarget.value })} className={inputClass} maxLength={120} />
             </Field>
-            <Field id="contact-rol" label="Rolul (opțional)">
+            <Field id="contact-rol" label="Rolul">
               <input id="contact-rol" value={form.rol} onChange={(e) => setForm({ ...form, rol: e.currentTarget.value })} className={inputClass} maxLength={80} placeholder="ex. administrator" />
             </Field>
             <Field id="contact-telefon" label="Telefon" error={error?.field === "telefon" ? error.message : null}>
@@ -403,7 +404,7 @@ function ContactsSection({ client, actions, onChanged }: { client: Client; actio
       ) : (
         <button type="button" onClick={() => setAdding(true)} className="mt-3 inline-flex items-center gap-1.5 text-[15px] font-medium text-[var(--md-a1)]">
           <IconPlus size={15} />
-          Adaugă o persoană
+          Adaugă persoană
         </button>
       )}
       {error && !adding ? <p className="mt-2 text-[14.5px] text-[var(--ap-error)]">{error.message}</p> : null}
@@ -432,7 +433,7 @@ function ContractsSection({ client, month, actions, onChanged }: { client: Clien
 
   return (
     <div className="mt-3">
-      {client.contracte.length === 0 ? <p className="text-[15px] text-dim">Niciun contract. Fără contract activ nu se pregătesc facturi lunare pentru client.</p> : null}
+      {client.contracte.length === 0 ? <p className="text-[15px] text-dim">Niciun contract: nu se pregătesc facturi lunare.</p> : null}
       <ul className="grid gap-2">
         {client.contracte.map((contract) => {
           const active = contractInMonth(contract, month);
@@ -533,7 +534,7 @@ function ContractForm({
     }
     const budget = fields.bugetReclame.trim() === "" ? null : parseAmount(fields.bugetReclame);
     if (fields.bugetReclame.trim() !== "" && budget === null) {
-      setError({ field: "bugetReclame", message: "Bugetul de reclame nu e o sumă. Scrie-l ca 3000 sau 3.000,00, ori lasă-l gol." });
+      setError({ field: "bugetReclame", message: "Bugetul nu e o sumă: scrie 3000 sau 3.000,00, ori lasă gol." });
       return;
     }
     start(async () => {
@@ -559,7 +560,7 @@ function ContractForm({
     <form onSubmit={submit} noValidate className="mt-3 grid gap-3 rounded-lg border border-hair p-3">
       <p className="text-[15px] font-semibold text-bone">{contract ? "Modifică contractul" : "Contract nou"}</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field id="ct-numar" label="Numărul (opțional)" error={fieldError("numar")}>
+        <Field id="ct-numar" label="Numărul" error={fieldError("numar")}>
           <input id="ct-numar" value={fields.numar} onChange={(e) => set("numar", e.currentTarget.value)} className={inputClass} maxLength={60} />
         </Field>
         <Field id="ct-starea" label="Starea">
@@ -572,7 +573,7 @@ function ContractForm({
         <Field id="ct-incepe" label="Începe" error={fieldError("incepe")}>
           <input id="ct-incepe" type="date" value={fields.incepe} onChange={(e) => set("incepe", e.currentTarget.value)} className={inputClass} />
         </Field>
-        <Field id="ct-termina" label="Se termină (opțional)" error={fieldError("seTermina")} hint="Gol = pe durată nedeterminată.">
+        <Field id="ct-termina" label="Se termină" error={fieldError("seTermina")} hint="Gol = nedeterminat.">
           <input id="ct-termina" type="date" value={fields.seTermina} onChange={(e) => set("seTermina", e.currentTarget.value)} className={inputClass} />
         </Field>
       </div>
@@ -593,13 +594,12 @@ function ContractForm({
           </select>
         </Field>
       </div>
-      <Field id="ct-buget" label="Buget de reclame recomandat, pe lună (opțional)" error={fieldError("bugetReclame")} hint="Îl plătește clientul direct platformelor: nu apare pe factură.">
+      <Field id="ct-buget" label="Buget de reclame recomandat, pe lună" error={fieldError("bugetReclame")} hint="Nu apare pe factură.">
         <input id="ct-buget" inputMode="decimal" value={fields.bugetReclame} onChange={(e) => set("bugetReclame", e.currentTarget.value)} className={inputClass} />
       </Field>
 
       <fieldset className="grid gap-2">
         <legend className="text-[14.5px] font-medium text-bone">Abonamentul, pe perioade</legend>
-        <p className="text-[14px] text-dim">Pe luni întregi. Ex.: martie–mai o sumă, din iunie alta. Ultima perioadă poate rămâne fără sfârșit.</p>
         {fieldError("preturi") ? <p className="text-[14.5px] text-[var(--ap-error)]">{fieldError("preturi")}</p> : null}
         {prices.map((row, index) => (
           <div key={row.key} className="grid gap-2 rounded-lg bg-[var(--ap-side)] p-2.5 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
@@ -620,7 +620,7 @@ function ContractForm({
             >
               Scoate
             </button>
-            <Field id={`pr-${row.key}-text`} label="Rândul de pe factură" error={fieldError(`preturi.${index}.descriere`)} className="sm:col-span-4" hint="Luna se adaugă singură la emitere.">
+            <Field id={`pr-${row.key}-text`} label="Rândul de pe factură" error={fieldError(`preturi.${index}.descriere`)} className="sm:col-span-4" hint="Luna se adaugă singură.">
               <input id={`pr-${row.key}-text`} value={row.descriere} onChange={(e) => setPrice(row.key, { descriere: e.currentTarget.value })} className={inputClass} maxLength={300} />
             </Field>
           </div>
@@ -631,11 +631,11 @@ function ContractForm({
           className="inline-flex items-center gap-1.5 justify-self-start text-[15px] font-medium text-[var(--md-a1)]"
         >
           <IconPlus size={15} />
-          Adaugă o perioadă
+          Adaugă perioadă
         </button>
       </fieldset>
 
-      <Field id="ct-note" label="Note (opțional)">
+      <Field id="ct-note" label="Note">
         <textarea id="ct-note" rows={2} value={fields.note} onChange={(e) => set("note", e.currentTarget.value)} className={textareaClass} maxLength={2000} />
       </Field>
       {error && !error.field?.startsWith("preturi.") && !["numar", "incepe", "seTermina", "servicii", "ziEmitere", "zileScadenta", "bugetReclame", "preturi"].includes(error.field ?? "") ? (
@@ -643,7 +643,7 @@ function ContractForm({
       ) : null}
       <div className={cn("flex gap-2")}>
         <button type="submit" disabled={pending} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
-          {pending ? "Se salvează…" : "Salvează contractul"}
+          {pending ? "Se salvează…" : "Salvează"}
         </button>
         <button type="button" onClick={() => onDone(false)} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
           Renunță
@@ -661,12 +661,12 @@ function AdsSection({ client, adsClients, actions, onChanged }: { client: Client
   const [pending, start] = useTransition();
 
   if (adsClients.length === 0) {
-    return <p className="mt-3 text-[15px] text-dim">Portalul de reclame n-are încă niciun client (sau migrarea lui nu e rulată). Adaugă clientul acolo, în Reclame → Clienți, apoi leagă-l aici.</p>;
+    return <p className="mt-3 text-[15px] text-dim">Niciun client în Reclame. Adaugă-l în Reclame → Clienți, apoi leagă-l aici.</p>;
   }
 
   return (
     <div className="mt-3 grid gap-2">
-      <Field id="ads-client" label="Clientul din portalul de reclame" hint="Panoul arată banii cheltuiți pe reclame pentru clientul ales.">
+      <Field id="ads-client" label="Clientul din Reclame">
         <select id="ads-client" value={value} onChange={(e) => setValue(e.currentTarget.value)} className={inputClass}>
           <option value="">Nelegat</option>
           {adsClients.map((item) => (
@@ -683,13 +683,13 @@ function AdsSection({ client, adsClients, actions, onChanged }: { client: Client
           onClick={() =>
             start(async () => {
               const result = await actions.linkAds(client.id, value || null);
-              setMessage(result.ok ? { tone: "ok", text: value ? "Legat." : "Legătura a fost scoasă." } : { tone: "error", text: result.message });
+              setMessage(result.ok ? { tone: "ok", text: value ? "Legat." : "Dezlegat." } : { tone: "error", text: result.message });
               if (result.ok) onChanged();
             })
           }
           className="btn btn-ghost !min-h-9 !px-3.5 !py-1.5 !text-[15px]"
         >
-          Salvează legătura
+          Salvează
         </button>
         {message ? <p className={cn("text-[14.5px]", message.tone === "ok" ? "text-[var(--ap-ok)]" : "text-[var(--ap-error)]")}>{message.text}</p> : null}
       </div>

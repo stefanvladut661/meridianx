@@ -105,8 +105,8 @@ export function descrieActivitate(a: Activitate): Descriere {
       return {
         titlu: `Apel: ${rezultat(d.rezultat)}${incercari && limita ? ` (${incercari}/${limita})` : incercari ? ` (încercarea ${incercari})` : ""}`,
         detaliu: unite([
-          d.revenit_in_rezerva === true && "a ieșit din listă, și-a pierdut telefonul și a revenit în rezerva de apeluri",
-          d.revenit_in_distributie === true && (d.doar_email === true ? "număr greșit: s-a întors în distribuție, doar pentru email" : "nu e contact: s-a întors în distribuție"),
+          d.revenit_in_rezerva === true && "ieșită din listă, înapoi în rezerva de apeluri",
+          d.revenit_in_distributie === true && (d.doar_email === true ? "înapoi în distribuție, doar pentru email" : "înapoi în distribuție"),
           sunaLa && `sună înapoi ${dateTimeRo(sunaLa)}`,
         ]),
         citat: text(d.nota),
@@ -118,8 +118,8 @@ export function descrieActivitate(a: Activitate): Descriere {
       return { titlu: `Email întors (bounce)${text(d.casuta) ? ` la ${text(d.casuta)}` : ""}` };
     case "whatsapp":
       // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
-      if (d.continuare_apel === true) return { titlu: "Continuare apel pe WhatsApp", detaliu: "după „Interesat”; firma rămâne pe telefon, canalul WhatsApp nu se folosește" };
-      if (d.anulat === true) return { titlu: `WhatsApp anulat${contWhatsapp(d) ? ` (${contWhatsapp(d)})` : ""}`, detaliu: "imediat după trimitere: firma e din nou în lista zilei" };
+      if (d.continuare_apel === true) return { titlu: "Continuare apel pe WhatsApp", detaliu: "după „Interesat”; rămâne pe telefon" };
+      if (d.anulat === true) return { titlu: `WhatsApp anulat${contWhatsapp(d) ? ` (${contWhatsapp(d)})` : ""}`, detaliu: "imediat după trimitere; din nou în lista zilei" };
       return { titlu: `WhatsApp trimis${contWhatsapp(d) ? ` de pe ${contWhatsapp(d)}` : ""}` };
     case "raspuns":
       return {

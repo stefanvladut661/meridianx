@@ -8,6 +8,7 @@ import type { AdAccountInfo } from "@/lib/ads/types";
 import type { AccountSummary, ClientSummary } from "@/lib/ads/model/types";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { Btn, Card, Pill, SectionTitle, type PillTone } from "@/components/panou/ui/primitives";
+import { Info } from "@/components/panou/ui/info";
 import { EmptyState, ErrorState, inputClass } from "@/components/panou/ui/states";
 import { ConfirmDialog, InlineNote } from "@/components/panou/ui/actions";
 import { Modal } from "@/components/panou/ui/modal";
@@ -134,7 +135,7 @@ function ClientCard({
 
   const refresh = () =>
     start(async () => {
-      setNote({ tone: "apricot", text: "Se citesc din nou conturile: structura și cifrele fiecăruia…" });
+      setNote({ tone: "apricot", text: "Se citesc conturile…" });
       const result = await actions.sync({ clientId: client.id }).catch(() => ({ ok: false as const, message: UNREACHABLE }) as Failure);
       if (!result.ok) {
         setNote({ tone: "rose", text: result.message });
@@ -150,7 +151,7 @@ function ClientCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[15px] font-medium">{client.name}</p>
-          <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             {OWNER_LABEL[client.owner]} · plafon {capText(client.owner, workspaces)}/zi
           </p>
         </div>
@@ -173,7 +174,7 @@ function ClientCard({
                 <span className="flex items-center gap-1.5 text-[13.5px]">
                   <Icon className={cn("h-3 w-3", ui.text)} aria-hidden="true" />
                   {PLATFORM_LABEL[platform]}
-                  {accounts.length > 1 ? <span className="text-[12px] text-muted-foreground">· {accounts.length} conturi</span> : null}
+                  {accounts.length > 1 ? <span className="text-[13px] text-muted-foreground">· {accounts.length} conturi</span> : null}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Pill tone={ui.tone}>{ui.label}</Pill>
@@ -185,7 +186,7 @@ function ClientCard({
                       className="rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-45"
                       aria-label={
                         retry
-                          ? `Reconectează ${PLATFORM_LABEL[platform]} pentru ${client.name}: citește din nou contul`
+                          ? `Reconectează ${PLATFORM_LABEL[platform]} pentru ${client.name}`
                           : conn === "none"
                             ? `Adaugă un cont ${PLATFORM_LABEL[platform]} pentru ${client.name}`
                             : `Deschide conturile ${PLATFORM_LABEL[platform]} ale ${client.name}`
@@ -197,11 +198,11 @@ function ClientCard({
                 </span>
               </div>
               {accounts.length > 0 ? (
-                <p className="mt-1 truncate font-mono text-[11.5px] text-muted-foreground" title={accounts.map((account) => account.adAccount).join(", ")}>
+                <p className="mt-1 truncate font-mono text-[13px] text-muted-foreground" title={accounts.map((account) => account.adAccount).join(", ")}>
                   {accounts.map((account) => account.name ?? account.adAccount).join(" · ")}
                 </p>
               ) : null}
-              {failing?.lastSyncError ? <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-rose">{failing.lastSyncError}</p> : null}
+              {failing?.lastSyncError ? <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-rose">{failing.lastSyncError}</p> : null}
             </li>
           );
         })}
@@ -209,22 +210,18 @@ function ClientCard({
 
       {broken.length > 0 ? (
         <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-rose/20 bg-rose/[0.06] px-2.5 py-2">
-          <p className="text-[12px] leading-tight text-[#FFC2CE]">
-            Ultima citire a eșuat pe {broken.map((row) => PLATFORM_LABEL[row.platform]).join(" și ")}. Cifrele rămân cele de la ultima actualizare.
-          </p>
+          <p className="text-[13px] leading-tight text-[#FFC2CE]">Citire eșuată: {broken.map((row) => PLATFORM_LABEL[row.platform]).join(" și ")}</p>
           <Btn size="xs" variant="danger" onClick={refresh} disabled={pending}>
             {pending ? "Se citește…" : "Reconectează"}
           </Btn>
         </div>
       ) : noKey && noKeyWorkspace ? (
-        <p className="mt-3 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2.5 py-2 text-[12px] leading-tight text-[#FFD0AC]">
-          Spațiul {noKeyWorkspace.name} nu are cheie: setează <span className="font-mono">{noKeyWorkspace.tokenEnv}</span> în Vercel și fă redeploy.
+        <p className="mt-3 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2.5 py-2 text-[13px] leading-tight text-[#FFD0AC]">
+          {noKeyWorkspace.name} n-are cheie: setează <span className="font-mono">{noKeyWorkspace.tokenEnv}</span> în Vercel, apoi redeploy.
         </p>
       ) : (
-        <p className="mt-3 text-[12px] text-muted-foreground">
-          {client.accounts.length === 0
-            ? "Niciun cont încă. Adaugă conturile ca să-i vezi campaniile."
-            : `Toate conexiunile răspund. Portalul le citește în fiecare dimineață${synced ? ` · ultima citire ${relativeRo(synced)}` : ""}.`}
+        <p className="mt-3 text-[13px] text-muted-foreground">
+          {client.accounts.length === 0 ? "Niciun cont încă." : synced ? `Citit ${relativeRo(synced)}` : "Nesincronizat"}
         </p>
       )}
 
@@ -232,7 +229,7 @@ function ClientCard({
 
       <div className="mt-3 flex justify-end">
         <Btn size="xs" variant="outline" icon={RefreshCw} disabled={pending || client.accounts.length === 0} onClick={refresh}>
-          {pending ? "Se actualizează…" : "Actualizează acum"}
+          {pending ? "Se sincronizează…" : "Sincronizează"}
         </Btn>
       </div>
     </Card>
@@ -244,9 +241,9 @@ function ClientCard({
 // ---------------------------------------------------------------------------
 
 function syncLine(account: AccountSummary): { text: string; tone: string } {
-  if (!account.syncEnabled) return { text: "urmărirea e oprită", tone: "text-muted-foreground" };
-  if (!account.lastSyncedAt) return { text: "încă nesincronizat", tone: "text-muted-foreground" };
-  if (account.lastSyncStatus === "failed") return { text: `ultima citire a eșuat · ${relativeRo(account.lastSyncedAt)}`, tone: "text-rose" };
+  if (!account.syncEnabled) return { text: "neurmărit", tone: "text-muted-foreground" };
+  if (!account.lastSyncedAt) return { text: "nesincronizat", tone: "text-muted-foreground" };
+  if (account.lastSyncStatus === "failed") return { text: `citire eșuată · ${relativeRo(account.lastSyncedAt)}`, tone: "text-rose" };
   return { text: `actualizat ${relativeRo(account.lastSyncedAt)}`, tone: "text-muted-foreground" };
 }
 
@@ -261,11 +258,11 @@ function AccountRow({ account, actions }: { account: AccountSummary; actions: Cl
       <CanalMark platform={account.platform} size="sm" label={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[14px] font-medium">{account.name ?? account.adAccount}</p>
-        <p className="mt-0.5 flex flex-wrap gap-x-2 font-mono text-[12px] text-muted-foreground">
+        <p className="mt-0.5 flex flex-wrap gap-x-2 font-mono text-[12.5px] text-muted-foreground">
           <span>{account.adAccount}</span>
           {account.currency ? <span>· {account.currency}</span> : null}
           <span className={line.tone}>· {line.text}</span>
-          {account.measured === false ? <span className="text-apricot">· fără conversii — rezultatele vor fi „nemăsurat”</span> : null}
+          {account.measured === false ? <span className="text-apricot">· fără conversii</span> : null}
         </p>
         {account.lastSyncStatus === "failed" && account.lastSyncError ? <p className="mt-1 text-[12.5px] leading-snug text-rose">{account.lastSyncError}</p> : null}
         {error ? <p className="mt-1 text-[12.5px] text-rose">{error}</p> : null}
@@ -312,8 +309,8 @@ function AddAccount({ client, workspaces, actions, startPlatform }: { client: Cl
         setNote({ tone: "rose", text: result.message });
         return;
       }
-      setNote(result.note ? { tone: "apricot", text: result.note } : { tone: "mint", text: "Contul e adăugat. Apasă „Actualizează acum” ca să-i aduci campaniile." });
-      if (!result.note) notify("Cont adăugat. Apasă „Actualizează acum” ca să-i aduci campaniile.");
+      setNote(result.note ? { tone: "apricot", text: result.note } : { tone: "mint", text: "Cont adăugat. Apasă „Sincronizează”." });
+      if (!result.note) notify("Cont adăugat.");
       setManual("");
       router.refresh();
     });
@@ -345,13 +342,13 @@ function AddAccount({ client, workspaces, actions, startPlatform }: { client: Cl
             })
           }
         >
-          Arată conturile pe care le vede tokenul
+          Arată conturile
         </Btn>
       </div>
 
       {visible ? (
         <div>
-          {visible.note ? <p className="text-[13px] leading-relaxed text-muted-foreground">{visible.note}</p> : null}
+          {visible.note ? <p className="text-[13.5px] leading-relaxed text-muted-foreground">{visible.note}</p> : null}
           {visible.accounts.length > 0 ? (
             <ul className="mt-2 divide-y divide-white/[0.05] overflow-hidden rounded-lg border border-white/[0.06]">
               {visible.accounts.map((account) => {
@@ -360,7 +357,7 @@ function AddAccount({ client, workspaces, actions, startPlatform }: { client: Cl
                   <li key={account.id} className="flex flex-wrap items-center justify-between gap-3 px-3 py-2">
                     <span className="min-w-0 text-[14px]">
                       <span className="font-medium">{account.name}</span>{" "}
-                      <span className="font-mono text-[12px] text-muted-foreground">
+                      <span className="font-mono text-[12.5px] text-muted-foreground">
                         {account.id} · {account.currency} · {account.state}
                       </span>
                     </span>
@@ -383,7 +380,7 @@ function AddAccount({ client, workspaces, actions, startPlatform }: { client: Cl
         }}
       >
         <label className="min-w-[14rem] flex-1">
-          <span className="mb-1 block text-[12px] uppercase tracking-[0.14em] text-muted-foreground">Sau scrie id-ul contului</span>
+          <span className="mb-1 block text-[12px] uppercase tracking-[0.14em] text-muted-foreground">Sau id-ul contului</span>
           <input
             value={manual}
             onChange={(event) => setManual(event.currentTarget.value)}
@@ -425,7 +422,6 @@ function EditClient({
   return (
     <div>
       <h2 className="text-[17px] font-semibold">Editează {client.name}</h2>
-      <p className="text-[13.5px] text-muted-foreground">Numele apare în selectoarele din bara de sus și în fișele campaniilor.</p>
 
       <div className="mt-4 space-y-4">
         <form
@@ -455,11 +451,13 @@ function EditClient({
         </form>
         {problem ? <InlineNote tone="rose">{problem}</InlineNote> : null}
 
-        <div className="rounded-lg border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-[13px] text-muted-foreground">
+        <div className="rounded-lg border border-white/[0.06] bg-white/[0.025] px-3 py-2.5 text-[13.5px] text-muted-foreground">
           <p>
-            <span className="text-foreground/80">{OWNER_LABEL[client.owner]}</span> · plafon la creare <span className="pu-num text-foreground/80">{capText(client.owner, workspaces)}</span> pe zi.
+            <span className="text-foreground/80">{OWNER_LABEL[client.owner]}</span> · plafon <span className="pu-num text-foreground/80">{capText(client.owner, workspaces)}</span>/zi
+            <Info label="Despre plafon" className="ml-1.5">
+              Prinde un zero în plus la creare. Se schimbă în configurația spațiului de lucru, nu aici.
+            </Info>
           </p>
-          <p className="mt-0.5">Plafonul prinde un zero în plus la creare; se setează în configurația spațiului de lucru, nu aici.</p>
         </div>
 
         <div className="space-y-2">
@@ -471,7 +469,7 @@ function EditClient({
               ))}
             </ul>
           ) : (
-            <p className="text-[13.5px] text-muted-foreground">Niciun cont încă. Adaugă-l mai jos; portalul îi aduce campaniile în fiecare dimineață.</p>
+            <p className="text-[13.5px] text-muted-foreground">Niciun cont încă.</p>
           )}
         </div>
 
@@ -504,8 +502,8 @@ function NewClient({ actions, onClose, onCreated }: { actions: ClientiActions; o
   const groupId = useId();
 
   const OWNERS: Array<{ value: "clienti" | "agentie"; label: string; hint: string }> = [
-    { value: "clienti", label: "Banii clientului", hint: "conturile din spațiile Clienți" },
-    { value: "agentie", label: "Banii agenției (Meridian)", hint: "conturile proprii ale agenției" },
+    { value: "clienti", label: "Banii clientului", hint: "spațiile Clienți" },
+    { value: "agentie", label: "Banii agenției", hint: "spațiile Meridian" },
   ];
 
   return (
@@ -518,14 +516,13 @@ function NewClient({ actions, onClose, onCreated }: { actions: ClientiActions; o
             setProblem(result.message);
             return;
           }
-          notify(`${name.trim()} adăugat. Leagă-i conturile ca să-i vezi campaniile.`);
+          notify(`${name.trim()} adăugat.`);
           router.refresh();
           onCreated(result.id);
         });
       }}
     >
       <h2 className="text-[17px] font-semibold">Adaugă client</h2>
-      <p className="text-[13.5px] text-muted-foreground">Numele apare în selectoarele din bara de sus și în fișele campaniilor.</p>
       <div className="mt-4 space-y-3">
         <label className="block">
           <span className={LABEL}>Nume</span>
@@ -544,7 +541,7 @@ function NewClient({ actions, onClose, onCreated }: { actions: ClientiActions; o
               >
                 <input type="radio" name={groupId} value={option.value} checked={owner === option.value} onChange={() => setOwner(option.value)} className="sr-only" />
                 {option.label}
-                <span className="text-[12.5px] font-normal text-muted-foreground">{option.hint}</span>
+                <span className="text-[13px] font-normal text-muted-foreground">{option.hint}</span>
               </label>
             ))}
           </div>
@@ -589,12 +586,7 @@ export function ClientiScreen({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Clienți</h1>
-          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
-            Spații de lucru și conturile conectate. Plafonul de buget zilnic se verifică la fiecare creare. Portalul citește conturile în fiecare dimineață și nu schimbă nimic în ele.
-          </p>
-        </div>
+        <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Clienți</h1>
         <Btn size="sm" variant="primary" icon={Plus} onClick={() => setAdding(true)} disabled={Boolean(failure)}>
           Adaugă client
         </Btn>
@@ -615,10 +607,9 @@ export function ClientiScreen({
               <EmptyState
                 icon={Building2}
                 title="Niciun client încă"
-                text="Un client adună conturile lui de pe Meta, Google și TikTok: îl adaugi o dată, îi legi conturile, iar portalul îi aduce campaniile, grupurile și reclamele în fiecare dimineață."
                 action={
                   <Btn size="sm" variant="primary" icon={Plus} onClick={() => setAdding(true)}>
-                    Adaugă primul client
+                    Adaugă client
                   </Btn>
                 }
               />
@@ -631,20 +622,24 @@ export function ClientiScreen({
             className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-[22px] border border-dashed border-white/[0.12] text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground"
           >
             <Building2 className="h-5 w-5" aria-hidden="true" />
-            <span className="text-[13.5px]">Adaugă un client</span>
+            <span className="text-[13.5px]">Adaugă client</span>
           </button>
         </div>
       )}
 
       <Card>
-        <SectionTitle title="Spații de lucru" hint="Un spațiu = un token și un plafon. Cheia stă în Vercel; aici vezi doar dacă e setată." />
+        <SectionTitle
+          title="Spații de lucru"
+          hint={workspaces.length}
+          info="Un spațiu = un token și un plafon. Cheia se schimbă în Vercel (Settings → Environment Variables), apoi redeploy și „Reconectează” pe cardul clientului."
+        />
         <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {workspaces.map((workspace) => (
             <li key={workspace.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/[0.06] px-3 py-2">
               <div className="min-w-0">
                 <CanalMark platform={workspace.platform} size="sm" label={false} className="mr-1" />
                 <span className="text-[14px]">{workspace.name}</span>
-                <p className="mt-1 text-[12px] text-muted-foreground">
+                <p className="mt-1 text-[13px] text-muted-foreground">
                   {OWNER_LABEL[workspace.owner]} · plafon{" "}
                   <span className="pu-num">{Object.entries(workspace.dailyBudgetCap).map(([currency, value]) => `${num(value)} ${currency}`).join(" · ")}</span>/zi
                 </p>
@@ -661,9 +656,6 @@ export function ClientiScreen({
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[12.5px] text-muted-foreground">
-          Cheia unui spațiu se schimbă în Vercel (Settings → Environment Variables), apoi redeploy. După ce ai pus-o, apasă „Reconectează” pe cardul clientului.
-        </p>
       </Card>
 
       <Modal open={adding} onOpenChange={setAdding} label="Adaugă client">
@@ -703,8 +695,8 @@ export function ClientiScreen({
         open={Boolean(archiving)}
         onOpenChange={(open) => !open && setArchiving(null)}
         title={archiving ? `Arhivezi ${archiving.name}?` : "Arhivezi clientul?"}
-        description="Clientul iese din selectoare și din liste."
-        consequence="Conturile lui nu se mai actualizează. Nimic nu se șterge: campaniile rămân în platforme, iar istoricul și cifrele rămân în portal."
+        description="Iese din selectoare și din liste."
+        consequence="Conturile nu se mai sincronizează. Nimic nu se șterge: nici campaniile, nici cifrele."
         confirmLabel="Arhivează clientul"
         onConfirm={async () => {
           if (!archiving) return;

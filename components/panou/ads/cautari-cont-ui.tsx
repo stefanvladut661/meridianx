@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { countOf } from "@/lib/ads/plan-derive";
+import { Info } from "@/components/panou/ui/info";
 import { cn } from "@/lib/utils";
 
 /**
@@ -56,15 +57,19 @@ export function RadioRow({
   );
 }
 
-/** Antetul unui card cu tabel sau listă, cu linie jos (ca în prototip: `border-b border-white/[0.06] px-4 py-3`). */
-export function CardHead({ title, hint, action, id }: { title: ReactNode; hint?: ReactNode; action?: ReactNode; id?: string }) {
+/**
+ * Antetul unui card cu tabel sau listă, cu linie jos (ca în prototip: `border-b border-white/[0.06] px-4 py-3`).
+ * `hint`: o cifră sau o stare scurtă; `info`: explicația, sub „i” lângă titlu.
+ */
+export function CardHead({ title, hint, info, action, id }: { title: ReactNode; hint?: ReactNode; info?: ReactNode; action?: ReactNode; id?: string }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
-      <div className="min-w-0">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
         <h2 id={id} className="text-[15px] font-medium">
           {title}
         </h2>
-        {hint ? <p className="text-[12.5px] text-muted-foreground">{hint}</p> : null}
+        {info ? <Info>{info}</Info> : null}
+        {hint ? <span className="pu-num text-[13.5px] text-muted-foreground">{hint}</span> : null}
       </div>
       {action}
     </div>
@@ -73,4 +78,4 @@ export function CardHead({ title, hint, action, id }: { title: ReactNode; hint?:
 
 /** Capul de coloană al tabelelor, cu clasele din prototip. */
 export const thClass = "px-3 py-2.5 font-medium";
-export const theadClass = "border-b border-white/[0.06] text-[11.5px] uppercase tracking-[0.14em] text-muted-foreground";
+export const theadClass = "border-b border-white/[0.06] text-[12px] uppercase tracking-[0.14em] text-muted-foreground";

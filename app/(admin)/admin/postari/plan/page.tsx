@@ -31,7 +31,7 @@ export default async function PlanPage() {
       {plans.ok && plans.data.length > 0 ? (
         <Card className="overflow-hidden p-0">
           <div className="border-b border-white/[0.06] px-4 py-3">
-            <SectionTitle title="Planurile aprobate" hint="Postările lor sunt în Coadă, unde le poți scoate una câte una înainte să plece." />
+            <SectionTitle title="Planuri aprobate" />
           </div>
           <ul className="divide-y divide-white/[0.05]">
             {plans.data.map((plan) => (
@@ -47,7 +47,7 @@ export default async function PlanPage() {
           </ul>
           <div className="border-t border-white/[0.06] px-4 py-2.5 text-[12.5px] text-muted-foreground">
             <Link href="/admin/postari" className="hover:text-foreground">
-              Deschide coada →
+              Coada →
             </Link>
           </div>
         </Card>

@@ -6,7 +6,7 @@ import { useToast } from "../ui/toast";
 
 /**
  * Ștergerea te aduce înapoi la listă cu `?sters=1`. Semnul se arată o dată, ca notificare
- * („Lead șters definitiv.”), apoi se scoate din adresă: nu e un filtru și nu trebuie să
+ * („Lead șters.”), apoi se scoate din adresă: nu e un filtru și nu trebuie să
  * supraviețuiască următoarei navigări sau unui refresh.
  */
 export function DeletedNotice() {
@@ -18,7 +18,7 @@ export function DeletedNotice() {
   useEffect(() => {
     if (done.current) return;
     done.current = true;
-    notify("Lead șters definitiv.");
+    notify("Lead șters.");
     const next = new URLSearchParams(searchParams.toString());
     next.delete("sters");
     const query = next.toString();

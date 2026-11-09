@@ -5,6 +5,7 @@ import { ExternalLink } from "lucide-react";
 import { PLATFORM_LABEL } from "@/lib/ads/constants";
 import type { CreateResponse, JobView } from "@/lib/ads/types";
 import { cn } from "@/lib/utils";
+import { Info } from "../ui/info";
 import { btnClass, Btn } from "../ui/primitives";
 import { ProgressBar } from "../ui/states";
 
@@ -49,7 +50,7 @@ export function JobProgress({
     try {
       onResult(await continueJob({ jobId: job.id }));
     } catch {
-      setError("Serverul n-a răspuns. Încearcă „Reia acum” peste câteva secunde — ce s-a creat rămâne, nimic nu se dublează.");
+      setError("Serverul n-a răspuns. Apasă „Reia acum” peste câteva secunde; nimic nu se dublează.");
     } finally {
       setBusy(false);
     }
@@ -97,13 +98,13 @@ export function JobProgress({
               · mai sunt <span className="pu-num">{clock(left)}</span>
             </>
           ) : null}
-          . Pagina poate rămâne deschisă; dacă o închizi, reiei din Planuri.
+          <Info className="ml-1.5">Dacă închizi pagina, reiei din Planuri.</Info>
         </p>
       ) : null}
 
       {job.created.length > 0 ? (
         <p className="mt-3 text-[13px] text-muted-foreground">
-          Create deja, pe pauză: {job.created.map((object) => object.name).slice(0, 4).join(" · ")}
+          Create deja: {job.created.map((object) => object.name).slice(0, 4).join(" · ")}
           {job.created.length > 4 ? ` · și încă ${job.created.length - 4}` : ""}
         </p>
       ) : null}
@@ -114,7 +115,7 @@ export function JobProgress({
         </Btn>
         {job.adsManagerUrl ? (
           <a href={job.adsManagerUrl} target="_blank" rel="noopener noreferrer" className={btnClass({ variant: "outline", size: "sm" })}>
-            Vezi ce s-a creat în {platform}
+            Vezi în {platform}
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="sr-only"> (se deschide într-o filă nouă)</span>
           </a>

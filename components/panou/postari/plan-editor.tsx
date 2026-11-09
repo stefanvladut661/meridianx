@@ -106,7 +106,7 @@ export function PlanEditor({
         previousPending = value.pending;
       }
     } catch {
-      setError("Serverul n-a răspuns (rețea, sesiune sau un clip prea mare pentru un singur apel). Verifică din nou.");
+      setError("Serverul n-a răspuns (rețea, sesiune sau clip prea mare). Verifică din nou.");
     } finally {
       setChecking(null);
     }
@@ -127,7 +127,7 @@ export function PlanEditor({
         setApproved(response);
         setResult(null);
         setText("");
-        notify("Plan aprobat. Postările au intrat în coadă.");
+        notify("Plan aprobat.");
         requestAnimationFrame(() => resultHeading.current?.focus());
       }
     } catch {
@@ -158,15 +158,14 @@ export function PlanEditor({
       {!canApprove && !approving && result ? (
         <p className="text-[13px] text-muted-foreground">
           {stale
-            ? "Verifică din nou după schimbare."
+            ? "Verifică din nou."
             : verified && verified.pending > 0
-              ? `Mai sunt ${verified.pending} clipuri de citit: apasă „Verifică planul”.`
+              ? `${verified.pending} clipuri necitite: „Verifică planul”.`
               : verified && verified.summary.errors > 0
                 ? "Corectează erorile și verifică din nou."
                 : null}
         </p>
       ) : null}
-      {canApprove ? <p className="text-[13px] text-muted-foreground">După aprobare, postările intră în coadă și pleacă singure la ora lor.</p> : null}
     </div>
   );
 
@@ -174,14 +173,9 @@ export function PlanEditor({
     <div className="space-y-4">
       <ScreenHead
         title="Plan nou"
-        text={
-          <>
-            Lipește planul JSON sau încarcă-l din fișier. Îl poate scrie și Claude, din manifest.json, la Clipuri. Verifici, vezi fiecare postare și abia apoi aprobi.
-          </>
-        }
         actions={
           <>
-            <Stamp>Nimic nu pleacă fără aprobare</Stamp>
+            <Stamp>Nimic fără aprobare</Stamp>
             <Link href="/admin/postari/clipuri" className={btnClass({ variant: "outline", size: "sm", className: "gap-1.5" })}>
               <Sparkles className="h-4 w-4" aria-hidden="true" /> Scrie planul cu Claude
             </Link>
@@ -191,7 +185,7 @@ export function PlanEditor({
 
       {driveMissing ? (
         <InlineNote tone="apricot">
-          Folderul principal de pe Drive nu e ales, deci planul nu se poate verifica.{" "}
+          Folderul Drive nu e ales: planul nu se poate verifica.{" "}
           <Link href="/admin/postari/setari" className="font-medium underline underline-offset-2">
             Alege-l în Setări
           </Link>
@@ -199,7 +193,7 @@ export function PlanEditor({
       ) : null}
       {fromClaude ? (
         <InlineNote tone="mint" >
-          <span role="status">Planul scris de Claude e în editor. Citește descrierile și corectează ce nu-ți place direct în JSON, apoi apasă „Verifică planul”.</span>
+          <span role="status">Planul scris de Claude e în editor. Corectează-l, apoi „Verifică planul”.</span>
         </InlineNote>
       ) : null}
 
@@ -207,7 +201,7 @@ export function PlanEditor({
         <Card className="space-y-3">
           <SectionTitle
             title="Planul (JSON)"
-            hint="Blocurile ```json, comentariile și virgulele de la final sunt iertate."
+            info="Merg și blocurile ```json, comentariile și virgulele de la final."
             action={
               <div className="flex flex-wrap items-center gap-1.5">
                 <input
@@ -231,7 +225,7 @@ export function PlanEditor({
                 </Btn>
                 {text.trim() === "" ? (
                   <Btn size="xs" variant="outline" onClick={() => setText(example)}>
-                    Pune un exemplu
+                    Exemplu
                   </Btn>
                 ) : (
                   <Btn
@@ -262,12 +256,12 @@ export function PlanEditor({
             placeholder={'{\n  "folder": "meridian reclame/lot-1",\n  "postari": [ … ]\n}'}
           />
           <p id="plan-sintaxa" className={cn("text-[13px] leading-relaxed", syntax && !syntax.ok ? "text-[#FFC2CE]" : syntax?.ok ? "text-[#B4F2CD]" : "text-muted-foreground")}>
-            {!syntax ? "Formatul e în README, la „Planul JSON”. Sau pornește de la „Pune un exemplu”." : syntax.ok ? "JSON valid. Verificarea citește folderul de pe Drive, clipurile și coada." : syntax.message}
+            {!syntax ? null : syntax.ok ? "JSON valid." : syntax.message}
             {syntax && !syntax.ok && syntax.line !== null && syntax.column !== null ? (
               <>
                 {" "}
                 <button type="button" onClick={() => jumpTo(syntax.line ?? 1, syntax.column ?? 1)} className="font-mono underline underline-offset-2 hover:text-foreground">
-                  Du-mă la rândul {syntax.line}, coloana {syntax.column}
+                  Rândul {syntax.line}, coloana {syntax.column}
                 </button>
               </>
             ) : null}
@@ -278,11 +272,11 @@ export function PlanEditor({
             </Btn>
             <p role="status" aria-live="polite" className="text-[13px] text-muted-foreground">
               {checking && checking.total > 0
-                ? `Se citesc clipurile de pe Drive: ${checking.total - checking.pending} din ${checking.total}.`
+                ? `Clipuri citite: ${checking.total - checking.pending} din ${checking.total}`
                 : checking
-                  ? "Se citește folderul de pe Drive…"
+                  ? "Se citește folderul…"
                   : stale
-                    ? "Planul s-a schimbat după verificare: verifică din nou."
+                    ? "Schimbat după verificare: verifică din nou."
                     : null}
             </p>
           </div>
@@ -304,8 +298,8 @@ export function PlanEditor({
                     Plan aprobat
                   </h2>
                   <p className="mt-1.5 text-[14px] leading-relaxed text-foreground/85" role="status">
-                    {approved.posts} {approved.posts === 1 ? "postare a intrat" : "postări au intrat"} în coadă: {approved.instagram} pe Instagram, {approved.tiktok} pe TikTok
-                    {approved.first ? `, de ${momentLabel(approved.first)}${approved.last && approved.last !== approved.first ? ` până ${momentLabel(approved.last)}` : ""}` : ""}. De aici pleacă singure.
+                    {approved.posts} {approved.posts === 1 ? "postare" : "postări"} în coadă · {approved.instagram} Instagram · {approved.tiktok} TikTok
+                    {approved.first ? ` · ${momentLabel(approved.first)}${approved.last && approved.last !== approved.first ? ` – ${momentLabel(approved.last)}` : ""}` : ""}
                   </p>
                   <Link href="/admin/postari" className={btnClass({ variant: "outline", size: "sm", className: "mt-3" })}>
                     Vezi coada
@@ -320,7 +314,6 @@ export function PlanEditor({
               <EmptyState
                 icon={ClipboardCheck}
                 title="Previzualizarea apare după verificare"
-                text="Verificarea citește folderul de pe Drive și fiecare clip, apoi arată postarea cu postarea: clipul, descrierea cu hashtag-uri, platformele și ora."
               />
             </Card>
           ) : null}
@@ -349,7 +342,7 @@ export function PlanEditor({
               ) : (
                 <PlanPreview plan={result.value} action={approveBar} />
               )}
-              {stale ? <p className="text-[13px] text-muted-foreground">Previzualizarea e a textului de dinainte.</p> : null}
+              {stale ? <p className="text-[13px] text-muted-foreground">Previzualizare veche.</p> : null}
             </section>
           ) : null}
         </div>

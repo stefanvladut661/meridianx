@@ -6,7 +6,6 @@ import { listPosts } from "@/lib/postari/postari";
 import { readSettings } from "@/lib/postari/setari";
 import { addDays, agoLabel, momentLabel, todayIn, zonedToUtc } from "@/lib/postari/timp";
 import { InlineNote } from "@/components/panou/ui/actions";
-import { untilRo } from "@/components/panou/ui/format";
 import { btnClass, Card, Pill, SectionTitle } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
 import { ScreenHead } from "@/components/panou/postari/shared";
@@ -15,13 +14,6 @@ import { markTiktokPublishedAction } from "../actions";
 
 export const metadata: Metadata = { title: "De publicat pe TikTok — MERIDIAN Postări", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
-
-const STEPS = [
-  "„Copiază descrierea” la clipul de mai jos.",
-  "Deschide notificarea TikTok (sau ciornele din profil).",
-  "Lipește descrierea și apasă „Postează”.",
-  "Înapoi aici, „Publicat”.",
-];
 
 /**
  * /admin/postari/tiktok — clipurile ajunse în ciornele TikTok, cu descrierea
@@ -52,31 +44,28 @@ export default async function TiktokPage() {
     <div className="mx-auto max-w-2xl space-y-4">
       <ScreenHead
         title="De publicat pe TikTok"
-        text="Gândit pentru telefon: copiază descrierea, deschide TikTok, publică. Dacă uiți, clipul se marchează singur când TikTok confirmă."
+        info={
+          <>
+            TikTok nu primește descrierea prin API.
+            <br />1. „Copiază descrierea”
+            <br />2. Deschide ciorna în TikTok
+            <br />3. Lipește și postează
+            <br />4. „Publicat”, aici
+            <br />Dacă uiți, se marchează singur când TikTok confirmă.
+          </>
+        }
       />
-
-      <Card className="py-4">
-        <SectionTitle title="Cum publici" hint="TikTok nu primește descrierea prin API, așa că o copiezi de aici." />
-        <ol className="mt-3 space-y-2">
-          {STEPS.map((step, index) => (
-            <li key={step} className="flex items-start gap-3 text-[14px]">
-              <span className="pu-num mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-lav/25 bg-lav/10 text-[12.5px] text-[#D8CCFF]">{index + 1}</span>
-              <span className="text-foreground/85">{step}</span>
-            </li>
-          ))}
-        </ol>
-      </Card>
 
       {!account ? (
         <InlineNote tone="apricot">
-          Contul TikTok nu e conectat, deci nimic nu ajunge în ciorne.{" "}
+          TikTok nu e conectat: nimic nu ajunge în ciorne.{" "}
           <Link href="/admin/postari/setari#conturi" className="font-medium underline underline-offset-2">
-            Conectează-l în Setări
+            Conectează-l
           </Link>
         </InlineNote>
       ) : account.stare !== "activ" ? (
         <InlineNote tone="rose">
-          {account.eroare ?? "Conectarea TikTok nu mai e bună."}{" "}
+          {account.eroare ?? "Conectarea TikTok a căzut."}{" "}
           <Link href="/admin/postari/setari#conturi" className="font-medium underline underline-offset-2">
             Conectează din nou
           </Link>
@@ -89,11 +78,7 @@ export default async function TiktokPage() {
           <EmptyState
             icon={Music2}
             title="Nimic de publicat acum"
-            text={
-              next
-                ? `Când un clip TikTok e trimis în ciorne, apare aici, cu descrierea gata de copiat. Următorul pleacă ${momentLabel(next.programataLa, fus)}.`
-                : "Când un clip TikTok e trimis în ciorne, apare aici, cu descrierea gata de copiat."
-            }
+            text={next ? `Următorul pleacă ${momentLabel(next.programataLa, fus)}.` : undefined}
             action={
               <Link href="/admin/postari" className={btnClass({ variant: "outline", size: "sm" })}>
                 Vezi coada
@@ -104,7 +89,7 @@ export default async function TiktokPage() {
       ) : (
         <section aria-label="Ciorne de publicat" className="space-y-3">
           <p className="flex items-center gap-2 text-[14px] font-medium">
-            În ciorne, de publicat <Pill tone="apricot">{drafts.length}</Pill>
+            În ciorne <Pill tone="apricot">{drafts.length}</Pill>
           </p>
           <TiktokDrafts drafts={drafts} fus={fus} now={now} markPublished={markTiktokPublishedAction} />
         </section>
@@ -114,7 +99,7 @@ export default async function TiktokPage() {
         <InlineNote tone="rose">
           {failed.length === 1 ? "Un clip TikTok n-a ajuns în ciorne" : `${failed.length} clipuri TikTok n-au ajuns în ciorne`}: {failed.map((post) => `„${post.fisier}”`).join(", ")}.{" "}
           <Link href="/admin/postari" className="font-medium underline underline-offset-2">
-            Vezi motivul în Coadă
+            Vezi motivul
           </Link>
         </InlineNote>
       ) : null}
@@ -122,7 +107,7 @@ export default async function TiktokPage() {
       {upcoming.length > 0 ? (
         <Card className="overflow-hidden p-0">
           <div className="border-b border-white/[0.06] px-4 py-3">
-            <SectionTitle title="Urmează" hint="Clipurile TikTok încă neajunse în ciorne." />
+            <SectionTitle title="Urmează" hint={upcoming.length} />
           </div>
           <ul className="divide-y divide-white/[0.05]">
             {upcoming.map((post) => (
@@ -138,7 +123,7 @@ export default async function TiktokPage() {
       {done.length > 0 ? (
         <Card className="py-3">
           <details>
-            <summary className="cursor-pointer text-[14px] font-medium">Publicate în ultimele 7 zile ({done.length})</summary>
+            <summary className="cursor-pointer text-[14px] font-medium">Publicate, ultimele 7 zile ({done.length})</summary>
             <ul className="mt-3 space-y-1.5">
               {done.map((post) => (
                 <li key={post.id} className="text-[13px] text-muted-foreground">
@@ -150,14 +135,6 @@ export default async function TiktokPage() {
           </details>
         </Card>
       ) : null}
-
-      <Card>
-        <SectionTitle title="De ce nu publică automat pe TikTok" />
-        <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">
-          TikTok nu permite publicarea directă din portal. Clipul ajunge în ciornele contului, iar omul îl publică din aplicație — de aceea un clip în ciorne nu e o postare ratată, ci un drum cu om la capăt.
-        </p>
-        <p className="mt-2 text-[12px] text-muted-foreground/70">Următoarea postare TikTok din coadă: {next ? untilRo(next.programataLa, now) : "niciuna programată"}</p>
-      </Card>
     </div>
   );
 }

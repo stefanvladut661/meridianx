@@ -86,8 +86,8 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
       const contor = d.rezultat === "nu_raspunde" && incercari && limita ? ` (${incercari}/${limita})` : "";
       const inapoi = ora(d.suna_inapoi_la);
       const amanunt = [
-        d.revenit_in_rezerva === true ? "A ieșit din listă, și-a pierdut telefonul și a revenit în rezerva de apeluri." : null,
-        d.revenit_in_distributie === true ? (d.doar_email === true ? "Număr greșit: înapoi în distribuție, doar pentru email." : "Nu e contact: înapoi în distribuție.") : null,
+        d.revenit_in_rezerva === true ? "Ieșită din listă, înapoi în rezerva de apeluri." : null,
+        d.revenit_in_distributie === true ? (d.doar_email === true ? "Înapoi în distribuție, doar pentru email." : "Înapoi în distribuție.") : null,
         inapoi ? `Sună înapoi: ${inapoi}` : null,
         citat(text(d.nota)),
       ]
@@ -110,7 +110,7 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
     }
     case "whatsapp": {
       // Excepția acceptată: după un apel „Interesat”, firma rămâne pe Telefon.
-      if (d.continuare_apel === true) return { ce: "Continuare apel pe WhatsApp", amanunt: "După „Interesat”. Firma rămâne pe telefon; canalul WhatsApp nu se folosește." };
+      if (d.continuare_apel === true) return { ce: "Continuare apel pe WhatsApp", amanunt: "După „Interesat”; rămâne pe telefon." };
       if (d.anulat === true) return { ce: "WhatsApp anulat imediat după trimitere", amanunt: "Firma e din nou în lista zilei." };
       // „Cont 2” din migrarea 34; rândurile vechi au doar numărul contului.
       const cont = text(d.cont_nume) ?? (numar(d.cont) ? `contul ${numar(d.cont)}` : null);
@@ -172,7 +172,7 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
 export function ActivitateFeed({
   activitate,
   acum,
-  gol = "Nicio activitate încă. Când roboții cercetează firme sau voi sunați și trimiteți mesaje, fiecare pas apare aici.",
+  gol = "Nicio activitate încă.",
 }: {
   activitate: ActivitateCuFirma[];
   /** Ora citirii (de pe server), ca „acum 5 min” să fie același la randare și la hidratare. */

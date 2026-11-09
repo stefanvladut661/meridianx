@@ -49,10 +49,10 @@ export function megabytes(bytes: number): string {
 
 function localCheck(file: File): string | null {
   if (!(VIDEO_UPLOAD_TYPES as readonly string[]).includes(file.type)) {
-    return "Fișierul trebuie să fie video MP4 sau MOV. Exportă-l ca MP4 (H.264).";
+    return "Fișierul nu e MP4 sau MOV. Exportă-l în MP4 (H.264).";
   }
   if (file.size > VIDEO_UPLOAD_MAX_BYTES) {
-    return `Are ${megabytes(file.size)} MB; portalul primește cel mult ${megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Exportă-l mai mic sau urcă-l din Ads Manager și alege-l apoi din bibliotecă.`;
+    return `Are ${megabytes(file.size)} MB; limita e ${megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Exportă-l mai mic sau urcă-l din Ads Manager și alege-l din bibliotecă.`;
   }
   return null;
 }
@@ -141,7 +141,7 @@ export function VideoUpload({
           retry: "status",
           videoId,
           stagingName,
-          message: `${label} procesează de peste 15 minute. Video-ul e în bibliotecă (id ${videoId}); verifică din nou peste câteva minute sau alege-l din bibliotecă.`,
+          message: `${label} procesează de peste 15 minute. Video-ul e în bibliotecă (id ${videoId}): verifică mai târziu sau alege-l de acolo.`,
         });
         return;
       }
@@ -192,7 +192,7 @@ export function VideoUpload({
       setPhase({
         step: "failed",
         retry: "upload",
-        message: prepared?.message ?? "Serverul n-a răspuns. Nu s-a urcat nimic. Încearcă din nou.",
+        message: prepared?.message ?? "Serverul n-a răspuns. Nu s-a urcat nimic.",
       });
       return;
     }
@@ -218,7 +218,7 @@ export function VideoUpload({
           reason === "too_large"
             ? "Stocarea temporară a refuzat fișierul: e peste limita ei. Exportă-l mai mic."
             : reason === "network"
-              ? "Conexiunea s-a întrerupt în timpul urcării. Încearcă din nou."
+              ? "Conexiunea s-a întrerupt. Încearcă din nou."
               : `Stocarea temporară a refuzat fișierul (${reason}). Încearcă din nou.`,
       });
       return;
@@ -234,7 +234,7 @@ export function VideoUpload({
       setPhase({
         step: "failed",
         retry: "upload",
-        message: sent?.message ?? `Serverul n-a răspuns în timp ce ${label} copia fișierul. Încearcă din nou.`,
+        message: sent?.message ?? `Serverul n-a răspuns cât ${label} copia fișierul. Încearcă din nou.`,
       });
       return;
     }
@@ -278,8 +278,7 @@ export function VideoUpload({
           <span id={`${inputId}-button`}>{file ? "Alege alt fișier" : "Alege fișierul"}</span>
         </label>
         <p id={`${inputId}-hint`} className="mt-2 text-[13px] leading-snug text-muted-foreground">
-          MP4 sau MOV, cel mult {megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Fișierul trece printr-o stocare temporară a
-          portalului și se șterge imediat ce {label} îl are.
+          MP4 sau MOV, cel mult {megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB
         </p>
         {file ? (
           <p className="mt-2 text-[14px] text-foreground/85">
@@ -289,11 +288,11 @@ export function VideoUpload({
         {problem ? <p className={cn("mt-1.5 text-[14px] leading-snug", ERROR_TEXT)}>{problem}</p> : null}
         {file && !problem && expectedName && expectedName !== file.name ? (
           <p className={cn("mt-1.5 text-[14px] leading-snug", WARNING_TEXT)}>
-            Planul pomenește „{expectedName}”, iar tu ai ales „{file.name}”. Verifică să fie video-ul potrivit.
+            Planul cere „{expectedName}”; ai ales „{file.name}”.
           </p>
         ) : null}
         {!adAccount ? (
-          <p className="mt-1.5 text-[14px] text-muted-foreground">Scrie întâi contul de reclame — video-ul intră în biblioteca lui.</p>
+          <p className="mt-1.5 text-[14px] text-muted-foreground">Scrie întâi contul de reclame.</p>
         ) : null}
       </div>
 
@@ -346,15 +345,13 @@ export function VideoUpload({
             </div>
           ) : phase.step === "copying" ? (
             <p className="mt-4 text-[14px] leading-snug text-foreground/80">
-              {label} descarcă fișierul din stocarea portalului
-              {phase.progress !== null ? <span className="pu-num font-mono text-[12.5px]"> · {phase.progress}%</span> : null}
-              . Durează cât o descărcare obișnuită — nu închide pagina.
+              {phase.progress !== null ? <span className="pu-num font-mono text-[12.5px]">{phase.progress}% · </span> : null}
+              Nu închide pagina.
             </p>
           ) : phase.step === "processing" ? (
             <p className="mt-4 text-[14px] leading-snug text-foreground/80">
-              {label} pregătește video-ul pentru reclame
-              {phase.progress !== null ? <span className="pu-num font-mono text-[12.5px]"> · {phase.progress}%</span> : null}
-              . De obicei, un minut sau două. Id-ul din bibliotecă: <span className="font-mono text-[12.5px]">{phase.videoId}</span>.
+              {phase.progress !== null ? <span className="pu-num font-mono text-[12.5px]">{phase.progress}% · </span> : null}
+              Id în bibliotecă: <span className="font-mono text-[12.5px]">{phase.videoId}</span>
             </p>
           ) : null}
         </div>
@@ -374,7 +371,7 @@ export function VideoUpload({
               }}
               className="mt-2 text-foreground underline underline-offset-4"
             >
-              Verifică din nou starea
+              Verifică din nou
             </button>
           ) : null}
         </div>

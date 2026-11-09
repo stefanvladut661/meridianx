@@ -90,11 +90,11 @@ export function InvoicesScreen({
     <>
       {!oblio ? (
         <Notice tone="warn" className="mt-5">
-          Oblio nu e legat: poți pregăti și corecta ciorne, dar aprobarea (emiterea) cere OBLIO_EMAIL, OBLIO_API_SECRET și OBLIO_CIF în Vercel.
+          Oblio nelegat: emiterea cere OBLIO_EMAIL, OBLIO_API_SECRET și OBLIO_CIF în Vercel.
         </Notice>
       ) : !series ? (
         <Notice tone="warn" className="mt-5">
-          Alege seria facturilor în Firmă → Setări, ca aprobarea să știe pe ce serie emite.
+          Alege seria facturilor în Setări, altfel aprobarea nu poate emite.
         </Notice>
       ) : null}
 
@@ -107,7 +107,7 @@ export function InvoicesScreen({
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <button type="button" disabled={pending} onClick={prepare} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
-          Pregătește ciornele pentru {monthLabel(month)}
+          Pregătește ciornele
         </button>
         <button type="button" disabled={pending} onClick={() => setOpen({ kind: "new" })} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
           <IconPlus size={16} />
@@ -118,7 +118,7 @@ export function InvoicesScreen({
         </button>
         {drive && missingOnDrive > 0 ? (
           <button type="button" disabled={pending} onClick={uploadMissing} className="btn btn-ghost !min-h-10 !px-4 !py-2 !text-[15px]">
-            Urcă pe Drive {missingOnDrive === 1 ? "PDF-ul lipsă" : `cele ${missingOnDrive} PDF-uri lipsă`}
+            {missingOnDrive === 1 ? "Urcă PDF-ul lipsă" : `Urcă ${missingOnDrive} PDF-uri lipsă`}
           </button>
         ) : null}
         {pending ? <span className="text-[14.5px] text-dim">Se lucrează…</span> : null}
@@ -130,7 +130,7 @@ export function InvoicesScreen({
       ) : null}
 
       {invoices.length === 0 ? (
-        <Empty className="mt-5">Nicio factură în {monthLabel(month)}. Apasă „Pregătește ciornele”, ca adminul să le facă din contractele active, sau fă una manuală.</Empty>
+        <Empty className="mt-5">Nicio factură în {monthLabel(month)}. Pregătește ciornele sau fă una manuală.</Empty>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">

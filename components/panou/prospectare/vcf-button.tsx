@@ -29,7 +29,7 @@ export function VcfButton({ firme, numeFisier, className }: { firme: FirmaVcf[];
     a.remove();
     // Unele browsere încep descărcarea după click: eliberăm adresa puțin mai târziu.
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    notify(`${cuTelefon === 1 ? "Un contact descărcat" : `${cuTelefon} contacte descărcate`}. Deschide fișierul pe telefon ca să le imporți în agendă.`);
+    notify(`${cuTelefon === 1 ? "Un contact descărcat" : `${cuTelefon} contacte descărcate`}. Deschide fișierul pe telefon.`);
   };
 
   return (

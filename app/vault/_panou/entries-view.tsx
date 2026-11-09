@@ -213,21 +213,21 @@ export function EntriesView({
     if (created) setQuery("");
     setEditor(null);
     onSelect(entryId);
-    notify(created ? "Intrare adăugată. Câmpurile secrete au fost criptate local." : "Intrarea a fost salvată. Versiunea veche rămâne în istoric.");
+    notify(created ? "Intrare adăugată." : "Intrare salvată.");
   }
 
   async function onDelete(entry: VaultEntry, lastOfClient: boolean) {
     await api.deleteEntry(entry, lastOfClient);
     onSelect(null);
     await reload();
-    notify("Intrarea a ajuns în coș. O poți restaura.");
+    notify("Intrare mutată în coș.");
   }
 
   async function onRename(clientId: string, name: string) {
     try {
       await api.renameClient(clientId, name);
       await reload();
-      notify("Clientul a fost redenumit.");
+      notify("Client redenumit.");
     } catch (cause) {
       notify(describeError(cause, "Redenumirea a eșuat. Încearcă din nou."), "error");
       throw cause;
@@ -241,7 +241,6 @@ export function EntriesView({
     <>
       <PageHead
         title="Intrări"
-        text="Secretele nu apar în listă, nici măcar mascate. Se deschid doar în fișă, cu „Arată” pe 30 de secunde."
         action={
           <div className="flex items-center gap-2">
             <SegmentedControl
@@ -264,7 +263,7 @@ export function EntriesView({
       {error && snapshot ? <InlineNote tone="rose">{error}</InlineNote> : null}
       {unreadable > 0 && tab === "intrari" ? (
         <InlineNote tone="apricot">
-          {countNoun(unreadable, "intrare nu s-a putut decripta", "intrări nu s-au putut decripta")}: rândurile par alterate pe server sau scrise cu o cheie pe care nu o ai. Sunt marcate în listă.
+          {countNoun(unreadable, "intrare nu s-a putut decripta", "intrări nu s-au putut decripta")} (alterate sau pe o cheie pe care n-o ai). Sunt marcate în listă.
         </InlineNote>
       ) : null}
 
@@ -294,7 +293,7 @@ export function EntriesView({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   onKeyDown={onSearchKeyDown}
-                  placeholder="Caută fără diacritice: „meta fit”, „#server”"
+                  placeholder="Caută sau #etichetă"
                   aria-label="Caută în seif"
                   autoComplete="off"
                   spellCheck={false}
@@ -349,18 +348,17 @@ export function EntriesView({
                   <EmptyState
                     icon={KeyRound}
                     title="Seiful e gol"
-                    text="Prima intrare: un client, un titlu, câmpurile pe care le are. Totul se criptează aici, înainte să plece."
                     action={
                       <Btn size="sm" variant="primary" icon={Plus} onClick={() => openEditor({ mode: "create" })}>
-                        Adaugă prima intrare
+                        Adaugă intrare
                       </Btn>
                     }
                   />
                 ) : (
                   <EmptyState
                     icon={KeyRound}
-                    title="Nicio intrare pe căutarea asta"
-                    text="Încearcă doar un cuvânt din titlu sau șterge filtrele. Secretele nu sunt niciodată căutabile."
+                    title="Nicio intrare găsită"
+                    text="Secretele nu intră în căutare."
                     action={
                       query || kindFilter !== "toate" || clientFilter !== "toate" ? (
                         <Btn
@@ -389,12 +387,8 @@ export function EntriesView({
               />
             )}
 
-            <p className="px-1 text-[12.5px] leading-relaxed text-muted-foreground/60">
-              Niciun secret nu apare în listă sau în căutare. Lista arată doar metadate.{" "}
-              <span className="hidden sm:inline">
-                <kbd className="font-mono">/</kbd> caută · <kbd className="font-mono">↑ ↓</kbd> umblă prin listă · <kbd className="font-mono">Enter</kbd> deschide fișa · <kbd className="font-mono">Esc</kbd> închide
-                fișa
-              </span>
+            <p className="hidden px-1 text-[12.5px] leading-relaxed text-muted-foreground/60 sm:block">
+              <kbd className="font-mono">/</kbd> caută · <kbd className="font-mono">↑ ↓</kbd> listă · <kbd className="font-mono">Enter</kbd> deschide · <kbd className="font-mono">Esc</kbd> închide
             </p>
           </div>
 
@@ -428,7 +422,7 @@ export function EntriesView({
               <EmptyState
                 icon={KeyRound}
                 title="Intrarea nu există"
-                text="Poate a fost ștearsă. Caută în coș sau în listă."
+                text="Poate e în coș."
                 action={
                   <Btn size="sm" variant="outline" onClick={() => onSelect(null)}>
                     Vezi lista
@@ -496,7 +490,7 @@ function TrashView({
     try {
       await api.restoreDeleted(item);
       await Promise.all([load(), onRestored()]);
-      notify("Intrare restaurată din coș.");
+      notify("Intrare restaurată.");
     } catch (cause) {
       setError(describeError(cause, "Restaurarea a eșuat. Încearcă din nou."));
     } finally {
@@ -507,7 +501,7 @@ function TrashView({
   return (
     <Card padded={false} className="overflow-hidden">
       <div className="border-b border-white/[0.06] px-4 py-3">
-        <SectionTitle title="Coș" hint="ștergerea e temporară; nimic nu se pierde definitiv" />
+        <SectionTitle title="Coș" info="Ștergerea definitivă se face doar din SQL, de un om." />
       </div>
       {error ? <p className="border-b border-rose/20 bg-rose/[0.07] px-4 py-2.5 text-[13.5px] text-[#FFC2CE]" role="alert">{error}</p> : null}
       {items === null ? (
@@ -517,7 +511,7 @@ function TrashView({
           </div>
         )
       ) : items.length === 0 ? (
-        <EmptyState icon={Trash2} title="Coșul e gol" text="Intrările șterse ajung aici și pot fi restaurate oricând." />
+        <EmptyState icon={Trash2} title="Coșul e gol" />
       ) : (
         <ul className="divide-y divide-white/[0.05]">
           {items.map((item) => {
@@ -526,11 +520,11 @@ function TrashView({
               <li key={item.entry.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
                   <p className={cn("truncate text-[14px]", !ok && "text-[#FFC79C]")}>{ok ? ok.payload.title : "Intrare ilizibilă"}</p>
-                  <p className="truncate text-[12px] text-muted-foreground">
+                  <p className="truncate text-[13px] text-muted-foreground">
                     {item.clientName}
                     {item.clientDeleted ? " (client șters)" : ""} · {ok ? KIND_LABEL[ok.payload.kind] : "ilizibilă"} · ștearsă {dateRo(item.deletedAt)} de {emailOf(item.entry.updatedBy)}
                   </p>
-                  {item.clientDeleted ? <p className="mt-0.5 text-[12px] text-muted-foreground/80">Restaurarea aduce înapoi și clientul „{item.clientName}”.</p> : null}
+                  {item.clientDeleted ? <p className="mt-0.5 text-[13px] text-muted-foreground/80">Se restaurează și clientul „{item.clientName}”.</p> : null}
                 </div>
                 <Btn size="xs" variant="outline" icon={RotateCcw} disabled={busyId === item.entry.id} onClick={() => void restore(item)}>
                   {busyId === item.entry.id ? "Se restaurează…" : "Restaurează"}
@@ -540,9 +534,6 @@ function TrashView({
           })}
         </ul>
       )}
-      <p className="border-t border-white/[0.06] px-4 py-2.5 text-[12px] leading-relaxed text-muted-foreground">
-        Ștergerea definitivă nu se face din aplicație, doar din SQL, de un om.
-      </p>
     </Card>
   );
 }

@@ -100,7 +100,7 @@ export function EmailGrafic({ zile }: { zile: ZiCasute[] }) {
   if (gol) {
     return (
       <p className="rounded-xl border border-dashed border-white/[0.09] px-4 py-10 text-center text-[14px] leading-relaxed text-muted-foreground">
-        Niciun email trimis în ultimele 14 zile. Graficul se umple după primele trimiteri ale roboților.
+        Niciun email în ultimele 14 zile.
       </p>
     );
   }
@@ -240,7 +240,7 @@ export function EmailGrafic({ zile }: { zile: ZiCasute[] }) {
             className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/[0.1] bg-[#08080B] px-3 py-2 shadow-[0_16px_40px_-16px_rgba(0,0,0,0.9)]"
             style={{ left: Math.min(Math.max(xOf(active), 80), width - 80) }}
           >
-            <p className="mb-1 font-mono text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">{ziLunga(shown.zi)}</p>
+            <p className="mb-1 font-mono text-[12px] uppercase tracking-[0.1em] text-muted-foreground">{ziLunga(shown.zi)}</p>
             {SERII.map((s) => (
               <p key={s.key} className="pu-num flex items-center gap-2 text-[14px] text-foreground">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.color }} aria-hidden="true" />

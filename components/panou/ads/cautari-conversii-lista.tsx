@@ -30,8 +30,8 @@ export function ConversiiLista({ actions }: { actions: ConversionActionInfo[] })
       {actions.length === 0 ? (
         <EmptyState
           icon={Target}
-          title="Contul n-are nicio acțiune de conversie"
-          text="Campaniile n-au după ce să se optimizeze. Creează-le pe cele standard, în cardul de mai jos: apel din anunț, clic pe telefon, formular."
+          title="Nicio acțiune de conversie"
+          text="Creează-le pe cele standard, mai jos."
         />
       ) : (
         <ul className="divide-y divide-white/[0.05]">
@@ -43,7 +43,7 @@ export function ConversiiLista({ actions }: { actions: ConversionActionInfo[] })
                 <div className="flex flex-wrap items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] [overflow-wrap:anywhere]">{action.name}</p>
-                    <p className="text-[12px] text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground">
                       {CONVERSION_TYPE_LABEL[action.type] ?? action.type} · {CATEGORY_LABEL[action.category] ?? action.category} · {action.primary ? "principală" : "secundară"}
                     </p>
                   </div>
@@ -51,22 +51,22 @@ export function ConversiiLista({ actions }: { actions: ConversionActionInfo[] })
                     {state.label}
                   </Pill>
                 </div>
-                <dl className="mt-2 grid gap-x-4 gap-y-1 text-[12px] sm:grid-cols-2">
-                  <div className="flex gap-1.5">
-                    <dt className="uppercase tracking-[0.12em] text-muted-foreground/70">Numără</dt>
+                <dl className="mt-2 grid gap-x-4 gap-y-1 text-[13px] sm:grid-cols-2">
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground/70">Numără</dt>
                     <dd className="text-foreground/75">
                       {action.counting ? (COUNTING_LABEL[action.counting] ?? action.counting) : "—"}
                       {action.callSeconds !== null ? ` · apel ≥ ${action.callSeconds} s` : ""}
                     </dd>
                   </div>
-                  <div className="flex gap-1.5">
-                    <dt className="uppercase tracking-[0.12em] text-muted-foreground/70">Fereastra</dt>
+                  <div className="flex items-baseline gap-1.5">
+                    <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground/70">Fereastra</dt>
                     <dd className="text-foreground/75">
                       {days(action.clickWindowDays) ?? "—"} după clic{action.viewWindowDays !== null ? ` · ${days(action.viewWindowDays)} după afișare` : ""}
                     </dd>
                   </div>
-                  <div className="flex flex-wrap items-center gap-1.5 sm:col-span-2">
-                    <dt className="uppercase tracking-[0.12em] text-muted-foreground/70">{sendTo ? "Eticheta" : "Id"}</dt>
+                  <div className="flex flex-wrap items-baseline gap-1.5 sm:col-span-2">
+                    <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground/70">{sendTo ? "Eticheta" : "Id"}</dt>
                     <dd className="flex flex-wrap items-center gap-1.5">
                       <code className="font-mono text-[12.5px] text-foreground/85 [overflow-wrap:anywhere]">{sendTo ?? action.id}</code>
                       {sendTo || action.type === "AD_CALL" ? <CopyButton value={sendTo ?? action.id} label="Copiază" size="xs" variant="ghost" /> : null}

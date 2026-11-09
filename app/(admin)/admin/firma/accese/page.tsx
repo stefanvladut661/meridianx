@@ -13,7 +13,7 @@ export default async function AccesePage() {
   const accounts = await listAccounts();
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead title="Accese" subtitle="Conturile firmei: cine are acces, dacă au 2FA, unde e parola și când se reînnoiesc. Parolele stau în managerul de parole — aici nu se scriu." />
+      <PageHead title="Accese" info="Parolele stau în managerul de parole. Aici scrii doar unde sunt." />
       {!accounts.ok ? (
         <Notice tone="error" className="mt-5">
           {accounts.message}

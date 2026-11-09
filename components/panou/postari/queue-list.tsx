@@ -70,8 +70,8 @@ function PostRow({
           <StatePill stare={post.stare} />
           <span className="text-[12.5px] text-muted-foreground">{kind}</span>
         </div>
-        {text ? <p className="mt-1 truncate text-[14px] text-foreground/85">{text}</p> : <p className="mt-1 text-[14px] italic text-muted-foreground">Fără descriere în plan</p>}
-        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-muted-foreground">
+        {text ? <p className="mt-1 truncate text-[14px] text-foreground/85">{text}</p> : <p className="mt-1 text-[14px] italic text-muted-foreground">Fără descriere</p>}
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted-foreground">
           <span className="pu-num">{time}</span>
           <span aria-hidden="true">·</span>
           <button
@@ -89,7 +89,7 @@ function PostRow({
         </p>
         <p className="mt-1.5 flex flex-wrap gap-1.5">
           {notes.map((note) => (
-            <span key={note} className="rounded-md border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[12px] text-muted-foreground">
+            <span key={note} className="rounded-md border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[13px] text-muted-foreground">
               {note}
             </span>
           ))}
@@ -97,23 +97,23 @@ function PostRow({
 
         {detail ? <p className="mt-1.5 text-[13px] text-foreground/75">{detail}</p> : null}
         {post.stare === "esuata" && post.eroare ? (
-          <p className="mt-1.5 rounded-lg border border-rose/20 bg-rose/[0.06] px-2 py-1 text-[12px] text-[#FFC2CE]">
+          <p className="mt-1.5 rounded-lg border border-rose/20 bg-rose/[0.06] px-2 py-1 text-[13px] text-[#FFC2CE]">
             {post.eroare}
             {post.incercari > 1 ? <span className="opacity-75"> ({post.incercari} încercări)</span> : null}
           </p>
         ) : null}
         {post.stare !== "esuata" && post.stare !== "scoasa" && post.eroare && !detail?.includes(post.eroare) ? (
-          <p className="mt-1.5 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2 py-1 text-[12px] text-[#FFD0AC]">Ultima încercare: {post.eroare}</p>
+          <p className="mt-1.5 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2 py-1 text-[13px] text-[#FFD0AC]">Ultima încercare: {post.eroare}</p>
         ) : null}
-        {post.avertisment ? <p className="mt-1.5 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2 py-1 text-[12px] text-[#FFD0AC]">{post.avertisment}</p> : null}
+        {post.avertisment ? <p className="mt-1.5 rounded-lg border border-apricot/20 bg-apricot/[0.06] px-2 py-1 text-[13px] text-[#FFD0AC]">{post.avertisment}</p> : null}
         {post.stare === "publicata" ? (
-          <p className="mt-1 text-[12px] text-muted-foreground">
+          <p className="mt-1 text-[13px] text-muted-foreground">
             {post.publicataLa ? `Publicată ${momentLabel(post.publicataLa, fus)}` : "Publicată"}
             {post.publicataDe ? ` · ${post.publicataDe}` : ""}
           </p>
         ) : null}
-        {post.stare === "in_ciorne" && post.trimisaLa ? <p className="mt-1 text-[12px] text-muted-foreground">În ciornele TikTok din {momentLabel(post.trimisaLa, fus)}.</p> : null}
-        {post.stare === "scoasa" && post.scoasaLa ? <p className="mt-1 text-[12px] text-muted-foreground">Scoasă {momentLabel(post.scoasaLa, fus)}.</p> : null}
+        {post.stare === "in_ciorne" && post.trimisaLa ? <p className="mt-1 text-[13px] text-muted-foreground">În ciorne din {momentLabel(post.trimisaLa, fus)}</p> : null}
+        {post.stare === "scoasa" && post.scoasaLa ? <p className="mt-1 text-[13px] text-muted-foreground">Scoasă {momentLabel(post.scoasaLa, fus)}</p> : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 max-sm:w-full max-sm:pl-[68px]">
@@ -124,12 +124,12 @@ function PostRow({
           </a>
         ) : null}
         {post.stare === "esuata" ? (
-          <Btn size="xs" variant="primary" icon={RotateCcw} disabled={busy} onClick={() => onRetry(post)} aria-label={`Reîncearcă ${post.fisier} pe ${PLATFORMA_LABEL[post.platforma]}`} title={running ? undefined : "Coada e oprită: pornește-o ca postarea să plece."}>
+          <Btn size="xs" variant="primary" icon={RotateCcw} disabled={busy} onClick={() => onRetry(post)} aria-label={`Reîncearcă ${post.fisier} pe ${PLATFORMA_LABEL[post.platforma]}`} title={running ? undefined : "Coada e oprită: pornește-o întâi."}>
             Reîncearcă
           </Btn>
         ) : null}
         {running && isDue(post, now) ? (
-          <Btn size="xs" variant="outline" icon={Zap} disabled={busy} onClick={onRun} title="Rulează coada acum: pleacă tot ce e deja la timp.">
+          <Btn size="xs" variant="outline" icon={Zap} disabled={busy} onClick={onRun} title="Pleacă tot ce e deja la timp.">
             Rulează acum
           </Btn>
         ) : null}
@@ -177,7 +177,7 @@ function PostDetails({
     let alive = true;
     history(post.id)
       .then((result) => alive && setEvents(result))
-      .catch(() => alive && setEvents({ ok: false, message: "Istoricul nu s-a putut încărca." }));
+      .catch(() => alive && setEvents({ ok: false, message: "Istoricul nu s-a încărcat. Redeschide detaliile." }));
     return () => {
       alive = false;
     };
@@ -212,7 +212,7 @@ function PostDetails({
       <div className="mt-3 flex flex-wrap gap-1.5">
         <StatePill stare={post.stare} />
         {notes.map((note) => (
-          <span key={note} className="rounded-md border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[12px] text-muted-foreground">
+          <span key={note} className="rounded-md border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[13px] text-muted-foreground">
             {note}
           </span>
         ))}
@@ -240,7 +240,7 @@ function PostDetails({
       {post.caption ? (
         <p className="mt-1.5 whitespace-pre-wrap break-words rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[14.5px] leading-relaxed">{post.caption}</p>
       ) : (
-        <p className="mt-1.5 text-[14px] text-muted-foreground">Fără descriere în plan.</p>
+        <p className="mt-1.5 text-[14px] text-muted-foreground">Fără descriere.</p>
       )}
       <p className="mt-2 text-[13.5px]">
         <a href={driveLink(post.driveFileId)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-lav underline-offset-2 hover:underline">
@@ -249,18 +249,18 @@ function PostDetails({
         </a>
       </p>
 
-      <h3 className="mt-5 text-[14.5px] font-semibold">Ce s-a întâmplat</h3>
+      <h3 className="mt-5 text-[14.5px] font-semibold">Istoric</h3>
       {!events ? (
-        <p className="mt-1.5 text-[14px] text-muted-foreground">Se încarcă istoricul…</p>
+        <p className="mt-1.5 text-[14px] text-muted-foreground">Se încarcă…</p>
       ) : !events.ok ? (
         <p className="mt-1.5 text-[14px] text-[#FFC2CE]">{events.message}</p>
       ) : events.items.length === 0 ? (
-        <p className="mt-1.5 text-[14px] text-muted-foreground">Nimic încă: postarea n-a pornit.</p>
+        <p className="mt-1.5 text-[14px] text-muted-foreground">Nimic încă.</p>
       ) : (
         <ol className="mt-2 space-y-2.5 border-l border-white/[0.08] pl-3">
           {events.items.map((item) => (
             <li key={item.id} className="text-[14px]">
-              <p className="text-[12px] text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 {momentLabel(item.createdAt, fus)} · {item.actor}
               </p>
               <p className={cn(item.rezultat === "eroare" && "text-[#FFC2CE]")}>
@@ -306,6 +306,7 @@ function PostDetails({
 export function QueueList({
   title,
   hint,
+  info,
   attention,
   groups,
   fus,
@@ -318,6 +319,8 @@ export function QueueList({
 }: {
   title: string;
   hint: string;
+  /** Explicația listei, sub „i” (ex. intervalul la „Toate zilele”). */
+  info?: string;
   attention: PostView[];
   groups: QueueGroup[];
   fus: string;
@@ -388,7 +391,6 @@ export function QueueList({
                   <AlertTriangle className="h-4 w-4 text-rose" aria-hidden="true" /> De văzut ({attention.length})
                 </span>
               }
-              hint="Eșuate sau blocate, oricând ar fi fost ora lor. Fiecare are motivul și „Reîncearcă”."
             />
           </div>
           <ul className="divide-y divide-white/[0.05]">{attention.map(row)}</ul>
@@ -397,12 +399,12 @@ export function QueueList({
 
       <Card className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
-          <SectionTitle title={title} hint={hint} />
+          <SectionTitle title={title} hint={hint} info={info} />
           <div className="flex flex-wrap items-center gap-3">
             {removedCount > 0 ? (
               <button type="button" onClick={() => setShowRemoved((value) => !value)} aria-pressed={showRemoved} className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
                 {showRemoved ? <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
-                {showRemoved ? "Ascunde cele scoase" : `Arată și cele scoase (${removedCount})`}
+                {showRemoved ? "Ascunde scoasele" : `Arată scoasele (${removedCount})`}
               </button>
             ) : null}
             <Link href="/admin/postari/tiktok" className="text-[13px] text-muted-foreground hover:text-foreground">
@@ -414,11 +416,10 @@ export function QueueList({
         {shown === 0 ? (
           <EmptyState
             icon={CalendarDays}
-            title="Nicio postare în ziua asta"
-            text="Alege altă zi din calendar sau aprobă un plan nou. Postările apar aici imediat după aprobare."
+            title="Nicio postare"
             action={
               <Link href="/admin/postari/plan" className={btnClass({ variant: "primary", size: "sm" })}>
-                Aprobă un plan
+                Plan nou
               </Link>
             }
           />
@@ -448,7 +449,7 @@ export function QueueList({
         onOpenChange={(next) => !next && setRemoving(null)}
         title="Scoți postarea din coadă?"
         description={removing ? `${PLATFORMA_LABEL[removing.platforma]} · ${zonedParts(new Date(removing.programataLa), fus).time} · ${removing.fisier}` : ""}
-        consequence="Postarea nu mai pleacă la ora programată. O poți readăuga doar aprobând un plan nou."
+        consequence="Nu mai pleacă. O readaugi doar cu un plan nou."
         confirmLabel="Scoate din coadă"
         onConfirm={async () => {
           if (!removing) return;

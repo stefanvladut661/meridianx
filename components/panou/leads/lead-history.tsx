@@ -12,10 +12,10 @@ import type { HistoryEntry } from "./labels";
  */
 export function LeadHistory({ entries }: { entries: HistoryEntry[] | null }) {
   if (entries === null) {
-    return <Spinner label="Se încarcă istoricul…" />;
+    return <Spinner label="Se încarcă…" />;
   }
   if (entries.length === 0) {
-    return <p className="text-[14px] text-muted-foreground">Încă nu s-a întâmplat nimic în afară de sosirea lead-ului.</p>;
+    return <p className="text-[14px] text-muted-foreground">Nimic după sosire.</p>;
   }
 
   return (
@@ -28,14 +28,14 @@ export function LeadHistory({ entries }: { entries: HistoryEntry[] | null }) {
             {entry.mails && entry.mails.length > 0 ? (
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {entry.mails.map((mail) => (
-                  <Pill key={mail.label} tone={mail.tone} className="text-[12px]">
+                  <Pill key={mail.label} tone={mail.tone}>
                     {mail.label}: {mail.outcome}
                   </Pill>
                 ))}
               </div>
             ) : null}
             {entry.detail ? <p className="mt-0.5 break-words font-mono text-[12px] text-muted-foreground">{entry.detail}</p> : null}
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               {entry.who} · {dateTimeRo(entry.at)}
             </p>
           </div>

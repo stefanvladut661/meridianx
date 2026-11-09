@@ -39,7 +39,7 @@ export function EmailTrimise({ emailuri, aleasa }: { emailuri: EmailTrimis[]; al
       <EmptyState
         icon={Mail}
         title={aleasa ? "Nicio trimitere de pe căsuța asta" : "Niciun email trimis încă"}
-        text={aleasa ? "Alege altă căsuță de mai sus sau vezi toate emailurile." : "Când roboții trimit, fiecare mesaj apare aici cu data, firma și căsuța folosită."}
+        text={aleasa ? "Alege altă căsuță." : undefined}
       />
     );
   }

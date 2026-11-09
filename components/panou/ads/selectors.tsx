@@ -110,7 +110,7 @@ export function AdsSelectors({
         </div>
       ) : (
         <Link href="/admin/ads/clienti" className="whitespace-nowrap text-[14px] font-medium text-lav underline underline-offset-4">
-          Adaugă primul client
+          Adaugă client
         </Link>
       )}
 

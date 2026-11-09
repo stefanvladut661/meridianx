@@ -17,7 +17,7 @@ export function AdsPreview({
   className?: string;
 }) {
   if (summary.ads.length === 0) {
-    return <p className={cn("text-[14px] text-muted-foreground", className)}>Nicio reclamă încă: planul nu are niciun text principal.</p>;
+    return <p className={cn("text-[14px] text-muted-foreground", className)}>Nicio reclamă: lipsește textul principal.</p>;
   }
 
   return (

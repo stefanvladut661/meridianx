@@ -9,6 +9,7 @@ import { keywordKey } from "@/lib/ads/google/search/text";
 import type { KeywordVolume, SearchVolumes } from "@/lib/ads/google/search/types";
 import { countOf, formatMoney } from "@/lib/ads/plan-derive";
 import { joinRo } from "@/lib/ads/plan-summary";
+import { Info } from "@/components/panou/ui/info";
 import { Card, SectionTitle, Stat } from "@/components/panou/ui/primitives";
 import { ProgressBar } from "@/components/panou/ui/states";
 import { cn } from "@/lib/utils";
@@ -194,7 +195,7 @@ function CampaignBlock({ campaign, errorPaths, volumes }: { campaign: SummaryCam
             {campaign.call ? (
               <p>
                 <span className="text-muted-foreground">Apel:</span> {campaign.call.phone}
-                {campaign.call.tracked ? null : <span className="ml-2 text-[13px] text-apricot">fără acțiune de conversie proprie</span>}
+                {campaign.call.tracked ? null : <span className="ml-2 text-[13px] text-apricot">fără conversie proprie</span>}
               </p>
             ) : null}
           </div>
@@ -271,7 +272,7 @@ export function CautariPlanPreview({
   accountLabel,
   sent = false,
   volumes = null,
-  title = "Citit în română",
+  title = "Previzualizare",
 }: {
   summary: SearchSummary;
   operations: number | null;
@@ -285,11 +286,10 @@ export function CautariPlanPreview({
   title?: string;
 }) {
   const { totals } = summary;
-  const headline = `${totals.campaigns === 1 ? "O campanie de căutare" : `${countOf(totals.campaigns, "campanii")} de căutare`}${accountLabel ? ` în contul ${accountLabel}` : ""}, ${
-    summary.dailyBudget ? `cu ${summary.dailyBudget} în total` : "fără buget"
-  }.`;
+  const headline = [accountLabel, summary.dailyBudget ? `${summary.dailyBudget}/zi în total` : "fără buget"].filter(Boolean).join(" · ");
   const cap = summary.capAmount ?? 0;
   const ratio = cap > 0 ? Math.min(1, totals.dailyBudget / cap) : 0;
+  const overLimit = operations !== null && operations > MUTATE_OPERATIONS_MAX;
 
   return (
     <div className="space-y-4">
@@ -313,19 +313,21 @@ export function CautariPlanPreview({
           <div className="mt-5 border-t border-white/[0.06] pt-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2 text-[13.5px]">
               <span className={summary.overCap ? "text-rose" : "text-foreground/80"}>
-                {summary.dailyBudget ?? "0"} din plafonul spațiului ({summary.cap})
+                {summary.dailyBudget ?? "0"} din plafonul de {summary.cap}
               </span>
-              {summary.monthly ? <span className="text-muted-foreground">{summary.monthly}, dacă pornești tot</span> : null}
+              {summary.monthly ? <span className="text-muted-foreground">{summary.monthly} dacă pornești tot</span> : null}
             </div>
             <ProgressBar className="mt-2" tone={summary.overCap ? "rose" : "lav"} value={Math.max(ratio * 100, totals.dailyBudget > 0 ? 1.5 : 0)} />
           </div>
         ) : null}
 
         {operations !== null ? (
-          <p className={cn("mt-4 text-[13px] leading-relaxed", operations > MUTATE_OPERATIONS_MAX ? "text-rose" : "text-muted-foreground")}>
-            Totul pleacă într-o singură cerere: {countOf(operations, "operații")}, create împreună sau deloc
-            {operations > MUTATE_OPERATIONS_MAX ? ` — peste limita Google de ${MUTATE_OPERATIONS_MAX.toLocaleString("ro-RO")} pe cerere` : ""}. Verificarea și crearea consumă fiecare{" "}
-            {operations} din cele {EXPLORER_DAILY_OPERATIONS.toLocaleString("ro-RO")} de operații pe zi ale proiectului Google Cloud la nivelul Explorer.
+          <p className={cn("mt-4 flex flex-wrap items-center gap-1.5 text-[13.5px] leading-relaxed", overLimit ? "text-rose" : "text-muted-foreground")}>
+            {overLimit ? `Peste limita Google de ${MUTATE_OPERATIONS_MAX.toLocaleString("ro-RO")} operații pe cerere.` : "O singură cerere, totul sau nimic."}
+            <Info label="Cota zilnică">
+              Verificarea și crearea consumă fiecare {operations} din cele {EXPLORER_DAILY_OPERATIONS.toLocaleString("ro-RO")} de operații pe zi ale proiectului Google Cloud (nivelul
+              Explorer).
+            </Info>
           </p>
         ) : null}
       </Card>
@@ -342,7 +344,7 @@ export function CautariPlanPreview({
                   „{list.name}” <span className="ml-1 font-mono text-[12.5px] text-muted-foreground">{counted(list.count, "cuvânt", "cuvinte")}</span>
                 </span>
                 <span className={cn("text-[13px]", list.usedBy.length === 0 ? "text-apricot" : "text-muted-foreground")}>
-                  {list.usedBy.length === 0 ? "nelegată de nicio campanie" : `pe ${list.usedBy.length === 1 ? "o campanie" : countOf(list.usedBy.length, "campanii")}`}
+                  {list.usedBy.length === 0 ? "nelegată" : `pe ${list.usedBy.length === 1 ? "o campanie" : countOf(list.usedBy.length, "campanii")}`}
                 </span>
               </li>
             ))}
@@ -350,7 +352,7 @@ export function CautariPlanPreview({
         </Card>
       ) : null}
 
-      {volumes && "error" in volumes ? <p className="text-[13.5px] text-apricot">{volumes.error} Volumele de căutare lipsesc din previzualizare; restul verificării e întreg.</p> : null}
+      {volumes && "error" in volumes ? <p className="text-[13.5px] text-apricot">{volumes.error} Fără volume de căutare; restul verificării e întreg.</p> : null}
       {volumes && "campaigns" in volumes && volumes.note ? <p className="text-[13.5px] text-muted-foreground">{volumes.note}</p> : null}
 
       {summary.campaigns.map((campaign, index) => (

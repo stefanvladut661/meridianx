@@ -29,7 +29,7 @@ export const maxDuration = 60;
 const OWNER_LABEL: Record<ConversionSetup["owner"], string> = {
   self: "contul însuși",
   manager: "un cont manager",
-  none: "nimeni încă — prima acțiune pornește urmărirea",
+  none: "nimeni încă",
   unknown: "necunoscut",
 };
 
@@ -83,7 +83,7 @@ export default async function ConversionsPage({ searchParams }: { searchParams: 
         <InlineNote className="max-w-2xl">
           {workspace?.platform === "google"
             ? `Spațiul ${summary.name} nu are cheie: setează ${summary.tokenEnv} în Vercel.`
-            : `Lucrezi în ${summary.name}. Conversiile se fac aici doar pe Google: treci în Meridian · Google sau Clienți · Google.`}
+            : `Lucrezi în ${summary.name}. Doar pe Google: alege Meridian · Google sau Clienți · Google din „Spațiu”, sus.`}
         </InlineNote>
       </div>
     );
@@ -126,7 +126,7 @@ export default async function ConversionsPage({ searchParams }: { searchParams: 
     googleError = describeGoogleError(error, "acțiunile de conversie ale contului", workspace.tokenEnv);
   }
   const blocked = setup?.conversionAccount
-    ? `Conversiile contului se gestionează în contul ${formatCustomerId(setup.conversionAccount)} (urmărirea conversiilor între conturi, din manager). Acolo se creează acțiunile noi, în Google Ads — portalul creează doar în contul clientului.`
+    ? `Conversiile se gestionează în contul ${formatCustomerId(setup.conversionAccount)} (între conturi, din manager). Acțiunile noi se creează acolo, în Google Ads.`
     : null;
   const calls = setup?.actions.filter((action) => action.type === "AD_CALL" && action.status === "ENABLED") ?? [];
   const callReportingOn = Boolean(setup?.callReporting.enabled && setup?.callReporting.conversions);
@@ -136,10 +136,7 @@ export default async function ConversionsPage({ searchParams }: { searchParams: 
       {header}
       {picker}
 
-      <ContHeadline
-        info={info}
-        hint="cont existent · portalul creează doar acțiuni de conversie, nu schimbă bugete și nu șterge nimic"
-      >
+      <ContHeadline info={info} note="Cont existent: portalul creează doar acțiuni de conversie. Nu schimbă bugete și nu șterge nimic.">
         {setup ? (
           <div className="grid gap-3 sm:grid-cols-3">
             <Tile label="Id-ul de urmărire">
@@ -152,7 +149,7 @@ export default async function ConversionsPage({ searchParams }: { searchParams: 
                 <span className="text-muted-foreground">apare după prima acțiune</span>
               )}
             </Tile>
-            <Tile label="Conversiile le gestionează">
+            <Tile label="Gestionate de">
               <span className={setup.conversionAccount ? "text-[#FFC79C]" : undefined}>
                 {setup.conversionAccount ? `contul ${formatCustomerId(setup.conversionAccount)} (între conturi)` : OWNER_LABEL[setup.owner]}
               </span>
@@ -162,13 +159,7 @@ export default async function ConversionsPage({ searchParams }: { searchParams: 
                 <Pill tone={callReportingOn ? "mint" : "apricot"} dot>
                   {setup.callReporting.enabled ? (setup.callReporting.conversions ? "pornită" : "pornită, fără conversii") : "oprită"}
                 </Pill>
-                <span className="text-[12.5px] text-muted-foreground">
-                  {setup.callReporting.enabled
-                    ? setup.callReporting.conversions
-                      ? "cu conversii din apeluri"
-                      : "apelurile nu se numără ca lead"
-                    : "se pornește în Google Ads (pașii, jos)"}
-                </span>
+                {!setup.callReporting.enabled ? <span className="text-[13.5px] text-muted-foreground">pașii, jos</span> : null}
               </span>
             </Tile>
           </div>
@@ -176,7 +167,7 @@ export default async function ConversionsPage({ searchParams }: { searchParams: 
       </ContHeadline>
 
       {setup && !setup.actions.some((action) => action.status === "ENABLED" && action.primary) ? (
-        <InlineNote tone="rose">Nicio acțiune principală activă: licitarea automată n-are după ce să se ghideze.</InlineNote>
+        <InlineNote tone="rose">Nicio acțiune principală activă: licitarea automată n-are ce urmări.</InlineNote>
       ) : null}
       {googleError ? <InlineNote className="max-w-2xl">{googleError}</InlineNote> : null}
 

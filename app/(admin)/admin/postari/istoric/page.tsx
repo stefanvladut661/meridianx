@@ -33,7 +33,7 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-4">
-      <ScreenHead title="Istoric" text="Fiecare aprobare, rulare și eșec, cu ora României. Aici se vede cine a făcut ce. Ultimele 300." />
+      <ScreenHead title="Istoric" info="Ultimele 300 de acțiuni, în ora României." />
 
       <nav aria-label="Zona" className="pu-no-scrollbar max-w-full overflow-x-auto">
         <div className="inline-flex items-center gap-1 rounded-full border border-white/[0.07] bg-white/[0.03] p-1">
@@ -50,7 +50,7 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
 
       {tinta ? (
         <InlineNote tone="neutral">
-          Doar pentru o postare.{" "}
+          O singură postare.{" "}
           <Link href="/admin/postari/istoric" className="font-medium text-foreground underline underline-offset-2">
             Arată tot
           </Link>
@@ -63,8 +63,7 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
         ) : history.data.length === 0 ? (
           <EmptyState
             icon={HistoryIcon}
-            title="Nicio rulare încă"
-            text={`Nicio acțiune încă${zona ? ` în ${ZONA_LABEL[zona]}` : ""}. După primul plan aprobat, fiecare rulare apare aici cu rezultatul ei.`}
+            title={`Nicio acțiune${zona ? ` în ${ZONA_LABEL[zona]}` : ""}`}
           />
         ) : (
           <ul className="divide-y divide-white/[0.05]">
@@ -81,13 +80,13 @@ export default async function IstoricPage({ searchParams }: { searchParams: Prom
                       <span className="font-medium">{row.actiune}</span>
                       {row.mesaj ? <span className="text-foreground/75"> — {row.mesaj}</span> : null}
                     </p>
-                    <p className="text-[12px] text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground">
                       {ZONA_LABEL[row.zona]} · {row.actor} · {dateTimeRo(row.createdAt)}
                       {row.tinta && UUID.test(row.tinta) ? (
                         <>
                           {" · "}
                           <Link href={`/admin/postari/istoric?tinta=${row.tinta}`} className="underline underline-offset-2 hover:text-foreground">
-                            doar această postare
+                            doar postarea asta
                           </Link>
                         </>
                       ) : null}

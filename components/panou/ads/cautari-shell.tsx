@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { PLATFORM_LABEL } from "@/lib/ads/constants";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { chooseWorkspace } from "@/app/(admin)/admin/ads/actions";
+import { Info } from "@/components/panou/ui/info";
 import { Btn, Card, Pill } from "@/components/panou/ui/primitives";
 import { inputClass } from "@/components/panou/ui/states";
 import { cn } from "@/lib/utils";
@@ -78,12 +79,7 @@ export function CautariHeader({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Căutări</h1>
-          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
-            Doar Google. Planuri de căutare, termenii reali, auditul unui cont existent și acțiunile de conversie.
-          </p>
-        </div>
+        <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Căutări</h1>
         <WorkspaceSwitch workspaces={workspaces} currentId={currentWorkspaceId} />
       </div>
       <nav
@@ -161,14 +157,32 @@ export function ContPicker({
   );
 }
 
-/** Capul contului ales: numele, id-ul în mono și, la dreapta, ce mai vrei să faci cu el. */
-export function ContHeadline({ info, hint, aside, children }: { info: { id: string; name: string; currency: string }; hint?: ReactNode; aside?: ReactNode; children?: ReactNode }) {
+/**
+ * Capul contului ales: numele, id-ul în mono și, la dreapta, ce mai vrei să faci cu el.
+ * `hint`: o stare scurtă sub nume; `note`: regula contului, sub „i” lângă nume.
+ */
+export function ContHeadline({
+  info,
+  hint,
+  note,
+  aside,
+  children,
+}: {
+  info: { id: string; name: string; currency: string };
+  hint?: ReactNode;
+  note?: ReactNode;
+  aside?: ReactNode;
+  children?: ReactNode;
+}) {
   return (
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[16px] font-semibold tracking-[-0.01em]">{info.name}</h2>
-          <p className="mt-1 text-[14px] text-muted-foreground">{hint}</p>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[16px] font-semibold tracking-[-0.01em]">{info.name}</h2>
+            {note ? <Info label="Ce face portalul aici">{note}</Info> : null}
+          </div>
+          {hint ? <p className="mt-1 text-[14px] text-muted-foreground">{hint}</p> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone="sky">

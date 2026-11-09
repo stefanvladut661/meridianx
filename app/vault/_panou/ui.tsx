@@ -59,12 +59,12 @@ export function LabeledInput({
         {...input}
       />
       {hint ? (
-        <span id={hintId} className="mt-1 block text-[11.5px] text-muted-foreground">
+        <span id={hintId} className="mt-1 block text-[13px] text-muted-foreground">
           {hint}
         </span>
       ) : null}
       {error ? (
-        <span id={errorId} className="mt-1 block text-[11.5px] text-rose">
+        <span id={errorId} className="mt-1 block text-[13px] text-rose">
           {error}
         </span>
       ) : null}

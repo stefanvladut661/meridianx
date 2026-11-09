@@ -13,8 +13,9 @@ import { jobViewOf } from "@/lib/ads/job-runner";
 import { PAUSED } from "@/lib/ads/meta/paused";
 import { ChannelMark } from "@/components/panou/ads/channel-mark";
 import { UnfinishedJobs, type UnfinishedJob } from "@/components/panou/ads/unfinished-jobs";
-import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
+import { PAGE_TITLE } from "@/components/panou/ads/tone";
 import { dateTimeRo } from "@/components/panou/ui/format";
+import { Info } from "@/components/panou/ui/info";
 import { Card, Pill, SectionTitle, Stamp, btnClass } from "@/components/panou/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/panou/ui/states";
 import { cn } from "@/lib/utils";
@@ -108,10 +109,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className={PAGE_TITLE}>Planuri</h1>
-          <p className={PAGE_LEAD}>Schițe verificate pe conturile reale, apoi create oprite. Un plan nu pornește nimic.</p>
-        </div>
+        <h1 className={PAGE_TITLE}>Planuri</h1>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/admin/ads/cautare" className={btnClass({ variant: "ghost", size: "sm" })}>
             <Search className="h-4 w-4" aria-hidden="true" /> Plan de căutare
@@ -132,7 +130,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
         {(
           [
             ["Planuri create", complete, "mint"],
-            ["Create parțial, de verificat", partial, "rose"],
+            ["Create parțial", partial, "rose"],
             ["Creări neterminate", unfinished.length, "sky"],
           ] as const
         ).map(([label, value, tone]) => (
@@ -143,29 +141,27 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
         ))}
       </div>
 
-      <div className="flex items-start gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-[13px] leading-relaxed text-muted-foreground">
-        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" />
-        <p>
-          Plafonul zilnic al spațiului de lucru:{" "}
-          {agencyCap !== null ? (
-            <>
-              <span className="text-foreground">{formatMoney(agencyCap, "RON")}</span> pentru reclamele agenției
-            </>
-          ) : null}
-          {agencyCap !== null && clientsCap !== null ? ", " : ""}
-          {clientsCap !== null ? (
-            <>
-              <span className="text-foreground">{formatMoney(clientsCap, "RON")}</span> pentru banii clienților
-            </>
-          ) : null}
-          . La creare, bugetul planului se compară cu plafonul — un zero în plus e prins înainte să ajungă în platformă. Un plan creat în ultimele 14 zile se sare la lot, ca să nu se dubleze.
-        </p>
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-[14px] text-muted-foreground">
+        <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-mint" aria-hidden="true" />
+        <span>Plafon zilnic</span>
+        {agencyCap !== null ? (
+          <span>
+            <span className="pu-num text-foreground">{formatMoney(agencyCap, "RON")}</span> agenție
+          </span>
+        ) : null}
+        {agencyCap !== null && clientsCap !== null ? <span aria-hidden="true">·</span> : null}
+        {clientsCap !== null ? (
+          <span>
+            <span className="pu-num text-foreground">{formatMoney(clientsCap, "RON")}</span> clienți
+          </span>
+        ) : null}
+        <Info>Bugetul planului se compară cu plafonul la creare: un zero în plus e prins înainte de platformă. La lot, un plan creat în ultimele 14 zile se sare.</Info>
       </div>
 
       {unfinished.length > 0 ? (
         <section aria-labelledby="neterminate" className="space-y-3">
           <div id="neterminate">
-            <SectionTitle title="Creări neterminate" hint="Așteaptă limita de cereri a platformei sau au rămas la jumătate. Ce s-a creat e pe pauză." />
+            <SectionTitle title="Creări neterminate" info="Așteaptă limita de cereri a platformei sau au rămas la jumătate. Ce s-a creat e pe pauză." />
           </div>
           <UnfinishedJobs jobs={unfinished} continueJob={continueJobAction} />
         </section>
@@ -175,15 +171,15 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
       <section aria-labelledby="create" className="space-y-3">
         <div id="create">
           <SectionTitle
-            title={all ? "Toate planurile create" : `Planurile create pentru ${client?.name}`}
-            hint="Ce a creat portalul — totul pe pauză."
+            title={all ? "Toate planurile" : `Planurile pentru ${client?.name}`}
+            hint={groups.length > 0 ? String(groups.length) : undefined}
             action={
               client ? (
                 <Link
                   href={all ? "/admin/ads/planuri" : "/admin/ads/planuri?toate=1"}
                   className="text-[13.5px] font-medium text-lav underline underline-offset-4"
                 >
-                  {all ? `Doar ${client.name}` : "Arată toate planurile"}
+                  {all ? `Doar ${client.name}` : "Toate planurile"}
                 </Link>
               ) : null
             }
@@ -200,14 +196,12 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
           <Card padded={false}>
             <EmptyState
               icon={FileJson}
-              title="Niciun plan încă"
-              text={`Niciun plan creat ${all ? "încă" : `pentru ${client?.name}`}. Lipește un plan scris cu asistentul AI sau pornește de la formularul ghidat. Îl citim în română înainte să creeze ceva.`}
+              title={all ? "Niciun plan" : `Niciun plan pentru ${client?.name}`}
               action={
                 <Link href="/admin/ads/nou" className={btnClass({ variant: "primary", size: "sm" })}>
                   Lipește un plan
                 </Link>
               }
-              hint="Planurile nu ating conturile până nu apeși „Creează pe pauză”."
             />
           </Card>
         ) : null}
@@ -283,12 +277,9 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
       </section>
 
       <Card className="flex flex-wrap items-center justify-between gap-3 border-lav/20 bg-lav/[0.05]">
-        <div>
-          <p className="text-[14px] font-medium text-[#D8CCFF]">Scrii planurile cu Claude?</p>
-          <p className="mt-0.5 text-[13px] text-[#D8CCFF]/70">Ia instrucțiunile și contextul conturilor de pe pagina „Pentru Claude”.</p>
-        </div>
+        <p className="text-[14.5px] font-medium text-[#D8CCFF]">Instrucțiuni pentru Claude</p>
         <Link href="/admin/ads/claude" className={btnClass({ variant: "outline", size: "sm" })}>
-          Deschide instrucțiunile
+          Deschide
         </Link>
       </Card>
     </div>

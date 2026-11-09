@@ -1,16 +1,19 @@
 import type { ReactNode } from "react";
+import { Info } from "@/components/panou/ui/info";
 import { cn } from "@/lib/utils";
 
 /**
  * Câmpul de formular al filei Conversii: eticheta mică cu majuscule din kit,
  * controlul, apoi nota sau eroarea. Eticheta e legată prin `htmlFor`, iar nota
  * stă în afara ei: cititorul de ecran nu o citește ca parte din nume.
+ * `info`: explicația, sub „i” lângă etichetă (în afara ei).
  */
 export function Camp({
   id,
   label,
   children,
   hint,
+  info,
   error,
   className,
 }: {
@@ -18,14 +21,18 @@ export function Camp({
   label: ReactNode;
   children: ReactNode;
   hint?: ReactNode;
+  info?: ReactNode;
   error?: ReactNode;
   className?: string;
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <label htmlFor={id} className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-        {label}
-      </label>
+      <span className="flex items-center gap-1.5">
+        <label htmlFor={id} className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          {label}
+        </label>
+        {info ? <Info>{info}</Info> : null}
+      </span>
       <div className="mt-1.5">{children}</div>
       {error ? (
         <p id={`${id}-eroare`} className="mt-1.5 text-[13px] leading-snug text-rose">

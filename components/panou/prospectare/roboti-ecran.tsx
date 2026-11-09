@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Cpu, Hammer, KeyRound, Loader2, Plus, Search, Send, type LucideIcon } from "lucide-react";
 import { comutaRobot, creeazaRobot } from "@/app/(admin)/admin/prospectare/actions";
 import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
+import { Info } from "@/components/panou/ui/info";
 import { dateTimeRo, num, relativeRo, untilRo } from "@/components/panou/ui/format";
 import { Modal } from "@/components/panou/ui/modal";
 import { Btn, Card } from "@/components/panou/ui/primitives";
@@ -204,9 +205,15 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         pill={eroare ? undefined : `${acumActivi} ${acumActivi === 1 ? "activ" : "activi"} acum`}
         pillTone="mint"
         actions={
-          <Btn size="sm" variant="primary" icon={Plus} onClick={deschide}>
-            Adaugă robot
-          </Btn>
+          <>
+            <Info label="Cum se conectează un robot">
+              Protocolul e în <code className="font-mono">docs/prospectare-api.md</code>. Tokenul stă în <code className="font-mono">MERIDIAN_ROBOT_TOKEN</code> pe
+              calculatorul robotului, niciodată într-un fișier din repo.
+            </Info>
+            <Btn size="sm" variant="primary" icon={Plus} onClick={deschide}>
+              Adaugă robot
+            </Btn>
+          </>
         }
       />
 
@@ -217,7 +224,6 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
           <EmptyState
             icon={Cpu}
             title="Niciun robot conectat"
-            text="Adaugă un robot și pune tokenul de acces pe calculatorul lui. Tokenul se arată o singură dată."
             action={
               <Btn size="sm" variant="primary" onClick={deschide}>
                 Adaugă robot
@@ -229,7 +235,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
             <div className="hidden overflow-x-auto xl:block">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-border text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">
+                  <tr className="border-b border-border text-[12px] uppercase tracking-[0.1em] text-muted-foreground">
                     <th scope="col" className="py-2.5 pl-4 pr-3 font-medium">
                       Nume
                     </th>
@@ -323,19 +329,8 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         )}
       </Card>
 
-      <InlineNote tone="neutral">
-        Cum vorbește robotul cu adminul (rutele, codurile de răspuns, exemplele): <code className="font-mono text-[13px] text-foreground">docs/prospectare-api.md</code>, în
-        repo. Pe calculatorul robotului, tokenul stă în variabila de mediu <code className="font-mono text-[13px] text-foreground">MERIDIAN_ROBOT_TOKEN</code>, niciodată într-un
-        fișier din repo.
-      </InlineNote>
-
       <Modal open={deschis} onOpenChange={(v) => (v ? setDeschis(true) : inchide())} label={token ? `Tokenul robotului ${numeCreat}` : "Adaugă robot"}>
         <h2 className="text-[18px] font-semibold">{token ? `Tokenul robotului ${numeCreat}` : "Adaugă robot"}</h2>
-        <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
-          {token
-            ? "Copiază tokenul acum și pune-l pe calculatorul robotului. Nu se mai afișează după ce închizi fereastra."
-            : "Dă-i un nume scurt, ca să știi ce calculator e. Tokenul de acces apare o singură dată."}
-        </p>
 
         {token ? (
           <div className="mt-4 space-y-3">
@@ -349,13 +344,13 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
             </code>
             <div className="flex flex-wrap items-center gap-2">
               <CopyButton value={token} label="Copiază tokenul" clearAfter={120} />
-              <span className="text-[12.5px] text-muted-foreground">Clipboardul se golește singur după 2 minute.</span>
+              <span className="text-[13px] text-muted-foreground">Clipboardul se golește în 2 minute.</span>
             </div>
             <InlineNote tone="apricot" className="flex items-start gap-2">
               <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>
-                Tokenul nu poate fi afișat din nou. Pune-l în variabila de mediu <code className="font-mono">MERIDIAN_ROBOT_TOKEN</code> a robotului, nu într-un fișier din repo și nu
-                în chat. Dacă îl pierzi, dezactivează robotul și adaugă altul, cu alt nume.
+                Nu se mai afișează. Pune-l în <code className="font-mono">MERIDIAN_ROBOT_TOKEN</code> pe calculatorul robotului, nu în repo sau în chat. Pierdut: dezactivezi
+                robotul și adaugi altul.
               </span>
             </InlineNote>
             <div className="flex justify-end">
@@ -411,14 +406,12 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
           if (!v) setDeOprit(null);
         }}
         title={deOprit ? `Dezactivezi ${deOprit.nume}?` : "Dezactivezi robotul?"}
-        description="Robotul nu mai primește firme și nu mai poate raporta nimic până îl activezi din nou."
+        description="Nu mai primește firme și nu mai raportează până îl activezi."
         consequence={
           deOprit
-            ? `La următoarea cerere primește 401. ${
-                deOprit.firma_curenta
-                  ? `Firma lui de acum (#${deOprit.firma_curenta.nr} ${deOprit.firma_curenta.nume}) trece la alt robot când îi expiră rezervarea, ${untilRo(deOprit.firma_curenta.expira_la, acum)}.`
-                  : "Nu are nicio firmă rezervată acum."
-              }`
+            ? deOprit.firma_curenta
+              ? `Firma lui (#${deOprit.firma_curenta.nr} ${deOprit.firma_curenta.nume}) trece la alt robot când expiră rezervarea, ${untilRo(deOprit.firma_curenta.expira_la, acum)}.`
+              : "Nu are nicio firmă rezervată acum."
             : undefined
         }
         confirmLabel="Dezactivează"

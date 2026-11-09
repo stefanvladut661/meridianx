@@ -6,6 +6,7 @@ import { lastCronRun, lastRuns, listPosts } from "@/lib/postari/postari";
 import { readSettings } from "@/lib/postari/setari";
 import { addDays, agoLabel, dayLabel, isDay, todayIn, zonedParts, zonedToUtc, ZILE_SCURT } from "@/lib/postari/timp";
 import { InlineNote } from "@/components/panou/ui/actions";
+import { Info } from "@/components/panou/ui/info";
 import { Card, Pill } from "@/components/panou/ui/primitives";
 import { ErrorState } from "@/components/panou/ui/states";
 import { QueueActions } from "@/components/panou/postari/queue-actions";
@@ -107,7 +108,7 @@ export default async function CoadaPage({ searchParams }: { searchParams: Promis
   const alertRows: QueueAlert[] = alerts.map((alert) => ({
     mesaj: alert.mesaj.split("\n\n")[0],
     when: agoLabel(alert.createdAt),
-    meta: alert.trimisa ? "trimisă pe email" : alert.eroare ? `emailul n-a plecat: ${alert.eroare}` : "doar aici",
+    meta: alert.trimisa ? "trimisă pe email" : alert.eroare ? `emailul n-a plecat: ${alert.eroare}` : "fără email",
     tone: alert.tip === "postare_esuata" || alert.tip === "token" ? "rose" : "apricot",
   }));
 
@@ -123,19 +124,20 @@ export default async function CoadaPage({ searchParams }: { searchParams: Promis
             {running ? "rulează" : "oprită"}
           </Pill>
         }
-        text="Nimic nu pleacă fără „Aprobă planul”. Pe TikTok, clipul ajunge în ciorne — îl publici din telefon."
         actions={<QueueActions running={running} setQueue={setQueueAction} runNow={runNowAction} />}
       />
 
       {!settings.ok ? <InlineNote tone="rose">{settings.message}</InlineNote> : null}
       {!running && upcoming > 0 ? (
         <InlineNote tone="apricot">
-          {upcoming} {upcoming === 1 ? "postare așteaptă" : "postări așteaptă"}. Cele care trec de ora lor cu peste 6 ore nu mai pleacă singure: le repui cu „Reîncearcă”.
+          {upcoming} {upcoming === 1 ? "postare așteaptă" : "postări așteaptă"}. Peste 6 ore de întârziere nu mai pleacă singure.{" "}
+          <Info label="Ce fac">Cele întârziate peste 6 ore devin eșuate; le repui cu „Reîncearcă”.</Info>
         </InlineNote>
       ) : null}
       {stale && upcoming > 0 && running ? (
         <InlineNote tone="apricot">
-          {last ? `Coada n-a mai rulat de ${agoLabel(last.inceputLa).replace(/^acum /, "")}.` : "Coada n-a rulat niciodată."} Supabase Cron trebuie s-o pornească la 5 minute: vezi pașii din README, la „Programarea”. Până atunci, „Rulează acum” trimite ce e la timp.
+          {last ? `Coada n-a mai rulat de ${agoLabel(last.inceputLa).replace(/^acum /, "")}.` : "Coada n-a rulat niciodată."} Până merge Supabase Cron, folosește „Rulează acum”.{" "}
+          <Info label="Ce fac">Jobul din Supabase Cron trebuie să pornească coada la 5 minute. Pașii sunt în README, la „Programarea”.</Info>
         </InlineNote>
       ) : null}
 
@@ -157,7 +159,8 @@ export default async function CoadaPage({ searchParams }: { searchParams: Promis
       {posts.ok ? (
         <QueueList
           title={selected ? dayLabel(selected, true) : "Toate zilele"}
-          hint={`${shownCount} ${shownCount === 1 ? "postare" : "postări"}${selected ? "" : " (ultimele 3 zile și următoarele 60)"}${platform ? ` · doar ${PLATFORMA_LABEL[platform]}` : ""}`}
+          hint={`${shownCount} ${shownCount === 1 ? "postare" : "postări"}${platform ? ` · doar ${PLATFORMA_LABEL[platform]}` : ""}`}
+          info={selected ? undefined : "Ultimele 3 zile și următoarele 60."}
           attention={attention}
           groups={groups}
           fus={fus}

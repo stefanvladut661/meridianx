@@ -36,16 +36,16 @@ export function DriveStatusCard({
       <div className="mt-2 rounded-xl border border-hair bg-char px-4 py-3 text-[15px]">
         <p className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-bone">Legătura:</span>
-          {mode === "oauth" ? "OAuth, ca tine (fișierele sunt ale tale)" : mode === "service" ? "cont de serviciu" : "nelegat"}
+          {mode === "oauth" ? "OAuth (fișierele sunt ale tale)" : mode === "service" ? "cont de serviciu" : "nelegat"}
           {ok ? <Tag tone="ok">Merge</Tag> : mode ? <Tag tone="warn">De verificat</Tag> : null}
         </p>
         {serviceEmail ? (
           <p className="mt-1.5 text-[15px] text-dim">
-            Adresa contului de serviciu — dă-i acces de <strong className="text-bone">editor</strong> la folderul rădăcină: <span className="select-all font-md-mono text-[14px] text-bone">{serviceEmail}</span>
+            Dă-i acces de <strong className="text-bone">editor</strong> la folderul rădăcină: <span className="select-all font-md-mono text-[14px] text-bone">{serviceEmail}</span>
           </p>
         ) : null}
-        {mode === "service" ? <p className="mt-1.5 text-[14px] text-dim">Un cont de serviciu poate urca fișiere doar într-un Shared Drive. Pentru un folder din „My Drive”, folosește OAuth (README → Drive).</p> : null}
-        {rootName ? <p className="mt-1.5 text-[15px] text-dim">Folderul rădăcină: „{rootName}”. Folderul lunii curente se numește „{folderName}”.</p> : null}
+        {mode === "service" ? <p className="mt-1.5 text-[14px] text-dim">Contul de serviciu urcă doar într-un Shared Drive. Pentru „My Drive”, folosește OAuth.</p> : null}
+        {rootName ? <p className="mt-1.5 text-[15px] text-dim">Rădăcina: „{rootName}” · luna curentă: „{folderName}”</p> : null}
         {message ? <p className="mt-1.5 text-[15px] text-[var(--ap-warn)]">{message}</p> : null}
         {ok ? (
           <button
@@ -59,7 +59,7 @@ export function DriveStatusCard({
             }
             className="btn btn-ghost mt-3 !min-h-9 !px-3.5 !py-1.5 !text-[15px]"
           >
-            {pending ? "Se lucrează…" : `Fă acum folderul „${folderName}”`}
+            {pending ? "Se lucrează…" : `Fă folderul „${folderName}”`}
           </button>
         ) : null}
         {result ? (

@@ -7,6 +7,7 @@ import { FORM_TRIGGER_LABEL, GTM_FILE_NAME, buildGtmImport, checkGtmInput, type 
 import type { ConversionActionInfo } from "@/lib/ads/google/conversions/types";
 import { InlineNote } from "@/components/panou/ui/actions";
 import { Btn, Card, SectionTitle } from "@/components/panou/ui/primitives";
+import { Info } from "@/components/panou/ui/info";
 import { SoftSelect } from "@/components/panou/ui/select";
 import { EmptyState } from "@/components/panou/ui/states";
 import { useToast } from "@/components/panou/ui/toast";
@@ -64,12 +65,12 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notify("Fișierul GTM e gata de importat.");
+    notify("Fișier GTM descărcat.");
   };
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(fileText());
-      notify("JSON-ul e copiat.");
+      notify("JSON copiat.");
     } catch {
       notify("Browserul n-a lăsat copierea: folosește descărcarea.", "error");
     }
@@ -82,46 +83,36 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
 
   return (
     <Card>
-      <SectionTitle title="Export pentru Google Tag Manager" hint="fișier de import + pașii" />
-      <ol className="mt-3 space-y-2 text-[13px] leading-relaxed text-muted-foreground">
-        <li>1. Alege ce trimit clicul pe telefon și formularul trimis.</li>
-        <li>2. Descarcă fișierul JSON de mai jos.</li>
-        <li>3. Importă-l în Tag Manager și publică (pașii exacți, mai jos pe pagină).</li>
-      </ol>
+      <SectionTitle title="Export GTM" info="Fișierul se importă și se publică de mână în Tag Manager (pașii, jos)." />
 
       {tagged.length === 0 ? (
         <div className="mt-4 rounded-xl border border-dashed border-white/[0.12]">
-          <EmptyState
-            icon={Tags}
-            className="px-4 py-8"
-            title="Nicio acțiune cu etichetă încă"
-            text="Importul are nevoie de eticheta AW-…/… a unei acțiuni de pe site — clic pe telefon sau pagină web. Creează-le în cardul „Creează acțiunile standard”: eticheta apare imediat după."
-          />
+          <EmptyState icon={Tags} className="px-4 py-8" title="Nicio acțiune cu etichetă" text="Creează clicul pe telefon sau formularul, mai jos." />
         </div>
       ) : (
         <div className="mt-4 space-y-4">
           <div>
             <SoftSelect
-              label="Clicul pe telefon trimite"
+              label="Clic pe telefon"
               value={phoneId}
               onChange={setPhoneId}
-              options={[{ value: "", label: "nimic — fără conversie pe telefon" }, ...phoneChoices.map((action) => ({ value: action.id, label: choice(action) }))]}
+              options={[{ value: "", label: "nimic" }, ...phoneChoices.map((action) => ({ value: action.id, label: choice(action) }))]}
             />
             {errorOf("phone") ? <p className="mt-1.5 text-[13px] leading-snug text-rose">{errorOf("phone")}</p> : null}
           </div>
           <div>
             <SoftSelect
-              label="Formularul trimis trimite"
+              label="Formular trimis"
               value={formActionId}
               onChange={setFormActionId}
-              options={[{ value: "", label: "nimic — fără conversie pe formular" }, ...formChoices.map((action) => ({ value: action.id, label: choice(action) }))]}
+              options={[{ value: "", label: "nimic" }, ...formChoices.map((action) => ({ value: action.id, label: choice(action) }))]}
             />
             {errorOf("form") ? <p className="mt-1.5 text-[13px] leading-snug text-rose">{errorOf("form")}</p> : null}
           </div>
 
           {form ? (
             <fieldset>
-              <legend className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Cum se recunoaște formularul trimis</legend>
+              <legend className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Formularul se recunoaște după</legend>
               <div className="mt-2 grid gap-1.5">
                 {(Object.keys(FORM_TRIGGER_LABEL) as Array<FormTrigger["kind"]>).map((kind) => (
                   <label
@@ -142,7 +133,7 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
                     id="gtm-cale"
                     label="Calea paginii de mulțumire"
                     error={pathError}
-                    hint="Pagina pe care ajunge omul DOAR după ce a trimis formularul. Fără domeniu."
+                    info="Pagina la care ajunge omul doar după trimitere. Fără domeniu."
                   >
                     <input
                       id="gtm-cale"
@@ -151,15 +142,19 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
                       placeholder="/multumim"
                       spellCheck={false}
                       className={campClass(Boolean(pathError), true)}
-                      {...descriere("gtm-cale", pathError, true)}
+                      {...descriere("gtm-cale", pathError)}
                     />
                   </Camp>
                 ) : triggerKind === "event" ? (
                   <Camp
                     id="gtm-eveniment"
-                    label="Numele evenimentului din dataLayer"
+                    label="Evenimentul din dataLayer"
                     error={errorOf("event")}
-                    hint={`Site-ul trebuie să trimită, după trimiterea reușită: dataLayer.push({ event: "${event.trim() || "generate_lead"}" }).`}
+                    info={
+                      <>
+                        După trimiterea reușită, site-ul trimite <code className="font-mono text-[12.5px]">{`dataLayer.push({ event: "${event.trim() || "generate_lead"}" })`}</code>.
+                      </>
+                    }
                   >
                     <input
                       id="gtm-eveniment"
@@ -167,11 +162,11 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
                       onChange={(change) => setEvent(change.target.value)}
                       spellCheck={false}
                       className={campClass(Boolean(errorOf("event")), true)}
-                      {...descriere("gtm-eveniment", errorOf("event"), true)}
+                      {...descriere("gtm-eveniment", errorOf("event"))}
                     />
                   </Camp>
                 ) : (
-                  <Camp id="gtm-form-id" label="Form ID (opțional)" error={errorOf("formId")} hint="Atributul id al formularului de pe site. Gol = orice formular trimis.">
+                  <Camp id="gtm-form-id" label="Form ID (opțional)" error={errorOf("formId")} info="Atributul id al formularului de pe site.">
                     <input
                       id="gtm-form-id"
                       value={formId}
@@ -179,7 +174,7 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
                       placeholder="toate formularele"
                       spellCheck={false}
                       className={campClass(Boolean(errorOf("formId")), true)}
-                      {...descriere("gtm-form-id", errorOf("formId"), true)}
+                      {...descriere("gtm-form-id", errorOf("formId"))}
                     />
                   </Camp>
                 )}
@@ -187,15 +182,13 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
             </fieldset>
           ) : null}
 
-          <label className="flex items-start gap-2.5 text-[14px] leading-snug text-foreground/85">
-            <input type="checkbox" checked={hasGoogleTag} onChange={(change) => setHasGoogleTag(change.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-lav" />
-            <span>
-              Site-ul are deja tag-ul Google cu {input.conversionId ? `AW-${input.conversionId}` : "id-ul contului"}
-              <span className="mt-0.5 block text-[13px] text-muted-foreground">
-                În cod (gtag.js) sau într-o etichetă GTM. Dacă nu ești sigur, lasă nebifat: importul îl adaugă.
-              </span>
-            </span>
-          </label>
+          <div className="flex items-start gap-1.5">
+            <label className="flex items-start gap-2.5 text-[14px] leading-snug text-foreground/85">
+              <input type="checkbox" checked={hasGoogleTag} onChange={(change) => setHasGoogleTag(change.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-lav" />
+              <span>Site-ul are deja tag-ul Google cu {input.conversionId ? `AW-${input.conversionId}` : "id-ul contului"}</span>
+            </label>
+            <Info label="Tag-ul Google">În cod (gtag.js) sau în GTM. Nesigur? Lasă nebifat: importul îl adaugă.</Info>
+          </div>
 
           {built ? (
             <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-3.5 py-3">
@@ -203,7 +196,7 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
               <ul className="mt-2.5 space-y-2.5">
                 {built.items.map((item) => (
                   <li key={`${item.kind}-${item.name}`} className="text-[13.5px] leading-snug">
-                    <span className="font-mono text-[11.5px] uppercase tracking-[0.14em] text-muted-foreground">{ITEM_KIND_LABEL[item.kind]}</span>
+                    <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-muted-foreground">{ITEM_KIND_LABEL[item.kind]}</span>
                     <span className="block [overflow-wrap:anywhere]">{item.name}</span>
                     <span className="block text-muted-foreground">{item.what}</span>
                   </li>
@@ -226,13 +219,12 @@ export function GtmExport({ trackingId, actions }: { trackingId: string | null; 
 
           <div className="space-y-2">
             <Btn variant="primary" size="sm" icon={Download} onClick={download} disabled={!ready} className="w-full justify-center">
-              Descarcă importul GTM
+              Descarcă importul
             </Btn>
             <Btn variant="outline" size="sm" onClick={copy} disabled={!ready} className="w-full justify-center">
               Copiază JSON-ul
             </Btn>
           </div>
-          <p className="text-[12px] text-muted-foreground">Conține doar etichetele alese. Nicio cheie de acces.</p>
 
           {ready ? (
             <details onToggle={(toggle) => setShowJson((toggle.target as HTMLDetailsElement).open)} className="rounded-xl border border-white/[0.07]">

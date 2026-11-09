@@ -18,7 +18,7 @@ export function ProgramariViitoare({
   canal,
   programari,
   conturi = [],
-  gol = "Nimic programat de mâine încolo. Cu „Programează” alegi firme și ziua; altfel, la 00:00 se programează singure, de la cele mai vechi site-uri.",
+  gol = "Nimic programat de mâine încolo.",
 }: {
   canal: CanalProgramare;
   programari: ProgramareCuFirma[];
@@ -92,7 +92,7 @@ export function ProgramariViitoare({
         </section>
       ))}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[13px] text-muted-foreground">Bifează ce vrei să anulezi: firmele se întorc în rezervă.</p>
+        <p className="text-[13px] text-muted-foreground">Bifează ce anulezi.</p>
         <button type="button" className={btnClass({ variant: "danger", size: "sm" })} disabled={alese.size === 0} onClick={() => setConfirm(true)}>
           Anulează {alese.size > 0 ? num(alese.size) : ""}
         </button>
@@ -101,7 +101,7 @@ export function ProgramariViitoare({
         open={confirm}
         onOpenChange={setConfirm}
         title={`Anulezi ${num(alese.size)} ${alese.size === 1 ? "programare" : "programări"}?`}
-        consequence="Firmele se întorc în rezervă: la 00:00 pot fi programate din nou, automat, pe orice canal."
+        consequence="Firmele se întorc în rezervă; la 00:00 pot fi reprogramate automat, pe orice canal."
         confirmLabel="Anulează programările"
         onConfirm={anuleaza}
       />

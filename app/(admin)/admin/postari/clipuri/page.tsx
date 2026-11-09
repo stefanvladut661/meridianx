@@ -9,6 +9,7 @@ import { readSettings } from "@/lib/postari/setari";
 import { isClaudeConfigured } from "@/lib/postari/claude-plan";
 import { addDays, todayIn } from "@/lib/postari/timp";
 import { InlineNote } from "@/components/panou/ui/actions";
+import { Info } from "@/components/panou/ui/info";
 import { btnClass, Card, Pill, SectionTitle } from "@/components/panou/ui/primitives";
 import { ClaudePlan } from "@/components/panou/postari/claude-plan";
 import { ClipsLot, type ClipRowData } from "@/components/panou/postari/clips";
@@ -34,12 +35,11 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const path = typeof params.folder === "string" ? params.folder.slice(0, 500) : "";
   const root = await rootFolder();
-  const intro = "Loturile din folderul Drive, citite din manifest. Vezi exact ce lipsește înainte să planifici.";
 
   if (!root.ok) {
     return (
       <div className="space-y-4">
-        <ScreenHead title="Clipuri" text={intro} />
+        <ScreenHead title="Clipuri" />
         <InlineNote tone="apricot">
           {root.message}{" "}
           <Link href="/admin/postari/setari" className="font-medium underline underline-offset-2">
@@ -99,7 +99,6 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
     <div className="space-y-4">
       <ScreenHead
         title="Clipuri"
-        text={intro}
         actions={
           canWrite ? (
             <a href="#scrie-plan" className={btnClass({ variant: "primary", size: "sm", className: "gap-1.5" })}>
@@ -166,7 +165,10 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
         <>
           {data.manifest && manifest && !manifest.ok ? <InlineNote tone="rose">manifest.json: {manifest.message}</InlineNote> : null}
           {!data.manifest && (data.clips.length > 0 || data.subfolders.length === 0) ? (
-            <InlineNote tone="neutral">Folderul n-are manifest.json. Planul se poate scrie și de mână; cu manifest, Claude scrie descrierile din hook, CTA și voce. Formatul e în README, la „Pentru terminalul de reclame”.</InlineNote>
+            <InlineNote tone="neutral">
+              Fără manifest.json: planul se scrie de mână.{" "}
+              <Info label="Despre manifest">Cu manifest, Claude scrie descrierile din hook, CTA și voce. Formatul e în README, la „Pentru terminalul de reclame”.</Info>
+            </InlineNote>
           ) : null}
           {manifest?.ok && manifest.warnings.length > 0 ? (
             <InlineNote tone="apricot">
@@ -184,12 +186,12 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
               <span className="flex flex-col gap-1">
                 {missing.map((name) => (
                   <span key={`l-${name}`} className="flex items-start gap-1.5">
-                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" /> În manifest, dar lipsă din folder: <span className="break-all font-mono">{name}</span>
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" /> Lipsește din folder: <span className="break-all font-mono">{name}</span>
                   </span>
                 ))}
                 {extra.map((name) => (
                   <span key={`e-${name}`} className="flex items-start gap-1.5">
-                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" /> În folder, dar nu în manifest: <span className="break-all font-mono">{name}</span>
+                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" /> Nu e în manifest: <span className="break-all font-mono">{name}</span>
                   </span>
                 ))}
               </span>
@@ -199,7 +201,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
           {data.subfolders.length > 0 ? (
             <Card className="overflow-hidden p-0">
               <div className="border-b border-white/[0.06] px-4 py-3">
-                <SectionTitle title="Loturi" hint="Câte un subfolder pe lot. Deschide unul ca să vezi clipurile și manifestul lui." />
+                <SectionTitle title="Loturi" hint={data.subfolders.length} />
               </div>
               <ul className="grid gap-2 p-3 sm:grid-cols-2 xl:grid-cols-3">
                 {data.subfolders.map((sub) => (
@@ -220,7 +222,7 @@ export default async function ClipuriPage({ searchParams }: { searchParams: Prom
               key={subPath || "radacina"}
               folder={subPath}
               title={lotName}
-              hint={`${rows.length} ${rows.length === 1 ? "clip" : "clipuri"} · ${hasManifest ? "manifest.json citit" : "fără manifest.json"}${data.others > 0 ? ` · plus ${data.others} ${data.others === 1 ? "alt fișier" : "alte fișiere"} (nu video), lăsate deoparte` : ""}`}
+              hint={`${rows.length} ${rows.length === 1 ? "clip" : "clipuri"} · ${hasManifest ? "cu manifest" : "fără manifest"}${data.others > 0 ? ` · ${data.others} non-video ignorate` : ""}`}
               pathLabel={`${subPath || root.data.name}/`}
               rows={rows}
               hasManifest={hasManifest}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { BatchEditor } from "@/components/panou/ads/batch-editor";
-import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
+import { PAGE_TITLE } from "@/components/panou/ads/tone";
 import { checkBatchPlan, chooseWorkspace, createBatchPlan } from "../actions";
 import { continueJobAction } from "../v2-actions";
 
@@ -31,10 +31,6 @@ export default async function BatchPage() {
           ← Planuri
         </Link>
         <h1 className={`mt-2 ${PAGE_TITLE}`}>Lot de planuri</h1>
-        <p className={PAGE_LEAD}>
-          Până la 50 de planuri, platforme amestecate, un singur proprietar. Se verifică plan cu plan, pe conturile reale, apoi se creează oprit — fiecare în
-          spațiul scris în el.
-        </p>
       </div>
 
       <BatchEditor

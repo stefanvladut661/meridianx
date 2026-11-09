@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { currentWorkspaceId, listWorkspaces } from "@/lib/ads/workspaces.server";
 import { PlanEditor } from "@/components/panou/ads/plan-editor";
-import { PAGE_LEAD, PAGE_TITLE } from "@/components/panou/ads/tone";
+import { PAGE_TITLE } from "@/components/panou/ads/tone";
 import {
   checkPlan,
   checkVideoUploadStatus,
@@ -45,9 +45,6 @@ export default async function NewPlanPage() {
           ← Planuri
         </Link>
         <h1 className={`mt-2 ${PAGE_TITLE}`}>Plan nou</h1>
-        <p className={PAGE_LEAD}>
-          Lipește JSON-ul scris cu asistentul. Îl citim în română, îl verificăm pe conturile reale și abia apoi îl creăm — oprit.
-        </p>
       </div>
 
       <PlanEditor

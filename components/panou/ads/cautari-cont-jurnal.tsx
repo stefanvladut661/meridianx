@@ -14,13 +14,13 @@ import { cn } from "@/lib/utils";
 export function CautariContJurnal({ journal }: { journal: StoreResult<AccountChange[]> }) {
   return (
     <Card as="section" aria-labelledby="jurnal" className="p-4 sm:p-5">
-      <SectionTitle title={<span id="jurnal">Jurnalul modificărilor</span>} hint="ce a făcut portalul în contul ăsta" />
+      <SectionTitle title={<span id="jurnal">Jurnalul portalului</span>} info="Ce a trimis portalul în contul ăsta. Modificările din Google Ads sunt la Audit." />
       {!journal.ok ? (
         <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">{STORE_FAILURE_MESSAGE[journal.reason]}</p>
       ) : journal.data.length === 0 ? (
         <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-dashed border-white/[0.12] px-3 py-3">
           <History className="mt-0.5 h-3.5 w-3.5 shrink-0 text-lav" aria-hidden="true" />
-          <p className="text-[13.5px] leading-relaxed text-muted-foreground">Nimic încă. Fiecare pauză, negativ sau acțiune de conversie trimisă din portal apare aici, cu cine și când.</p>
+          <p className="text-[13.5px] leading-relaxed text-muted-foreground">Nimic trimis încă din portal.</p>
         </div>
       ) : (
         <ol className="mt-3 space-y-3">
@@ -29,7 +29,7 @@ export function CautariContJurnal({ journal }: { journal: StoreResult<AccountCha
               <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", entry.kind === "pause" ? "bg-apricot" : "bg-lav")} aria-hidden="true" />
               <div className="min-w-0">
                 <p className="text-[13.5px] leading-snug">{entry.summary}</p>
-                <p className="text-[12px] text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   {dateTimeRo(entry.createdAt)}
                   {entry.createdByEmail ? ` · ${entry.createdByEmail}` : ""} · {entry.operations} op.
                 </p>

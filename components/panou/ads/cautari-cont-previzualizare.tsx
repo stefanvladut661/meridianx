@@ -12,7 +12,7 @@ export function NegativePreview({ preview }: { preview: NegativesPreview }) {
   const bad = preview.keywords.filter((item) => item.problem);
   return (
     <div className="space-y-4 rounded-xl border border-white/[0.07] bg-white/[0.025] p-4">
-      <h3 className="text-[11.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Previzualizarea</h3>
+      <h3 className="text-[12px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Previzualizarea</h3>
       {preview.errors.length > 0 ? (
         <InlineNote tone="rose">
           <ul className="space-y-1.5">
@@ -24,7 +24,7 @@ export function NegativePreview({ preview }: { preview: NegativesPreview }) {
       ) : null}
       {preview.conflicts.length > 0 ? (
         <div>
-          <h4 className="text-[14px] font-medium">Cuvinte cheie active care ar fi blocate</h4>
+          <h4 className="text-[14px] font-medium">Cuvinte cheie active blocate</h4>
           <ul className="mt-2 space-y-1 text-[13.5px] text-foreground/85">
             {preview.conflicts.slice(0, 60).map((conflict, index) => (
               <li key={index}>
@@ -78,7 +78,7 @@ export function NegativePreview({ preview }: { preview: NegativesPreview }) {
       ))}
       <p className={cn("text-[13.5px]", preview.ok ? "text-mint" : "text-muted-foreground")}>
         {preview.ok
-          ? `${countOf(preview.operations, "operații")} verificate la Google cu validateOnly — le-ar accepta pe toate. Nu s-a schimbat nimic încă.`
+          ? `${countOf(preview.operations, "operații")} verificate (validateOnly) · Google le acceptă. Nimic schimbat încă.`
           : "Nu se trimite nimic până nu e totul în regulă."}
       </p>
     </div>

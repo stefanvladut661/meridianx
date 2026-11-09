@@ -43,11 +43,11 @@ export function ClientsScreen({
     <>
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="text-[15px] text-dim">
-          {clients.length === 0 ? "Niciun client încă." : `${clients.length} ${clients.length === 1 ? "client" : "clienți"}`} · abonamentele din {monthLabel(month)}
+          {clients.length === 0 ? "Niciun client încă" : `${clients.length} ${clients.length === 1 ? "client" : "clienți"}`} · {monthLabel(month)}
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <Link href={showArchived ? "?" : "?arhiva=1"} className="text-[15px] font-medium text-[var(--md-a1)] underline underline-offset-4">
-            {showArchived ? "Ascunde arhiva" : "Arată și arhiva"}
+            {showArchived ? "Ascunde arhiva" : "Arată arhiva"}
           </Link>
           <button type="button" onClick={() => setOpen({ kind: "new" })} className="btn btn-light !min-h-10 !px-4 !py-2 !text-[15px]">
             <IconPlus size={16} />
@@ -57,9 +57,7 @@ export function ClientsScreen({
       </div>
 
       {clients.length === 0 ? (
-        <Empty className="mt-4">
-          Adaugă primul client cu „Client nou”. {oblio ? "Datele firmei le poți lua din Oblio, după CUI." : "Când legi Oblio, datele firmei vin de acolo, după CUI."}
-        </Empty>
+        <Empty className="mt-4">Adaugă primul client cu „Client nou”.</Empty>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-xl border border-hair bg-char">
           <table className="ads-table min-w-full border-collapse">
@@ -103,7 +101,7 @@ export function ClientsScreen({
                           </p>
                         </>
                       ) : client.contracte.length > 0 ? (
-                        <Tag tone="muted">Fără contract activ în {monthLabel(month)}</Tag>
+                        <Tag tone="muted">Fără contract activ</Tag>
                       ) : (
                         <span className="text-[14.5px] text-dim">—</span>
                       )}

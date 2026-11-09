@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Film, MoreHorizontal, Pencil, Play, RefreshCw, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, Film, MoreHorizontal, Pencil, Play, RefreshCw, Trash2, Upload } from "lucide-react";
 import { PLATFORM_LABEL, VIDEO_UPLOAD_MAX_BYTES, VIDEO_UPLOAD_TYPES } from "@/lib/ads/constants";
 import { MATERIAL_NAME_MAX, aspectLabel, durationLabel, sizeLabel, type MaterialRow, type MaterialUploadRow } from "@/lib/ads/materials-shared";
 import { Btn, Card, Pill, SectionTitle, SegmentedControl } from "@/components/panou/ui/primitives";
@@ -92,9 +92,9 @@ function readVideoInfo(file: File): Promise<Info> {
 }
 
 function checkFile(file: File): string | null {
-  if (!(VIDEO_UPLOAD_TYPES as readonly string[]).includes(file.type)) return "Fișierul nu e MP4 sau MOV. Exportă clipul în MP4 (H.264) și încearcă din nou.";
+  if (!(VIDEO_UPLOAD_TYPES as readonly string[]).includes(file.type)) return "Fișierul nu e MP4 sau MOV. Exportă-l în MP4 (H.264).";
   if (file.size > VIDEO_UPLOAD_MAX_BYTES) {
-    return `${file.name} are ${megabytes(file.size)} MB, peste limita de ${megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Exportă-l la 4–6 Mbps (tot 1080p) sau taie din durată.`;
+    return `${file.name} are ${megabytes(file.size)} MB; limita e ${megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Exportă-l la 4–6 Mbps (1080p) sau scurtează-l.`;
   }
   return null;
 }
@@ -142,16 +142,13 @@ function UploadModalBody({
       onSubmit={(event) => {
         event.preventDefault();
         if (!name.trim()) {
-          setProblem("Dă-i materialului un nume — cel după care îl recunoști în listă.");
+          setProblem("Dă-i materialului un nume.");
           return;
         }
         onStart({ file: draft.file, name: name.trim(), clientId: clientId || null, info: info ?? { duration: null, width: null, height: null }, prepared: null, uploaded: false, replaces: draft.replaces });
       }}
     >
       <h2 className="text-[17px] font-semibold">{draft.replaces ? "Reia urcarea" : "Urcă un video"}</h2>
-      <p className="text-[13.5px] text-muted-foreground">
-        MP4 sau MOV, cel mult {megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB. Îl urci o dată; ajunge în contul de reclame abia când îl alegi într-o campanie.
-      </p>
 
       <div className="mt-4 space-y-3">
         <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] px-3 py-2.5">
@@ -160,18 +157,18 @@ function UploadModalBody({
           </span>
           <div className="min-w-0">
             <p className="truncate text-[14.5px] font-medium">{draft.file.name}</p>
-            <p className="text-[12.5px] text-muted-foreground">{facts ? facts.join(" · ") || "Browserul n-a putut citi durata și formatul; se urcă oricum." : "Se citește durata și formatul…"}</p>
+            <p className="text-[13px] text-muted-foreground">{facts ? facts.join(" · ") || "Durata și formatul nu s-au citit; se urcă oricum." : "Se citesc durata și formatul…"}</p>
           </div>
         </div>
         <label className="block">
-          <span className={LABEL}>Numele din listă</span>
+          <span className={LABEL}>Nume</span>
           <TextInput className="mt-1.5" value={name} maxLength={MATERIAL_NAME_MAX} onChange={(event) => setName(event.currentTarget.value)} autoFocus />
         </label>
         <SoftSelect
-          label="Pentru clientul"
+          label="Client"
           value={clientId || "none"}
           onChange={(value) => setClientId(value === "none" ? "" : value)}
-          options={[{ value: "none", label: "Oricare (al agenției)" }, ...clients.map((client) => ({ value: client.id, label: client.name }))]}
+          options={[{ value: "none", label: "Al agenției" }, ...clients.map((client) => ({ value: client.id, label: client.name }))]}
         />
         {problem ? <InlineNote tone="rose">{problem}</InlineNote> : null}
       </div>
@@ -181,7 +178,7 @@ function UploadModalBody({
           Renunță
         </Btn>
         <Btn type="submit" variant="primary" icon={Upload}>
-          Urcă în Materiale
+          Urcă
         </Btn>
       </div>
     </form>
@@ -239,7 +236,7 @@ function MaterialRowItem({
       )}
       <div className="min-w-0 flex-1 basis-[12rem]">
         <p className="truncate text-[14.5px]">{material.name}</p>
-        <p className="text-[12.5px] text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           {facts.length ? `${facts.join(" · ")} · ` : ""}
           {clientName ?? "al agenției"} · {dateTimeRo(material.createdAt)}
         </p>
@@ -254,7 +251,7 @@ function MaterialRowItem({
               );
             })
           ) : unfinished ? null : (
-            <span className="text-[12px] text-muted-foreground/70">netrimis încă în niciun cont</span>
+            <span className="text-[13px] text-muted-foreground/70">netrimis</span>
           )}
         </div>
       </div>
@@ -376,7 +373,7 @@ export function MaterialeScreen({
     if (!prepared) {
       const response = await actions.prepare({ name: job.name, clientId: job.clientId, file: { size: job.file.size, type: job.file.type }, video: job.info }).catch(() => null);
       if (!response || !response.ok) {
-        setPhase({ step: "failed", job, message: response ? response.message : "Serverul n-a răspuns. Nu s-a urcat nimic. Încearcă din nou." });
+        setPhase({ step: "failed", job, message: response ? response.message : "Serverul n-a răspuns. Nu s-a urcat nimic." });
         return;
       }
       prepared = { id: response.id, uploadUrl: response.uploadUrl };
@@ -390,7 +387,7 @@ export function MaterialeScreen({
         const reason = caught instanceof Error ? caught.message : "";
         if (reason === "aborted" && cancelled.current) {
           setPhase({ step: "idle" });
-          notify("Urcarea a fost anulată. Fișierul nu e în Materiale.", "warn");
+          notify("Urcare anulată.", "warn");
           return;
         }
         // Un URL refuzat (expirat, deja folosit) nu mai e bun: următoarea încercare cere altul.
@@ -402,10 +399,10 @@ export function MaterialeScreen({
             reason === "too_large"
               ? "Stocarea a refuzat fișierul: e prea mare."
               : reason === "network"
-                ? "Rețeaua s-a întrerupt în timpul urcării. Poți relua urcarea."
+                ? "Rețeaua s-a întrerupt."
                 : reason === "aborted"
-                  ? "Urcarea e oprită. Poți relua urcarea."
-                  : `Stocarea a refuzat fișierul (${reason}). Poți relua urcarea.`,
+                  ? "Urcarea e oprită."
+                  : `Stocarea a refuzat fișierul (${reason}).`,
         });
         return;
       } finally {
@@ -416,12 +413,12 @@ export function MaterialeScreen({
 
     const finished = await actions.finish({ id: prepared.id }).catch(() => null);
     if (!finished || !finished.ok) {
-      setPhase({ step: "failed", job, message: finished ? finished.message : "Serverul n-a confirmat urcarea. Apasă „Reia urcarea”: fișierul nu se urcă a doua oară." });
+      setPhase({ step: "failed", job, message: finished ? finished.message : "Serverul n-a confirmat urcarea. Reluarea doar confirmă, nu urcă din nou." });
       return;
     }
     if (job.replaces) await actions.archive({ id: job.replaces }).catch(() => null);
     setPhase({ step: "idle" });
-    notify(`„${job.name}” e în Materiale. Îl alegi într-o campanie, în „Creează”.`);
+    notify(`„${job.name}” e în Materiale.`);
     router.refresh();
   };
 
@@ -431,12 +428,7 @@ export function MaterialeScreen({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Materiale</h1>
-          <p className="mt-2 max-w-2xl text-[14px] text-muted-foreground">
-            Biblioteca de video a conturilor. Ce urci aici e ce poți trimite în campanii: le urci o dată și le folosești pe orice canal.
-          </p>
-        </div>
+        <h1 className="text-[22px] font-semibold leading-none sm:text-[26px]">Materiale</h1>
         <Btn
           size="sm"
           variant="primary"
@@ -447,7 +439,7 @@ export function MaterialeScreen({
             fileRef.current?.click();
           }}
         >
-          Încarcă video nou
+          Urcă video
         </Btn>
         <input
           id={fileId}
@@ -481,7 +473,7 @@ export function MaterialeScreen({
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[14.5px] font-medium">{current.name}</p>
-              <p className="text-[12.5px] text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 {phase.step === "uploading"
                   ? `${megabytes(phase.loaded)} din ${megabytes(phase.total)} MB · ${Math.round(percent)}% urcat`
                   : `${megabytes(current.file.size)} MB · urcare întreruptă`}
@@ -495,7 +487,7 @@ export function MaterialeScreen({
           </div>
           <ProgressBar value={phase.step === "uploading" ? percent : 0} tone={phase.step === "failed" ? "rose" : "lav"} className="mt-3" />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[12.5px] text-muted-foreground">Nu închide fila. Dacă urcarea se întrerupe, o poți relua cu același fișier.</p>
+            <p className="text-[13px] text-muted-foreground">{phase.step === "uploading" ? "Nu închide fila." : ""}</p>
             <div className="flex gap-1.5">
               {phase.step === "uploading" ? (
                 <Btn
@@ -529,7 +521,11 @@ export function MaterialeScreen({
       {!missing ? (
         <Card className="overflow-hidden p-0">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
-            <SectionTitle title="Biblioteca de video" hint={`${visible.length} ${visible.length === 1 ? "fișier" : "fișiere"} · ${megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB per fișier${platforms.size ? ` · trimise pe ${[...platforms].map((platform) => PLATFORM_LABEL[platform]).join(", ")}` : ""}`} />
+            <SectionTitle
+              title="Biblioteca de video"
+              hint={`${visible.length} ${visible.length === 1 ? "fișier" : "fișiere"}${platforms.size ? ` · trimise pe ${[...platforms].map((platform) => PLATFORM_LABEL[platform]).join(", ")}` : ""}`}
+              info={`MP4 sau MOV, cel mult ${megabytes(VIDEO_UPLOAD_MAX_BYTES)} MB per fișier.`}
+            />
             {selectedClient ? (
               <SegmentedControl
                 size="sm"
@@ -562,10 +558,6 @@ export function MaterialeScreen({
               ))}
             </ul>
           ) : null}
-          <div className="flex items-center gap-2 border-t border-white/[0.06] px-4 py-2.5 text-[12.5px] text-muted-foreground">
-            <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
-            Un video poate fi folosit în oricâte campanii. „Scoate din listă” îl ascunde de aici; din conturile de reclame se șterge doar în platformă.
-          </div>
         </Card>
       ) : null}
 
@@ -573,7 +565,7 @@ export function MaterialeScreen({
         <div className="flex flex-col items-center rounded-2xl border border-dashed border-white/[0.12] px-6 py-10 text-center">
           <CheckCircle2 className="mb-3 h-5 w-5 text-mint" aria-hidden="true" />
           <p className="text-[14.5px] font-medium">Biblioteca e goală</p>
-          <p className="mt-1 max-w-sm text-[13.5px] text-muted-foreground">Încarcă primul MP4 vertical. După urcare, îl alegi într-o campanie, în „Creează”, la pasul Reclame.</p>
+          <p className="mt-1 max-w-sm text-[13.5px] text-muted-foreground">Urcă primul MP4 vertical.</p>
         </div>
       ) : null}
 
@@ -597,7 +589,6 @@ export function MaterialeScreen({
         {preview?.previewUrl ? (
           <div>
             <h2 className="truncate text-[17px] font-semibold">{preview.name}</h2>
-            <p className="text-[13.5px] text-muted-foreground">Fără sunet și fără pornire singură; primul cadru, cu controale.</p>
             {/* Previzualizare fără sunet, fără pornire singură: primul cadru, cu controale. */}
             <video src={`${preview.previewUrl}#t=0.1`} preload="metadata" muted playsInline controls className="mt-4 max-h-[65dvh] w-full rounded-xl bg-black object-contain" aria-label={`Previzualizare: ${preview.name}`} />
             <div className="mt-4 flex justify-end">
@@ -628,8 +619,8 @@ export function MaterialeScreen({
         open={Boolean(archiving)}
         onOpenChange={(open) => !open && setArchiving(null)}
         title={archiving ? `Scoți „${archiving.name}” din listă?` : "Scoți materialul din listă?"}
-        description="Materialul dispare din bibliotecă și nu mai poate fi ales în campanii noi."
-        consequence="Campaniile făcute cu el nu se ating; video-ul rămâne în conturile în care a fost trimis."
+        description="Nu mai poate fi ales în campanii noi."
+        consequence="Campaniile și conturile în care a fost trimis rămân neatinse."
         confirmLabel="Scoate din listă"
         onConfirm={async () => {
           if (!archiving) return;
@@ -638,7 +629,7 @@ export function MaterialeScreen({
             notify(`Materialul nu e scos. ${result.message}`, "error");
             return;
           }
-          notify("Materialul a fost scos din listă.");
+          notify("Material scos din listă.");
           router.refresh();
         }}
       />
@@ -665,7 +656,6 @@ function RenameBody({ material, rename, onClose, onDone }: { material: MaterialR
       }}
     >
       <h2 className="text-[17px] font-semibold">Redenumește materialul</h2>
-      <p className="text-[13.5px] text-muted-foreground">Numele după care îl recunoști în listă. Fișierul din platforme nu se schimbă.</p>
       <label className="mt-4 block">
         <span className={LABEL}>Nume</span>
         <input value={name} maxLength={MATERIAL_NAME_MAX} onChange={(event) => setName(event.currentTarget.value)} className={inputClass("mt-1.5")} autoFocus />

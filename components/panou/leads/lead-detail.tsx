@@ -121,7 +121,7 @@ export function LeadDetail({
     setCopied(true);
     if (copiedTimer.current) clearTimeout(copiedTimer.current);
     copiedTimer.current = setTimeout(() => setCopied(false), 2000);
-    notify("Linkul lead-ului e în clipboard.");
+    notify("Link copiat.");
   };
 
   const headingId = `lead-${lead.id}-titlu`;
@@ -160,7 +160,7 @@ export function LeadDetail({
 
       <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] bg-white/[0.02] px-4 py-2 sm:px-5">
         <span className="text-[12.5px] text-muted-foreground">
-          {neighbors === null ? "se calculează poziția…" : neighbors.position !== null ? `${neighbors.position} din ${neighbors.total} în lista filtrată` : "în afara filtrului curent"}
+          {neighbors === null ? "se calculează…" : neighbors.position !== null ? `${neighbors.position} din ${neighbors.total}` : "în afara filtrului"}
         </span>
         <div className="flex items-center gap-1.5">
           {neighbors?.prevHref ? (
@@ -209,7 +209,7 @@ export function LeadDetail({
             ) : null}
           </div>
         ) : (
-          <p className="text-[14px] text-muted-foreground">Clientul n-a lăsat nici telefon, nici email.</p>
+          <p className="text-[14px] text-muted-foreground">Fără telefon sau email.</p>
         )}
         {lead.phone || lead.email ? (
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -228,7 +228,7 @@ export function LeadDetail({
                 type="button"
                 onClick={async () => {
                   await copyText(lead.phone ?? "");
-                  notify("Numărul e în clipboard.");
+                  notify("Număr copiat.");
                 }}
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12.5px] text-muted-foreground hover:text-foreground"
               >
@@ -240,7 +240,7 @@ export function LeadDetail({
                 type="button"
                 onClick={async () => {
                   await copyText(lead.email ?? "");
-                  notify("Emailul e în clipboard.");
+                  notify("Email copiat.");
                 }}
                 className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12.5px] text-muted-foreground hover:text-foreground"
               >
@@ -264,7 +264,7 @@ export function LeadDetail({
         <Row label="Fonduri">
           {lead.isFunded ? (
             <span className="inline-flex items-center gap-1 text-apricot">
-              <Banknote className="h-3.5 w-3.5" aria-hidden="true" /> da, cere finanțare
+              <Banknote className="h-3.5 w-3.5" aria-hidden="true" /> da
             </span>
           ) : (
             "nu"
@@ -273,7 +273,7 @@ export function LeadDetail({
         {lead.message ? (
           <p className="mt-3 whitespace-pre-wrap break-words rounded-xl border border-white/[0.07] bg-white/[0.025] p-3 text-[14px] leading-relaxed text-foreground/85">{lead.message}</p>
         ) : (
-          <p className="mt-3 text-[13.5px] text-muted-foreground">Clientul n-a scris niciun mesaj.</p>
+          <p className="mt-3 text-[13.5px] text-muted-foreground">Fără mesaj.</p>
         )}
       </Section>
 
@@ -288,10 +288,10 @@ export function LeadDetail({
               {lead.utm.source ?? "—"} / {lead.utm.medium ?? "—"} / {lead.utm.campaign ?? "—"}
             </span>
           ) : (
-            <span className="text-muted-foreground">fără parametri UTM</span>
+            <span className="text-muted-foreground">fără UTM</span>
           )}
         </Row>
-        <Row label="Referrer">{lead.referrer ? <span className="break-all font-mono text-[12.5px]">{lead.referrer}</span> : <span className="text-muted-foreground">direct, fără referrer</span>}</Row>
+        <Row label="Referrer">{lead.referrer ? <span className="break-all font-mono text-[12.5px]">{lead.referrer}</span> : <span className="text-muted-foreground">direct</span>}</Row>
         <Row label="Intrat">
           <span className="inline-flex items-center gap-1">
             <Clock3 className="h-3 w-3" aria-hidden="true" />
@@ -314,18 +314,13 @@ export function LeadDetail({
       </Section>
 
       <Section className="bg-white/[0.015]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted-foreground">
-            Ștergerea nu poate fi anulată: notele și istoricul dispar odată cu lead-ul. Pentru spam sau teste. Un lead pierdut se marchează „Pierdut”, nu se șterge.
-          </p>
-          <div className="flex items-center gap-1.5">
-            {whatsapp ? (
-              <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-mint/25 bg-mint/12 px-3 text-[13.5px] text-mint">
-                <Megaphone className="h-3.5 w-3.5" aria-hidden="true" /> Continuă pe WhatsApp
-              </a>
-            ) : null}
-            <DeleteButton onClick={() => setDeleteOpen(true)} />
-          </div>
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {whatsapp ? (
+            <a href={whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-mint/25 bg-mint/12 px-3 text-[13.5px] text-mint">
+              <Megaphone className="h-3.5 w-3.5" aria-hidden="true" /> Continuă pe WhatsApp
+            </a>
+          ) : null}
+          <DeleteButton onClick={() => setDeleteOpen(true)} />
         </div>
         <DeleteControl
           leadId={lead.id}

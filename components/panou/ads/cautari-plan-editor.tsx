@@ -13,6 +13,7 @@ import type { PlanProblem } from "@/lib/ads/plan-validate";
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
 import { Btn, Card, SectionTitle, Stamp } from "@/components/panou/ui/primitives";
+import { Info } from "@/components/panou/ui/info";
 import { EmptyState } from "@/components/panou/ui/states";
 import { cn } from "@/lib/utils";
 import { CautariPlanCheck } from "./cautari-plan-check";
@@ -186,39 +187,37 @@ export function CautariPlanEditor({
       ? "JSON-ul nu se poate citi."
       : "Niciun plan încă."
     : syntax
-      ? "JSON-ul nu se mai poate citi. Previzualizarea arată ultima versiune citită."
+      ? "JSON-ul nu se mai poate citi. Vezi ultima versiune citită."
       : errorCount > 0
         ? `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat${warningCount ? `, ${warningCount} de citit` : ""}.`
-        : `Planul e valid${warningCount ? `, cu ${warningCount === 1 ? "un lucru" : countOf(warningCount, "lucruri")} de citit` : ""}.`;
+        : `Plan valid${warningCount ? `, ${warningCount === 1 ? "un lucru" : countOf(warningCount, "lucruri")} de citit` : ""}.`;
 
   const created = result?.ok === true && freshCheck !== null;
   const campaignCount = summary?.totals.campaigns ?? 0;
   const step: { action: "none" | "check" | "create"; reason: string } = !draft
-    ? { action: "none", reason: "Lipește un plan de căutare ca să-l poți verifica." }
+    ? { action: "none", reason: "Lipește un plan." }
     : syntax
-      ? { action: "none", reason: "Repară întâi JSON-ul din stânga." }
+      ? { action: "none", reason: "Repară JSON-ul." }
       : errorCount > 0
-        ? { action: "none", reason: `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat mai sus.` }
+        ? { action: "none", reason: `${errorCount === 1 ? "Un lucru" : countOf(errorCount, "lucruri")} de corectat.` }
         : current.platform !== "google"
-          ? { action: "none", reason: "Planurile de căutare se creează doar în spațiile Google: schimbă spațiul din selectorul de sus." }
+          ? { action: "none", reason: "Doar în spațiile Google: schimbă spațiul, sus." }
           : !actions
-            ? { action: "none", reason: "Planul e valid. Verificarea pe Google și crearea pe pauză nu sunt încă legate de pagina asta." }
+            ? { action: "none", reason: "Plan valid. Verificarea nu e legată aici." }
             : !current.tokenConfigured
-              ? { action: "none", reason: `Planul e valid, dar spațiul ${current.name} nu are cheie: setează ${current.tokenEnv} în Vercel și fă redeploy.` }
+              ? { action: "none", reason: `Spațiul ${current.name} nu are cheie: setează ${current.tokenEnv} în Vercel, apoi redeploy.` }
               : created
-                ? { action: "none", reason: "Create. Pentru alt plan, schimbă JSON-ul și verifică din nou." }
+                ? { action: "none", reason: "Create pe pauză." }
                 : !freshCheck
                   ? {
                       action: "check",
-                      reason: check
-                        ? "Planul s-a schimbat de la verificare. Verifică din nou înainte de creare."
-                        : "Întâi verificarea pe contul real: contul, moneda, numele, locațiile, adresele și toată crearea, trimisă la Google fără să se creeze nimic.",
+                      reason: check ? "Planul s-a schimbat. Verifică din nou." : "Verifică pe contul real. Nu se creează nimic.",
                     }
                   : !freshCheck.ok
-                    ? { action: "check", reason: `Google: ${freshCheck.errors.length === 1 ? "un lucru" : countOf(freshCheck.errors.length, "lucruri")} de corectat mai sus.` }
+                    ? { action: "check", reason: `Google: ${freshCheck.errors.length === 1 ? "un lucru" : countOf(freshCheck.errors.length, "lucruri")} de corectat.` }
                     : {
                         action: "create",
-                        reason: `Se creează în ${freshCheck.account?.name ?? "contul din plan"}: ${campaignCount === 1 ? "o campanie" : countOf(campaignCount, "campanii")}, ${countOf(summary?.totals.adGroups ?? 0, "grupuri")}, ${countOf(summary?.totals.ads ?? 0, "anunțuri")} — toate oprite, într-o singură cerere.`,
+                        reason: `${freshCheck.account?.name ?? "Contul din plan"}: ${campaignCount === 1 ? "o campanie" : countOf(campaignCount, "campanii")}, ${countOf(summary?.totals.adGroups ?? 0, "grupuri")}, ${countOf(summary?.totals.ads ?? 0, "anunțuri")}. Toate pe pauză.`,
                       };
   const busy = checking || creating;
 
@@ -229,7 +228,7 @@ export function CautariPlanEditor({
         onOpenChange={changeConfirm}
         title="Creezi planul pe pauză?"
         description={`${campaignCount === 1 ? "O campanie de căutare" : `${countOf(campaignCount, "campanii")} de căutare`} în ${freshCheck?.account?.name ?? "contul din plan"}.`}
-        consequence="Totul pleacă într-o singură cerere, totul sau nimic, cu toate campaniile oprite. Pornirea rămâne la tine, în Google Ads."
+        consequence="O singură cerere, totul sau nimic, totul pe pauză. Pornești doar din Google Ads."
         confirmLabel="Creează pe pauză"
         tone="primary"
         onConfirm={runCreate}
@@ -238,8 +237,7 @@ export function CautariPlanEditor({
       {/* ------------------------------------------------------------ 1. JSON */}
       <Card as="section" aria-labelledby="search-json" className="flex min-w-0 flex-col lg:sticky lg:top-20">
         <SectionTitle
-          title={<span id="search-json">1. Planul de căutare</span>}
-          hint="Lipește planul primit. Se citește singur — nu trebuie apăsat nimic."
+          title={<span id="search-json">1. JSON</span>}
           action={
             <Btn size="xs" variant="ghost" icon={Wand2} onClick={loadExample} disabled={busy}>
               Încarcă exemplul
@@ -292,9 +290,7 @@ export function CautariPlanEditor({
             </InlineNote>
           ) : draft ? (
             <InlineNote tone={errorCount > 0 ? "rose" : "mint"}>{status}</InlineNote>
-          ) : (
-            <p className="text-muted-foreground">Nimic de citit încă.</p>
-          )}
+          ) : null}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -332,23 +328,22 @@ export function CautariPlanEditor({
           {status}
         </p>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <Stamp>Se creează oprită</Stamp>
-          <span className="text-[13px] text-muted-foreground">Portalul nu are niciun buton care pornește o campanie. O activezi tu, din Google Ads.</span>
+        <div className="flex items-center gap-2">
+          <Stamp>Se creează pe pauză</Stamp>
+          <Info label="Pe pauză">Portalul nu pornește campanii. Le pornești tu, din Google Ads.</Info>
         </div>
 
         {!draft || !summary || !validation ? (
           <Card className="p-0">
             <EmptyState
               icon={FileJson}
-              title="Aici citești campaniile de căutare"
-              text="Lipește planul în stânga: vezi fiecare campanie cu bugetul, zonele și programul ei, cuvintele cheie pe grupuri, negativele și anunțurile arătate cum apar în Google."
+              title="Niciun plan"
+              text="Lipește JSON-ul în stânga."
               action={
                 <Btn size="sm" variant="primary" icon={Wand2} onClick={loadExample}>
-                  Încarcă exemplul comentat
+                  Încarcă exemplul
                 </Btn>
               }
-              hint="Două campanii pentru o firmă inventată, cu o listă comună și toate tipurile de materiale. Conflictele dintre negative și cuvinte le găsește portalul."
             />
           </Card>
         ) : (
@@ -366,7 +361,7 @@ export function CautariPlanEditor({
               />
             </div>
             <CautariPlanPreview
-              title="2. Citit în română"
+              title="2. Previzualizare"
               summary={summary}
               operations={validation.operations}
               errorPaths={errorPaths}
@@ -380,7 +375,7 @@ export function CautariPlanEditor({
         {checkFailure ? (
           <div role="alert" className="space-y-2">
             <InlineNote tone="rose">
-              <p className="text-[14.5px] font-semibold">Verificarea pe Google n-a mers.</p>
+              <p className="text-[14.5px] font-semibold">Verificarea n-a mers.</p>
               <p className="mt-1.5">{checkFailure.message}</p>
             </InlineNote>
             <PlanProbleme title="De corectat" problems={checkFailure.problems} tone="error" />
@@ -398,16 +393,16 @@ export function CautariPlanEditor({
               </h3>
               <p id="search-reason" className="mt-1 text-[13px] leading-relaxed text-muted-foreground" aria-live="polite">
                 {checking
-                  ? "Google caută contul, numele campaniilor și listelor, locațiile, conversiile de apel și adresele, apoi verifică toată crearea, fără să creeze nimic…"
+                  ? "Se verifică în Google, fără să se creeze nimic…"
                   : creating
-                    ? "Se creează tot planul într-o singură cerere: totul sau nimic. Nu închide pagina."
+                    ? "Se creează. Nu închide pagina."
                     : step.reason}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
               {step.action === "check" ? (
                 <Btn variant="primary" size="md" onClick={runCheck} disabled={busy} aria-describedby="search-reason">
-                  {checking ? "Se verifică în Google…" : check ? "Verifică din nou" : "Verifică în Google"}
+                  {checking ? "Se verifică…" : check ? "Verifică din nou" : "Verifică în Google"}
                 </Btn>
               ) : null}
               <Btn

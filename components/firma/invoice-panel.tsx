@@ -95,11 +95,11 @@ function RowsEditor({ rows, setRows, currency, error }: { rows: RowDraft[]; setR
           className="inline-flex items-center gap-1.5 text-[15px] font-medium text-[var(--md-a1)]"
         >
           <IconPlus size={15} />
-          Adaugă un rând
+          Adaugă rând
         </button>
         <p className="text-[15px] font-semibold tabular-nums text-bone">Total: {"rows" in parsed ? money(invoiceTotal(parsed.rows), currency) : "—"}</p>
       </div>
-      <p className="text-[14px] text-dim">Firma nu e plătitoare de TVA: prețul e final.</p>
+      <p className="text-[14px] text-dim">Neplătitor de TVA: prețul e final.</p>
     </fieldset>
   );
 }
@@ -127,7 +127,7 @@ export function ManualInvoicePanel({
   const client = clients.find((item) => item.id === clientId) ?? null;
 
   return (
-    <SidePanel title="Factură manuală" subtitle="Pentru ceva care nu e în contract. Se face ca ciornă; o emiți apoi cu „Aprobă”." onClose={onClose}>
+    <SidePanel title="Factură manuală" onClose={onClose}>
       <form
         noValidate
         onSubmit={(event) => {
@@ -149,7 +149,7 @@ export function ManualInvoicePanel({
         }}
         className="grid gap-4"
       >
-        <Field id="m-client" label="Clientul" error={error?.field === "clientId" ? error.message : null} hint={client && !client.ready ? "Clientului îi lipsesc CUI-ul sau adresa: completează-le în Clienți înainte de aprobare." : undefined}>
+        <Field id="m-client" label="Clientul" error={error?.field === "clientId" ? error.message : null} hint={client && !client.ready ? "Lipsesc CUI-ul sau adresa: completează-le în Clienți înainte de aprobare." : undefined}>
           <select id="m-client" value={clientId} onChange={(e) => setClientId(e.currentTarget.value)} className={inputClass}>
             <option value="">Alege clientul</option>
             {clients.map((item) => (
@@ -174,7 +174,7 @@ export function ManualInvoicePanel({
             </select>
           </Field>
         </div>
-        <Field id="m-ment" label="Mențiuni pe factură (opțional)" error={error?.field === "mentiuni" ? error.message : null}>
+        <Field id="m-ment" label="Mențiuni pe factură" error={error?.field === "mentiuni" ? error.message : null}>
           <textarea id="m-ment" rows={2} value={fields.mentiuni} onChange={(e) => setFields({ ...fields, mentiuni: e.currentTarget.value })} className={textareaClass} maxLength={1000} />
         </Field>
         {error && !error.field ? <Notice tone="error">{error.message}</Notice> : null}
@@ -213,7 +213,7 @@ export function InvoicePanel({
   if (!invoice) {
     return (
       <SidePanel title="Factura" onClose={onClose}>
-        <p className="text-[15px] text-dim">Se încarcă factura… Dacă nu apare, nu mai e în luna aleasă.</p>
+        <p className="text-[15px] text-dim">Se încarcă… Dacă nu apare, nu e în luna aleasă.</p>
       </SidePanel>
     );
   }
@@ -290,7 +290,7 @@ function DraftEditor({
         return;
       }
       setDirty(false);
-      setResult({ tone: "ok", text: "Ciorna e salvată." });
+      setResult({ tone: "ok", text: "Ciornă salvată." });
       onChanged();
     });
   };
@@ -315,7 +315,7 @@ function DraftEditor({
         onChanged();
         return;
       }
-      onChanged({ tone: approved.warning ? "warn" : "ok", text: approved.warning ? `${approved.message} ${approved.warning}` : `${approved.message} A plecat în e-Factura; emailul e pregătit mai jos.` });
+      onChanged({ tone: approved.warning ? "warn" : "ok", text: approved.warning ? `${approved.message} ${approved.warning}` : `${approved.message} Trimisă în e-Factura; emailul e pregătit.` });
     });
   };
 
@@ -331,14 +331,14 @@ function DraftEditor({
     <div className="grid gap-4" onInput={() => setDirty(true)}>
       {invoice.starea === "eroare" && invoice.pasi.emitere?.mesaj ? (
         <Notice tone="error">
-          Oblio a refuzat emiterea: {invoice.pasi.emitere.mesaj} Repară ce spune (aici sau la client) și aprobă din nou — nu se emite de două ori.
+          Oblio a refuzat emiterea: {invoice.pasi.emitere.mesaj} Repară și aprobă din nou; nu se emite de două ori.
         </Notice>
       ) : null}
       <p className="text-[15px] text-dim">
-        Ciornă {invoice.felul === "contract" ? "din contract" : "manuală"}. Nu există încă în Oblio. La aprobare se emite cu data de azi și scadența în {fields.zileScadenta || "0"} zile (planificat: {dayLabel(fields.dataPlanificata)}, scadentă {dayLabel(due)}).
+        Ciornă {invoice.felul === "contract" ? "din contract" : "manuală"} · planificată {dayLabel(fields.dataPlanificata)} · scadentă {dayLabel(due)}. La aprobare se emite cu data de azi.
       </p>
       {client && !client.ready ? (
-        <Notice tone="warn">Clientului îi lipsesc CUI-ul sau adresa completă, cerute de e-Factura. Completează-le în Clienți, altfel aprobarea e refuzată.</Notice>
+        <Notice tone="warn">Lipsesc CUI-ul sau adresa, cerute de e-Factura. Completează-le în Clienți, altfel aprobarea e refuzată.</Notice>
       ) : null}
       <RowsEditor
         rows={rows}
@@ -357,7 +357,7 @@ function DraftEditor({
           <input id="d-scad" type="number" min={0} max={120} value={fields.zileScadenta} onChange={(e) => setFields({ ...fields, zileScadenta: e.currentTarget.value })} className={inputClass} />
         </Field>
       </div>
-      <Field id="d-ment" label="Mențiuni pe factură (opțional)" error={error?.field === "mentiuni" ? error.message : null}>
+      <Field id="d-ment" label="Mențiuni pe factură" error={error?.field === "mentiuni" ? error.message : null}>
         <textarea id="d-ment" rows={2} value={fields.mentiuni} onChange={(e) => setFields({ ...fields, mentiuni: e.currentTarget.value })} className={textareaClass} maxLength={1000} />
       </Field>
       {error && !error.field ? <Notice tone="error">{error.message}</Notice> : null}
@@ -377,7 +377,7 @@ function DraftEditor({
           Renunță la ciornă
         </button>
       </div>
-      <p className="text-[14px] text-dim">„Aprobă și emite” emite factura în Oblio, o trimite în e-Factura, îi pune PDF-ul pe Drive și pregătește emailul. Emailul pleacă abia la „Trimite”.</p>
+      <p className="text-[14px] text-dim">Aprobarea emite în Oblio și în e-Factura. Emailul pleacă abia la „Trimite”.</p>
     </div>
   );
 }
@@ -468,7 +468,7 @@ function IssuedView({ invoice, oblio, email, actions, onChanged }: { invoice: Fa
 
       {invoice.emailStare !== "nepregatit" ? <EmailSection invoice={invoice} email={email} sendEmail={actions.sendEmail} onChanged={onChanged} /> : null}
 
-      <p className="text-[14px] text-dim">Factura emisă nu se mai corectează aici. Anularea sau stornarea se fac în Oblio, de tine.</p>
+      <p className="text-[14px] text-dim">Anularea și stornarea se fac în Oblio.</p>
     </div>
   );
 }
@@ -495,9 +495,9 @@ function EmailSection({ invoice, email, sendEmail, onChanged }: { invoice: Factu
   return (
     <section aria-labelledby="email-factura" className="rounded-xl border border-hair p-3">
       <h3 id="email-factura" className={sectionTitle}>
-        Emailul către client — pleacă doar la „Trimite”
+        Emailul către client
       </h3>
-      {invoice.emailStare === "esuat" ? <p className="mt-2 text-[14.5px] text-[var(--ap-error)]">Încercarea de dinainte n-a plecat. Verifică adresa și trimite din nou.</p> : null}
+      {invoice.emailStare === "esuat" ? <p className="mt-2 text-[14.5px] text-[var(--ap-error)]">Data trecută n-a plecat. Verifică adresa și trimite din nou.</p> : null}
       <form
         noValidate
         onSubmit={(event) => {
@@ -515,13 +515,13 @@ function EmailSection({ invoice, email, sendEmail, onChanged }: { invoice: Factu
         }}
         className="mt-3 grid gap-3"
       >
-        <Field id="e-to" label="Către" error={error?.field === "to" ? error.message : null} hint="Mai multe adrese, despărțite prin virgulă.">
+        <Field id="e-to" label="Către" error={error?.field === "to" ? error.message : null} hint="Adrese separate prin virgulă.">
           <input id="e-to" value={fields.to} onChange={(e) => setFields({ ...fields, to: e.currentTarget.value })} className={inputClass} />
         </Field>
         <Field id="e-subj" label="Subiectul" error={error?.field === "subject" ? error.message : null}>
           <input id="e-subj" value={fields.subject} onChange={(e) => setFields({ ...fields, subject: e.currentTarget.value })} className={inputClass} maxLength={300} />
         </Field>
-        <Field id="e-text" label="Textul" error={error?.field === "text" ? error.message : null} hint={`Atașat: PDF-ul facturii ${invoiceName(invoice)}, luat din Oblio la trimitere.`}>
+        <Field id="e-text" label="Textul" error={error?.field === "text" ? error.message : null} hint={`Atașat: PDF-ul ${invoiceName(invoice)}.`}>
           <textarea id="e-text" rows={7} value={fields.text} onChange={(e) => setFields({ ...fields, text: e.currentTarget.value })} className={textareaClass} maxLength={5000} />
         </Field>
         {error && !error.field ? <Notice tone="error">{error.message}</Notice> : null}
@@ -533,7 +533,7 @@ function EmailSection({ invoice, email, sendEmail, onChanged }: { invoice: Factu
         <button type="submit" disabled={pending || !email} className={cn("btn btn-light justify-self-start !min-h-10 !px-4 !py-2 !text-[15px]")}>
           {pending ? "Se trimite…" : "Trimite emailul"}
         </button>
-        {!email ? <p className="text-[14px] text-dim">Emailul nu e configurat (RESEND_API_KEY lipsește în Vercel).</p> : null}
+        {!email ? <p className="text-[14px] text-dim">Lipsește RESEND_API_KEY în Vercel.</p> : null}
       </form>
     </section>
   );

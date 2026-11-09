@@ -13,12 +13,12 @@ import { ActivateFlow, RecoverFlow } from "./onboarding";
 
 export function ActivatePage() {
   const { phase } = useVault();
-  if (phase.kind === "unlocked") return <AlreadyOpen title="Contul e activ" text="Seiful e deschis, deci contul tău e deja activat. Parola master o schimbi din Contul meu." />;
+  if (phase.kind === "unlocked") return <AlreadyOpen title="Contul e activ" text="Parola master o schimbi din Contul meu." />;
   return <ActivateFlow />;
 }
 
 export function RecoverPage() {
   const { phase } = useVault();
-  if (phase.kind === "unlocked") return <AlreadyOpen title="Seiful e deschis" text="Recuperarea cu codul e pentru când cheile nu se mai deschid. Acum ele sunt deschise, deci nu ai nimic de recuperat." />;
+  if (phase.kind === "unlocked") return <AlreadyOpen title="Seiful e deschis" text="Cheile se deschid, n-ai nimic de recuperat." />;
   return <RecoverFlow />;
 }

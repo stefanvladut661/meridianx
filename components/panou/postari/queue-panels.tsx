@@ -75,14 +75,14 @@ export function QueueStrip({
               aria-label={`${day.label}: ${day.count === 0 ? "nicio postare" : `${day.count} ${day.count === 1 ? "postare" : "postări"}`}${day.failed ? `, ${day.failed} eșuate` : ""}`}
               className={cn("min-w-[74px] flex-1 rounded-xl border px-2 py-2 text-left transition-colors", active ? "border-lav/40 bg-lav/[0.1]" : "border-white/[0.07] hover:border-white/20")}
             >
-              <p className="text-[11.5px] uppercase tracking-[0.1em] text-muted-foreground">{day.weekday}</p>
+              <p className="text-[12px] uppercase tracking-[0.1em] text-muted-foreground">{day.weekday}</p>
               <p className={cn("pu-num mt-0.5 text-[16px]", active ? "text-[#D8CCFF]" : "")}>{day.date}</p>
               <div className="mt-1 flex items-center gap-1">
                 {Array.from({ length: Math.min(day.count, 4) }).map((_, index) => (
                   <span key={index} className="h-1 w-1 rounded-full bg-lav" aria-hidden="true" />
                 ))}
                 {day.failed ? <span className="h-1 w-1 rounded-full bg-rose" aria-hidden="true" /> : null}
-                <span className="ml-auto text-[11.5px] text-muted-foreground">{day.count || "—"}</span>
+                <span className="ml-auto text-[12px] text-muted-foreground">{day.count || "—"}</span>
               </div>
             </Link>
           );
@@ -114,18 +114,18 @@ export function QueueStatus({
         <Clock className="h-3.5 w-3.5" aria-hidden="true" /> ultima rulare:{" "}
         {lastRun ? (
           <span className="text-foreground/80">
-            {lastRun.ago} ({lastRun.source === "cron" ? "Supabase Cron" : "manual"})
+            {lastRun.ago} ({lastRun.source === "cron" ? "cron" : "manual"})
             {lastRun.error ? <span className="text-[#FFC2CE]"> · {lastRun.error}</span> : null}
           </span>
         ) : (
           <span className="text-foreground/80">n-a rulat încă</span>
         )}
       </span>
-      <LiveDot active={running} label={running ? "verifică la 5 minute" : "oprit din portal"} />
+      <LiveDot active={running} label={running ? "la 5 minute" : "oprită"} />
       <span className="ml-auto flex items-center gap-3 text-[13px] text-muted-foreground">
-        {waiting} {waiting === 1 ? "postare în așteptare" : "postări în așteptare"}
+        {waiting} în așteptare
         <Link href="/admin/postari/istoric?zona=coada" className="hover:text-foreground">
-          Istoricul cozii →
+          Istoric →
         </Link>
       </span>
     </Card>
@@ -141,7 +141,7 @@ export interface PlatformStats {
 function MiniStat({ label, value, tone }: { label: string; value: number; tone?: "rose" }) {
   return (
     <div className="rounded-xl border border-white/[0.07] px-3 py-2">
-      <p className="text-[11.5px] uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+      <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
       <p className={cn("pu-num mt-1 text-[20px] font-medium leading-none", tone === "rose" && value > 0 ? "text-rose" : value === 0 ? "text-foreground/45" : "")}>{value}</p>
     </div>
   );
@@ -151,10 +151,7 @@ function MiniStat({ label, value, tone }: { label: string; value: number; tone?:
 export function QueueStats({ instagram, tiktok }: { instagram: PlatformStats | null; tiktok: PlatformStats | null }) {
   return (
     <Card className="py-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[14px] font-medium">Ultimele 7 zile</h2>
-        <span className="text-[12.5px] text-muted-foreground">după ora din plan</span>
-      </div>
+      <h2 className="text-[14px] font-medium">Ultimele 7 zile</h2>
       <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {instagram ? (
           <>
@@ -189,10 +186,10 @@ export function QueueAlerts({ alerts }: { alerts: QueueAlert[] }) {
         <SectionTitle
           title={
             <span className="inline-flex items-center gap-2">
-              <BellRing className="h-4 w-4 text-apricot" aria-hidden="true" /> Alertele din ultimele 2 zile
+              <BellRing className="h-4 w-4 text-apricot" aria-hidden="true" /> Alerte
             </span>
           }
-          hint="Ce a ridicat coada singură: eșecuri, tokenuri, conturi care expiră."
+          hint="ultimele 2 zile"
         />
       </div>
       <ul className="divide-y divide-white/[0.05]">
@@ -201,7 +198,7 @@ export function QueueAlerts({ alerts }: { alerts: QueueAlert[] }) {
             <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", alert.tone === "rose" ? "bg-rose" : "bg-apricot")} aria-hidden="true" />
             <div className="min-w-0 flex-1">
               <p className="whitespace-pre-line text-[14px]">{alert.mesaj}</p>
-              <p className="mt-0.5 text-[12px] text-muted-foreground">
+              <p className="mt-0.5 text-[13px] text-muted-foreground">
                 {alert.when} · {alert.meta}
               </p>
             </div>

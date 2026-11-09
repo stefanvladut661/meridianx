@@ -61,7 +61,7 @@ export function EntryList({
             ) : (
               <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5">
                 <h3 className="min-w-0 truncate text-[13.5px] font-medium">{name}</h3>
-                <span className="flex shrink-0 items-center gap-3 text-[12px] text-muted-foreground">
+                <span className="flex shrink-0 items-center gap-3 text-[13px] text-muted-foreground">
                   <span>{countNoun(group.entries.length, "intrare", "intrări")}</span>
                   {group.client ? (
                     <>
@@ -124,7 +124,7 @@ function EntryRow({ entry, selected, onSelect }: { entry: VaultEntry; selected: 
           <span className={cn("truncate text-[14px]", !ok && "text-[#FFC79C]")}>{ok ? ok.payload.title : "Intrare ilizibilă"}</span>
           {!ok ? <Pill tone="apricot">ilizibil</Pill> : null}
         </span>
-        <span className="block truncate text-[12px] text-muted-foreground">
+        <span className="block truncate text-[13px] text-muted-foreground">
           {ok ? (
             <>
               {KIND_LABEL[ok.payload.kind]} · {countNoun(ok.payload.fields.length, "câmp", "câmpuri")}
@@ -136,7 +136,7 @@ function EntryRow({ entry, selected, onSelect }: { entry: VaultEntry; selected: 
           )}
         </span>
       </span>
-      <span className="shrink-0 text-[11.5px] text-muted-foreground">{relativeRo(entry.updatedAt)}</span>
+      <span className="shrink-0 text-[12.5px] text-muted-foreground">{relativeRo(entry.updatedAt)}</span>
     </button>
   );
 }
@@ -191,7 +191,7 @@ function RenameForm({ name, onRename, onDone }: { name: string; onRename: (name:
         className="h-8 min-w-0 flex-1 basis-[12rem]"
       />
       <Btn type="submit" size="xs" variant="primary" disabled={saving}>
-        {saving ? "Se salvează…" : "Salvează numele"}
+        {saving ? "Se salvează…" : "Salvează"}
       </Btn>
       <Btn size="xs" variant="ghost" disabled={saving} onClick={onDone}>
         Anulează

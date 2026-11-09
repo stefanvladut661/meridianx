@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, Copy, ExternalLink, Layers, Loader2, Play, ShieldCheck, Square, Wand2, CheckCircle2 } from "lucide-react";
+import { ChevronRight, Copy, ExternalLink, Layers, Loader2, Play, Square, Wand2, CheckCircle2 } from "lucide-react";
 import { OBJECTIVE_LABEL, PLATFORM_LABEL, type Objective } from "@/lib/ads/constants";
 import { exampleBatchFor } from "@/lib/ads/example-plan";
 import { countOf, formatMoney, rawVideosOf } from "@/lib/ads/plan-derive";
@@ -15,7 +15,7 @@ import type { CheckResponse, CreateResponse, JobView, PlatformCheck } from "@/li
 import type { WorkspaceSummary } from "@/lib/ads/workspaces";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog, InlineNote } from "../ui/actions";
-import { Btn, btnClass, Card, Pill, SectionTitle, type PillTone } from "../ui/primitives";
+import { Btn, btnClass, Card, Pill, SectionTitle, Stamp, type PillTone } from "../ui/primitives";
 import { EmptyState, ProgressBar } from "../ui/states";
 import { useToast } from "../ui/toast";
 import { ProblemList } from "./problem-list";
@@ -88,7 +88,7 @@ function rowStatus(row: Row): { tone: Tone; label: string; detail: string | null
       ? { tone: "busy", label: "Așteaptă platforma", detail: `${PLATFORM_LABEL[job.platform]} a cerut o pauză — reiau la ${clockTime.format(new Date(job.waitUntil))}, de la ${step}`, link: job.adsManagerUrl }
       : { tone: "busy", label: "Se creează pe pauză", detail: `Se creează pe pauză — ${step}`, link: job.adsManagerUrl };
   }
-  if (create?.state === "done") return { tone: "ok", label: "Creată pe pauză", detail: "Creată — oprită", link: create.result.adsManagerUrl };
+  if (create?.state === "done") return { tone: "ok", label: "Creată pe pauză", detail: null, link: create.result.adsManagerUrl };
   if (create?.state === "failed") {
     const result = create.result;
     if (result.duplicate) return { tone: "warning", label: "Creată deja — sărită", detail: null, link: result.duplicate.adsManagerUrl };
@@ -98,7 +98,7 @@ function rowStatus(row: Row): { tone: Tone; label: string; detail: string | null
   if (check?.state === "checking") return { tone: "busy", label: "Se verifică", detail: null, link: null };
   if (check?.state === "done") {
     return check.check.ok
-      ? { tone: "ok", label: "Verificat", detail: "Verificat — gata de creat", link: null }
+      ? { tone: "ok", label: "Verificat", detail: null, link: null }
       : {
           tone: "error",
           label: "Problemă",
@@ -115,9 +115,9 @@ function rowStatus(row: Row): { tone: Tone; label: string; detail: string | null
       link: null,
     };
   }
-  if (!row.tokenConfigured) return { tone: "warning", label: "Fără token", detail: "Spațiul n-are token", link: null };
-  if (row.needsUpload) return { tone: "warning", label: "Video de urcat", detail: "Video-ul trebuie urcat întâi", link: null };
-  return { tone: "none", label: "De verificat", detail: "Valid — de verificat", link: null };
+  if (!row.tokenConfigured) return { tone: "warning", label: "Fără token", detail: null, link: null };
+  if (row.needsUpload) return { tone: "warning", label: "Video de urcat", detail: null, link: null };
+  return { tone: "none", label: "De verificat", detail: null, link: null };
 }
 
 /** Ce probleme are rândul, din orice pas — pentru lista de copiat. */
@@ -149,7 +149,7 @@ function CheckSummary({ check }: { check: PlatformCheck }) {
       </ul>
       {names.length > 0 ? (
         <p className="text-muted-foreground">
-          Targetarea, cum a înțeles-o {PLATFORM_LABEL[check.platform]}:{" "}
+          Targetare în {PLATFORM_LABEL[check.platform]}:{" "}
           {names.map((name) => `${name.asked} → ${name.found ?? "negăsit"}`).join(" · ")}
         </p>
       ) : null}
@@ -322,7 +322,7 @@ export function BatchEditor({
     try {
       await navigator.clipboard.writeText(value);
       setCopied(what);
-      if (what === "problems") notify("Problemele sunt în clipboard, gata de lipit în Claude.");
+      if (what === "problems") notify("Probleme copiate.");
       window.setTimeout(() => setCopied(null), 2000);
     } catch {
       textareaRef.current?.select();
@@ -345,13 +345,13 @@ export function BatchEditor({
   const reason = run
     ? `${run.kind === "check" ? "Se verifică" : "Se creează pe pauză"} ${run.done + 1} din ${run.total}: „${run.name}”…`
     : creatable.length > 0
-      ? `${creatable.length === 1 ? "Un plan verificat" : countOf(creatable.length, "planuri verificate")}, gata de creat — oprite.`
+      ? `${creatable.length === 1 ? "Un plan verificat" : countOf(creatable.length, "planuri verificate")}, gata de creat.`
       : checkable.length > 0
-        ? "Întâi verificarea pe conturile reale: contul, pagina sau identitatea, pixelul, video-ul, targetarea."
+        ? "Verifică pe conturile reale."
         : problemRows.length > 0
-          ? "Copiază problemele, dă-le conversației și lipește aici lotul corectat."
+          ? "Dă problemele lui Claude și lipește lotul corectat."
           : created.length > 0
-            ? "Lotul e creat. Campaniile te așteaptă oprite în platforme."
+            ? "Lot creat pe pauză."
             : "Niciun plan gata de verificat.";
 
   return (
@@ -364,8 +364,8 @@ export function BatchEditor({
 
         <Card className="flex flex-col">
           <SectionTitle
-            title="Lipește lotul"
-            hint="O listă JSON de planuri. Se citește singur, plan cu plan."
+            title="Lotul lipit"
+            info="O listă JSON de planuri. Se citește singur, plan cu plan."
             action={
               <Btn size="xs" variant="ghost" icon={Wand2} onClick={() => setText(exampleBatchFor(owner))} disabled={busy}>
                 Încarcă exemplul
@@ -406,13 +406,11 @@ export function BatchEditor({
             ) : batch?.ok ? (
               <InlineNote tone={validCount === items.length ? "mint" : "rose"}>
                 {validCount === items.length
-                  ? `${items.length === 1 ? "Un plan valid" : `Toate cele ${items.length} planuri sunt valide`}.`
+                  ? `${items.length === 1 ? "Un plan valid" : `${countOf(items.length, "planuri")} valide`}.`
                   : `${validCount} din ${items.length} valide · ${countOf(items.length - validCount, "planuri")} de corectat.`}
-                {batch.tooMany ? ` Lotul avea mai mult de ${BATCH_MAX} de planuri: s-au citit primele ${BATCH_MAX}.` : ""}
+                {batch.tooMany ? ` Peste ${BATCH_MAX} de planuri: s-au citit primele ${BATCH_MAX}.` : ""}
               </InlineNote>
-            ) : (
-              <p className="text-muted-foreground">Lipește lotul primit din conversație. Se citește singur.</p>
-            )}
+            ) : null}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Btn size="sm" variant="outline" icon={Copy} onClick={() => copy("json")} disabled={!text}>
@@ -432,15 +430,11 @@ export function BatchEditor({
             >
               Golește
             </Btn>
-            <span className="text-[12.5px] text-muted-foreground">maxim {BATCH_MAX}, un proprietar</span>
+            <span className="text-[13px] text-muted-foreground">maxim {BATCH_MAX}, un proprietar</span>
           </div>
-          <p className="mt-4 text-[13px] leading-relaxed text-muted-foreground">
-            Formatul și contextul conturilor, gata de dat conversației care scrie lotul:{" "}
-            <Link href="/admin/ads/claude" className="text-foreground/85 underline underline-offset-4 hover:text-lav">
-              Pentru Claude
-            </Link>
-            .
-          </p>
+          <Link href="/admin/ads/claude" className="mt-4 self-start text-[13.5px] text-foreground/85 underline underline-offset-4 hover:text-lav">
+            Formatul, în „Pentru Claude”
+          </Link>
         </Card>
       </div>
 
@@ -457,14 +451,13 @@ export function BatchEditor({
           <Card padded={false}>
             <EmptyState
               icon={Layers}
-              title="Un lot = mai multe campanii odată."
-              text="Aceeași reclamă pe Meta, TikTok și Google, sau zece variante de public. Fiecare plan se verifică pe contul lui și se creează oprit; un plan creat deja se sare."
+              title="Niciun lot"
+              text="Lipește JSON-ul în stânga."
               action={
                 <Btn size="sm" variant="primary" onClick={() => setText(exampleBatchFor(owner))}>
-                  Încarcă un lot de exemplu
+                  Încarcă exemplul
                 </Btn>
               }
-              hint={`Lotul e pentru ${owner === "clienti" ? "banii clienților" : "reclamele agenției"} — spațiul ales mai sus.`}
             />
           </Card>
         ) : (
@@ -500,7 +493,7 @@ export function BatchEditor({
                         notify("Se oprește după planul curent.", "warn");
                       }}
                     >
-                      Oprește după planul ăsta
+                      Oprește lotul
                     </Btn>
                   ) : (
                     <>
@@ -536,7 +529,7 @@ export function BatchEditor({
                   <ProgressBar value={(run.done / run.total) * 100} tone="lav" />
                 </div>
               ) : null}
-              <p className="mt-3 flex items-center gap-1.5 text-[12.5px] text-muted-foreground" aria-live="polite">
+              <p className="mt-3 flex items-center gap-1.5 text-[13.5px] text-muted-foreground" aria-live="polite">
                 {run ? <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" /> : null}
                 {reason}
               </p>
@@ -565,7 +558,7 @@ export function BatchEditor({
                         <span className="pu-num w-6 shrink-0 text-[12.5px] text-muted-foreground">{String(row.item.index + 1).padStart(2, "0")}</span>
                         <div className="min-w-0 flex-1">
                           <p className="break-words text-[14.5px]">{row.item.name}</p>
-                          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted-foreground">
+                          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground">
                             {workspace ? (
                               <span
                                 className={cn(
@@ -581,7 +574,7 @@ export function BatchEditor({
                             {facts.length > 0 ? <span>{facts.join(" · ")}</span> : null}
                           </p>
                           {status.detail && status.detail !== status.label ? (
-                            <p className={cn("mt-1 text-[12.5px] leading-snug", status.tone === "error" ? "text-rose" : status.tone === "warning" ? "text-apricot" : "text-muted-foreground")}>
+                            <p className={cn("mt-1 text-[13px] leading-snug", status.tone === "error" ? "text-rose" : status.tone === "warning" ? "text-apricot" : "text-muted-foreground")}>
                               {status.detail}
                             </p>
                           ) : null}
@@ -640,19 +633,17 @@ export function BatchEditor({
             </Card>
 
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
-                <ShieldCheck className="h-3.5 w-3.5 text-mint" aria-hidden="true" /> toate campaniile se creează oprite
-              </p>
+              <Stamp>Totul se creează pe pauză</Stamp>
               <Btn size="sm" variant="outline" icon={Copy} disabled={problemRows.length === 0} onClick={() => copy("problems")}>
-                {copied === "problems" ? "Copiat" : `Copiază problemele pentru Claude${problemRows.length > 0 ? ` (${problemRows.length})` : ""}`}
+                {copied === "problems" ? "Copiat" : `Copiază problemele${problemRows.length > 0 ? ` (${problemRows.length})` : ""}`}
               </Btn>
             </div>
 
             {createdOnce && !busy ? (
               <Card className="border-mint/20 bg-mint/[0.05]">
                 <p className="text-[14.5px] font-medium text-[#C4F5D8]">Lot terminat</p>
-                <p className="mt-1 text-[13.5px] leading-relaxed text-[#C4F5D8]/75">
-                  {created.length} create pe pauză, {skipped.length} sărite pentru că existau deja, {failedCreates} cu probleme, {creatable.length} oprite înainte de creare.
+                <p className="pu-num mt-1 text-[13.5px] leading-relaxed text-[#C4F5D8]/75">
+                  {created.length} create · {skipped.length} sărite (existau deja) · {failedCreates} cu probleme · {creatable.length} rămase
                 </p>
               </Card>
             ) : null}
@@ -664,12 +655,12 @@ export function BatchEditor({
         open={confirming}
         onOpenChange={setConfirming}
         title={creatable.length === 1 ? "Creezi o campanie pe pauză?" : `Creezi ${creatable.length} campanii pe pauză?`}
-        description={`Se împart pe spațiile de lucru din planuri${
-          toCreateByWorkspace.size > 0 ? ` (${[...toCreateByWorkspace.entries()].map(([name, count]) => `${count} în ${name}`).join(", ")})` : ""
-        }. Fiecare pornește oprită.`}
+        description={`${
+          toCreateByWorkspace.size > 0 ? `${[...toCreateByWorkspace.entries()].map(([name, count]) => `${count} în ${name}`).join(", ")}. ` : ""
+        }Toate oprite.`}
         consequence={`${creatable.length === 1 ? "O campanie" : `${creatable.length} campanii`}${
-          creatableTotals.length > 0 ? ` · buget zilnic total ${creatableTotals.map((total) => formatMoney(total.amount, total.currency)).join(" + ")}, dacă le pornești pe toate` : ""
-        }. Plafonul fiecărui spațiu se verifică și la creare; un plan care îl depășește se sare, nu se forțează. Pornirea rămâne la tine, în platformă.`}
+          creatableTotals.length > 0 ? ` · ${creatableTotals.map((total) => formatMoney(total.amount, total.currency)).join(" + ")}/zi în total, dacă le pornești pe toate` : ""
+        }. Un plan peste plafonul spațiului se sare. ${creatable.length === 1 ? "O pornești" : "Le pornești"} tu, din platformă.`}
         confirmLabel={`Creează pe pauză (${creatable.length})`}
         tone="primary"
         onConfirm={() => {

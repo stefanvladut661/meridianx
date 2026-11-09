@@ -21,7 +21,7 @@ export default async function PanouPage({ searchParams }: { searchParams: Promis
   const lastDigest = admin ? (await admin.from("firma_rezumate").select("zi, alerte, trimis, catre, mesaj").order("zi", { ascending: false }).limit(1).maybeSingle()).data : null;
   return (
     <main className="px-4 pb-16 pt-6 sm:px-6">
-      <PageHead title="Panou" subtitle="Cifrele lunii și ce cere atenție. Cifrele vin doar din ce e în admin — unde lipsesc datele, scrie ce trebuie făcut." />
+      <PageHead title="Panou" />
       {!dashboard.ok ? (
         <Notice tone="error" className="mt-5">
           {dashboard.message}

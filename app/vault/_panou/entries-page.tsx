@@ -95,7 +95,7 @@ export function EntriesPage() {
       onTab={onTab}
       onLock={() => {
         void vault.lock();
-        notify("Seif blocat. Cheia a fost ștearsă din memorie.");
+        notify("Seif blocat.");
       }}
     />
   );

@@ -22,6 +22,7 @@ import type { ConversionsCreateResponse, ConversionsPreview, ConversionsPreviewR
 import { countOf } from "@/lib/ads/plan-derive";
 import { CopyButton, InlineNote } from "@/components/panou/ui/actions";
 import { Btn, Card, Pill, SectionTitle } from "@/components/panou/ui/primitives";
+import { Info } from "@/components/panou/ui/info";
 import { SoftSelect } from "@/components/panou/ui/select";
 import { useToast } from "@/components/panou/ui/toast";
 import { cn } from "@/lib/utils";
@@ -168,7 +169,7 @@ export function ConversiiCreare({
           router.refresh();
         } else if (response.recheck) setPreview(null);
       } catch {
-        setCreated({ ok: false, message: "Serverul n-a răspuns. Nu se știe dacă acțiunile s-au creat: reîncarcă pagina și uită-te în listă înainte să încerci din nou." });
+        setCreated({ ok: false, message: "Serverul n-a răspuns. Nu se știe dacă s-au creat: reîncarcă pagina și verifică lista înainte să reîncerci." });
       }
     });
   };
@@ -178,8 +179,8 @@ export function ConversiiCreare({
   return (
     <Card>
       <SectionTitle
-        title="Creează acțiunile standard care lipsesc"
-        hint="Bifate implicit doar cele care lipsesc din cont. Se creează pornite — o conversie nu cheltuie bani — și fără nimic despre client în nume."
+        title="Acțiuni standard lipsă"
+        info="Bifate doar cele care lipsesc. Se creează pornite (o conversie nu cheltuie bani), fără date despre client în nume."
       />
 
       <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
@@ -200,17 +201,17 @@ export function ConversiiCreare({
                     className="mt-1 h-4 w-4 shrink-0 accent-lav"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <label htmlFor={id("on")} className="cursor-pointer text-[15px] font-medium">
-                        {spec.title}
-                      </label>
-                      <span className="font-mono text-[11.5px] uppercase tracking-[0.14em] text-muted-foreground">{spec.type}</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="flex items-center gap-1.5">
+                        <label htmlFor={id("on")} className="cursor-pointer text-[15px] font-medium">
+                          {spec.title}
+                        </label>
+                        <Info label={`Ce numără „${spec.title}”`}>{spec.what}</Info>
+                      </span>
+                      <span className="font-mono text-[12px] uppercase tracking-[0.14em] text-muted-foreground">{spec.type}</span>
                     </div>
-                    <p className="mt-1 text-[13.5px] leading-snug text-muted-foreground">{spec.what}</p>
                     {existing[kind] ? (
-                      <p className="mt-1.5 text-[13px] leading-snug text-[#FFC79C]">
-                        Contul are deja „{existing[kind]}”. O a doua acțiune principală pentru același lucru ar număra de două ori.
-                      </p>
+                      <p className="mt-1.5 text-[13.5px] leading-snug text-[#FFC79C]">Există deja „{existing[kind]}”: o a doua principală ar număra dublu.</p>
                     ) : null}
                   </div>
                 </div>
@@ -218,7 +219,7 @@ export function ConversiiCreare({
                 {draft.on ? (
                   <fieldset className="mt-4 grid gap-x-3 gap-y-3 sm:grid-cols-2 sm:pl-7">
                     <legend className="sr-only">Setările pentru „{spec.title}”</legend>
-                    <Camp id={id("name")} label="Numele în Google Ads" error={field(kind, "name")} className="sm:col-span-2">
+                    <Camp id={id("name")} label="Nume" error={field(kind, "name")} className="sm:col-span-2">
                       <input
                         id={id("name")}
                         value={draft.name}
@@ -260,14 +261,14 @@ export function ConversiiCreare({
                       />
                     </Camp>
                     {spec.call ? (
-                      <Camp id={id("callSeconds")} label="Durata minimă (s)" error={field(kind, "callSeconds")} hint="Un apel mai scurt nu e lead.">
+                      <Camp id={id("callSeconds")} label="Durata minimă (s)" error={field(kind, "callSeconds")} info="Un apel mai scurt nu e lead.">
                         <input
                           id={id("callSeconds")}
                           inputMode="numeric"
                           value={draft.callSeconds}
                           onChange={(event) => update(kind, { callSeconds: event.target.value })}
                           className={campClass(Boolean(field(kind, "callSeconds")), true)}
-                          {...descriere(id("callSeconds"), field(kind, "callSeconds"), true)}
+                          {...descriere(id("callSeconds"), field(kind, "callSeconds"))}
                         />
                       </Camp>
                     ) : (
@@ -282,7 +283,7 @@ export function ConversiiCreare({
                         />
                       </Camp>
                     )}
-                    <Camp id={id("value")} label={`Valoare (${account.currency})`} error={field(kind, "value")} hint="Aceeași la fiecare conversie.">
+                    <Camp id={id("value")} label={`Valoare (${account.currency})`} error={field(kind, "value")} info="Aceeași la fiecare conversie.">
                       <input
                         id={id("value")}
                         inputMode="decimal"
@@ -290,7 +291,7 @@ export function ConversiiCreare({
                         placeholder="fără"
                         onChange={(event) => update(kind, { value: event.target.value })}
                         className={campClass(Boolean(field(kind, "value")), true)}
-                        {...descriere(id("value"), field(kind, "value"), true)}
+                        {...descriere(id("value"), field(kind, "value"))}
                       />
                     </Camp>
                     <label className="flex items-center gap-2.5 self-end pb-1.5 text-[14px] text-foreground/85 sm:col-span-2">
@@ -316,12 +317,12 @@ export function ConversiiCreare({
           </div>
           <p className="text-[13.5px] leading-snug text-muted-foreground" aria-live="polite">
             {chosen.length === 0
-              ? "Bifează o acțiune ca s-o creezi."
+              ? "Bifează o acțiune."
               : preview && !fresh
-                ? "Ai schimbat formularul: verifică din nou."
+                ? "Formular schimbat: verifică din nou."
                 : fresh?.ok
-                  ? `Gata de creat: ${counted(fresh.operations, "acțiune", "acțiuni")}, într-o singură cerere.`
-                  : "Întâi verificarea: regulile Google, numele din cont, apoi validateOnly."}
+                  ? `Gata: ${counted(fresh.operations, "acțiune", "acțiuni")}.`
+                  : "Verifică întâi în Google. Nu se creează nimic."}
           </p>
           {general.length > 0 ? (
             <ul role="alert" className="space-y-1 text-[14px] leading-snug text-rose">
@@ -347,12 +348,9 @@ export function ConversiiCreare({
 function Verificare({ preview }: { preview: ConversionsPreview }) {
   return (
     <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3.5">
-      <p className="flex items-center gap-2">
-        <Pill tone={preview.ok ? "mint" : "rose"} dot>
-          {preview.ok ? "Google acceptă tot" : "Nu se poate crea așa"}
-        </Pill>
-        <span className="text-[13px] text-muted-foreground">{preview.ok ? "Nimic creat încă." : "Vezi problemele."}</span>
-      </p>
+      <Pill tone={preview.ok ? "mint" : "rose"} dot>
+        {preview.ok ? "Google acceptă tot" : "Nu se poate crea așa"}
+      </Pill>
       <ul className="mt-3 space-y-3">
         {preview.rows.map((row) => (
           <li key={row.kind}>
@@ -398,8 +396,8 @@ function Creata({ result }: { result: ConversionsCreateResponse }) {
               ) : (
                 <span className="mt-0.5 block text-[13px] opacity-70">
                   {item.type === "AD_CALL"
-                    ? "Fără etichetă: se leagă de butonul de apel (planul de căutare, assets.call.conversion_action_id)."
-                    : "Eticheta n-a apărut încă: reîncarcă pagina peste un minut."}
+                    ? "Fără etichetă: se leagă de butonul de apel (assets.call.conversion_action_id)."
+                    : "Eticheta apare în ~1 minut: reîncarcă pagina."}
                 </span>
               )}
             </li>
