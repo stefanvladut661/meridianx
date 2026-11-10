@@ -77,3 +77,17 @@ ok=$(echo "$rez" | grep -c '^ok'); bad=$(echo "$rez" | grep -c '^ERROR')
 echo "Sesiunile robotului (38): $ok ok, $bad picate."
 [ "$bad" -eq 0 ] || exit 1
 bash "$T/concurenta-sesiuni.sh"
+[ $? -eq 0 ] || exit 1
+for runda in 1 2; do
+  out=$(q < "$M"/00000000000039_*.sql 2>&1) || { echo "MIGRARE PICATĂ ($runda): 39"; echo "$out" | tail -5; exit 1; }
+  echo "$out" | grep -q '|f$' && { echo "VERIFICARE FALSĂ în 39:"; echo "$out" | grep '|f$'; exit 1; }
+done
+echo "Migrarea 39: rulată de două ori peste baza testelor, toate verificările true."
+echo "$out" | grep '|t$' | sed 's/|t$//' | sed 's/^/  /'
+[ -f "$T/distribuire.sql" ] || exit 0
+rez=$(q -1 < "$T/distribuire.sql" 2>&1 | grep -E '^(ok|ERROR)')
+echo "$rez" | sed 's/→ \([0-9A-Z]*\): .*/→ \1/'
+ok=$(echo "$rez" | grep -c '^ok'); bad=$(echo "$rez" | grep -c '^ERROR')
+echo "Distribuirea manuală (39): $ok ok, $bad picate."
+[ "$bad" -eq 0 ] || exit 1
+bash "$T/concurenta-distribuire.sh"
