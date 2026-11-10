@@ -4,7 +4,7 @@ import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Ban, Bot, Building2, CalendarClock, CalendarDays, Check, ExternalLink, Files, ImageIcon, Loader2, Lock, LockOpen, Mail, MapPin, MessageCircle, Phone, StickyNote, Star, User, X, type LucideIcon } from "lucide-react";
-import { permiteRecontactare, salveazaNota, schimbaEtapa } from "@/app/(admin)/admin/prospectare/actions";
+import { marcheazaFirma, permiteRecontactare, salveazaNota, schimbaEtapa } from "@/app/(admin)/admin/prospectare/actions";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
 import { Modal } from "@/components/panou/ui/modal";
@@ -146,8 +146,8 @@ const CANAL_MIC: Record<Canal, string> = { email: "email", whatsapp: "WhatsApp",
 
 /** Unde ajunge firma după ce un admin îi permite canalul (în distribuție, firmele cu canal permis trec primele). */
 const UNDE_PERMIS: Record<Canal, string> = {
-  email: "intră prima la email, la 00:00",
-  whatsapp: "intră prima la WhatsApp, la 00:00",
+  email: "se poate distribui pe email din Firme",
+  whatsapp: "se poate distribui pe WhatsApp din Firme",
   telefon: "intră prima în rezerva de apeluri",
 };
 
@@ -216,8 +216,8 @@ const programareText = (p: ProgramareFisa, azi: string): string => [`Programată
 /** Fără programare activă: de ce firma intră sau nu în distribuția de la 00:00. Null = spun deja alte rânduri din fișă. */
 function stareDistributie(f: Firma): { ton: "neutral" | "apricot"; text: string } | null {
   if (f.etapa === "nu_contacta" || f.etapa === "client" || f.etapa === "respins" || f.date_extra?.duplicat_de) return null;
-  if (!f.link_demo) return { ton: "neutral", text: "Fără site demo publicat: intră în distribuție după publicare." };
-  if (!f.demo_verificat) return { ton: "apricot", text: "Link demo neverificat: nu intră în distribuție." };
+  if (!f.link_demo) return { ton: "neutral", text: f.alocat_lui ? `Fără site demo publicat: în lista de construcție a lui ${f.alocat_lui}.` : "Fără site demo publicat: se distribuie după publicare." };
+  if (!f.demo_verificat) return { ton: "apricot", text: "Link demo neverificat: nu se poate distribui." };
   if (f.canal_permis) return { ton: "neutral", text: `Recontactare permisă ${PE_CANAL[f.canal_permis]}: ${UNDE_PERMIS[f.canal_permis]}.` };
   if (f.telefon_la) return { ton: "neutral", text: "Într-o listă de apeluri: nu intră în distribuție cât stă acolo." };
   if (f.email_la && f.whatsapp_la) return { ton: "neutral", text: "A primit email și WhatsApp: nu mai intră în distribuție." };
@@ -229,15 +229,13 @@ function stareDistributie(f: Firma): { ton: "neutral" | "apricot"; text: string 
     if (lipsa) return { ton: "neutral", text: `A primit ${CANAL_MIC[primit]}; pe ${CANAL_MIC[urmator]} nu poate (${lipsa}): nu mai intră în distribuție.` };
     return {
       ton: "neutral",
-      text: `A primit ${CANAL_MIC[primit]}: intră și pe ${CANAL_MIC[urmator]}, în altă zi, dacă n-a răspuns.`,
+      text: `A primit ${CANAL_MIC[primit]}: se poate distribui și pe ${CANAL_MIC[urmator]}, din ziua următoare, dacă n-a răspuns.`,
     };
   }
-  if (f.etapa !== "site_gata") return { ton: "neutral", text: `Etapa „${ETAPE[f.etapa].label}”: în distribuție intră doar firmele cu site gata.` };
+  if (f.etapa !== "site_gata") return { ton: "neutral", text: `Etapa „${ETAPE[f.etapa].label}”: se distribuie doar firmele cu site gata.` };
   return {
     ton: "neutral",
-    text: f.telefon_gresit
-      ? "În rezervă, doar pentru email."
-      : "În rezervă: la 00:00 poate merge pe email sau WhatsApp.",
+    text: f.telefon_gresit ? "Necontactată: se poate distribui doar pe email." : "Necontactată: o distribui din Firme („Selectează” → „Distribuie”).",
   };
 }
 
@@ -259,9 +257,13 @@ function Distributie({ firma, programari, acum }: { firma: Firma; programari: Fi
         <div className="rounded-lg border border-lav/25 bg-lav/[0.07] px-3 py-2.5 text-[#D8CCFF]">
           <p className="font-medium">{programareText(activa, azi)}.</p>
           <p className="mt-1 text-[13px] text-foreground/70">
-            {activa.sursa === "automat" ? "Automat, la 00:00." : `Manual, de ${activa.creat_de}.`}
+            {activa.sursa === "automat" ? "Automat, la 00:00." : `De ${activa.creat_de}.`}
             {activa.zi_ceruta ? ` Cerută pe ${ddll(activa.zi_ceruta)} (zi plină).` : ""}{" "}
-            {activa.zi <= azi ? "Alte canale blocate azi; dacă nu pleacă, se întoarce la 00:00." : "Alte canale blocate până atunci; se anulează până în ziua ei."}
+            {activa.zi < azi
+              ? "Restanță: rămâne pe cont până pleacă sau o scoți din coadă."
+              : activa.zi === azi
+                ? "Alte canale blocate cât e programată; dacă nu pleacă azi, rămâne ca restanță."
+                : "Alte canale blocate până atunci; se anulează până în ziua ei."}
           </p>
           <Link href={pagina.href} className="mt-1 inline-block rounded-sm text-[13px] text-foreground/80 underline underline-offset-2 hover:text-foreground">
             {pagina.label} →
@@ -753,6 +755,11 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
             </dd>
           </div>
           <Detaliu eticheta="Lot">{firma.lot ?? "—"}</Detaliu>
+          {firma.alocat_lui ? (
+            <Detaliu eticheta="Construiește">
+              <span className="font-mono">{firma.alocat_lui}</span>
+            </Detaliu>
+          ) : null}
           <Detaliu eticheta="Adăugată" icon={CalendarDays}>
             {dateRo(firma.creat_la)}
           </Detaliu>
@@ -826,6 +833,8 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
             </div>
           </div>
         ) : null}
+
+        <RezultatFirma firma={firma} />
 
         <div>
           <Field label="Notă internă">
@@ -910,6 +919,115 @@ function Fisa({ fisa, acum, onInchide }: { fisa: FisaFirma; acum: number; onInch
         onConfirm={nuContacta}
       />
     </>
+  );
+}
+
+type ActiuneFisa = "raspuns" | "interesat" | "client";
+
+const ACTIUNI: { id: ActiuneFisa; label: string }[] = [
+  { id: "raspuns", label: "A răspuns" },
+  { id: "interesat", label: "Interesat" },
+  { id: "client", label: "Client" },
+];
+
+/** Canalul pe care a venit, probabil, răspunsul: ultimul folosit. */
+function ultimulCanal(f: Firma): Canal | null {
+  const canale: [Canal, string | null][] = [
+    ["email", f.email_la],
+    ["whatsapp", f.whatsapp_la],
+    ["telefon", f.telefon_la],
+  ];
+  const folosite = canale.filter((c): c is [Canal, string] => Boolean(c[1])).sort((a, b) => b[1].localeCompare(a[1]));
+  return folosite[0]?.[0] ?? null;
+}
+
+/** „A răspuns”, „Interesat”, „Client”, fiecare cu o notă: rezultatul contactului, în activitatea firmei. */
+function RezultatFirma({ firma }: { firma: Firma }) {
+  const router = useRouter();
+  const { notify } = useToast();
+  const [alesa, setAlesa] = useState<ActiuneFisa | null>(null);
+  const [canal, setCanal] = useState<Canal | "">(ultimulCanal(firma) ?? "");
+  const [nota, setNota] = useState("");
+  const [mesaj, setMesaj] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, startTransition] = useTransition();
+  if (firma.etapa === "nu_contacta") return null;
+
+  const salveaza = () =>
+    startTransition(async () => {
+      if (!alesa) return;
+      const r = await marcheazaFirma({ firmaId: firma.id, actiune: alesa, canal: alesa === "raspuns" ? canal || null : undefined, nota: nota.trim() || undefined }).catch(() => ({
+        ok: false as const,
+        message: "Conexiunea a căzut: nu știm dacă s-a salvat. Reîncarcă fișa.",
+      }));
+      setMesaj({ ok: r.ok, text: r.message });
+      notify(r.message, r.ok ? undefined : "error");
+      if (r.ok) {
+        setAlesa(null);
+        setNota("");
+        router.refresh();
+      }
+    });
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {ACTIUNI.map((a) => {
+          const deja = (a.id === "interesat" && firma.etapa === "interesat") || (a.id === "client" && firma.etapa === "client");
+          return (
+            <Btn
+              key={a.id}
+              size="sm"
+              variant={alesa === a.id ? "primary" : a.id === "client" ? "mint" : "outline"}
+              aria-pressed={alesa === a.id}
+              disabled={deja || pending}
+              onClick={() => {
+                setMesaj(null);
+                setAlesa((v) => (v === a.id ? null : a.id));
+              }}
+            >
+              {a.label}
+            </Btn>
+          );
+        })}
+      </div>
+      {alesa ? (
+        <div className="space-y-2 rounded-xl border border-white/[0.08] bg-white/[0.02] p-3">
+          {alesa === "raspuns" ? (
+            <label className="flex items-center gap-2 text-[14px]">
+              <span className="text-muted-foreground">Pe</span>
+              <select value={canal} onChange={(e) => setCanal(e.target.value as Canal | "")} className={inputClass("h-8 w-auto")}>
+                <option value="">alt canal</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="email">email</option>
+                <option value="telefon">telefon</option>
+              </select>
+            </label>
+          ) : null}
+          <textarea
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            rows={2}
+            maxLength={2000}
+            placeholder="notă (opțional), ex. vrea ofertă pe 2 pagini"
+            aria-label={`Notă: ${ACTIUNI.find((a) => a.id === alesa)?.label}`}
+            className={inputClass("h-auto resize-y py-2 leading-relaxed")}
+          />
+          <div className="flex justify-end gap-2">
+            <Btn size="sm" variant="ghost" onClick={() => setAlesa(null)} disabled={pending}>
+              Renunță
+            </Btn>
+            <Btn size="sm" variant="primary" icon={pending ? Loader2 : undefined} onClick={salveaza} disabled={pending}>
+              Salvează
+            </Btn>
+          </div>
+        </div>
+      ) : null}
+      {mesaj && !mesaj.ok ? (
+        <p role="alert" className="text-[13px] text-rose">
+          {mesaj.text}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

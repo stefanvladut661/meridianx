@@ -114,8 +114,14 @@ export function WhatsAppRand({
   butonRef,
   onTrimite,
   onCopiat,
+  restantaDin = null,
+  onScoate,
 }: {
   firma: FirmaRand;
+  /** Programată într-o zi de dinainte și netrimisă (restanță): ziua ei, ex. „08.11”. */
+  restantaDin?: string | null;
+  /** „Scoate din coadă” (doar la restanțe). */
+  onScoate?: () => void;
   /** Șablonul umplut; gol când șablonul lipsește din Setări. */
   mesaj: string;
   contNume: string;
@@ -150,6 +156,7 @@ export function WhatsAppRand({
             {firma.oras ? ` · ${firma.oras}` : ""}
             {` · ${contNume}`}
             {limita ? <span className="text-[#FFC79C]"> · {limita === "peste" ? "peste limită" : "la limită"}</span> : null}
+            {restantaDin ? <span className="text-[#FFB0C0]"> · restantă din {restantaDin}</span> : null}
           </p>
         </div>
 
@@ -197,6 +204,17 @@ export function WhatsAppRand({
             <p className="min-w-0 flex-1 truncate text-[14px] leading-5 text-muted-foreground">Fără mesaj pregătit.</p>
           )}
           <span className="ml-auto flex shrink-0 gap-1">
+            {onScoate ? (
+              <button
+                type="button"
+                onClick={onScoate}
+                disabled={ocupat}
+                className="h-8 rounded-md border border-rose/25 px-2 text-[13.5px] text-[#FFB0C0] hover:bg-rose/10 disabled:opacity-50"
+              >
+                Scoate
+                <span className="sr-only"> din coadă: {firma.nume}</span>
+              </button>
+            ) : null}
             {firma.telefon ? <CopiazaMic valoare={numarScurt(firma.telefon)} eticheta="Nr." descriere={`copiază numărul ${numarAfisat(firma.telefon)}, fără 0`} anunt="Numărul copiat, fără 0 în față." onCopiat={onCopiat} /> : null}
             {deCopiat ? (
               <CopiazaMic

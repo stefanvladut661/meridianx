@@ -11,6 +11,7 @@ import {
   citesteOptiuniDistributie,
   citesteProgramari,
   citesteProgramariViitoare,
+  citesteCanale,
   citesteSetari,
   maineBucuresti,
 } from "@/lib/prospectare/citire";
@@ -28,31 +29,34 @@ function firme(n: number): string {
 }
 
 /**
- * /admin/prospectare/whatsapp — ce e programat AZI pe WhatsApp, pe conturi
- * (migrarea 35): la 00:00 se programează singure cele mai vechi site-uri cu
- * mobil, egal pe conturile active (din 36, și cele cu email trimis într-o zi de
- * dinainte); restul vine din „Programează”. Jos, ce e
- * programat de mâine încolo. Garda de admin e în layout.
+ * /admin/prospectare/whatsapp — ce e programat AZI pe WhatsApp, pe conturi, plus
+ * restanțele (migrarea 39: nimic nu se programează singur; firmele vin din Firme,
+ * „Distribuie”, iar netrimisele rămân pe contul lor până pleacă sau sunt scoase
+ * din coadă). Jos, ce e programat de mâine încolo.
  */
 export default async function WhatsAppPage() {
   await requireAdmin();
   const { azi } = aziBucuresti();
   // Ciclul de azi întâi: dacă cronul de la 00:00 n-a rulat, îl pornește citirea asta.
   const ciclu = await asiguraCiclu();
-  const [programari, conturi, setari, optiuni, viitoare, utilizator] = await Promise.all([
-    citesteProgramari("whatsapp", [azi], ["programata", "folosita"]),
+  const [programari, conturi, setari, optiuni, viitoare, utilizator, canale] = await Promise.all([
+    // Azi și restanțele (netrimise din zilele dinainte: nu se mai eliberează la 00:00), cu datele robotului pentru mesaj.
+    citesteProgramari("whatsapp", [azi], ["programata", "folosita"], { restante: true, cuDateExtra: true }),
     citesteConturiWhatsapp(),
     citesteSetari(),
     citesteOptiuniDistributie(),
     citesteProgramariViitoare("whatsapp", maineBucuresti(azi)),
     utilizatorCurent(),
+    citesteCanale(),
   ]);
   const toateConturile = conturi.ok ? conturi.data : [];
+  const wa = canale.ok ? canale.data.find((c) => c.canal === "whatsapp") : undefined;
 
   return (
     <div className="space-y-4">
       <WhatsAppScreen
         azi={azi}
+        suspendat={wa && !wa.activ ? (wa.motiv ?? "") : null}
         programari={programari.ok ? programari.data : null}
         eroareProgramari={programari.ok ? null : programari.message}
         conturi={conturi.ok ? conturi.data : null}
@@ -62,11 +66,13 @@ export default async function WhatsAppPage() {
         eroareCiclu={ciclu.ok ? null : ciclu.message}
         programeaza={
           <ProgrameazaButon
+            key="programeaza"
             canal="whatsapp"
             azi={azi}
             optiuni={optiuni.ok ? optiuni.data : null}
             conturi={toateConturile}
             utilizator={utilizator}
+            suspendat={Boolean(wa && !wa.activ)}
             className="h-10 px-3.5 text-[14.5px] sm:h-8 sm:px-3 sm:text-[14px]"
           />
         }

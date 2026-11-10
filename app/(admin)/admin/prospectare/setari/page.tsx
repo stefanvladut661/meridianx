@@ -4,10 +4,11 @@ import { relativeRo } from "@/components/panou/ui/format";
 import { Card } from "@/components/panou/ui/primitives";
 import { PageHead } from "@/components/panou/prospectare/page-head";
 import { EroareCitire } from "@/components/panou/prospectare/prezentare-eroare";
+import { SetariCanale } from "@/components/panou/prospectare/setari-canale";
 import { SetariConturi } from "@/components/panou/prospectare/setari-conturi";
 import { SetariLimite } from "@/components/panou/prospectare/setari-limite";
 import { SetariSabloane } from "@/components/panou/prospectare/setari-sabloane";
-import { aziBucuresti, citesteCasute, citesteConturiWhatsapp, citesteSetari } from "@/lib/prospectare/citire";
+import { aziBucuresti, citesteCanale, citesteCasute, citesteConturiWhatsapp, citesteSetari } from "@/lib/prospectare/citire";
 import { COOKIE_UTILIZATOR, isUtilizator, UTILIZATORI } from "@/lib/prospectare/labels";
 import { requireAdmin } from "../../_components/require-admin";
 
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function SetariPage() {
   await requireAdmin();
   const { azi } = aziBucuresti();
-  const [setari, casute, conturi, jar] = await Promise.all([citesteSetari(), citesteCasute(azi), citesteConturiWhatsapp(), cookies()]);
+  const [setari, casute, conturi, canale, jar] = await Promise.all([citesteSetari(), citesteCasute(azi), citesteConturiWhatsapp(), citesteCanale(), cookies()]);
   const ales = jar.get(COOKIE_UTILIZATOR)?.value;
   // Previzualizarea scriptului de apel și a mesajului de după apel pune în {utilizator} numele ales în comutatorul de la Apeluri.
   const utilizator = UTILIZATORI[isUtilizator(ales) ? ales : "stefan"];
@@ -33,6 +34,8 @@ export default async function SetariPage() {
   return (
     <div className="space-y-4">
       <PageHead title="Setări" pill={pill} />
+
+      <SetariCanale canale={canale.ok ? canale.data : null} eroare={canale.ok ? null : canale.message} />
 
       <SetariConturi conturi={conturi.ok ? conturi.data : null} eroare={conturi.ok ? null : conturi.message} />
 

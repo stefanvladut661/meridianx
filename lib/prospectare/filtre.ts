@@ -15,10 +15,12 @@ export function filtreDinAdresa(params: Record<string, string | string[] | undef
   const canal = p("canal");
   const scor = p("scor");
   const ordine = p("ordine");
+  const alocat = p("alocat");
   return {
     q: p("q"),
     etapa: isEtapa(etapa) ? etapa : null,
-    canal: canal === "fara" ? "fara" : isCanal(canal) ? canal : null,
+    canal: canal === "fara" || canal === "doar_email" || canal === "doar_whatsapp" ? canal : isCanal(canal) ? canal : null,
+    alocat: alocat && /^[A-Za-z0-9._-]{1,40}$/.test(alocat) ? alocat : null,
     nisa: p("nisa"),
     oras: p("oras"),
     lot: p("lot"),

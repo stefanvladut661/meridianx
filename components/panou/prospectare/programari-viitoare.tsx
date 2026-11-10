@@ -101,7 +101,7 @@ export function ProgramariViitoare({
         open={confirm}
         onOpenChange={setConfirm}
         title={`Anulezi ${num(alese.size)} ${alese.size === 1 ? "programare" : "programări"}?`}
-        consequence="Firmele se întorc în rezervă; la 00:00 pot fi reprogramate automat, pe orice canal."
+        consequence="Firmele se întorc în rezervă; le distribui din nou din Firme, pe orice canal."
         confirmLabel="Anulează programările"
         onConfirm={anuleaza}
       />

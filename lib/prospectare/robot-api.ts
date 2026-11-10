@@ -46,8 +46,9 @@ export function ok(body: Record<string, unknown>): NextResponse {
   return NextResponse.json({ ok: true, ...body }, { headers: NO_STORE });
 }
 
-export function fail(status: number, cod: string, mesaj: string, extra?: Record<string, string>): NextResponse {
-  return NextResponse.json({ ok: false, eroare: { cod, mesaj } }, { status, headers: { ...NO_STORE, ...extra } });
+/** Un refuz: `extra` = antete (ex. Retry-After); `corp` = câmpuri în plus în răspuns (ex. cine ține lacătul). */
+export function fail(status: number, cod: string, mesaj: string, extra?: Record<string, string>, corp?: Record<string, unknown>): NextResponse {
+  return NextResponse.json({ ok: false, ...corp, eroare: { cod, mesaj } }, { status, headers: { ...NO_STORE, ...extra } });
 }
 
 /** Statusul HTTP → codul scurt pe care îl citește robotul. */
@@ -97,7 +98,7 @@ async function authenticate(token: string, sesiune: string): Promise<{ ok: true;
  */
 export function robotRoute<S extends z.ZodType>(
   schema: S,
-  handler: (robot: Robot, body: z.infer<S>) => Promise<{ ok: true; data: Record<string, unknown> } | { ok: false; message: string; status?: number }>
+  handler: (robot: Robot, body: z.infer<S>) => Promise<{ ok: true; data: Record<string, unknown> } | { ok: false; message: string; status?: number; corp?: Record<string, unknown> }>
 ) {
   return async function POST(request: NextRequest): Promise<NextResponse> {
     const token = bearerToken(request.headers.get("authorization"));
@@ -134,7 +135,7 @@ export function robotRoute<S extends z.ZodType>(
     const result = await handler(auth.robot, parsed.data);
     if (!result.ok) {
       const status = result.status ?? 500;
-      return fail(status, codFor(status), result.message);
+      return fail(status, codFor(status), result.message, undefined, result.corp);
     }
     return ok(result.data);
   };

@@ -445,7 +445,7 @@ async function rpc(name, params) {
   return data;
 }
 
-const total = { adaugate: 0, actualizate: 0, neschimbate: 0, etape_pastrate: 0, canale_noi: 0, respinse: 0, conflicte: [] };
+const total = { adaugate: 0, actualizate: 0, neschimbate: 0, etape_pastrate: 0, canale_noi: 0, respinse: 0, conflicte: [], nr_ocupat: [] };
 for (let i = 0; i < firme.length; i += LOT) {
   const r = await rpc("prospectare_upsert_firme", { p_firme: firme.slice(i, i + LOT), p_sursa: "import", p_autor: "import", p_proba: PROBA });
   total.adaugate += r.adaugate;
@@ -455,6 +455,8 @@ for (let i = 0; i < firme.length; i += LOT) {
   total.canale_noi += r.canale_noi ?? 0;
   total.respinse += r.respinse ?? 0;
   total.conflicte.push(...r.conflicte);
+  // Migrarea 39: firmele noi al căror număr era deja luat primesc un număr nou (nu se mai sar).
+  total.nr_ocupat.push(...(r.nr_ocupat ?? []));
   process.stdout.write(`\rFirme: ${Math.min(i + LOT, firme.length)}/${firme.length}`);
 }
 console.log("");
@@ -471,6 +473,10 @@ console.log(`Respinse la evaluare ${PROBA ? "care ar rămâne" : "rămase"} doar
 console.log(`Conflicte: ${total.conflicte.length}`);
 for (const c of total.conflicte.slice(0, 40)) console.log(`  #${c.nr ?? "?"} ${c.domeniu ?? ""}: ${c.motiv}`);
 if (total.conflicte.length > 40) console.log(`  … încă ${total.conflicte.length - 40}`);
+if (total.nr_ocupat.length) {
+  console.log(`Firme noi cu numărul altei firme (${PROBA ? "ar primi" : "au primit"} un număr nou; cel vechi în date_extra.nr_robot): ${total.nr_ocupat.length}`);
+  for (const c of total.nr_ocupat.slice(0, 20)) console.log(`  #${c.nr_cerut} ${c.domeniu}`);
+}
 if (!PROBA) console.log(`Activitate: ${act.noi} noi, ${act.existente} existente${act.fara_firma?.length ? `, ${act.fara_firma.length} fără firmă` : ""}`);
 console.log(`Căsuțe: ${cas.randuri} rânduri ${PROBA ? "(nescrise)" : "(valoarea mai mare se păstrează)"}`);
 console.log(PROBA ? "\nProbă terminată. Nimic scris. Rulează fără --proba ca să scrii." : "\nImport terminat.");

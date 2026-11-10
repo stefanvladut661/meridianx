@@ -11,6 +11,7 @@ import { httpsUrl, methodNotAllowed, robotRoute, UUID } from "@/lib/prospectare/
  *
  *   { "firma_id" | "domeniu" | "nr": …, "link_demo": "https://…", "captura_url": "https://drive…", "link_verificat": true, "detalii": {…} }
  *      → { "ok": true, "firma": { firma_id, nr, nr_site, etapa, link_demo, demo_verificat } }
+ *   Opțional, pe fiecare firmă: "telefon_mobil", "doar_whatsapp", "problema", "puncte" (listă de 2–3 rânduri).
  *   { "firme": [ { … ca mai sus … }, … ] }            (cel mult 100)
  *      → { "ok": true, "terminate": 2, "erori": 1, "firme": [ { index, firma_id, nr, nr_site, … } | { index, …, eroare: { cod, mesaj } } ] }
  *
@@ -35,6 +36,12 @@ const firma = z.object({
   captura_url: z.string().trim().max(1000).regex(/^https:\/\/\S+$/, "trebuie să fie o adresă https://").optional(),
   link_verificat: z.boolean().optional(),
   detalii,
+  // Ce copiază /termina în firmă (migrarea 39): mobilul (înlocuiește doar un fix), „doar WhatsApp”, problema
+  // site-ului vechi și cele 3 schimbări (pentru mesajul WhatsApp). Pot veni și în `detalii`.
+  telefon_mobil: z.string().trim().max(40).optional(),
+  doar_whatsapp: z.boolean().optional(),
+  problema: z.string().trim().max(500).optional(),
+  puncte: z.union([z.array(z.string().trim().max(300)).max(6), z.string().trim().max(2000)]).optional(),
 });
 
 // O firmă sau `{ firme: [...] }`: forma se alege după cheia `firme`, ca erorile să arate câmpul exact.

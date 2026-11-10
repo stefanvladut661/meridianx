@@ -26,6 +26,9 @@ const VARIABILE: { v: string; ce: string }[] = [
   { v: "{persoana_contact}", ce: "persoana de contact (lipsă: salut fără nume)" },
   { v: "{link_demo}", ce: "linkul site-ului demo" },
   { v: "{oras}", ce: "orașul firmei" },
+  { v: "{nume_titular}", ce: "titularul contului WhatsApp de pe care pleacă (Setări → Conturi)" },
+  { v: "{problema}", ce: "problema site-ului vechi (de la robot); lipsă: rândul dispare" },
+  { v: "{puncte}", ce: "cele 3 schimbări, pe rânduri cu „* ” (de la robot); lipsă: rândurile dispar" },
   { v: "{utilizator}", ce: "cine sună, din comutatorul de la Apeluri (gol în primul mesaj WhatsApp)" },
 ];
 const CUNOSCUTE = new Set(VARIABILE.map((x) => x.v));
@@ -40,7 +43,18 @@ const MIN = 10;
 const MAX = 2000;
 
 /** Firmă inventată, doar pentru previzualizare. */
-const EXEMPLU = { nume: "Tâmplăria Exemplu", persoana_contact: "Ana Popescu", link_demo: "https://demo-exemplu.meridianx.ro", oras: "Cluj-Napoca" };
+const EXEMPLU = {
+  nume: "Tâmplăria Exemplu",
+  persoana_contact: "Ana Popescu",
+  link_demo: "https://demo-exemplu.meridianx.ro",
+  oras: "Cluj-Napoca",
+  date_extra: {
+    problema: "numărul de telefon nu se poate apăsa de pe mobil",
+    puncte: ["clienții vă sună dintr-o atingere", "cererea de ofertă e pe prima pagină", "lucrările voastre se văd din prima"],
+  },
+};
+/** Aceeași firmă, fără datele robotului: varianta scurtă a mesajului WhatsApp. */
+const EXEMPLU_SCURT = { ...EXEMPLU, date_extra: {} };
 
 /** În lista de WhatsApp se trimite de pe un cont, nu în numele cuiva: acolo {utilizator} rămâne gol. */
 const faraUtilizator = (cheie: Cheie): boolean => cheie === "sablon_whatsapp_primul";
@@ -132,7 +146,7 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
                       });
                     }
                   }}
-                  rows={3}
+                  rows={faraUtilizator(s.cheie) ? 9 : 3}
                   maxLength={MAX + 200}
                   aria-invalid={eroare ? true : undefined}
                   aria-describedby={`${id}-h${eroare ? ` ${id}-e` : ""}`}
@@ -159,11 +173,21 @@ export function SetariSabloane({ sabloane, utilizator }: { sabloane: Pick<Setari
                     {gresite.length === 1 ? "Variabilă necunoscută" : "Variabile necunoscute"}: {gresite.join(", ")}. Rămân ca text în mesaj.
                   </p>
                 ) : null}
-                <div className="mt-2 rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] px-3 py-2.5">
-                  <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Exemplu · {EXEMPLU.nume}</p>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-relaxed text-foreground/85">
-                    {umpleSablon(valoare, EXEMPLU, faraUtilizator(s.cheie) ? "" : utilizator) || <span className="text-muted-foreground">Șablonul e gol.</span>}
-                  </p>
+                <div className={cn("mt-2 grid gap-2", faraUtilizator(s.cheie) && "lg:grid-cols-2")}>
+                  <div className="rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] px-3 py-2.5">
+                    <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Exemplu · {EXEMPLU.nume}</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-relaxed text-foreground/85">
+                      {umpleSablon(valoare, EXEMPLU, faraUtilizator(s.cheie) ? "" : utilizator, "Ștefan") || <span className="text-muted-foreground">Șablonul e gol.</span>}
+                    </p>
+                  </div>
+                  {faraUtilizator(s.cheie) ? (
+                    <div className="rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] px-3 py-2.5">
+                      <p className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">Varianta scurtă · fără problemă și puncte</p>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-[14px] leading-relaxed text-foreground/85">
+                        {umpleSablon(valoare, EXEMPLU_SCURT, "", "Ștefan") || <span className="text-muted-foreground">Șablonul e gol.</span>}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );

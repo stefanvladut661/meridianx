@@ -14,9 +14,12 @@ import { EroareCitire } from "@/components/panou/prospectare/prezentare-eroare";
 import { cate } from "@/components/panou/prospectare/prezentare-comun";
 import { ProgramariViitoare } from "@/components/panou/prospectare/programari-viitoare";
 import { ProgrameazaButon } from "@/components/panou/prospectare/programeaza";
+import { RestanteBanda } from "@/components/panou/prospectare/restante-banda";
 import {
   asiguraCiclu,
   aziBucuresti,
+  citesteCanale,
+  citesteRestante,
   citesteCasute,
   citesteCasutePeZile,
   citesteEmailuriTrimise,
@@ -49,7 +52,7 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
   const de = new Date(acum - ZILE * 24 * 60 * 60 * 1000).toISOString();
   // Ciclul de azi (00:00) înainte de programări: dacă cronul n-a rulat, îl pornește citirea asta.
   const ciclu = await asiguraCiclu();
-  const [casute, peZile, istoric, raspunsuri, programari, viitoare, optiuni, setari] = await Promise.all([
+  const [casute, peZile, istoric, raspunsuri, programari, viitoare, optiuni, setari, canale, restante] = await Promise.all([
     citesteCasute(azi),
     citesteCasutePeZile(azi),
     citesteIstoricCasute(azi, ZILE),
@@ -58,7 +61,11 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
     citesteProgramariViitoare("email", maine),
     citesteOptiuniDistributie(),
     citesteSetari(),
+    citesteCanale(),
+    citesteRestante("email", azi),
   ]);
+  const canalEmail = canale.ok ? canale.data.find((c) => c.canal === "email") : undefined;
+  const suspendat = canalEmail ? !canalEmail.activ : false;
 
   // Filtrul acceptă doar o căsuță cunoscută; altfel arată toate emailurile.
   const ceruta = typeof params.casuta === "string" ? params.casuta.trim().toLowerCase() : undefined;
@@ -75,12 +82,25 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
     <div className="space-y-4">
       <PageHead
         title="Email"
-        actions={<ProgrameazaButon canal="email" azi={azi} optiuni={optiuniProgramare} />}
+        actions={<ProgrameazaButon canal="email" azi={azi} optiuni={optiuniProgramare} suspendat={suspendat} />}
       />
+
+      {suspendat ? (
+        <InlineNote tone="rose" className="flex flex-wrap items-center justify-between gap-2">
+          <p className="min-w-0 flex-1">
+            Emailul e suspendat{canalEmail?.motiv ? ` (${canalEmail.motiv})` : ""}: robotul primește o listă goală. Firmele programate așteaptă.
+          </p>
+          <Link href="/admin/prospectare/setari#canale" className="rounded-sm text-[13.5px] underline underline-offset-2">
+            Setări
+          </Link>
+        </InlineNote>
+      ) : null}
+
+      {restante.ok ? <RestanteBanda key={restante.data.map((r) => r.id).join(",")} restante={restante.data} azi={azi} ce="pe email" /> : null}
 
       {!ciclu.ok ? (
         <InlineNote tone="rose">
-          Distribuția de azi nu a pornit: {ciclu.message} „Programate” poate fi incomplet; reîncarcă peste un minut.
+          Lista zilei nu s-a verificat: {ciclu.message} Reîncarcă peste un minut.
         </InlineNote>
       ) : null}
 
@@ -101,8 +121,8 @@ export default async function EmailPage({ searchParams }: { searchParams: Promis
           title="Programate azi și mâine, pe căsuțe"
           info={
             <>
-              Trimise = cerute azi de robot. Netrimisele se întorc în distribuție la 00:00. „Mâine”: doar manualele; restul se pun la 00:00, cele mai vechi site-uri
-              primele, până la limita căsuței{plafon === null ? null : <> (fără limită proprie: plafonul de încălzire, {num(plafon)} pe zi)</>}.
+              Trimise = cerute azi de robot. Nimic nu se mai programează singur: firmele vin din Firme („Selectează” → „Distribuie”). Netrimisele rămân
+              pe căsuța lor ca restanțe, până pleacă sau le scoți din coadă{plafon === null ? null : <>. Limita fără valoare proprie: plafonul de încălzire, {num(plafon)} pe zi</>}.
             </>
           }
           hint={

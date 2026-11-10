@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Building2, SearchX } from "lucide-react";
-import { citesteFirme, citesteFisa, citesteOptiuni, citesteRezumat } from "@/lib/prospectare/citire";
+import { aziBucuresti, citesteCanale, citesteCasute, citesteConturiWhatsapp, citesteFirme, citesteFisa, citesteOptiuni, citesteRezumat, citesteTerminale } from "@/lib/prospectare/citire";
 import { filtreDinAdresa } from "@/lib/prospectare/filtre";
 import { btnClass, Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
@@ -11,6 +11,7 @@ import { FirmeEroare, FirmeTabel } from "@/components/panou/prospectare/firme-ta
 import { FirmeFisa, type StareFisa } from "@/components/panou/prospectare/firme-fisa";
 import { FirmePaginare } from "@/components/panou/prospectare/firme-paginare";
 import { firmeCuNumar } from "@/components/panou/prospectare/firme-format";
+import { SelecteazaButon, SelectieProvider } from "@/components/panou/prospectare/firme-selectie";
 import { requireAdmin } from "../../_components/require-admin";
 
 export const metadata: Metadata = { title: "Firme — MERIDIAN Prospectare", robots: { index: false, follow: false } };
@@ -19,7 +20,7 @@ export const dynamic = "force-dynamic";
 const CALE = "/admin/prospectare/firme";
 const PE_PAGINA = 500;
 /** Cheile pe care le citește `filtreDinAdresa` (pagina și exportul CSV). */
-const CHEI = ["q", "etapa", "canal", "nisa", "oras", "lot", "scor", "ordine"] as const;
+const CHEI = ["q", "etapa", "canal", "alocat", "nisa", "oras", "lot", "scor", "ordine"] as const;
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -52,15 +53,23 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
   const firmaParam = unul(params.firma);
   const firmaId = firmaParam && firmaParam.length <= 64 ? firmaParam : null;
 
-  const [firme, rezumat, optiuni, fisa] = await Promise.all([
+  const { azi } = aziBucuresti();
+  const [firme, rezumat, optiuni, fisa, canale, conturi, casute, terminale] = await Promise.all([
     citesteFirme(filtre, pagina, PE_PAGINA),
     citesteRezumat(),
     citesteOptiuni(),
     firmaId ? citesteFisa(firmaId) : Promise.resolve(null),
+    // „Distribuie” și „Alocă pentru construcție” (migrarea 39).
+    citesteCanale(),
+    citesteConturiWhatsapp(),
+    citesteCasute(azi),
+    citesteTerminale(),
   ]);
   const acum = Date.now();
 
   const filtruQ = interogare(params);
+  // Selecția se golește când se schimbă filtrele (nu și la altă pagină sau altă ordine).
+  const filtruSelectie = interogare({ ...params, ordine: undefined });
   const areFiltre = CHEI.some((k) => k !== "ordine" && Boolean(unul(params[k])?.trim()));
   const ordineQ = interogare({ ordine: params.ordine });
   const total = firme.ok ? firme.data.total : null;
@@ -76,13 +85,33 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
 
       <FirmeFiltre
         optiuni={optiuni.ok ? { nise: optiuni.data.nise ?? [], orase: optiuni.data.orase ?? [], loturi: optiuni.data.loturi ?? [] } : null}
+        terminale={terminale.ok ? terminale.data : []}
         etape={rezumat.ok ? (rezumat.data.etape_vizibile ?? rezumat.data.etape ?? {}) : null}
         gasite={total}
       />
 
+      <SelectieProvider
+        total={total}
+        filtru={filtruSelectie}
+        date={{
+          azi,
+          canale: canale.ok ? canale.data : null,
+          conturi: conturi.ok ? conturi.data : [],
+          casute: casute.ok ? casute.data.map((c) => ({ adresa: c.adresa, activa: c.activa, limita: c.limita_azi })) : [],
+          terminale: terminale.ok ? terminale.data : [],
+        }}
+      >
       <Card padded={false} className="overflow-hidden">
         <div className="border-b border-border px-4 py-3">
-          <SectionTitle title={total === null ? "Firme" : firmeCuNumar(total)} action={<FirmeOrdine />} />
+          <SectionTitle
+            title={total === null ? "Firme" : firmeCuNumar(total)}
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                <SelecteazaButon />
+                <FirmeOrdine />
+              </div>
+            }
+          />
         </div>
 
         {!firme.ok ? (
@@ -127,6 +156,7 @@ export default async function FirmePage({ searchParams }: { searchParams: Promis
           />
         )}
       </Card>
+      </SelectieProvider>
 
       {firmaId && stareFisa ? <FirmeFisa key={firmaId} stare={stareFisa} inchideHref={cu(interogare(params, { pagina: pagina > 1 ? String(pagina) : null }))} acum={acum} /> : null}
     </div>

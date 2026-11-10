@@ -45,6 +45,7 @@ export function ProgrameazaButon({
   conturi = [],
   utilizator = "stefan",
   className,
+  suspendat = false,
 }: {
   canal: CanalProgramare;
   azi: string;
@@ -52,11 +53,19 @@ export function ProgrameazaButon({
   conturi?: ContWhatsapp[];
   utilizator?: Utilizator;
   className?: string;
+  /** Canalul e suspendat din Setări: nu se programează (migrarea 39). */
+  suspendat?: boolean;
 }) {
   const [deschis, setDeschis] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => setDeschis(true)} className={btnClass({ variant: "outline", size: "sm", className })}>
+      <button
+        type="button"
+        onClick={() => setDeschis(true)}
+        disabled={suspendat}
+        title={suspendat ? "Canalul e suspendat din Setări" : undefined}
+        className={btnClass({ variant: "outline", size: "sm", className })}
+      >
         <CalendarClock className="h-4 w-4" aria-hidden="true" />
         Programează
       </button>

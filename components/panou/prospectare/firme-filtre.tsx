@@ -9,6 +9,7 @@ import { num } from "@/components/panou/ui/format";
 import { useToast } from "@/components/panou/ui/toast";
 import { ETAPE, ETAPE_ORDINE } from "@/lib/prospectare/labels";
 import type { Optiune, Rezumat } from "@/lib/prospectare/citire";
+import type { Terminal } from "@/lib/prospectare/types";
 import { firmeCuNumar } from "./firme-format";
 
 /**
@@ -18,7 +19,7 @@ import { firmeCuNumar } from "./firme-format";
  * (useOptimistic), nu după răspunsul bazei.
  */
 
-const CHEI_FILTRE = ["q", "etapa", "canal", "nisa", "oras", "lot", "scor"] as const;
+const CHEI_FILTRE = ["q", "etapa", "canal", "alocat", "nisa", "oras", "lot", "scor"] as const;
 type Cheie = (typeof CHEI_FILTRE)[number] | "ordine";
 type Valori = Record<Cheie, string>;
 
@@ -42,6 +43,8 @@ const CANALE_OPTIUNI: Alegeri = [
   { value: "", label: "Toate canalele" },
   { value: "email", label: "au primit email" },
   { value: "whatsapp", label: "au primit WhatsApp" },
+  { value: "doar_email", label: "doar email" },
+  { value: "doar_whatsapp", label: "doar WhatsApp" },
   { value: "telefon", label: "pe telefon" },
   { value: "fara", label: "necontactate" },
 ];
@@ -60,6 +63,7 @@ function valoriDin(params: { get(key: string): string | null }): Valori {
     q: v("q"),
     etapa: v("etapa"),
     canal: v("canal"),
+    alocat: v("alocat"),
     nisa: v("nisa"),
     oras: v("oras"),
     lot: v("lot"),
@@ -110,9 +114,12 @@ function useFiltreAdresa() {
 
 export function FirmeFiltre({
   optiuni,
+  terminale = [],
   etape,
   gasite,
 }: {
+  /** Terminalele listelor de construcție (filtrul „Alocate lui”). */
+  terminale?: Terminal[];
   /** Nișele, orașele și loturile firmelor cu site, cu câte are fiecare; `null` dacă citirea a căzut. */
   optiuni: Optiuni | null;
   /** Câte firme are fiecare etapă (fără cele respinse la evaluare); `null` dacă rezumatul a căzut. */
@@ -199,7 +206,7 @@ export function FirmeFiltre({
         </Btn>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-7">
         <SoftSelect ariaLabel="Nișa" value={valori.nisa} onChange={(v) => aplica({ nisa: v })} options={cuCurenta([{ value: "", label: "Toate nișele" }, ...lista(optiuni?.nise)], valori.nisa)} />
         <SoftSelect ariaLabel="Orașul" value={valori.oras} onChange={(v) => aplica({ oras: v })} options={cuCurenta([{ value: "", label: "Toate orașele" }, ...lista(optiuni?.orase)], valori.oras)} />
         <SoftSelect ariaLabel="Scorul minim" value={valori.scor} onChange={(v) => aplica({ scor: v })} options={cuCurenta(SCORURI, valori.scor)} />
@@ -213,6 +220,12 @@ export function FirmeFiltre({
           )}
         />
         <SoftSelect ariaLabel="Canalele folosite" value={valori.canal} onChange={(v) => aplica({ canal: v })} options={cuCurenta(CANALE_OPTIUNI, valori.canal)} />
+        <SoftSelect
+          ariaLabel="Alocate lui (lista de construcție)"
+          value={valori.alocat}
+          onChange={(v) => aplica({ alocat: v })}
+          options={cuCurenta([{ value: "", label: "Alocate oricui" }, ...terminale.map((t) => ({ value: t.nume, label: `Alocate lui ${t.nume} · ${num(t.de_construit)}` }))], valori.alocat)}
+        />
         <SoftSelect ariaLabel="Lotul" value={valori.lot} onChange={(v) => aplica({ lot: v })} options={cuCurenta([{ value: "", label: "Toate loturile" }, ...lista(optiuni?.loturi)], valori.lot)} />
       </div>
     </Card>

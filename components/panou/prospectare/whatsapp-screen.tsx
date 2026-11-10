@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, ChevronDown, MessageCircle, Send } from "lucide-react";
-import { anuleazaWhatsapp, trimiteWhatsapp } from "@/app/(admin)/admin/prospectare/actions";
-import { InlineNote } from "@/components/panou/ui/actions";
-import { num } from "@/components/panou/ui/format";
+import { anuleazaWhatsapp, scoateDinCoada, trimiteWhatsapp } from "@/app/(admin)/admin/prospectare/actions";
+import { ConfirmDialog, InlineNote } from "@/components/panou/ui/actions";
+import { dayMonthRo, num } from "@/components/panou/ui/format";
+import { useToast } from "@/components/panou/ui/toast";
 import { btnClass, Card } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
 import { linkWhatsApp, umpleSablon } from "@/lib/prospectare/contact";
-import type { ContWhatsapp, FirmaRand, ProgramareCuFirma } from "@/lib/prospectare/types";
+import type { ContWhatsapp, ProgramareCuFirma } from "@/lib/prospectare/types";
 import { cn } from "@/lib/utils";
 import { PageHead } from "./page-head";
 import { EroareCitire } from "./prezentare-eroare";
@@ -38,7 +39,9 @@ type Locala =
 
 interface Rand {
   programare: number;
-  firma: FirmaRand;
+  firma: ProgramareCuFirma["firma"];
+  /** Ziua programării: înaintea zilei de azi = restanță (migrarea 39: nu se mai eliberează la 00:00). */
+  zi: string;
   /** Contul pe care e programată sau de pe care a plecat. */
   cont: number;
   trimisa: boolean;
@@ -68,6 +71,13 @@ const EXPIRA_MS = 20 * 1000;
 const CONEXIUNE = "Conexiunea a căzut; nu știm dacă firma s-a marcat. Lista se reîncarcă: dacă e tot de trimis, reîncearcă.";
 const BTN_SUS = "h-10 px-3.5 text-[14.5px] sm:h-8 sm:px-3 sm:text-[14px]";
 
+/** „de o zi”, „de 3 zile”, „de 20 de zile”. */
+function deZile(n: number): string {
+  if (n <= 1) return "de o zi";
+  const rest = n % 100;
+  return rest >= 20 || rest === 0 ? `de ${n} de zile` : `de ${n} zile`;
+}
+
 /** Mesajul unei erori, ca propoziție încheiată (ca textul care urmează să înceapă curat). */
 const fraza = (text: string): string => (/[.!?…]$/.test(text.trim()) ? text.trim() : `${text.trim()}.`);
 
@@ -86,7 +96,7 @@ function fara<K, V>(m: Map<K, V>, k: K): Map<K, V> {
 
 /** Rândul din listă, după ce știe ecranul în plus față de bază. */
 function randDin(p: ProgramareCuFirma, o: Locala | undefined): Rand {
-  const baza = { programare: p.id, firma: p.firma };
+  const baza = { programare: p.id, firma: p.firma, zi: p.zi };
   if (!o) {
     const trimisa = p.stare === "folosita";
     return { ...baza, cont: p.cont_whatsapp ?? 0, trimisa, la: trimisa ? p.firma.whatsapp_la : null, lucru: null };
@@ -199,7 +209,10 @@ export function WhatsAppScreen({
   eroareSetari,
   eroareCiclu,
   programeaza,
+  suspendat = null,
 }: {
+  /** WhatsApp-ul e suspendat din Setări: motivul ("" fără motiv); null = activ. */
+  suspendat?: string | null;
   azi: string;
   /** Programările de azi pe WhatsApp (programate și folosite); null: nu s-au citit. */
   programari: ProgramareCuFirma[] | null;
@@ -216,6 +229,10 @@ export function WhatsAppScreen({
   programeaza: ReactNode;
 }) {
   const router = useRouter();
+  const { notify } = useToast();
+  const [scot, setScot] = useState<number[] | null>(null);
+  // Programările scoase din coadă: dispar din listă imediat, fără să aștepte recitirea paginii.
+  const [scoase, setScoase] = useState<Set<number>>(() => new Set());
   const [filtru, setFiltru] = useState<Filtru>("toate");
   const [locale, setLocale] = useState<Map<string, Locala>>(() => new Map());
   // „trimise azi” întors de ultima acțiune pe cont, până la următoarea citire din bază.
@@ -259,7 +276,7 @@ export function WhatsAppScreen({
   const contor = (id: number): number => Math.max(0, (raportat.get(id) ?? trimiseServer.get(id) ?? 0) + (delta.get(id) ?? 0));
 
   // ---- rândurile ----------------------------------------------------------
-  const randuri = (programari ?? []).map((p) => randDin(p, locale.get(p.firma_id)));
+  const randuri = (programari ?? []).filter((p) => !scoase.has(p.id)).map((p) => randDin(p, locale.get(p.firma_id)));
   const inLista = new Set(randuri.map((r) => r.cont));
   const conturiAzi: ContAzi[] = [
     ...(conturi ?? []).filter((c) => c.activ || inLista.has(c.id)).map((c) => ({ id: c.id, nume: c.nume, limita: c.limita_zi, activ: c.activ })),
@@ -281,7 +298,19 @@ export function WhatsAppScreen({
   const deTrimisPe = (id: number) => toateDeTrimis.filter((r) => r.cont === id).length;
   const contInlocuitor = (r: Rand): number | null => (eActiv(r.cont) ? null : (inlocuiri.get(r.cont) ?? null));
   const inactiveCuFirme = conturiAzi.filter((c) => !c.activ && deTrimisPe(c.id) > 0);
-  const mesajPentru = (firma: FirmaRand): string => (sablon.trim() ? umpleSablon(sablon, firma, "") : "");
+  // Mesajul firmei: titularul contului de pe care pleacă, problema și punctele de la robot (date_extra).
+  const mesajPentru = (firma: Rand["firma"], cont: number): string => (sablon.trim() ? umpleSablon(sablon, firma, "", dupaId.get(cont)?.titular ?? "") : "");
+  const restante = toateDeTrimis.filter((r) => r.zi < azi);
+  const ceaMaiVeche = restante.reduce<string | null>((m, r) => (m === null || r.zi < m ? r.zi : m), null);
+  const zileRestanta = ceaMaiVeche ? Math.round((Date.parse(`${azi}T12:00:00Z`) - Date.parse(`${ceaMaiVeche}T12:00:00Z`)) / 86400000) : 0;
+  const faraTitular = (conturi ?? []).filter((c) => c.activ && !c.titular?.trim() && sablon.includes("{nume_titular}"));
+
+  const scoate = async (ids: number[]) => {
+    const r = await scoateDinCoada(ids).catch(() => ({ ok: false as const, message: "Conexiunea a căzut: nu știm dacă s-au scos. Lista se reîncarcă." }));
+    notify(r.message, r.ok ? undefined : "error");
+    if (r.ok) setScoase((v) => new Set([...v, ...ids]));
+    router.refresh();
+  };
 
   // ---- efecte ---------------------------------------------------------------
   // Citit după hidratare: serverul nu știe ce cont urmărește telefonul ăsta.
@@ -367,14 +396,14 @@ export function WhatsAppScreen({
     const { firma } = r;
     const telefon = firma.telefon;
     const inlocuitor = contInlocuitor(r);
-    if (!telefon || inCurs.current.has(firma.id) || (!eActiv(r.cont) && inlocuitor === null)) return;
+    if (suspendat !== null || !telefon || inCurs.current.has(firma.id) || (!eActiv(r.cont) && inlocuitor === null)) return;
     inCurs.current.add(firma.id);
 
     // Fereastra se deschide acum, cât suntem încă în clic; primește adresa după ce baza a marcat firma.
     const fereastra = window.open("", "_blank");
     if (fereastra) pregatesteFereastra(fereastra);
-    const mesaj = mesajPentru(firma);
     const contOptimist = inlocuitor ?? r.cont;
+    const mesaj = mesajPentru(firma, contOptimist);
 
     // Rândul pleacă din listă: focusul trece pe următoarea firmă care se poate trimite (sau pe „Trimise azi”).
     const i = deTrimis.findIndex((x) => x.firma.id === firma.id);
@@ -514,10 +543,45 @@ export function WhatsAppScreen({
 
   // ---- notele de sus ----------------------------------------------------------
   const note: ReactNode[] = [];
+  if (suspendat !== null) {
+    note.push(
+      <InlineNote key="suspendat" tone="rose" className="flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0 flex-1">WhatsApp-ul e suspendat{suspendat ? ` (${suspendat})` : ""}: nu se trimite nimic. Firmele programate așteaptă.</p>
+        <Link href={`${SETARI}#canale`} className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
+          Setări
+        </Link>
+      </InlineNote>
+    );
+  }
+  if (restante.length) {
+    note.push(
+      <div key="restante" role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-rose/40 bg-rose/[0.14] px-3.5 py-3 text-[14.5px] text-[#FFC2CE]">
+        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <p className="min-w-0 flex-1 font-medium">
+          {restante.length === 1 ? "O firmă programată și netrimisă" : `${num(restante.length)} firme programate și netrimise`} {deZile(zileRestanta)}
+        </p>
+        <button type="button" onClick={() => setScot(restante.map((r) => r.programare))} className={btnClass({ variant: "danger", size: "sm", className: BTN_SUS })}>
+          Scoate din coadă
+        </button>
+      </div>
+    );
+  }
   if (eroareCiclu) {
     note.push(
       <InlineNote key="ciclu" tone="apricot">
-        Programarea de la 00:00 nu s-a verificat: {fraza(eroareCiclu)} Lista poate fi incompletă; reîncarcă peste un minut.
+        Lista zilei nu s-a verificat: {fraza(eroareCiclu)} Reîncarcă peste un minut.
+      </InlineNote>
+    );
+  }
+  if (faraTitular.length) {
+    note.push(
+      <InlineNote key="titular" tone="apricot" className="flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0 flex-1">
+          {faraTitular.map((c) => `„${c.nume}”`).join(", ")} {faraTitular.length === 1 ? "n-are titular" : "n-au titular"}: în mesaj, {"{nume_titular}"} rămâne gol.
+        </p>
+        <Link href={SETARI_CONTURI} className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
+          Conturi
+        </Link>
       </InlineNote>
     );
   }
@@ -597,13 +661,16 @@ export function WhatsAppScreen({
       <EmptyState
         icon={MessageCircle}
         title="Nimic programat azi pe WhatsApp"
-        text={conturi !== null && active.length === 0 ? "Niciun cont activ: la 00:00 nu se programează nimic." : undefined}
         action={
           conturi !== null && active.length === 0 ? (
             <Link href={SETARI_CONTURI} className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
               Activează un cont
             </Link>
-          ) : undefined
+          ) : (
+            <Link href="/admin/prospectare/firme" className={btnClass({ variant: "outline", size: "sm", className: BTN_SUS })}>
+              Distribuie din Firme
+            </Link>
+          )
         }
         className="py-10"
       />
@@ -643,13 +710,17 @@ export function WhatsAppScreen({
             <WhatsAppRand
               key={r.programare}
               firma={r.firma}
-              mesaj={mesajPentru(r.firma)}
+              mesaj={mesajPentru(r.firma, contFolosit)}
+              restantaDin={r.zi < azi ? dayMonthRo(`${r.zi}T12:00:00Z`) : null}
+              onScoate={r.zi < azi ? () => setScot([r.programare]) : undefined}
               contNume={inlocuitor !== null ? `${numeCont(r.cont)} → ${numeCont(inlocuitor)}` : numeCont(r.cont)}
               limita={limita === undefined || trimisePeCont < limita ? null : trimisePeCont > limita ? "peste" : "la"}
               lucru={r.lucru === "anulare" ? "anulare" : null}
               eroare={erori.get(r.firma.id) ?? null}
               motivBlocare={
-                !r.firma.telefon
+                suspendat !== null
+                  ? "WhatsApp-ul e suspendat din Setări."
+                  : !r.firma.telefon
                   ? "Firma nu are telefon în fișă."
                   : blocatInactiv
                     ? `„${numeCont(r.cont)}” e dezactivat: alege contul mai sus.`
@@ -766,6 +837,20 @@ export function WhatsAppScreen({
       </p>
 
       <BaraTrimitere bara={bara} onAnuleaza={anuleaza} onDeschis={laDeschis} onInchide={inchideBara} />
+
+      <ConfirmDialog
+        open={scot !== null}
+        onOpenChange={(open) => {
+          if (!open) setScot(null);
+        }}
+        title={scot && scot.length > 1 ? `Scoți ${num(scot.length)} firme din coadă?` : "Scoți firma din coadă?"}
+        description="Nu mai sunt programate pe WhatsApp; le distribui din nou din Firme."
+        confirmLabel="Scoate din coadă"
+        tone="primary"
+        onConfirm={async () => {
+          if (scot) await scoate(scot);
+        }}
+      />
     </div>
   );
 }

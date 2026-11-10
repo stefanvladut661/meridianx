@@ -85,6 +85,10 @@ export interface Firma {
   /** De câte ori n-a răspuns la telefon (nu e contact; firma se întoarce în distribuție). */
   apel_incercari: number;
   nota: string | null;
+  /** Terminalul care construiește firma (lista de construcție, migrarea 39): ex. „stefan-1”. */
+  alocat_lui: string | null;
+  alocat_la: string | null;
+  alocat_de: string | null;
   date_extra: Record<string, unknown>;
   creat_la: string;
   actualizat_la: string;
@@ -193,8 +197,19 @@ export interface ContWhatsapp {
   limita_zi: number;
   activ: boolean;
   ordine: number;
+  /** Titularul contului ({nume_titular} în mesaj): Cont 1 = Ștefan, Cont 2 = Vlăduț, Cont 3 = Vlad. */
+  titular: string | null;
   actualizat_la: string;
   actualizat_de: string | null;
+}
+
+/** Un canal de contact, activ sau suspendat din Setări (migrarea 39). */
+export interface CanalStare {
+  canal: Canal;
+  activ: boolean;
+  motiv: string | null;
+  schimbat_la: string;
+  schimbat_de: string | null;
 }
 
 export const NISE_STATUS_IDS = ["libera", "rezervata", "in_cercetare", "terminata"] as const;
@@ -341,6 +356,9 @@ export interface CicluZi {
   anulate: number;
   suna_inapoi: number;
   rezerva: number;
+  /** Din migrarea 39: nimic automat; netrimisele de pe email și WhatsApp rămân ca restanțe. */
+  automat?: boolean;
+  restante?: { email: number; whatsapp: number };
 }
 
 export interface RezumatDistributie {
@@ -353,8 +371,58 @@ export interface RezumatDistributie {
   capacitate: { email: number; whatsapp: number; telefon: number; plafon_casuta: number };
   rezerva: { total: number; email: number; whatsapp: number; telefon: number };
   intoarse_la_00: { email: number; whatsapp: number; telefon: number };
+  /** Programările netrimise din zilele trecute (migrarea 39). */
+  restante?: { email: number; whatsapp: number; cea_mai_veche: string | null };
+  canale?: Partial<Record<Canal, { activ: boolean; motiv: string | null }>>;
 }
 
-/** O programare cu firma ei (paginile Email, WhatsApp, Apeluri). */
-export type ProgramareCuFirma = Programare & { firma: FirmaRand };
+/** O programare cu firma ei (paginile Email, WhatsApp, Apeluri). WhatsApp-ul aduce și `date_extra` (problema, punctele). */
+export type ProgramareCuFirma = Programare & { firma: FirmaRand & { date_extra?: Record<string, unknown> } };
+
+// ---------------------------------------------------------------------------
+// Distribuirea manuală și listele de construcție (migrarea 39)
+// ---------------------------------------------------------------------------
+
+export type OrdineDistribuire = "scor" | "recente";
+
+/** Rezumatul „Distribuie” (proba) sau rezultatul ei. */
+export interface RezultatDistribuire {
+  proba: boolean;
+  canal: CanalProgramare;
+  zi: string;
+  ordine: OrdineDistribuire;
+  selectate: number;
+  programate: number;
+  pe_conturi: { cheie: string; nume: string; n: number; deja: number; limita: number; peste_limita: boolean }[];
+  sarite: { id: string; nr: number; nr_site: number | null; nume: string; motiv: string }[];
+  firme: { id: string; nr: number; nr_site: number | null; nume: string; scor: number | null; cont: string; fixat: boolean }[];
+  avertismente: string[];
+}
+
+/** Rezumatul „Alocă pentru construcție” (proba) sau rezultatul ei. */
+export interface RezultatAlocare {
+  proba: boolean;
+  selectate: number;
+  alocate: number;
+  pe_terminale: { terminal: string; n: number; deja: number }[];
+  sarite: { id: string; nr: number; nume: string; motiv: string }[];
+  firme: { id: string; nr: number; nume: string; scor: number | null; terminal: string; din: string | null }[];
+}
+
+/** Un terminal (sesiune de robot sau listă de construcție), cu câte firme are încă de construit. */
+export interface Terminal {
+  nume: string;
+  /** Robotul (calculatorul) pe care a rulat ultima dată, dacă s-a raportat. */
+  robot: string | null;
+  ultima_activitate: string | null;
+  de_construit: number;
+}
+
+/** Lacătul de publicare: cine îl ține și de când (null = liber). */
+export interface LacatPublicare {
+  robot: string | null;
+  sesiune: string | null;
+  din: string | null;
+  batut_la: string | null;
+}
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Building2, Cpu, LayoutTemplate, LockOpen, Mail, MapPinned, MessageCircle, Phone, Users, type LucideIcon } from "lucide-react";
-import { dateTimeRo, num, relativeRo, timeRo } from "@/components/panou/ui/format";
+import { dateTimeRo, num, relativeRo } from "@/components/panou/ui/format";
 import { Info } from "@/components/panou/ui/info";
 import { btnClass, Card, SectionTitle } from "@/components/panou/ui/primitives";
 import { EmptyState } from "@/components/panou/ui/states";
@@ -178,7 +178,7 @@ function randuriDistributie(d: RezumatDistributie): RandDistributie[] {
       maine: d.programate_maine.email,
       maineDetaliu: "manuale",
       rezerva: d.rezerva.email,
-      intoarse: d.intoarse_la_00.email,
+      intoarse: d.restante?.email ?? 0,
     },
     {
       cheie: "whatsapp",
@@ -191,7 +191,7 @@ function randuriDistributie(d: RezumatDistributie): RandDistributie[] {
       maine: d.programate_maine.whatsapp,
       maineDetaliu: "manuale",
       rezerva: d.rezerva.whatsapp,
-      intoarse: d.intoarse_la_00.whatsapp,
+      intoarse: d.restante?.whatsapp ?? 0,
     },
     {
       cheie: "telefon",
@@ -204,41 +204,40 @@ function randuriDistributie(d: RezumatDistributie): RandDistributie[] {
       maine: d.programate_maine.telefon,
       maineDetaliu: "manuale",
       rezerva: d.rezerva.telefon,
-      intoarse: d.intoarse_la_00.telefon,
+      // Apelurile nesunate se întorc în rezervă la 00:00 (telefonul n-are restanțe).
+      intoarse: 0,
     },
   ];
 }
 
 /**
- * Distribuția de la 00:00, pe canale: emailul și WhatsApp-ul se programează singure (cât permit
- * căsuțele și conturile), apelurile doar prin import sau programare manuală. Tabel de la 768 în sus, carduri sub.
+ * Distribuția pe canale (migrarea 39): nimic nu se programează singur; firmele se distribuie din Firme.
+ * Netrimisele de pe email și WhatsApp rămân pe contul lor (restanțe). Tabel de la 768 în sus, carduri sub.
  */
 function Distributie({ d }: { d: RezumatDistributie }) {
   const randuri = randuriDistributie(d);
   const c = d.ciclu;
   const laZeroZero = [
-    c.mutate > 0 ? `${cate(c.mutate, "programare mutată", "programări mutate")} pe mâine (zi plină)` : null,
-    c.anulate > 0 ? `${cate(c.anulate, "programare anulată", "programări anulate")} (canal închis)` : null,
+    c.anulate > 0 ? `${cate(c.anulate, "apel anulat", "apeluri anulate")} (canal închis)` : null,
     c.suna_inapoi > 0 ? `${cate(c.suna_inapoi, "„Sună înapoi” trecut", "„Sună înapoi” trecute")} pe azi` : null,
   ].filter(Boolean);
+  const suspendate = (["email", "whatsapp", "telefon"] as const).filter((k) => d.canale?.[k]?.activ === false);
   return (
     <Card>
       <SectionTitle
         title="Distribuția pe canale"
         info={
           <>
-            La 00:00 se programează firmele cu site publicat, cele mai vechi primele: întâi email (căsuța domeniului din linkul demo), apoi WhatsApp, cât permit căsuțele
-            și conturile. Ziua se completează și peste zi. Apelurile intră doar prin import sau programare manuală.
-            <br />
-            „Mâine”: doar manualele. „Întoarse”: programate ieri, neplecate. Rezervele se suprapun.
+            Nimic nu se programează singur: firmele se distribuie din Firme („Selectează” → „Distribuie”). Ce e programat și netrimis rămâne pe contul lui, ca
+            restanță, până pleacă sau îl scoți din coadă. Rezervele se suprapun.
           </>
         }
-        hint={`${c.zi === d.azi ? `azi la ${timeRo(c.rulat_la)}` : `rulat ${dateTimeRo(c.rulat_la)}`} · ${cate(d.rezerva.total, "firmă", "firme")} în rezervă`}
+        hint={`${cate(d.rezerva.total, "firmă", "firme")} în rezervă${suspendate.length ? ` · suspendat: ${suspendate.map((k) => (k === "telefon" ? "apel" : k === "email" ? "email" : "WhatsApp")).join(", ")}` : ""}`}
       />
 
       <div className="mt-3 hidden overflow-x-auto md:block">
         <table className="w-full border-collapse text-left">
-          <caption className="sr-only">Programate azi și mâine, rezerva și ce s-a întors la 00:00, pe fiecare canal</caption>
+          <caption className="sr-only">Programate azi și mâine, rezerva și restanțele, pe fiecare canal</caption>
           <thead>
             <tr className="border-b border-border text-[12px] uppercase tracking-[0.12em] text-muted-foreground">
               <th scope="col" className="py-2 pr-3 font-medium">
@@ -254,7 +253,7 @@ function Distributie({ d }: { d: RezumatDistributie }) {
                 În rezervă
               </th>
               <th scope="col" className="py-2 font-medium">
-                Întoarse la 00:00
+                Restanțe
               </th>
             </tr>
           </thead>
@@ -279,7 +278,7 @@ function Distributie({ d }: { d: RezumatDistributie }) {
                   <p className="pu-num text-[19px] font-medium leading-none">{num(r.rezerva)}</p>
                 </td>
                 <td className="py-2.5">
-                  <p className="pu-num text-[19px] font-medium leading-none">{num(r.intoarse)}</p>
+                  <p className={`pu-num text-[19px] font-medium leading-none ${r.intoarse > 0 ? "text-rose" : ""}`}>{num(r.intoarse)}</p>
                 </td>
               </tr>
             ))}
@@ -299,7 +298,7 @@ function Distributie({ d }: { d: RezumatDistributie }) {
                 { label: "Azi", n: r.azi, detaliu: r.aziDetaliu },
                 { label: "Mâine", n: r.maine, detaliu: r.maineDetaliu },
                 { label: "În rezervă", n: r.rezerva, detaliu: null },
-                { label: "Întoarse la 00:00", n: r.intoarse, detaliu: null },
+                { label: "Restanțe", n: r.intoarse, detaliu: null },
               ].map((x) => (
                 <div key={x.label} className="min-w-0">
                   <dt className="text-[12px] uppercase tracking-[0.12em] text-muted-foreground">{x.label}</dt>

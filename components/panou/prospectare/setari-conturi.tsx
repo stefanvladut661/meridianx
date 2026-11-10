@@ -23,7 +23,7 @@ import { telefonCont } from "./whatsapp-card";
  * se dezactivează; nu se șterg, ca firmele trimise de pe ele să-și păstreze contul.
  */
 
-type Camp = "nume" | "telefon" | "limita";
+type Camp = "nume" | "telefon" | "limita" | "titular";
 type Erori = Partial<Record<Camp | "general", string>>;
 
 const LIMITA_IMPLICITA = 30;
@@ -36,6 +36,7 @@ function campDinMesaj(message: string): Camp | "general" {
   if (message.startsWith("Contul are nevoie") || message.startsWith("Numele")) return "nume";
   if (message.startsWith("Numărul contului")) return "telefon";
   if (message.startsWith("Limita")) return "limita";
+  if (message.startsWith("Titularul")) return "titular";
   return "general";
 }
 
@@ -82,6 +83,7 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
   const [nume, setNume] = useState(cont?.nume ?? `Cont ${urmatorul}`);
   const [telefon, setTelefon] = useState(cont?.telefon ?? "");
   const [limita, setLimita] = useState(String(cont?.limita_zi ?? LIMITA_IMPLICITA));
+  const [titular, setTitular] = useState(cont?.titular ?? "");
   const [erori, setErori] = useState<Erori>({});
 
   const curata = (camp: Camp) => {
@@ -100,6 +102,7 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
       if (dublura) e.telefon = `Numărul e deja pe „${dublura.nume}”.`;
     }
     if (!intreg(limita, 0, 1000)) e.limita = "Limita pe zi: între 0 și 1000.";
+    if (titular.trim().length > 60) e.titular = "Titularul: cel mult 60 de caractere.";
     const numeDublura = n ? toate.find((c) => c.id !== cont?.id && c.nume.trim().toLowerCase() === n.toLowerCase()) : undefined;
     if (!e.nume && numeDublura) e.nume = `Există deja un cont „${numeDublura.nume}”: alege alt nume.`;
     return e;
@@ -118,6 +121,7 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
         telefon: telefon.trim(),
         limita: Number(limita),
         activ: cont?.activ ?? true,
+        titular: titular.trim(),
       }).catch(() => ({ ok: false as const, message: "Conexiunea a căzut și nu știm dacă s-a salvat. Închide dialogul și verifică lista." }));
       if (!result.ok) {
         setErori({ [campDinMesaj(result.message)]: result.message });
@@ -169,6 +173,25 @@ function FormularCont({ cont, toate, onGata }: { cont: ContWhatsapp | null; toat
               aria-invalid={erori.telefon ? true : undefined}
               aria-describedby={descriere}
               className={inputClass(cn("pu-num mt-1.5", CAMP, erori.telefon && "border-rose/50"))}
+            />
+          )}
+        </CampCont>
+
+        <CampCont id={`${id}-titular`} label="Titular" hint="Numele din mesaj: „sunt {nume_titular} de la MeridianX”." eroare={erori.titular}>
+          {(descriere) => (
+            <input
+              id={`${id}-titular`}
+              value={titular}
+              onChange={(e) => {
+                setTitular(e.target.value);
+                curata("titular");
+              }}
+              placeholder="ex. Ștefan"
+              maxLength={80}
+              autoComplete="off"
+              aria-invalid={erori.titular ? true : undefined}
+              aria-describedby={descriere}
+              className={inputClass(cn("mt-1.5", CAMP, erori.titular && "border-rose/50"))}
             />
           )}
         </CampCont>
@@ -229,6 +252,7 @@ function RandCont({ cont, lucreaza, onEditeaza, onComuta }: { cont: ContWhatsapp
           )}
         </div>
         <p className="pu-num mt-0.5 text-[14px] text-muted-foreground sm:text-[13px]">
+          {cont.titular ? `${cont.titular} · ` : ""}
           {telefonCont(cont.telefon)} · {num(cont.limita_zi)} pe zi
         </p>
       </div>

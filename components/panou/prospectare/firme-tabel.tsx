@@ -11,6 +11,7 @@ import { ETAPE } from "@/lib/prospectare/labels";
 import type { FirmaRand } from "@/lib/prospectare/types";
 import { CanaleBadge, StageBadge } from "./stage-badge";
 import { linkWeb } from "./firme-format";
+import { CasutaFirma, CasutaTot, useSelectie } from "./firme-selectie";
 
 /**
  * Tabelul firmelor, ca în Excel (pe tema închisă a adminului): celule conturate, antet plin și fix
@@ -39,6 +40,9 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [deschid, setDeschid] = useState<string | null>(null);
+  const selectie = useSelectie();
+  const selectez = Boolean(selectie?.activ);
+  const coloane = selectez ? 12 : 11;
 
   const hrefFirma = (id: string) => {
     const next = new URLSearchParams(params.toString());
@@ -58,10 +62,11 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
     deschide(id);
   };
 
-  // Clicul pe linkul demo își face treaba lui, nu deschide fișa.
+  // Clicul pe linkul demo își face treaba lui, nu deschide fișa. În modul „Selectează”, rândul se bifează.
   const peRand = (event: MouseEvent<HTMLTableRowElement>, id: string) => {
-    if ((event.target as HTMLElement).closest("a, button")) return;
-    deschide(id);
+    if ((event.target as HTMLElement).closest("a, button, input")) return;
+    if (selectez) selectie?.comuta(id);
+    else deschide(id);
   };
 
   const seDeschide = (id: string) => pending && deschid === id;
@@ -75,7 +80,12 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
           <caption className="sr-only">Firmele din filtrele curente. Numele firmei deschide fișa cu detalii și cronologie.</caption>
           <thead>
             <tr>
-              <th scope="col" className={cn(TH, "w-[76px] border-l text-center")}>
+              {selectez ? (
+                <th scope="col" className={cn(TH, "w-[44px] border-l text-center")}>
+                  <CasutaTot className="flex justify-center" />
+                </th>
+              ) : null}
+              <th scope="col" className={cn(TH, "w-[76px] text-center", !selectez && "border-l")}>
                 Nr site
               </th>
               <th scope="col" className={cn(TH, "text-left")}>
@@ -119,7 +129,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                 <Fragment key={f.id}>
                   {grupaNoua ? (
                     <tr>
-                      <th scope="colgroup" colSpan={11} className="border-b border-l border-r border-white/[0.12] bg-[#1A1C26] px-3 py-1.5 text-left text-[12.5px] font-semibold text-lav">
+                      <th scope="colgroup" colSpan={coloane} className="border-b border-l border-r border-white/[0.12] bg-[#1A1C26] px-3 py-1.5 text-left text-[12.5px] font-semibold text-lav">
                         {GRUPE[f.grupa_tabel]}
                       </th>
                     </tr>
@@ -127,9 +137,18 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                   <tr
                     onClick={(event) => peRand(event, f.id)}
                     aria-busy={seDeschide(f.id) || undefined}
-                    className={cn("cursor-pointer transition-colors hover:bg-lav/[0.09]", activ ? "bg-lav/[0.13]" : i % 2 === 0 ? "bg-white/[0.012]" : "bg-white/[0.045]")}
+                    aria-selected={selectez ? selectie?.alese.has(f.id) : undefined}
+                    className={cn(
+                      "cursor-pointer transition-colors hover:bg-lav/[0.09]",
+                      activ || (selectez && selectie?.alese.has(f.id)) ? "bg-lav/[0.13]" : i % 2 === 0 ? "bg-white/[0.012]" : "bg-white/[0.045]"
+                    )}
                   >
-                    <td className={cn(TD, "border-l text-center")}>
+                    {selectez ? (
+                      <td className={cn(TD, "border-l text-center")}>
+                        <CasutaFirma id={f.id} nume={f.nume} />
+                      </td>
+                    ) : null}
+                    <td className={cn(TD, "text-center", !selectez && "border-l")}>
                       {f.nr_site === null ? (
                         <span className="text-muted-foreground" title="Site nepublicat">
                           —
@@ -161,6 +180,14 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                         </span>
                         <span aria-hidden="true"> · </span>
                         <span className="font-mono">{f.domeniu}</span>
+                        {f.alocat_lui ? (
+                          <>
+                            <span aria-hidden="true"> · </span>
+                            <span className="font-mono text-lav" title="Lista de construcție">
+                              {f.alocat_lui}
+                            </span>
+                          </>
+                        ) : null}
                       </p>
                     </td>
                     <td className={cn(TD, "max-w-[150px] truncate")}>{f.nisa ?? <span className="text-muted-foreground">—</span>}</td>
@@ -205,13 +232,15 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
         </table>
       </div>
 
+      {selectez ? <CasutaTot cuText className="px-4 pt-3 lg:hidden" /> : null}
       <ul className="space-y-2 p-3 lg:hidden">
         {firme.map((f) => {
           const activ = selectatId === f.id;
           const loc = [f.nisa, f.oras, f.scor === null ? null : `scor ${num(f.scor)}`].filter(Boolean).join(" · ");
           const contact = [f.telefon, f.email].filter((c): c is string => Boolean(c));
           return (
-            <li key={f.id}>
+            <li key={f.id} className={selectez ? "flex items-start gap-2.5" : undefined}>
+              {selectez ? <CasutaFirma id={f.id} nume={f.nume} className="mt-4 h-5 w-5" /> : null}
               <Link
                 href={hrefFirma(f.id)}
                 prefetch={false}
@@ -219,7 +248,7 @@ export function FirmeTabel({ firme, acum, selectatId, grupe = false }: { firme: 
                 onClick={(event) => peLink(event, f.id)}
                 aria-current={activ ? "true" : undefined}
                 aria-busy={seDeschide(f.id) || undefined}
-                className={cn("block w-full rounded-xl border border-l-2 border-border p-3 text-left transition-colors hover:bg-white/[0.04]", etapaMeta(f).bara, activ && "bg-white/[0.05]")}
+                className={cn("block w-full min-w-0 rounded-xl border border-l-2 border-border p-3 text-left transition-colors hover:bg-white/[0.04]", etapaMeta(f).bara, activ && "bg-white/[0.05]")}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">

@@ -2,6 +2,7 @@ import { db, failure, NO_DB, type Result } from "./db";
 import type {
   Activitate,
   Canal,
+  CanalStare,
   CanalProgramare,
   Casuta,
   CicluZi,
@@ -9,7 +10,9 @@ import type {
   Dispozitiv,
   EmailTrimis,
   FirmaInLucru,
+  LacatPublicare,
   SesiuneRobot,
+  Terminal,
   Etapa,
   Firma,
   FirmaProgramabila,
@@ -35,7 +38,7 @@ import type {
  */
 
 export const COLOANE_FIRMA =
-  "id, nr, nr_site, grupa_tabel, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, canal_permis, canal_permis_motiv, canal_permis_la, canal_permis_de, evaluare, evaluare_motiv, evaluat_la, evaluat_de, nisa_id, link_demo, captura_url, lot, slug, de_refacut, site_gata_la, construit_de, demo_verificat, telefon_gresit, apel_incercari, nota, creat_la, actualizat_la";
+  "id, nr, nr_site, grupa_tabel, nume, domeniu, site_vechi, nisa, oras, judet, scor, telefon, este_mobil, email, persoana_contact, etapa, email_la, whatsapp_la, whatsapp_cont, telefon_la, canal_permis, canal_permis_motiv, canal_permis_la, canal_permis_de, evaluare, evaluare_motiv, evaluat_la, evaluat_de, nisa_id, link_demo, captura_url, lot, slug, de_refacut, site_gata_la, construit_de, demo_verificat, telefon_gresit, apel_incercari, nota, alocat_lui, alocat_la, alocat_de, creat_la, actualizat_la";
 
 const MIN_FIRMA = "id, nr, nume, domeniu, etapa, persoana_contact, oras";
 
@@ -128,7 +131,10 @@ export async function citesteOptiuni(): Promise<Result<Optiuni>> {
 export interface FiltreFirme {
   q?: string | null;
   etapa?: Etapa | null;
-  canal?: Canal | "fara" | null;
+  /** Canalul folosit: „a primit X”, „doar X” (niciun alt canal) sau „fara” (necontactate). */
+  canal?: Canal | "fara" | "doar_email" | "doar_whatsapp" | null;
+  /** Lista de construcție: terminalul căruia i-a fost alocată firma (migrarea 39). */
+  alocat?: string | null;
   nisa?: string | null;
   oras?: string | null;
   lot?: string | null;
@@ -160,10 +166,14 @@ function aplicaFiltre<Q>(query: Q, f: FiltreFirme): Q {
   // Firmele respinse la evaluare (doar evidența minimă) nu apar niciodată. Cele fără site apar doar
   // prin căutare sau filtrul de etapă: tabelul principal are doar firmele cu site (migrarea 37).
   q = q.gt("grupa_tabel", 0);
-  if (!f.etapa && !(f.q ?? "").trim()) q = q.in("grupa_tabel", [1, 2]);
+  // Listele de construcție au mai ales firme fără site: filtrul „Alocate lui” le arată și pe ele.
+  if (!f.etapa && !(f.q ?? "").trim() && !f.alocat) q = q.in("grupa_tabel", [1, 2]);
   if (f.etapa) q = q.eq("etapa", f.etapa);
-  // Canalul folosit: o firmă poate avea email și WhatsApp, deci filtrul e „a primit X”.
+  if (f.alocat) q = q.eq("alocat_lui", f.alocat);
+  // Canalul folosit: o firmă poate avea email și WhatsApp, deci filtrul e „a primit X” sau „doar X”.
   if (f.canal === "fara") q = q.is("email_la", null).is("whatsapp_la", null).is("telefon_la", null);
+  else if (f.canal === "doar_email") q = q.not("email_la", "is", null).is("whatsapp_la", null).is("telefon_la", null);
+  else if (f.canal === "doar_whatsapp") q = q.not("whatsapp_la", "is", null).is("email_la", null).is("telefon_la", null);
   else if (f.canal) q = q.not(`${f.canal}_la`, "is", null);
   if (f.nisa) q = q.eq("nisa", f.nisa);
   if (f.oras) q = q.eq("oras", f.oras);
@@ -215,6 +225,25 @@ export async function citesteFirmeExport(f: FiltreFirme): Promise<Result<FirmaRa
   return toate<FirmaRand>((from, to) =>
     ordoneaza(aplicaFiltre(client.from("prospectare_firme").select(COLOANE_FIRMA), f), f.ordine).order("id", { ascending: true }).range(from, to) as unknown as PromiseLike<{ data: FirmaRand[] | null; error: { code?: string; message?: string } | null }>
   );
+}
+
+/**
+ * „Selectează tot (din filtrul curent)”: id-urile tuturor firmelor din filtre, pe toate paginile, în ordinea
+ * tabelului (cel mult `max`).
+ */
+export async function citesteIdsFirme(f: FiltreFirme, max = 5000): Promise<Result<string[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const r = await toate<{ id: string }>(
+    (from, to) =>
+      ordoneaza(aplicaFiltre(client.from("prospectare_firme").select("id"), f), f.ordine).order("id", { ascending: true }).range(from, to) as unknown as PromiseLike<{
+        data: { id: string }[] | null;
+        error: { code?: string; message?: string } | null;
+      }>,
+    max
+  );
+  if (!r.ok) return r;
+  return { ok: true, data: r.data.slice(0, max).map((x) => x.id) };
 }
 
 export interface FisaFirma {
@@ -693,11 +722,75 @@ export async function citesteConturiWhatsapp(): Promise<Result<ContWhatsapp[]>> 
   if (!client) return { ok: false, message: NO_DB };
   const { data, error } = await client
     .from("prospectare_conturi_whatsapp")
-    .select("id, nume, telefon, limita_zi, activ, ordine, actualizat_la, actualizat_de")
+    .select("id, nume, telefon, limita_zi, activ, ordine, titular, actualizat_la, actualizat_de")
     .order("ordine", { ascending: true })
     .order("id", { ascending: true });
   if (error) return failure(error);
   return { ok: true, data: (data ?? []) as ContWhatsapp[] };
+}
+
+const CANALE_ORDINE: Canal[] = ["whatsapp", "email", "telefon"];
+
+/** Canalele (Setări): active sau suspendate, cu motivul. Un canal fără rând e activ. */
+export async function citesteCanale(): Promise<Result<CanalStare[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client.from("prospectare_canale").select("canal, activ, motiv, schimbat_la, schimbat_de");
+  if (error) return failure(error);
+  const pe = new Map(((data ?? []) as CanalStare[]).map((c) => [c.canal, c]));
+  return {
+    ok: true,
+    data: CANALE_ORDINE.map((canal) => pe.get(canal) ?? { canal, activ: true, motiv: null, schimbat_la: new Date(0).toISOString(), schimbat_de: null }),
+  };
+}
+
+/**
+ * Terminalele pentru „Alocă pentru construcție”: sesiunile care s-au raportat vreodată (migrarea 38) și numele
+ * folosite deja în liste, fiecare cu câte firme are încă de construit.
+ */
+export async function citesteTerminale(): Promise<Result<Terminal[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const [ses, alocate] = await Promise.all([
+    client.from("prospectare_sesiuni").select("sesiune, ultima_activitate, robot:prospectare_dispozitive(nume)").order("ultima_activitate", { ascending: false }).limit(500),
+    toate<{ alocat_lui: string; etapa: Etapa; link_demo: string | null; demo_verificat: boolean; evaluare: string | null }>((from, to) =>
+      client
+        .from("prospectare_firme")
+        .select("alocat_lui, etapa, link_demo, demo_verificat, evaluare")
+        .not("alocat_lui", "is", null)
+        .order("id", { ascending: true })
+        .range(from, to) as unknown as PromiseLike<{
+        data: { alocat_lui: string; etapa: Etapa; link_demo: string | null; demo_verificat: boolean; evaluare: string | null }[] | null;
+        error: { code?: string; message?: string } | null;
+      }>
+    ),
+  ]);
+  if (ses.error) return failure(ses.error);
+  if (!alocate.ok) return alocate;
+  const pe = new Map<string, Terminal>();
+  for (const s of (ses.data ?? []) as unknown as { sesiune: string; ultima_activitate: string; robot: { nume: string } | { nume: string }[] | null }[]) {
+    if (pe.has(s.sesiune)) continue;
+    const robot = Array.isArray(s.robot) ? s.robot[0] : s.robot;
+    pe.set(s.sesiune, { nume: s.sesiune, robot: robot?.nume ?? null, ultima_activitate: s.ultima_activitate, de_construit: 0 });
+  }
+  for (const f of alocate.data) {
+    const t = pe.get(f.alocat_lui) ?? pe.set(f.alocat_lui, { nume: f.alocat_lui, robot: null, ultima_activitate: null, de_construit: 0 }).get(f.alocat_lui)!;
+    const deConstruit = (f.etapa === "cercetat" || f.etapa === "site_in_lucru") && !(f.link_demo && f.demo_verificat) && f.evaluare !== "respinsa";
+    if (deConstruit) t.de_construit += 1;
+  }
+  return { ok: true, data: [...pe.values()].sort((a, b) => a.nume.localeCompare(b.nume, "ro", { numeric: true })) };
+}
+
+/** Lacătul de publicare (migrarea 39): cine îl ține acum. `null` = liber (sau expirat). */
+export async function citesteLacatPublicare(): Promise<Result<LacatPublicare | null>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client.from("prospectare_lacate").select("sesiune, luat_la, batut_la, robot:prospectare_dispozitive(nume)").eq("cheie", "publicare").maybeSingle();
+  if (error) return failure(error);
+  const l = data as { sesiune: string | null; luat_la: string | null; batut_la: string | null; robot: { nume: string } | { nume: string }[] | null } | null;
+  if (!l?.batut_la || Date.now() - Date.parse(l.batut_la) > 30 * 60 * 1000) return { ok: true, data: null };
+  const robot = Array.isArray(l.robot) ? l.robot[0] : l.robot;
+  return { ok: true, data: { robot: robot?.nume ?? null, sesiune: l.sesiune, din: l.luat_la, batut_la: l.batut_la } };
 }
 
 /** Tabla comună de nișe: rezervate întâi, apoi libere, apoi terminate. */
@@ -777,21 +870,34 @@ export async function citesteProgramabile(canal: CanalProgramare, filtre: Filtre
   return { ok: true, data: data as { total: number; firme: FirmaProgramabila[] } };
 }
 
-/** Programările unui canal în zilele date (cu firma), în ordinea în care pleacă: de la cel mai mic număr de site. */
-export async function citesteProgramari(canal: CanalProgramare, zile: string[], stari: StareProgramare[] = ["programata", "folosita"]): Promise<Result<ProgramareCuFirma[]>> {
+/**
+ * Programările unui canal în zilele date (cu firma), în ordinea în care pleacă: de la cel mai mic număr de site.
+ * `restante`: și cele netrimise din zilele dinaintea primei zile cerute (migrarea 39: nu se mai eliberează la 00:00).
+ * `cuDateExtra`: firma vine cu `date_extra` (mesajul WhatsApp: problema și punctele).
+ */
+export async function citesteProgramari(
+  canal: CanalProgramare,
+  zile: string[],
+  stari: StareProgramare[] = ["programata", "folosita"],
+  optiuni: { restante?: boolean; cuDateExtra?: boolean } = {}
+): Promise<Result<ProgramareCuFirma[]>> {
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
-  const r = await toate<ProgramareCuFirma>((from, to) =>
-    client
-      .from("prospectare_programari")
-      .select(`id, firma_id, canal, zi, sursa, casuta, cont_whatsapp, utilizator, stare, zi_ceruta, creat_la, creat_de, inchis_la, motiv, firma:prospectare_firme(${COLOANE_FIRMA})`)
-      .eq("canal", canal)
-      .in("zi", zile)
-      .in("stare", stari)
-      .order("zi", { ascending: true })
-      .order("id", { ascending: true })
-      .range(from, to) as unknown as PromiseLike<{ data: ProgramareCuFirma[] | null; error: { code?: string; message?: string } | null }>
-  );
+  const coloane = `id, firma_id, canal, zi, sursa, casuta, cont_whatsapp, utilizator, stare, zi_ceruta, creat_la, creat_de, inchis_la, motiv, firma:prospectare_firme(${COLOANE_FIRMA}${optiuni.cuDateExtra ? ", date_extra" : ""})`;
+  const prima = [...zile].sort()[0];
+  const r = await toate<ProgramareCuFirma>((from, to) => {
+    const q = client.from("prospectare_programari").select(coloane).eq("canal", canal);
+    // Restanțele: netrimise din zilele dinainte, plus cele trimise azi (contorul și „Trimise azi”).
+    const filtrat = optiuni.restante && prima
+      ? q.or(
+          `and(zi.in.(${zile.join(",")}),stare.in.(${stari.join(",")})),and(zi.lt.${prima},stare.eq.programata),and(zi.lt.${prima},stare.eq.folosita,inchis_la.gte.${inceputAziBucuresti()})`
+        )
+      : q.in("zi", zile).in("stare", stari);
+    return filtrat.order("zi", { ascending: true }).order("id", { ascending: true }).range(from, to) as unknown as PromiseLike<{
+      data: ProgramareCuFirma[] | null;
+      error: { code?: string; message?: string } | null;
+    }>;
+  });
   if (!r.ok) return r;
   const out: ProgramareCuFirma[] = [];
   for (const p of r.data) {
@@ -802,6 +908,15 @@ export async function citesteProgramari(canal: CanalProgramare, zile: string[], 
   const nrSite = (p: ProgramareCuFirma) => p.firma.nr_site ?? Number.MAX_SAFE_INTEGER;
   out.sort((a, b) => a.zi.localeCompare(b.zi) || nrSite(a) - nrSite(b) || a.id - b.id);
   return { ok: true, data: out };
+}
+
+/** Restanțele unui canal (migrarea 39): programate în zilele dinaintea zilei `azi` și netrimise. Doar id-ul și ziua. */
+export async function citesteRestante(canal: CanalProgramare, azi: string): Promise<Result<{ id: number; zi: string }[]>> {
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client.from("prospectare_programari").select("id, zi").eq("canal", canal).eq("stare", "programata").lt("zi", azi).order("zi").limit(1000);
+  if (error) return failure(error);
+  return { ok: true, data: (data ?? []) as { id: number; zi: string }[] };
 }
 
 /** Programările viitoare (de mâine încolo) ale unui canal: se pot anula până în ziua lor. */
