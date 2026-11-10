@@ -137,6 +137,12 @@ function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number
             <span title={d.ultima_activitate ? dateTimeRo(d.ultima_activitate) : undefined}>{d.ultima_activitate ? relativeRo(d.ultima_activitate, acum) : "niciodată activ"}</span>
             <span aria-hidden="true">·</span>
             <span>{cate(d.site_uri_azi, "site azi", "site-uri azi")}</span>
+            {d.sesiuni.length > 1 || d.sesiuni.some((s) => s.sesiune !== "1") ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{cate(d.sesiuni.filter((s) => acum - Date.parse(s.ultima_activitate) <= 30 * 60 * 1000).length, "sesiune activă", "sesiuni active")}</span>
+              </>
+            ) : null}
           </p>
         </li>
       ))}

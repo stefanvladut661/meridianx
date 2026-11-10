@@ -50,7 +50,7 @@ export const POST = robotRoute(schema, async (robot, body) => {
       p_limita: body.limita_azi ?? null,
     });
     if (!result.ok) return result;
-    await rpc("prospectare_robot_ce_face", { p_dispozitiv: robot.id, p_tip: "trimitere", p_detaliu: `emailuri din ${body.casuta}` });
+    await rpc("prospectare_robot_ce_face", { p_dispozitiv: robot.id, p_tip: "trimitere", p_detaliu: `emailuri din ${body.casuta}`, p_sesiune: robot.sesiune });
     return { ok: true, data: result.data };
   }
 

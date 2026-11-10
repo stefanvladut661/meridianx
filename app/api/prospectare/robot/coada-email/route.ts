@@ -20,6 +20,7 @@ const schema = z.object({
 export const POST = robotRoute(schema, async (robot, body) => {
   const result = await rpc<{ zi: string; firme: unknown[]; casute: unknown[] }>("prospectare_coada_email", {
     p_dispozitiv: robot.id,
+    p_sesiune: robot.sesiune,
     p_casuta: body.casuta ?? null,
   });
   if (!result.ok) return result;

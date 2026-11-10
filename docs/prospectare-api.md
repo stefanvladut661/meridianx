@@ -1,6 +1,6 @@
 # API-ul Prospectare pentru roboți
 
-Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–37. Regulile (email și WhatsApp câte o dată pe firmă, telefonul separat, „Nu contacta”, o nișă și o firmă la un singur robot, distribuția pe canale) stau în bază, nu în robot.
+Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–38. Regulile (email și WhatsApp câte o dată pe firmă, telefonul separat, „Nu contacta”, o nișă și o firmă la un singur robot, distribuția pe canale) stau în bază, nu în robot.
 
 **Fluxul unui robot:** (1) rezervă o nișă (`/nisa`), (2) înainte să cercetezi un domeniu, întreabă dacă e deja evaluat (`/evaluare` → `verifica`), (3) notează fiecare firmă evaluată, și pe cele respinse (`/evaluare` → `noteaza`), (4) trimite progresul și, la final, termină nișa (`/nisa`), (5) ia din coada comună o firmă de construit (`/rezerva`), semn de viață (`/heartbeat`), publici și o marchezi imediat (`/termina`), (6) emailul: iei lista zilei din `/coada-email` și, pentru fiecare firmă, ceri canalul (`/eveniment` → `email_de_trimis`) înainte să trimiți.
 
@@ -21,7 +21,22 @@ Content-Type: application/json
 
 Tokenul se creează în admin → Prospectare → Roboți → „Adaugă robot”. Se arată **o singură dată**; în bază rămâne doar hash-ul lui. Pe calculatorul robotului îl ții într-o variabilă de mediu (de exemplu `MERIDIAN_ROBOT_TOKEN`), nu într-un fișier din repo. Un robot dezactivat din admin primește 401 la următoarea cerere.
 
-**Limita de cereri:** 120 pe minut pe robot (Setări → „Cereri pe minut”). Peste ea: 429 cu `Retry-After: 60`.
+**Un calculator = un robot = un token.** Pe același calculator pot rula mai multe sesiuni (terminale) în paralel, **cu același token**; nu se fac tokenuri noi pentru fiecare terminal.
+
+**Limita de cereri:** 120 pe minut pe robot (Setări → „Cereri pe minut”), pentru toate sesiunile lui la un loc. Peste ea: 429 cu `Retry-After: 60`. Cu mai multe sesiuni pe același calculator, crește limita din Setări dacă e nevoie.
+
+## Sesiunile (migrarea 38)
+
+Fiecare cerere poate avea în corpul JSON câmpul **`sesiune`**: numele terminalului, `"1"`, `"2"`, `"3"`… (text sau număr; litere, cifre, punct, liniuță; cel mult 40). **Fără câmp, cererea e a sesiunii `"1"`**: robotul vechi merge ca înainte. O sesiune invalidă (ex. `"a b"`) primește 422.
+
+```json
+{ "sesiune": "2", "tip_lucru": "construire" }
+```
+
+- **Firmele de construit** (`/rezerva`, `/heartbeat`) se țin pe robot + sesiune: fiecare sesiune are firma ei în lucru și și-o reia după o repornire; `/heartbeat` merge doar din sesiunea care are firma (din alta: 409). Două sesiuni nu primesc niciodată aceeași firmă, iar cererile simultane ale aceleiași sesiuni primesc aceeași firmă (una singură în lucru).
+- **Nișele** (`/nisa`, `/evaluare` cu `nisa_id`) se țin tot pe robot + sesiune: nișa unei sesiuni nu o poate lua altă sesiune a aceluiași robot (409, ca între roboți), cât timp dă semn de viață.
+- **`/termina`** notează sesiunea care a publicat; **`/coada-email`** și **`/eveniment`** notează ce face sesiunea.
+- În admin → Roboți, fiecare calculator e **un singur rând**, cu sesiunile lui active (semn de viață în ultima jumătate de oră), ce face fiecare și totalul de site-uri de azi.
 
 ## Răspunsurile
 
@@ -63,18 +78,18 @@ Câmpuri: `domeniu` (obligatoriu), `nr`, `nume`, `site_vechi`, `nisa`, `oras`, `
 
 **Coada de construcție e comună:** orice robot poate lua orice firmă, nu doar cea pe care a cercetat-o. Intră în coadă firmele alese pentru construit (`site_in_lucru`) și orice firmă cercetată, neevaluată ca respinsă, cu scor ≥ 45 (Setări → „Scor minim pentru coada de construcție”), cu email sau mobil și fără site. Când o iei, trece în „Site în lucru”.
 
-Firma e a ta 3 ore (Setări → „Rezervare”). Ordinea: întâi firma pe care o lucrai deja (după o repornire primești aceeași, cu `reluata: true`), apoi cele rămase de la un robot oprit, apoi refacerile, apoi cele alese deja pentru construit, apoi scorul cel mai mare. Două cereri simultane nu primesc niciodată aceeași firmă.
+Firma e a sesiunii tale 3 ore (Setări → „Rezervare”). Ordinea: întâi firma pe care o lucra deja această sesiune (după o repornire primești aceeași, cu `reluata: true`), apoi cele rămase de la un robot sau o sesiune oprită, apoi refacerile, apoi cele alese deja pentru construit, apoi scorul cel mai mare. Două cereri simultane (de la roboți sau sesiuni diferite) nu primesc niciodată aceeași firmă.
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/rezerva \
   -H "Authorization: Bearer $MERIDIAN_ROBOT_TOKEN" -H "Content-Type: application/json" \
-  -d '{"tip_lucru":"construire"}'
+  -d '{"tip_lucru":"construire","sesiune":"2"}'
 ```
 
-`tip_lucru`: `construire`, `refacere` sau lipsă (oricare).
+`tip_lucru`: `construire`, `refacere` sau lipsă (oricare). `sesiune`: vezi mai sus (lipsă = `"1"`).
 
 ```json
-{ "ok": true, "firma": { "id": "6f1c…", "nr": 412, "nume": "…", "domeniu": "…", "slug": "…", "de_refacut": false, "date_extra": {}, "rezervare": { "tip_lucru": "construire", "expira_la": "2026-11-02T15:04:05+00:00", "reluata": false } } }
+{ "ok": true, "firma": { "id": "6f1c…", "nr": 412, "nume": "…", "domeniu": "…", "slug": "…", "de_refacut": false, "date_extra": {}, "rezervare": { "tip_lucru": "construire", "expira_la": "2026-11-02T15:04:05+00:00", "reluata": false, "sesiune": "2" } } }
 { "ok": true, "firma": null }
 ```
 
@@ -82,12 +97,12 @@ curl -s https://www.meridianx.ro/api/prospectare/robot/rezerva \
 
 ## 3. `POST /heartbeat`: lucrez încă
 
-O dată la 30–60 de minute cât construiești. Prelungește rezervarea cu încă 3 ore. **409** = rezervarea a expirat și a luat-o alt robot: te oprești din lucrul la firma asta.
+O dată la 30–60 de minute cât construiești, **din aceeași sesiune** care a rezervat firma. Prelungește rezervarea cu încă 3 ore. **409** = rezervarea a expirat și a luat-o alt robot sau altă sesiune, sau firma e a altei sesiuni: te oprești din lucrul la firma asta.
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/heartbeat \
   -H "Authorization: Bearer $MERIDIAN_ROBOT_TOKEN" -H "Content-Type: application/json" \
-  -d '{"firma_id":"6f1c…"}'
+  -d '{"firma_id":"6f1c…","sesiune":"2"}'
 ```
 
 ```json
@@ -130,21 +145,21 @@ O singură firmă cu eroare primește statusul ei (404 firmă inexistentă, 422 
 
 ## 5. `POST /nisa`: tabla comună de nișe
 
-O nișă e o pereche „nișă · zonă” (ex. „instalatori · Muntenia”). Înainte să cauți firme, o rezervi: alt robot nu o mai poate lua cât timp dai semn de viață. Fără semn de viață 24 de ore, rezervarea expiră și o poate prelua alt robot.
+O nișă e o pereche „nișă · zonă” (ex. „instalatori · Muntenia”). Înainte să cauți firme, o rezervi **din sesiunea care o cercetează**: alt robot sau altă sesiune a aceluiași robot nu o mai poate lua cât timp dai semn de viață. Fără semn de viață 24 de ore, rezervarea expiră și o poate prelua alt robot sau altă sesiune. Toate acțiunile de mai jos primesc `sesiune` (lipsă = `"1"`).
 
 ```bash
 curl -s https://www.meridianx.ro/api/prospectare/robot/nisa \
   -H "Authorization: Bearer $MERIDIAN_ROBOT_TOKEN" -H "Content-Type: application/json" \
-  -d '{"actiune":"rezerva","nisa":"instalatori","zona":"Muntenia"}'
+  -d '{"actiune":"rezerva","nisa":"instalatori","zona":"Muntenia","sesiune":"2"}'
 ```
 
 ```json
-{ "ok": true, "nisa": { "id": 12, "nisa": "instalatori", "zona": "Muntenia", "status": "rezervata", "rezervata_la": "2026-11-02T14:20:00+00:00", "gasite": 0, "eligibile": 0, "respinse": 0, "reluata": false, "preluata_de_la": null } }
-{ "ok": false, "eroare": { "cod": "conflict", "mesaj": "Nișa „instalatori · Muntenia” e rezervată de robot-2 din 02.11.2026 16:20." } }
+{ "ok": true, "nisa": { "id": 12, "nisa": "instalatori", "zona": "Muntenia", "status": "rezervata", "sesiune": "2", "rezervata_la": "2026-11-02T14:20:00+00:00", "gasite": 0, "eligibile": 0, "respinse": 0, "reluata": false, "preluata_de_la": null, "preluata_de_la_sesiune": null } }
+{ "ok": false, "eroare": { "cod": "conflict", "mesaj": "Nișa „instalatori · Muntenia” e rezervată de PC Ștefan (sesiunea 1) din 02.11.2026 16:20." } }
 ```
 
-- **200**: nișa e a ta. Dacă nu exista, s-a creat. `reluata: true` = era deja a ta; `preluata_de_la` = robotul de la care ai preluat-o după 24 h fără semn de viață.
-- **409**: rezervată de alt robot (cine și de când), sau terminată. Alegi altă nișă.
+- **200**: nișa e a sesiunii tale. Dacă nu exista, s-a creat. `reluata: true` = era deja a acestei sesiuni; `preluata_de_la` / `preluata_de_la_sesiune` = robotul și sesiunea de la care ai preluat-o după 24 h fără semn de viață.
+- **409**: rezervată de alt robot sau de altă sesiune a ta (cine, ce sesiune și de când), sau terminată. Alegi altă nișă.
 
 Progresul (și semnul de viață, măcar o dată pe oră) și terminarea:
 
@@ -153,7 +168,7 @@ Progresul (și semnul de viață, măcar o dată pe oră) și terminarea:
 -d '{"actiune":"termina","nisa_id":12,"gasite":61,"eligibile":25,"respinse":36}'
 ```
 
-Cifrele nu scad niciodată (se păstrează cea mai mare). Ele cresc și singure când notezi firme cu `nisa_id` (secțiunea 6). **409** = nișa nu mai e a ta (a preluat-o alt robot) sau e deja terminată.
+Cifrele nu scad niciodată (se păstrează cea mai mare). Ele cresc și singure când notezi firme cu `nisa_id` (secțiunea 6). **409** = nișa nu mai e a acestei sesiuni (a preluat-o alt robot sau altă sesiune) sau e deja terminată. La `/evaluare` → `noteaza` cu `nisa_id`, la fel: doar sesiunea care are nișa (altfel 409; atunci notezi fără `nisa_id`).
 
 ## 6. `POST /evaluare`: firmele evaluate
 
@@ -254,10 +269,11 @@ Ce nu pleacă azi (SMTP căzut, limită atinsă, robot oprit) se întoarce în d
 import os, requests
 
 API = "https://www.meridianx.ro/api/prospectare/robot"
-H = {"Authorization": f"Bearer {os.environ['MERIDIAN_ROBOT_TOKEN']}"}
+H = {"Authorization": f"Bearer {os.environ['MERIDIAN_ROBOT_TOKEN']}"}   # același token în toate terminalele
+SESIUNE = os.environ.get("MERIDIAN_SESIUNE", "1")                          # „1”, „2”, „3”… pe fiecare terminal
 
 def cere(ruta, corp):
-    r = requests.post(f"{API}/{ruta}", json=corp, headers=H, timeout=30)
+    r = requests.post(f"{API}/{ruta}", json={**corp, "sesiune": SESIUNE}, headers=H, timeout=30)
     date = r.json()
     if r.status_code == 429:
         raise RuntimeError("limită: " + date["eroare"]["mesaj"])
@@ -271,7 +287,7 @@ if st == 200:
     evaluate = [evalueaza(dom) for dom in v["noi"]]   # {"domeniu", "scor", "evaluare", "motiv", …}
     cere("evaluare", {"actiune": "noteaza", "nisa_id": nisa_id, "firme": evaluate})
     cere("nisa", {"actiune": "termina", "nisa_id": nisa_id})
-# 409 la nișă: e a altui robot (mesajul spune cine) sau e terminată; alegi alta.
+# 409 la nișă: e a altui robot sau a altei sesiuni (mesajul spune cine) sau e terminată; alegi alta.
 
 # Construcție: orice firmă din coada comună.
 st, d = cere("rezerva", {"tip_lucru": "construire"})

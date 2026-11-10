@@ -6,9 +6,10 @@ import { methodNotAllowed, robotRoute } from "@/lib/prospectare/robot-api";
  * POST /api/prospectare/robot/nisa — tabla comună de nișe (nișă + zonă).
  *
  *   { "actiune": "rezerva", "nisa": "instalatori", "zona": "Muntenia" }
- *      200 = nișa e a ta (o creează dacă nu există; `reluata: true` dacă era deja a ta).
- *      409 = rezervată de alt robot (mesajul spune de cine și de când) sau terminată.
- *      Rezervarea expiră după 24 h fără semn de viață: atunci o poate prelua alt robot.
+ *      200 = nișa e a sesiunii tale (o creează dacă nu există; `reluata: true` dacă era deja a ei).
+ *      409 = rezervată de alt robot sau de altă sesiune a ta (mesajul spune de cine, sesiunea și de când), sau terminată.
+ *      Rezervarea expiră după 24 h fără semn de viață: atunci o poate prelua alt robot sau altă sesiune.
+ *   Toate acțiunile primesc și `"sesiune": "2"` (lipsă = „1”): nișa se ține pe robot + sesiune (migrarea 38).
  *   { "actiune": "progres", "nisa_id": 12, "gasite": 40, "eligibile": 18, "respinse": 22, "nota": "…" }
  *      semn de viață + cifrele (nu scad niciodată). 409 = nișa nu mai e a ta.
  *   { "actiune": "termina", "nisa_id": 12, "gasite": 61, "eligibile": 25, "respinse": 36 }
@@ -29,12 +30,13 @@ const schema = z.discriminatedUnion("actiune", [
 
 export const POST = robotRoute(schema, async (robot, body) => {
   if (body.actiune === "rezerva") {
-    const result = await rpc<Record<string, unknown>>("prospectare_nisa_rezerva", { p_dispozitiv: robot.id, p_nisa: body.nisa, p_zona: body.zona });
+    const result = await rpc<Record<string, unknown>>("prospectare_nisa_rezerva", { p_dispozitiv: robot.id, p_nisa: body.nisa, p_zona: body.zona, p_sesiune: robot.sesiune });
     if (!result.ok) return result;
     return { ok: true, data: { nisa: result.data } };
   }
   const result = await rpc<Record<string, unknown>>("prospectare_nisa_progres", {
     p_dispozitiv: robot.id,
+    p_sesiune: robot.sesiune,
     p_nisa_id: body.nisa_id,
     p_gasite: body.gasite ?? null,
     p_eligibile: body.eligibile ?? null,

@@ -60,7 +60,9 @@ function Cand({ la, acum, prefix }: { la: string; acum: number; prefix: string }
 
 /** Cine are nișa și de când: robotul, rezervarea și ultimul semn de viață (pe expirate, cu apricot). */
 export function NisaRobot({ n, acum }: { n: Nisa; acum: number }) {
-  const robot = n.dispozitiv ?? (n.dispozitiv_id ? "robot șters" : null);
+  const nume = n.dispozitiv ?? (n.dispozitiv_id ? "robot șters" : null);
+  // Mai multe sesiuni pe același robot (migrarea 38): „PC Ștefan · sesiunea 2”.
+  const robot = nume && n.sesiune ? `${nume} · sesiunea ${n.sesiune}` : nume;
   const semn = n.semn_la ?? n.rezervata_la;
 
   if (n.status === "libera") {
