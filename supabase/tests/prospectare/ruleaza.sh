@@ -7,7 +7,8 @@
 # peste baza cu date (ca pe producție), testele distribuției și proba ei de concurență; apoi
 # migrarea 36 de două ori, testele „email și WhatsApp” și proba de concurență a completării; apoi
 # migrarea 37 de două ori, testele tabelului (numărul de site, evaluările, /termina) și proba de concurență a numerelor;
-# apoi migrarea 38 de două ori, testele sesiunilor robotului și proba de concurență a sesiunilor (același token).
+# apoi migrarea 38 de două ori, testele sesiunilor robotului și proba de concurență a sesiunilor (același token);
+# apoi 39 (distribuirea manuală) și 40 (pagina Roboți: arhivarea, tokenul nou, proprietarii), fiecare de două ori, cu testele lor.
 set -u
 T=$(cd "$(dirname "$0")" && pwd); M="$T/../../migrations"
 if ! docker ps --format "{{.Names}}" | grep -qx pgprospectare && ! docker start pgprospectare >/dev/null 2>&1; then
@@ -90,4 +91,17 @@ echo "$rez" | sed 's/→ \([0-9A-Z]*\): .*/→ \1/'
 ok=$(echo "$rez" | grep -c '^ok'); bad=$(echo "$rez" | grep -c '^ERROR')
 echo "Distribuirea manuală (39): $ok ok, $bad picate."
 [ "$bad" -eq 0 ] || exit 1
-bash "$T/concurenta-distribuire.sh"
+bash "$T/concurenta-distribuire.sh" || exit 1
+# Migrarea 40 (pagina Roboți): înainte, doi roboți cu proprietarul greșit, ca pe producție.
+q -c "insert into public.prospectare_dispozitive (nume, proprietar, token_hash) values ('vladut 2', 'Ștefan', encode(sha256('t40-v2'::bytea), 'hex')), ('sincron', 'Vlăduț', encode(sha256('t40-s'::bytea), 'hex')) on conflict do nothing" >/dev/null || exit 1
+for runda in 1 2; do
+  out=$(q < "$M"/00000000000040_*.sql 2>&1) || { echo "MIGRARE PICATĂ ($runda): 40"; echo "$out" | tail -5; exit 1; }
+  echo "$out" | grep -q '|f$' && { echo "VERIFICARE FALSĂ în 40:"; echo "$out" | grep '|f$'; exit 1; }
+done
+echo "Migrarea 40: rulată de două ori peste baza testelor, toate verificările true."
+echo "$out" | grep '|t$' | sed 's/|t$//' | sed 's/^/  /'
+rez=$(q -1 < "$T/roboti.sql" 2>&1 | grep -E '^(ok|ERROR)')
+echo "$rez" | sed 's/→ \([0-9A-Z]*\): .*/→ \1/'
+ok=$(echo "$rez" | grep -c '^ok'); bad=$(echo "$rez" | grep -c '^ERROR')
+echo "Pagina Roboți (40): $ok ok, $bad picate."
+[ "$bad" -eq 0 ] || exit 1

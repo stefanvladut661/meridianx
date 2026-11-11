@@ -119,6 +119,10 @@ export function descrieActivitate(a: Pick<ActivitateCuFirma, "tip" | "detalii">)
     case "site":
       return { ce: "Site demo gata", amanunt: null };
     case "rezervare": {
+      // Migrarea 40: robotul a fost arhivat, iar rezervarea lui s-a eliberat (firma o ia alt terminal).
+      if (d.eliberata === "robot arhivat") {
+        return { ce: "Rezervarea s-a eliberat: robotul a fost arhivat", amanunt: [text(d.robot), text(d.sesiune) && `terminalul ${text(d.sesiune)}`].filter(Boolean).join(" · ") || null };
+      }
       const lucru = d.tip_lucru === "refacere" ? "refacere" : "construire";
       const pana = ora(d.expira_la);
       return {

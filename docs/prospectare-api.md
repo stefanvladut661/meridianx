@@ -1,6 +1,6 @@
 # API-ul Prospectare pentru roboți
 
-Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–39. Regulile (email și WhatsApp câte o dată pe firmă, telefonul separat, „Nu contacta”, o nișă și o firmă la un singur robot, listele de construcție, lacătul de publicare) stau în bază, nu în robot.
+Roboții din `auto-web-rebuilder` vorbesc cu adminul doar prin rutele de mai jos. Nu au acces direct la Supabase: fiecare cerere trece prin server, care verifică tokenul și cheamă funcțiile din migrările 28–40. Regulile (email și WhatsApp câte o dată pe firmă, telefonul separat, „Nu contacta”, o nișă și o firmă la un singur robot, listele de construcție, lacătul de publicare) stau în bază, nu în robot.
 
 **Modul de lucru (migrarea 39, 10 nov):** un calculator caută firme (`/nisa`, `/evaluare`). Omul le împarte în admin pe **liste de construcție**, câte una pe terminal (Firme → „Selectează” → „Alocă pentru construcție”). Fiecare terminal își ia lista din **`/lista-mea`**, construiește local și, la final, publică: ia **lacătul de publicare** (`/publicare`), face deploy-ul, raportează site-urile cu **`/termina`** (în lot) și eliberează lacătul. Contactarea o pornește omul, din tabelul Firme („Selectează” → „Distribuie”): **nimic nu se mai programează singur la 00:00**, iar ce e programat și netrimis rămâne pe contul lui (restanță), până pleacă sau îl scoate omul din coadă. Un canal se poate **suspenda** din Setări (acum: emailul, „livrabilitate, reparăm”); cât e suspendat, `/coada-email` întoarce o listă goală.
 
@@ -23,7 +23,7 @@ Authorization: Bearer mrx_robot_…
 Content-Type: application/json
 ```
 
-Tokenul se creează în admin → Prospectare → Roboți → „Adaugă robot”. Se arată **o singură dată**; în bază rămâne doar hash-ul lui. Pe calculatorul robotului îl ții într-o variabilă de mediu (de exemplu `MERIDIAN_ROBOT_TOKEN`), nu într-un fișier din repo. Un robot dezactivat din admin primește 401 la următoarea cerere.
+Tokenul se creează în admin → Prospectare → Roboți → „Adaugă robot”. Se arată **o singură dată**; în bază rămâne doar hash-ul lui. Pe calculatorul robotului îl ții într-o variabilă de mediu (de exemplu `MERIDIAN_ROBOT_TOKEN`), nu într-un fișier din repo. În Roboți, „Token nou” face un token nou (arătat tot o singură dată): **cel vechi nu mai merge din clipa aceea**, pe niciun terminal (401), până pui tokenul nou pe calculator. „Arhivează” scoate robotul din listă (rămâne în istoric): tokenul lui nu mai merge, iar firmele, nișele și lacătul lui se eliberează imediat (migrarea 40).
 
 **Un calculator = un robot = un token.** Pe același calculator pot rula mai multe sesiuni (terminale) în paralel, **cu același token**; nu se fac tokenuri noi pentru fiecare terminal.
 
@@ -54,7 +54,7 @@ Mereu aceeași formă:
 | Status | `cod` | Ce faci |
 |---|---|---|
 | 200 | — | Continui. |
-| 401 | `neautorizat` | Token greșit sau robot dezactivat. Te oprești și anunți omul. |
+| 401 | `neautorizat` | Token greșit (schimbat cu „Token nou”) sau robot arhivat. Te oprești și anunți omul. |
 | 404 | `negasit` | Firma nu există (domeniu sau nr greșit). |
 | 409 | `conflict` | Firma a primit deja email sau are alt canal (WhatsApp, telefon), e „Nu contacta” / respinsă / client, rezervarea nu mai e a ta, sau nișa e rezervată de alt robot / terminată. **Nu trimiți emailul, nu mai lucrezi la firmă sau la nișă.** |
 | 422 | `date_invalide` | Corp greșit; mesajul spune câmpul. Nu repeta aceeași cerere. |

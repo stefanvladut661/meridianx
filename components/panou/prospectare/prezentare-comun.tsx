@@ -1,5 +1,5 @@
 import { num } from "@/components/panou/ui/format";
-import type { Dispozitiv } from "@/lib/prospectare/types";
+import type { Dispozitiv, SesiuneRobot } from "@/lib/prospectare/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -17,24 +17,60 @@ export function cate(n: number, unu: string, multe: string): string {
   return `${num(n)} ${n === 1 ? unu : cuDe ? `de ${multe}` : multe}`;
 }
 
-/** Un robot e „activ acum” dacă a cerut ceva în ultimele 15 minute (aceeași regulă ca rezumatul din bază). */
-export const ACTIV_ACUM_MS = 15 * 60 * 1000;
+/**
+ * Fără niciun semn în ultima jumătate de oră, robotul (sau terminalul) e „Oprit”. Un terminal care construiește dă semn
+ * cel puțin o dată la 25 de minute (heartbeat), deci jumătatea de oră nu-l prinde din greșeală.
+ */
+export const SEMN_MS = 30 * 60 * 1000;
 
-export type StareRobot = "acum" | "asteapta" | "oprit";
+/** Stările pe înțelesul nostru: lucrează acum (verde), pornit dar nu lucrează (galben), oprit (gri). */
+export type StareRobot = "lucreaza" | "pornit" | "oprit";
 
-export function stareRobot(d: Pick<Dispozitiv, "activ" | "ultima_activitate">, acum: number): StareRobot {
-  if (!d.activ) return "oprit";
-  if (d.ultima_activitate && acum - new Date(d.ultima_activitate).getTime() < ACTIV_ACUM_MS) return "acum";
-  return "asteapta";
+const recent = (t: string | null | undefined, acum: number): boolean => Boolean(t) && acum - Date.parse(t as string) <= SEMN_MS;
+
+/**
+ * Un terminal lucrează dacă a dat semn în ultima jumătate de oră și: are o firmă în construcție (rezervare), sau cercetează /
+ * trimite (sarcină raportată în ultima jumătate de oră). Construcția fără firmă (ex. doar a cerut lista, între două firme)
+ * înseamnă pornit, nu lucru.
+ */
+export function stareSesiune(s: Pick<SesiuneRobot, "ultima_activitate" | "ce_face" | "ce_face_la" | "firma_curenta">, acum: number): StareRobot {
+  if (!recent(s.ultima_activitate, acum)) return "oprit";
+  if (s.firma_curenta) return "lucreaza";
+  if ((s.ce_face === "cercetare" || s.ce_face === "trimitere") && recent(s.ce_face_la, acum)) return "lucreaza";
+  return "pornit";
+}
+
+/** Calculatorul: lucrează dacă lucrează măcar un terminal; pornit dacă a dat semn; altfel oprit (și arhivat / fără token valid). */
+export function stareRobot(
+  d: Pick<Dispozitiv, "activ" | "arhivat_la" | "ultima_activitate" | "ce_face" | "ce_face_la" | "firma_curenta" | "sesiuni">,
+  acum: number
+): StareRobot {
+  if (!d.activ || d.arhivat_la) return "oprit";
+  if (d.sesiuni.length === 0) {
+    return stareSesiune({ ultima_activitate: d.ultima_activitate ?? "", ce_face: d.ce_face, ce_face_la: d.ce_face_la, firma_curenta: d.firma_curenta }, acum);
+  }
+  const stari = d.sesiuni.map((s) => stareSesiune(s, acum));
+  if (stari.includes("lucreaza")) return "lucreaza";
+  return stari.includes("pornit") || recent(d.ultima_activitate, acum) ? "pornit" : "oprit";
 }
 
 const STARI: Record<StareRobot, { label: string; title: string; punct: string; text: string }> = {
-  acum: { label: "activ acum", title: "A cerut ceva în ultimele 15 minute", punct: "animate-dotpulse bg-mint", text: "text-[#A7EFC3]" },
-  asteapta: { label: "în așteptare", title: "Activ, dar n-a cerut nimic în ultimele 15 minute", punct: "bg-apricot/70", text: "text-muted-foreground" },
-  oprit: { label: "dezactivat", title: "Dezactivat din admin: primește 401 la orice cerere", punct: "bg-white/25", text: "text-muted-foreground" },
+  lucreaza: {
+    label: "Lucrează acum",
+    title: "Un terminal construiește o firmă, cercetează sau trimite, iar robotul a dat semn în ultima jumătate de oră",
+    punct: "animate-dotpulse bg-mint",
+    text: "text-[#A7EFC3]",
+  },
+  pornit: {
+    label: "Pornit, dar nu lucrează",
+    title: "A dat semn în ultima jumătate de oră, dar niciun terminal nu are o sarcină",
+    punct: "bg-[#F2C94C]",
+    text: "text-[#F5DC8E]",
+  },
+  oprit: { label: "Oprit", title: "Niciun semn de o jumătate de oră", punct: "bg-white/25", text: "text-muted-foreground" },
 };
 
-/** Starea robotului, ca `LiveDot` din prototip, cu trei stări în loc de două. */
+/** Starea robotului sau a unui terminal: punct colorat + eticheta. */
 export function RobotStare({ stare, className }: { stare: StareRobot; className?: string }) {
   const meta = STARI[stare];
   return (
@@ -44,3 +80,6 @@ export function RobotStare({ stare, className }: { stare: StareRobot; className?
     </span>
   );
 }
+
+/** Numele afișat al robotului: calculatorul („PC Ștefan”), altfel numele tehnic. */
+export const numeCalculator = (d: Pick<Dispozitiv, "nume" | "calculator">): string => d.calculator?.trim() || d.nume;

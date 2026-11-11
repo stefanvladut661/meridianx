@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/panou/ui/states";
 import { ActivitateFeed } from "@/components/panou/prospectare/activitate-feed";
 import { MailboxTable } from "@/components/panou/prospectare/email-casute";
 import { PageHead } from "@/components/panou/prospectare/page-head";
-import { cate, linkFirma, RobotStare, stareRobot } from "@/components/panou/prospectare/prezentare-comun";
+import { cate, linkFirma, numeCalculator, RobotStare, stareRobot, stareSesiune } from "@/components/panou/prospectare/prezentare-comun";
 import { EroareCitire } from "@/components/panou/prospectare/prezentare-eroare";
 import {
   aziBucuresti,
@@ -99,7 +99,9 @@ function Palnie({ rezumat }: { rezumat: Rezumat }) {
   );
 }
 
-function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number }) {
+function Roboti({ dispozitive: toti, acum }: { dispozitive: Dispozitiv[]; acum: number }) {
+  // Cei arhivați (migrarea 40) nu apar în Prezentare: rămân doar în istoric și în Roboți, cu „Arată arhivați”.
+  const dispozitive = toti.filter((d) => !d.arhivat_la);
   if (dispozitive.length === 0) {
     return (
       <p className="py-4 text-[14px] text-muted-foreground">
@@ -117,7 +119,9 @@ function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number
           <div className="flex items-center justify-between gap-2">
             <span className="flex min-w-0 items-center gap-1.5 text-[14px] font-medium">
               <Cpu className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <span className="truncate">{d.nume}</span>
+              <span className="truncate" title={d.calculator ? d.nume : undefined}>
+                {numeCalculator(d)}
+              </span>
             </span>
             <RobotStare stare={stareRobot(d, acum)} />
           </div>
@@ -140,7 +144,7 @@ function Roboti({ dispozitive, acum }: { dispozitive: Dispozitiv[]; acum: number
             {d.sesiuni.length > 1 || d.sesiuni.some((s) => s.sesiune !== "1") ? (
               <>
                 <span aria-hidden="true">·</span>
-                <span>{cate(d.sesiuni.filter((s) => acum - Date.parse(s.ultima_activitate) <= 30 * 60 * 1000).length, "sesiune activă", "sesiuni active")}</span>
+                <span>{cate(d.sesiuni.filter((s) => stareSesiune(s, acum) !== "oprit").length, "terminal pornit", "terminale pornite")}</span>
               </>
             ) : null}
           </p>
@@ -547,7 +551,11 @@ export default async function PrezentarePage() {
       <Card>
         <SectionTitle
           title="Roboți"
-          hint={`${num(r.roboti_activi)} ${r.roboti_activi === 1 ? "activ" : "activi"} din ${num(r.roboti)} · ${num(r.in_lucru)} în lucru · ${num(r.coada_constructie)} în coada de construcție`}
+          hint={`${
+            dispozitive.ok
+              ? `${num(dispozitive.data.filter((d) => !d.arhivat_la && stareRobot(d, acum) === "lucreaza").length)} lucrează acum din ${num(dispozitive.data.filter((d) => !d.arhivat_la).length)}`
+              : `${num(r.roboti_activi)} activi din ${num(r.roboti)}`
+          } · ${num(r.in_lucru)} în lucru · ${num(r.coada_constructie)} în coada de construcție`}
           action={
             <Link href="/admin/prospectare/roboti" className={linkMic}>
               Toți roboții →

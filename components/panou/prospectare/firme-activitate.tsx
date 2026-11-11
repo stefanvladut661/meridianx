@@ -136,6 +136,10 @@ export function descrieActivitate(a: Activitate): Descriere {
       };
     }
     case "rezervare": {
+      // Migrarea 40: robotul a fost arhivat, iar rezervarea lui s-a eliberat (firma o ia alt terminal).
+      if (text(d.eliberata) === "robot arhivat") {
+        return { titlu: "Rezervarea s-a eliberat: robotul a fost arhivat", detaliu: unite([text(d.robot), text(d.sesiune) && `terminalul ${text(d.sesiune)}`]) };
+      }
       const expira = text(d.expira_la);
       return {
         titlu: `Rezervată de un robot: ${text(d.tip_lucru) === "refacere" ? "refacere" : "construire"}`,

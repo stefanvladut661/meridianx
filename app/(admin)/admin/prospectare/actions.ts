@@ -296,6 +296,15 @@ export async function salveazaNota(input: unknown): Promise<ActionResult> {
 // Roboți
 // ---------------------------------------------------------------------------
 
+const PROPRIETARI_ROBOT = ["Ștefan", "Vlăduț"] as const;
+const proprietarSchema = z.enum(PROPRIETARI_ROBOT, "Alege Ștefan sau Vlăduț.");
+/** Numele calculatorului, afișat mare („PC Ștefan”). Gol = se arată numele tehnic. */
+const calculatorSchema = z
+  .string()
+  .trim()
+  .max(80, "Calculatorul: cel mult 80 de caractere.")
+  .regex(/^[\p{L}\p{N}._ ()'-]*$/u, "Calculatorul: litere, cifre, spațiu, punct, liniuță.");
+
 const robotSchema = z.object({
   nume: z
     .string()
@@ -303,8 +312,11 @@ const robotSchema = z.object({
     .min(2, "Numele robotului: cel puțin 2 caractere.")
     .max(80, "Numele robotului: cel mult 80 de caractere.")
     .regex(/^[\p{L}\p{N}._ -]+$/u, "Numele robotului: litere, cifre, punct, liniuță, spațiu."),
-  proprietar: z.string().trim().min(1, "Alege al cui e robotul.").max(80),
+  calculator: calculatorSchema.optional().default(""),
+  proprietar: proprietarSchema,
 });
+
+const eticheta = (r: { nume: string; calculator?: string | null }) => r.calculator?.trim() || r.nume;
 
 /** Creează robotul și întoarce tokenul O SINGURĂ DATĂ; în bază rămâne doar hash-ul. */
 export async function creeazaRobot(input: unknown): Promise<ActionResult<{ token: string; nume: string }>> {
@@ -315,39 +327,125 @@ export async function creeazaRobot(input: unknown): Promise<ActionResult<{ token
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   const token = newRobotToken();
-  const { error } = await client
-    .from("prospectare_dispozitive")
-    .insert({ nume: parsed.data.nume, proprietar: parsed.data.proprietar, token_hash: hashToken(token), creat_de: who.nume });
+  const { error } = await client.from("prospectare_dispozitive").insert({
+    nume: parsed.data.nume,
+    calculator: parsed.data.calculator || null,
+    proprietar: parsed.data.proprietar,
+    token_hash: hashToken(token),
+    token_schimbat_la: new Date().toISOString(),
+    creat_de: who.nume,
+  });
   if (error) {
     const f = failure(error);
     return { ok: false, message: f.code === "23505" ? `Există deja un robot cu numele „${parsed.data.nume}”.` : f.message };
   }
   gata();
-  return { ok: true, message: `Robotul ${parsed.data.nume} e creat. Copiază tokenul acum: nu se mai arată.`, data: { token, nume: parsed.data.nume } };
+  const cum = eticheta(parsed.data);
+  return { ok: true, message: `${cum} e adăugat. Copiază tokenul acum: nu se mai arată.`, data: { token, nume: cum } };
 }
 
-const comutaSchema = z.object({ id: z.uuid(), activ: z.boolean() });
+const idSchema = z.object({ id: z.uuid("Robotul nu mai există.") });
 
-export async function comutaRobot(input: unknown): Promise<ActionResult> {
+/**
+ * Token nou: hash-ul din bază se înlocuiește, deci tokenul vechi nu mai merge din clipa asta (orice terminal care îl folosește
+ * primește 401). Robotul e pornit din nou. Tokenul nou se întoarce O SINGURĂ DATĂ. Un robot arhivat nu primește token.
+ */
+export async function tokenNouRobot(input: unknown): Promise<ActionResult<{ token: string; nume: string }>> {
   const who = await cine();
   if (!who) return { ok: false, message: SESSION_EXPIRED };
-  const parsed = comutaSchema.safeParse(input);
+  const parsed = idSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const token = newRobotToken();
+  const acum = new Date().toISOString();
+  const { data, error } = await client
+    .from("prospectare_dispozitive")
+    .update({ token_hash: hashToken(token), activ: true, token_schimbat_la: acum, schimbat_la: acum, schimbat_de: who.nume })
+    .eq("id", parsed.data.id)
+    .is("arhivat_la", null)
+    .select("nume, calculator")
+    .maybeSingle();
+  if (error) return { ok: false, message: failure(error).message };
+  if (!data) {
+    const { data: exista } = await client.from("prospectare_dispozitive").select("arhivat_la").eq("id", parsed.data.id).maybeSingle();
+    return { ok: false, message: exista ? "Robotul e arhivat: scoate-l din arhivă, apoi cere un token nou." : "Robotul nu mai există." };
+  }
+  gata();
+  const cum = eticheta(data);
+  return { ok: true, message: `Token nou pentru ${cum}. Cel vechi nu mai merge.`, data: { token, nume: cum } };
+}
+
+const redenumesteSchema = z.object({ id: z.uuid("Robotul nu mai există."), calculator: calculatorSchema });
+
+/** Redenumește: schimbă doar numele calculatorului (cel mare). Numele tehnic rămâne. */
+export async function redenumesteRobot(input: unknown): Promise<ActionResult> {
+  const who = await cine();
+  if (!who) return { ok: false, message: SESSION_EXPIRED };
+  const parsed = redenumesteSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   const client = db();
   if (!client) return { ok: false, message: NO_DB };
   const { data, error } = await client
     .from("prospectare_dispozitive")
-    .update({ activ: parsed.data.activ, schimbat_la: new Date().toISOString(), schimbat_de: who.nume })
+    .update({ calculator: parsed.data.calculator || null, schimbat_la: new Date().toISOString(), schimbat_de: who.nume })
     .eq("id", parsed.data.id)
-    .select("nume")
+    .select("nume, calculator")
     .maybeSingle();
   if (error) return { ok: false, message: failure(error).message };
   if (!data) return { ok: false, message: "Robotul nu mai există." };
   gata();
-  return {
-    ok: true,
-    message: parsed.data.activ ? `${data.nume} e activ din nou.` : `${data.nume} e dezactivat; firma lui trece la alt robot când expiră rezervarea.`,
-  };
+  return { ok: true, message: data.calculator ? `Calculatorul se numește acum „${data.calculator}”.` : `${data.nume} se arată cu numele tehnic.` };
+}
+
+const proprietarRobotSchema = z.object({ id: z.uuid("Robotul nu mai există."), proprietar: proprietarSchema });
+
+export async function proprietarRobot(input: unknown): Promise<ActionResult> {
+  const who = await cine();
+  if (!who) return { ok: false, message: SESSION_EXPIRED };
+  const parsed = proprietarRobotSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const client = db();
+  if (!client) return { ok: false, message: NO_DB };
+  const { data, error } = await client
+    .from("prospectare_dispozitive")
+    .update({ proprietar: parsed.data.proprietar, schimbat_la: new Date().toISOString(), schimbat_de: who.nume })
+    .eq("id", parsed.data.id)
+    .select("nume, calculator")
+    .maybeSingle();
+  if (error) return { ok: false, message: failure(error).message };
+  if (!data) return { ok: false, message: "Robotul nu mai există." };
+  gata();
+  return { ok: true, message: `${eticheta(data)} e al lui ${parsed.data.proprietar}.` };
+}
+
+const arhiveazaSchema = z.object({ id: z.uuid("Robotul nu mai există."), arhivat: z.boolean() });
+
+/**
+ * Arhivează: robotul iese din listă, rămâne în istoric; tokenul lui nu mai merge, iar firmele, nișele și lacătul lui se
+ * eliberează acum. Scoate din arhivă: revine în listă, oprit până la un token nou. Totul într-o funcție din bază (migrarea 40).
+ */
+export async function arhiveazaRobot(input: unknown): Promise<ActionResult> {
+  const who = await cine();
+  if (!who) return { ok: false, message: SESSION_EXPIRED };
+  const parsed = arhiveazaSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  const result = await rpc<{ nume: string; calculator: string | null; arhivat: boolean; deja: boolean; firme: number; nise: number; lacat: boolean }>(
+    "prospectare_robot_arhiveaza",
+    { p_id: parsed.data.id, p_arhivat: parsed.data.arhivat, p_autor: who.nume }
+  );
+  if (!result.ok) return { ok: false, message: result.message };
+  gata();
+  const r = result.data;
+  const cum = eticheta(r);
+  if (!r.arhivat) return { ok: true, message: r.deja ? `${cum} nu era arhivat.` : `${cum} e din nou în listă. Pornește cu un token nou.` };
+  if (r.deja) return { ok: true, message: `${cum} era deja arhivat.` };
+  const eliberate = [
+    r.firme ? `${r.firme} ${r.firme === 1 ? "firmă" : "firme"}` : null,
+    r.nise ? `${r.nise} ${r.nise === 1 ? "nișă" : "nișe"}` : null,
+    r.lacat ? "lacătul de publicare" : null,
+  ].filter(Boolean);
+  return { ok: true, message: `${cum} e arhivat; tokenul lui nu mai merge.${eliberate.length ? ` Eliberate: ${eliberate.join(", ")}.` : ""}` };
 }
 
 // ---------------------------------------------------------------------------

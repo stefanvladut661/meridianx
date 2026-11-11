@@ -171,9 +171,17 @@ export interface SesiuneRobot {
 
 export interface Dispozitiv {
   id: string;
+  /** Numele tehnic (unic), afișat mic sub calculator. */
   nume: string;
+  /** Numele calculatorului, afișat mare („PC Ștefan”); null = se arată numele tehnic (migrarea 40). */
+  calculator: string | null;
   proprietar: string;
+  /** Intern: false = tokenul e refuzat (robot arhivat sau oprit înainte de migrarea 40). Token nou îl pornește. */
   activ: boolean;
+  /** Arhivat: iese din listă (filtrul „Arată arhivați”), tokenul nu mai merge, rămâne în istoric. */
+  arhivat_la: string | null;
+  arhivat_de: string | null;
+  token_schimbat_la: string | null;
   ultima_activitate: string | null;
   creat_la: string;
   /** Firma rezervată acum (rezervare neexpirată), dacă are; cu mai multe sesiuni, prima. */

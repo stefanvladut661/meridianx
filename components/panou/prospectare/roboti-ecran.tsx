@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Cpu, Hammer, KeyRound, Loader2, Plus, Search, Send, type LucideIcon } from "lucide-react";
-import { comutaRobot, creeazaRobot } from "@/app/(admin)/admin/prospectare/actions";
+import { Archive, ArchiveRestore, Cpu, Hammer, KeyRound, Loader2, Pencil, Plus, Search, Send, type LucideIcon } from "lucide-react";
+import { arhiveazaRobot, creeazaRobot, proprietarRobot, redenumesteRobot, tokenNouRobot } from "@/app/(admin)/admin/prospectare/actions";
 import { ConfirmDialog, CopyButton, InlineNote } from "@/components/panou/ui/actions";
 import { Info } from "@/components/panou/ui/info";
 import { dateTimeRo, num, relativeRo, untilRo } from "@/components/panou/ui/format";
 import { Modal } from "@/components/panou/ui/modal";
-import { Btn, Card } from "@/components/panou/ui/primitives";
+import { Btn, Card, Pill } from "@/components/panou/ui/primitives";
 import { SoftSelect } from "@/components/panou/ui/select";
 import { EmptyState, inputClass } from "@/components/panou/ui/states";
 import { useToast } from "@/components/panou/ui/toast";
@@ -17,13 +17,14 @@ import type { Dispozitiv, SesiuneRobot } from "@/lib/prospectare/types";
 import { cn } from "@/lib/utils";
 import { PageHead } from "./page-head";
 import { EroareCitire } from "./prezentare-eroare";
-import { linkFirma, RobotStare, stareRobot } from "./prezentare-comun";
+import { linkFirma, numeCalculator, RobotStare, SEMN_MS, stareRobot, stareSesiune } from "./prezentare-comun";
 
 /**
- * Ecranul Roboți, ca `RobotsPage` din prototip: un rând pe calculator (un robot = un token), cu
- * sesiunile lui active (mai multe terminale în paralel, migrarea 38) și ce face fiecare; carduri
- * sub 1280. „Adaugă robot” cu tokenul arătat o singură dată și activare / dezactivare. Tokenul stă doar în starea componentei: nu intră în
- * URL, în log sau în altă parte și dispare când se închide fereastra.
+ * Ecranul Roboți. Un robot = un calculator (un singur token), cu mai multe terminale (sesiuni) pe el.
+ * Fiecare calculator: numele lui mare („PC Ștefan”), numele tehnic mic dedesubt, starea (Lucrează acum / Pornit, dar nu
+ * lucrează / Oprit), proprietarul (editabil) și terminalele, fiecare cu ce face și câte site-uri a făcut azi.
+ * Acțiuni: Token nou (cel vechi nu mai merge), Redenumește (numele calculatorului), Arhivează (iese din listă, rămâne în
+ * istoric, tokenul nu mai merge). Tokenul stă doar în starea componentei: nu intră în URL sau în log și dispare la închidere.
  */
 
 const PROPRIETARI = [
@@ -31,11 +32,11 @@ const PROPRIETARI = [
   { value: "Vlăduț", label: "Vlăduț" },
 ];
 
-/** Mesajele acțiunii care privesc câmpul „Nume”: se arată sub el, nu doar în notificare. */
-const eroareDeNume = (message: string) => message.startsWith("Numele robotului") || message.startsWith("Există deja un robot");
+/** Terminalele fără semn de o zi nu se mai listează: se numără. */
+const TERMINAL_RECENT_MS = 24 * 3600 * 1000;
 
-/** Fără sarcină raportată în ultima jumătate de oră, robotul e „Inactiv”. */
-const INACTIV_DUPA_MS = 30 * 60 * 1000;
+/** Mesajele acțiunii care privesc câmpul „Nume tehnic”: se arată sub el, nu doar în notificare. */
+const eroareDeNume = (message: string) => message.startsWith("Numele robotului") || message.startsWith("Există deja un robot");
 
 const SARCINI: Record<NonNullable<Dispozitiv["ce_face"]>, { label: string; icon: LucideIcon; culoare: string }> = {
   cercetare: { label: "Cercetare", icon: Search, culoare: "text-sky" },
@@ -43,150 +44,96 @@ const SARCINI: Record<NonNullable<Dispozitiv["ce_face"]>, { label: string; icon:
   trimitere: { label: "Trimitere", icon: Send, culoare: "text-mint" },
 };
 
-/** Cel mai recent dintre momentele în care robotul a dat semn (cerere sau sarcină raportată). */
+/** Cel mai recent semn al calculatorului (cerere sau sarcină raportată, de pe oricare terminal). */
 function vazutLa(d: Dispozitiv): string | null {
-  const momente = [d.ultima_activitate, d.ce_face_la].filter((v): v is string => Boolean(v));
+  const momente = [d.ultima_activitate, d.ce_face_la, ...d.sesiuni.map((s) => s.ultima_activitate)].filter((v): v is string => Boolean(v));
   if (momente.length === 0) return null;
   return momente.reduce((a, b) => (Date.parse(b) > Date.parse(a) ? b : a));
 }
 
-/** Ce face robotul acum: „Cercetare: instalatori · Muntenia · acum 3 min”, sau „Inactiv · văzut acum 2 h”. */
-function CeFace({ d, acum }: { d: Dispozitiv; acum: number }) {
-  const la = d.ce_face_la ? Date.parse(d.ce_face_la) : NaN;
-  const sarcina = d.ce_face ? SARCINI[d.ce_face] : undefined;
-  if (!sarcina || !d.ce_face_la || Number.isNaN(la) || acum - la > INACTIV_DUPA_MS) {
-    const vazut = vazutLa(d);
-    const ultima = sarcina && d.ce_face_la ? `Ultima sarcină: ${sarcina.label}${d.ce_face_detaliu ? `, ${d.ce_face_detaliu}` : ""} (${dateTimeRo(d.ce_face_la)})` : undefined;
-    return (
-      <span className="flex items-start gap-1.5 text-[13.5px]" title={ultima}>
-        <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-white/30" aria-hidden="true" />
-        <span className="min-w-0">
-          <span className="font-medium text-foreground/80">Inactiv</span>
-          <span className="text-muted-foreground">
-            {" · "}
-            {vazut ? (
-              <time dateTime={vazut} title={dateTimeRo(vazut)}>
-                văzut {relativeRo(vazut, acum)}
-              </time>
-            ) : (
-              "nevăzut încă"
-            )}
-          </span>
-        </span>
-      </span>
-    );
-  }
+function Cand({ la, acum, prefix = "" }: { la: string | null; acum: number; prefix?: string }) {
+  if (!la) return <span>niciodată</span>;
   return (
-    <span className="flex items-start gap-1.5 text-[13.5px]">
-      <sarcina.icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", sarcina.culoare)} aria-hidden="true" />
-      <span className="min-w-0 break-words">
-        <span className="font-medium text-foreground">{sarcina.label}</span>
-        {d.ce_face_detaliu ? `: ${d.ce_face_detaliu}` : null}
-        <span className="text-muted-foreground">
-          {" · "}
-          <time dateTime={d.ce_face_la} title={dateTimeRo(d.ce_face_la)}>
-            {relativeRo(d.ce_face_la, acum)}
-          </time>
-        </span>
-      </span>
-    </span>
+    <time dateTime={la} title={dateTimeRo(la)}>
+      {prefix}
+      {relativeRo(la, acum)}
+    </time>
   );
 }
 
-/** Sesiunea a dat semn în ultima jumătate de oră. */
-const sesiuneActiva = (s: SesiuneRobot, acum: number) => acum - Date.parse(s.ultima_activitate) <= INACTIV_DUPA_MS;
-
-/** O sesiune: „Sesiunea 2 · Construcție: #412 Firma · acum 3 min”, firma ei în lucru și site-urile ei de azi. */
-function SesiuneLinie({ s, acum }: { s: SesiuneRobot; acum: number }) {
+/** Un terminal: numele, starea, ce face (cu firma în lucru), când a dat semn și câte site-uri azi. */
+function Terminal({ s, acum }: { s: SesiuneRobot; acum: number }) {
+  const stare = stareSesiune(s, acum);
   const la = s.ce_face_la ? Date.parse(s.ce_face_la) : NaN;
-  const sarcina = s.ce_face && s.ce_face_la && !Number.isNaN(la) && acum - la <= INACTIV_DUPA_MS ? SARCINI[s.ce_face] : undefined;
-  const f = s.firma_curenta;
-  // Firma în construcție are rândul ei (cu linkul și expirarea): detaliul sarcinii n-o mai repetă.
-  const detaliu = sarcina && s.ce_face === "constructie" && f && s.ce_face_detaliu?.startsWith(`#${f.nr}`) ? null : s.ce_face_detaliu;
+  const sarcina = s.ce_face && s.ce_face_la && !Number.isNaN(la) && acum - la <= SEMN_MS ? SARCINI[s.ce_face] : undefined;
+  const f = stare === "lucreaza" ? s.firma_curenta : null;
+  const detaliu = s.ce_face_detaliu;
   return (
-    <li className="flex items-start gap-2 text-[13.5px]">
-      <span className="pu-num mt-px shrink-0 rounded-md border border-white/[0.12] bg-white/[0.05] px-1.5 text-[12.5px] font-semibold text-foreground" title={`Sesiunea ${s.sesiune}`}>
-        {/^\d+$/.test(s.sesiune) ? `S${s.sesiune}` : s.sesiune}
+    <li className="flex flex-wrap items-start gap-x-3 gap-y-1 py-2 text-[13.5px] first:pt-0 last:pb-0">
+      <span className="w-[8.5rem] shrink-0 truncate font-mono text-[13.5px] font-semibold text-foreground" title={`Terminalul ${s.sesiune}`}>
+        {s.sesiune}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-start gap-1.5">
-          {sarcina ? <sarcina.icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", sarcina.culoare)} aria-hidden="true" /> : null}
-          <span className="min-w-0 break-words">
-            {sarcina ? (
-              <>
-                <span className="font-medium text-foreground">{sarcina.label}</span>
-                {detaliu ? `: ${detaliu}` : null}
-              </>
-            ) : (
-              <span className="text-foreground/80">fără sarcină raportată</span>
-            )}
-            <span className="text-muted-foreground">
-              {" · "}
-              <time dateTime={s.ultima_activitate} title={dateTimeRo(s.ultima_activitate)}>
-                {relativeRo(s.ultima_activitate, acum)}
-              </time>
-              {s.site_uri_azi ? ` · ${num(s.site_uri_azi)} ${s.site_uri_azi === 1 ? "site" : "site-uri"} azi` : null}
-            </span>
+      <span className="min-w-0 flex-1 basis-[16rem]">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <RobotStare stare={stare} />
+          <span className="text-muted-foreground">
+            <Cand la={s.ultima_activitate} acum={acum} />
           </span>
         </span>
-        {f ? (
-          <span className="mt-0.5 block text-[12.5px] text-muted-foreground">
-            {f.tip_lucru === "refacere" ? "reface" : "construiește"}{" "}
-            <Link href={linkFirma(f.id)} className="rounded-sm text-foreground/85 underline-offset-2 hover:underline" title={f.nume}>
-              #{f.nr} {f.nume}
-            </Link>
-            {" · "}
-            <span title={`Rezervarea expiră la ${dateTimeRo(f.expira_la)}`}>expiră {untilRo(f.expira_la, acum)}</span>
+        {sarcina && !f ? (
+          // Firma în construcție are rândul ei (mai jos). Lucrează: sarcina, plin. Pornit: ultima sarcină, stins (ex. „Construcție: lista de construcție: 4 firme”).
+          <span className={cn("mt-0.5 flex items-start gap-1.5", stare !== "lucreaza" && "text-muted-foreground")}>
+            <sarcina.icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", stare === "lucreaza" ? sarcina.culoare : "text-muted-foreground")} aria-hidden="true" />
+            <span className="min-w-0 break-words">
+              <span className={stare === "lucreaza" ? "font-medium text-foreground" : undefined}>{sarcina.label}</span>
+              {detaliu ? `: ${detaliu}` : null}
+            </span>
           </span>
         ) : null}
+        {f ? (
+          <span className="mt-0.5 flex items-start gap-1.5">
+            <Hammer className="mt-0.5 h-3.5 w-3.5 shrink-0 text-apricot" aria-hidden="true" />
+            <span className="min-w-0 break-words">
+              <span className="font-medium text-foreground">{f.tip_lucru === "refacere" ? "Reface" : "Construiește"}</span>{" "}
+              <Link href={linkFirma(f.id)} className="rounded-sm text-foreground/85 underline-offset-2 hover:underline" title={f.nume}>
+                #{f.nr} {f.nume}
+              </Link>
+              <span className="text-muted-foreground">
+                {" · "}
+                <span title={`Rezervarea expiră la ${dateTimeRo(f.expira_la)}`}>expiră {untilRo(f.expira_la, acum)}</span>
+              </span>
+            </span>
+          </span>
+        ) : null}
+      </span>
+      <span className="pu-num shrink-0 whitespace-nowrap text-[13.5px]" title={`${num(s.site_uri_total)} în total`}>
+        <span className={cn("font-semibold", s.site_uri_azi ? "text-foreground" : "text-muted-foreground")}>{num(s.site_uri_azi)}</span>
+        <span className="text-muted-foreground"> {s.site_uri_azi === 1 ? "site azi" : "site-uri azi"}</span>
       </span>
     </li>
   );
 }
 
-/** Sesiunile active ale calculatorului (cele fără semn de o jumătate de oră se numără, nu se listează). */
-function Sesiuni({ d, acum }: { d: Dispozitiv; acum: number }) {
-  const active = d.sesiuni.filter((s) => sesiuneActiva(s, acum));
-  const inactive = d.sesiuni.length - active.length;
-  if (active.length === 0) return <CeFace d={d} acum={acum} />;
+function Terminale({ d, acum }: { d: Dispozitiv; acum: number }) {
+  const recente = d.sesiuni.filter((s) => stareSesiune(s, acum) !== "oprit" || acum - Date.parse(s.ultima_activitate) <= TERMINAL_RECENT_MS || s.site_uri_azi > 0);
+  const vechi = d.sesiuni.filter((s) => !recente.includes(s));
+  if (d.sesiuni.length === 0) return <p className="text-[13px] text-muted-foreground">Niciun terminal încă: apar aici după prima cerere.</p>;
   return (
-    <div className="space-y-1.5">
-      <ul className="space-y-1.5" aria-label={`Sesiunile active ale robotului ${d.nume}`}>
-        {active.map((s) => (
-          <SesiuneLinie key={s.sesiune} s={s} acum={acum} />
-        ))}
-      </ul>
-      {inactive > 0 ? (
-        <p className="text-[12.5px] text-muted-foreground">
-          + {inactive} {inactive === 1 ? "sesiune inactivă" : "sesiuni inactive"} (fără semn de o jumătate de oră)
+    <div>
+      {recente.length > 0 ? (
+        <ul className="divide-y divide-border/60" aria-label={`Terminalele de pe ${numeCalculator(d)}`}>
+          {recente.map((s) => (
+            <Terminal key={s.sesiune} s={s} acum={acum} />
+          ))}
+        </ul>
+      ) : null}
+      {vechi.length > 0 ? (
+        <p className={cn("text-[12.5px] text-muted-foreground", recente.length > 0 && "mt-1.5")} title={vechi.map((s) => s.sesiune).join(", ")}>
+          {recente.length > 0 ? "+ " : ""}
+          {vechi.length} {vechi.length === 1 ? "terminal" : "terminale"} fără semn de o zi
         </p>
       ) : null}
     </div>
-  );
-}
-
-function NumarSesiuni({ d, acum }: { d: Dispozitiv; acum: number }) {
-  const active = d.sesiuni.filter((s) => sesiuneActiva(s, acum)).length;
-  return (
-    <span className="pu-num whitespace-nowrap text-[13.5px]" title={`${d.sesiuni.length} ${d.sesiuni.length === 1 ? "sesiune cunoscută" : "sesiuni cunoscute"} pe acest calculator`}>
-      <span className={cn("font-semibold", active ? "text-[#A7EFC3]" : "text-muted-foreground")}>{num(active)}</span>
-      <span className="text-muted-foreground"> {active === 1 ? "activă" : "active"}</span>
-    </span>
-  );
-}
-
-function FirmaCurenta({ d, acum, scurt = false }: { d: Dispozitiv; acum: number; scurt?: boolean }) {
-  const f = d.firma_curenta;
-  if (!f) return <span className="text-muted-foreground">{scurt ? "—" : "fără firmă în lucru"}</span>;
-  return (
-    <span className="min-w-0">
-      <Link href={linkFirma(f.id)} className="block truncate rounded-sm underline-offset-2 hover:underline" title={f.nume}>
-        <span className="pu-num text-muted-foreground">#{f.nr}</span> {f.nume}
-      </Link>
-      <span className="block text-[14px] text-muted-foreground" title={`Rezervarea expiră la ${dateTimeRo(f.expira_la)}`}>
-        {f.tip_lucru === "refacere" ? "refacere" : "construire"} · expiră {untilRo(f.expira_la, acum)}
-      </span>
-    </span>
   );
 }
 
@@ -194,27 +141,45 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
   const router = useRouter();
   const { notify } = useToast();
 
+  const [arataArhivati, setArataArhivati] = useState(false);
+
+  // Adaugă robot
   const [deschis, setDeschis] = useState(false);
   const [nume, setNume] = useState("");
+  const [calculatorNou, setCalculatorNou] = useState("");
   const [proprietar, setProprietar] = useState("Ștefan");
   const [eroareNume, setEroareNume] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [numeCreat, setNumeCreat] = useState("");
   const [creez, startCreare] = useTransition();
-  const [comut, startComutare] = useTransition();
-  const [comutId, setComutId] = useState<string | null>(null);
-  const [deOprit, setDeOprit] = useState<Dispozitiv | null>(null);
   const numeRef = useRef<HTMLInputElement>(null);
+
+  // Tokenul arătat o singură dată (la creare sau la „Token nou”)
+  const [token, setToken] = useState<{ valoare: string; pentru: string; nou: boolean } | null>(null);
   const tokenRef = useRef<HTMLElement>(null);
 
-  // Formularul dispare când apare tokenul: focusul trece pe token, nu rămâne în gol.
+  // Acțiunile pe un robot
+  const [deToken, setDeToken] = useState<Dispozitiv | null>(null);
+  const [deArhivat, setDeArhivat] = useState<Dispozitiv | null>(null);
+  const [deRedenumit, setDeRedenumit] = useState<Dispozitiv | null>(null);
+  const [calculator, setCalculator] = useState("");
+  const [eroareCalculator, setEroareCalculator] = useState<string | null>(null);
+  const [salvez, startSalvare] = useTransition();
+  const [ocupat, setOcupat] = useState<string | null>(null);
+  const [proprietarLocal, setProprietarLocal] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (token) tokenRef.current?.focus();
   }, [token]);
 
+  const activi = dispozitive.filter((d) => !d.arhivat_la);
+  const arhivati = dispozitive.filter((d) => d.arhivat_la);
+  const lista = arataArhivati ? [...activi, ...arhivati] : activi;
+  const lucreaza = activi.filter((d) => stareRobot(d, acum) === "lucreaza").length;
+  const terminalePornite = activi.reduce((n, d) => n + (d.activ ? d.sesiuni.filter((s) => stareSesiune(s, acum) !== "oprit").length : 0), 0);
+
   const deschide = () => {
     setToken(null);
     setNume("");
+    setCalculatorNou("");
     setEroareNume(null);
     setDeschis(true);
   };
@@ -222,8 +187,8 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
   const inchide = () => {
     setDeschis(false);
     setToken(null);
-    setNumeCreat("");
     setNume("");
+    setCalculatorNou("");
     setEroareNume(null);
   };
 
@@ -237,7 +202,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
     }
     setEroareNume(null);
     startCreare(async () => {
-      const result = await creeazaRobot({ nume: curat, proprietar });
+      const result = await creeazaRobot({ nume: curat, calculator: calculatorNou.trim(), proprietar });
       if (!result.ok || !result.data) {
         const message = result.message;
         if (eroareDeNume(message)) {
@@ -248,50 +213,72 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         }
         return;
       }
-      setNumeCreat(result.data.nume);
-      setToken(result.data.token);
+      setToken({ valoare: result.data.token, pentru: result.data.nume, nou: false });
       notify(result.message);
       router.refresh();
     });
   };
 
-  const comuta = (d: Dispozitiv, activ: boolean) => {
-    setComutId(d.id);
-    startComutare(async () => {
-      const result = await comutaRobot({ id: d.id, activ });
-      notify(result.message, result.ok ? undefined : "error");
+  const deschideRedenumire = (d: Dispozitiv) => {
+    setCalculator(d.calculator ?? "");
+    setEroareCalculator(null);
+    setDeRedenumit(d);
+  };
+
+  const redenumeste = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const d = deRedenumit;
+    if (!d) return;
+    startSalvare(async () => {
+      const result = await redenumesteRobot({ id: d.id, calculator: calculator.trim() });
+      if (!result.ok) {
+        setEroareCalculator(result.message);
+        return;
+      }
+      notify(result.message);
+      setDeRedenumit(null);
       router.refresh();
-      setComutId(null);
     });
   };
 
-  const acumActivi = dispozitive.filter((d) => stareRobot(d, acum) === "acum").length;
-  const sesiuniActive = dispozitive.reduce((n, d) => n + d.sesiuni.filter((s) => sesiuneActiva(s, acum)).length, 0);
+  const schimbaProprietar = async (d: Dispozitiv, valoare: string) => {
+    setProprietarLocal((p) => ({ ...p, [d.id]: valoare }));
+    setOcupat(d.id);
+    const result = await proprietarRobot({ id: d.id, proprietar: valoare });
+    notify(result.message, result.ok ? undefined : "error");
+    if (!result.ok) setProprietarLocal((p) => ({ ...p, [d.id]: d.proprietar }));
+    setOcupat(null);
+    router.refresh();
+  };
 
-  const buton = (d: Dispozitiv, className?: string) => {
-    const ocupat = comut && comutId === d.id;
-    return d.activ ? (
-      <Btn size="xs" variant="outline" className={className} disabled={ocupat} icon={ocupat ? Loader2 : undefined} onClick={() => setDeOprit(d)} aria-label={`Dezactivează ${d.nume}`}>
-        Dezactivează
-      </Btn>
-    ) : (
-      <Btn size="xs" variant="mint" className={className} disabled={ocupat} icon={ocupat ? Loader2 : undefined} onClick={() => comuta(d, true)} aria-label={`Activează ${d.nume}`}>
-        {ocupat ? "Se activează…" : "Activează"}
-      </Btn>
-    );
+  const scoateDinArhiva = async (d: Dispozitiv) => {
+    setOcupat(d.id);
+    const result = await arhiveazaRobot({ id: d.id, arhivat: false });
+    notify(result.message, result.ok ? undefined : "error");
+    setOcupat(null);
+    router.refresh();
+  };
+
+  const firmeInLucru = (d: Dispozitiv) => {
+    const vazute = new Map<string, { nr: number; nume: string }>();
+    for (const s of d.sesiuni) if (s.firma_curenta) vazute.set(s.firma_curenta.id, s.firma_curenta);
+    if (d.firma_curenta) vazute.set(d.firma_curenta.id, d.firma_curenta);
+    return [...vazute.values()];
   };
 
   return (
     <div className="space-y-4">
       <PageHead
         title="Roboți"
-        pill={eroare ? undefined : `${acumActivi} ${acumActivi === 1 ? "activ" : "activi"} acum · ${sesiuniActive} ${sesiuniActive === 1 ? "sesiune" : "sesiuni"}`}
+        pill={eroare ? undefined : `${lucreaza} lucrează acum · ${terminalePornite} ${terminalePornite === 1 ? "terminal pornit" : "terminale pornite"}`}
         pillTone="mint"
         actions={
           <>
-            <Info label="Cum se conectează un robot">
-              Protocolul e în <code className="font-mono">docs/prospectare-api.md</code>. Tokenul stă în <code className="font-mono">MERIDIAN_ROBOT_TOKEN</code> pe
-              calculatorul robotului, niciodată într-un fișier din repo.
+            <Info label="Cum funcționează roboții">
+              Un robot = un calculator, cu un singur token. Pe el rulează mai multe terminale (stefan-1, stefan-2…), fiecare cu treaba lui și cu
+              site-urile lui. Tokenul stă în <code className="font-mono">MERIDIAN_ROBOT_TOKEN</code> pe calculator, niciodată în repo sau în chat. „Token
+              nou”: cel vechi nu mai merge. „Arhivează”: robotul iese din listă, rămâne în istoric, iar firmele lui trec la alți roboți. Protocolul e în{" "}
+              <code className="font-mono">docs/prospectare-api.md</code>.
             </Info>
             <Btn size="sm" variant="primary" icon={Plus} onClick={deschide}>
               Adaugă robot
@@ -300,13 +287,27 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         }
       />
 
+      {arhivati.length > 0 && !eroare ? (
+        <div className="flex justify-end">
+          <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={arataArhivati}
+              onChange={(e) => setArataArhivati(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-white/20 bg-transparent accent-[#9C8CFF]"
+            />
+            Arată arhivați ({arhivati.length})
+          </label>
+        </div>
+      ) : null}
+
       <Card className="overflow-hidden p-0">
         {eroare ? (
           <EroareCitire title="Roboții nu s-au putut citi" message={eroare} />
-        ) : dispozitive.length === 0 ? (
+        ) : lista.length === 0 ? (
           <EmptyState
             icon={Cpu}
-            title="Niciun robot conectat"
+            title={arhivati.length > 0 ? "Toți roboții sunt arhivați" : "Niciun robot conectat"}
             action={
               <Btn size="sm" variant="primary" onClick={deschide}>
                 Adaugă robot
@@ -314,109 +315,103 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
             }
           />
         ) : (
-          <>
-            <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-border text-[12px] uppercase tracking-[0.1em] text-muted-foreground">
-                    <th scope="col" className="py-2.5 pl-4 pr-3 font-medium">
-                      Calculator
-                    </th>
-                    <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Proprietar
-                    </th>
-                    <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Stare
-                    </th>
-                    <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Sesiuni
-                    </th>
-                    <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Ce face fiecare sesiune
-                    </th>
-                    <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Ultima activitate
-                    </th>
-                    <th scope="col" className="py-2.5 pr-3 font-medium">
-                      Site-uri azi / total
-                    </th>
-                    <th scope="col" className="py-2.5 pr-4 text-right font-medium">
-                      Acțiune
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dispozitive.map((d) => (
-                    <tr key={d.id} className="border-b border-border/70 align-top last:border-0">
-                      <td className="py-2.5 pl-4 pr-3 text-[14px] font-medium">
-                        <span className="inline-flex items-center gap-1.5">
-                          <Cpu className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <ul className="divide-y divide-border">
+            {lista.map((d) => {
+              const arhivat = Boolean(d.arhivat_la);
+              const stare = stareRobot(d, acum);
+              const vazut = vazutLa(d);
+              const lucru = ocupat === d.id;
+              return (
+                <li key={d.id} className={cn("px-4 py-4 sm:px-5", arhivat && "bg-white/[0.015]")}>
+                  <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Cpu className={cn("h-4 w-4 shrink-0", arhivat ? "text-muted-foreground/60" : "text-muted-foreground")} aria-hidden="true" />
+                        <h2 className={cn("min-w-0 break-words text-[18px] font-semibold leading-tight", arhivat && "text-foreground/60")}>{numeCalculator(d)}</h2>
+                        {arhivat ? <Pill>Arhivat</Pill> : null}
+                      </div>
+                      <p className="mt-1 flex flex-wrap gap-x-2 text-[12.5px] text-muted-foreground">
+                        <span className="font-mono" title="Numele tehnic">
                           {d.nume}
                         </span>
-                      </td>
-                      <td className="py-2.5 pr-3 text-[13.5px]">{d.proprietar}</td>
-                      <td className="py-2.5 pr-3">
-                        <RobotStare stare={stareRobot(d, acum)} />
-                      </td>
-                      <td className="py-2.5 pr-3">
-                        <NumarSesiuni d={d} acum={acum} />
-                      </td>
-                      <td className="min-w-[280px] max-w-[440px] py-2.5 pr-3">
-                        <Sesiuni d={d} acum={acum} />
-                      </td>
-                      <td className="whitespace-nowrap py-2.5 pr-3 text-[13.5px] text-muted-foreground">
-                        {d.ultima_activitate ? (
-                          <time dateTime={d.ultima_activitate} title={dateTimeRo(d.ultima_activitate)}>
-                            {relativeRo(d.ultima_activitate, acum)}
-                          </time>
-                        ) : (
-                          "niciodată"
-                        )}
-                      </td>
-                      <td className="pu-num whitespace-nowrap py-2.5 pr-3 text-[13.5px]" title="Toate sesiunile calculatorului">
-                        <span className="font-semibold">{num(d.site_uri_azi)}</span> / {num(d.site_uri_total)}
-                      </td>
-                      <td className="py-2.5 pr-4 text-right">{buton(d)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <ul className="divide-y divide-border xl:hidden">
-              {dispozitive.map((d) => (
-                <li key={d.id} className="space-y-2 px-4 py-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex min-w-0 items-center gap-1.5 text-[14px] font-medium">
-                      <Cpu className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                      <span className="truncate">{d.nume}</span>
-                    </span>
-                    <RobotStare stare={stareRobot(d, acum)} />
+                        {arhivat && d.arhivat_la ? (
+                          <span title={dateTimeRo(d.arhivat_la)}>
+                            · arhivat {relativeRo(d.arhivat_la, acum)}
+                            {d.arhivat_de ? ` de ${d.arhivat_de}` : ""}
+                          </span>
+                        ) : d.token_schimbat_la ? (
+                          <span title={dateTimeRo(d.token_schimbat_la)}>· token din {dateTimeRo(d.token_schimbat_la)}</span>
+                        ) : null}
+                      </p>
+                    </div>
+                    {arhivat ? null : (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px]">
+                        <RobotStare stare={stare} className="text-[14px] font-medium" />
+                        {stare !== "lucreaza" ? (
+                          <span className="text-muted-foreground">
+                            <Cand la={vazut} acum={acum} prefix="ultima activitate " />
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-[13px] text-muted-foreground">
-                    {d.proprietar} · {d.ultima_activitate ? relativeRo(d.ultima_activitate, acum) : "niciodată activ"}
-                  </p>
-                  <NumarSesiuni d={d} acum={acum} />
-                  <Sesiuni d={d} acum={acum} />
-                  {d.sesiuni.some((s) => sesiuneActiva(s, acum)) ? null : (
-                    <div className="flex gap-1 text-[13px]">
-                      <span className="shrink-0 text-muted-foreground">construiește:</span>
-                      <FirmaCurenta d={d} acum={acum} scurt />
+
+                  <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2.5">
+                    <div className="flex items-center gap-2 text-[13.5px]">
+                      <span className="text-muted-foreground">Proprietar</span>
+                      <SoftSelect
+                        ariaLabel={`Proprietarul lui ${numeCalculator(d)}`}
+                        value={proprietarLocal[d.id] ?? d.proprietar}
+                        onChange={(v) => void schimbaProprietar(d, v)}
+                        options={PROPRIETARI.some((p) => p.value === d.proprietar) ? PROPRIETARI : [...PROPRIETARI, { value: d.proprietar, label: d.proprietar }]}
+                        disabled={lucru}
+                        className="w-[7.5rem]"
+                      />
+                    </div>
+                    <p className="pu-num text-[13.5px] text-muted-foreground" title="Toate terminalele calculatorului">
+                      <span className="font-semibold text-foreground">{num(d.site_uri_azi)}</span> {d.site_uri_azi === 1 ? "site azi" : "site-uri azi"} ·{" "}
+                      {num(d.site_uri_total)} în total
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 sm:ml-auto">
+                      {arhivat ? (
+                        <Btn size="xs" variant="outline" icon={lucru ? Loader2 : ArchiveRestore} disabled={lucru} onClick={() => void scoateDinArhiva(d)}>
+                          Scoate din arhivă
+                        </Btn>
+                      ) : (
+                        <>
+                          <Btn size="xs" variant="outline" icon={KeyRound} disabled={lucru} onClick={() => setDeToken(d)} aria-label={`Token nou pentru ${numeCalculator(d)}`}>
+                            Token nou
+                          </Btn>
+                          <Btn size="xs" variant="outline" icon={Pencil} disabled={lucru} onClick={() => deschideRedenumire(d)} aria-label={`Redenumește ${numeCalculator(d)}`}>
+                            Redenumește
+                          </Btn>
+                          <Btn size="xs" variant="ghost" icon={Archive} disabled={lucru} onClick={() => setDeArhivat(d)} aria-label={`Arhivează ${numeCalculator(d)}`}>
+                            Arhivează
+                          </Btn>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {arhivat ? null : (
+                    <div className="mt-3 rounded-xl border border-border/70 bg-white/[0.02] px-3.5 py-2.5">
+                      <Terminale d={d} acum={acum} />
                     </div>
                   )}
-                  <p className="pu-num text-[13px] text-muted-foreground">
-                    {num(d.site_uri_azi)} site-uri azi / {num(d.site_uri_total)} total (toate sesiunile)
-                  </p>
-                  {buton(d)}
                 </li>
-              ))}
-            </ul>
-          </>
+              );
+            })}
+          </ul>
         )}
       </Card>
 
-      <Modal open={deschis} onOpenChange={(v) => (v ? setDeschis(true) : inchide())} label={token ? `Tokenul robotului ${numeCreat}` : "Adaugă robot"}>
-        <h2 className="text-[18px] font-semibold">{token ? `Tokenul robotului ${numeCreat}` : "Adaugă robot"}</h2>
+      {/* Adaugă robot / tokenul arătat o singură dată */}
+      <Modal
+        open={deschis || token !== null}
+        onOpenChange={(v) => (v ? undefined : inchide())}
+        label={token ? `Tokenul pentru ${token.pentru}` : "Adaugă robot"}
+      >
+        <h2 className="text-[18px] font-semibold">{token ? `Tokenul pentru ${token.pentru}` : "Adaugă robot"}</h2>
 
         {token ? (
           <div className="mt-4 space-y-3">
@@ -426,17 +421,17 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
               aria-label="Tokenul robotului"
               className="block select-all break-all rounded-lg border border-border bg-secondary px-3 py-2.5 font-mono text-[13.5px] leading-relaxed"
             >
-              {token}
+              {token.valoare}
             </code>
             <div className="flex flex-wrap items-center gap-2">
-              <CopyButton value={token} label="Copiază tokenul" clearAfter={120} />
+              <CopyButton value={token.valoare} label="Copiază tokenul" clearAfter={120} />
               <span className="text-[13px] text-muted-foreground">Clipboardul se golește în 2 minute.</span>
             </div>
             <InlineNote tone="apricot" className="flex items-start gap-2">
               <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>
-                Nu se mai afișează. Pune-l în <code className="font-mono">MERIDIAN_ROBOT_TOKEN</code> pe calculatorul robotului, nu în repo sau în chat. Pierdut: dezactivezi
-                robotul și adaugi altul.
+                Nu se mai afișează. Pune-l în <code className="font-mono">MERIDIAN_ROBOT_TOKEN</code> pe calculator, nu în repo sau în chat.
+                {token.nou ? " Cel vechi nu mai merge." : ""} Pierdut: „Token nou”.
               </span>
             </InlineNote>
             <div className="flex justify-end">
@@ -448,7 +443,18 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         ) : (
           <form className="mt-4 space-y-3" onSubmit={creeaza} noValidate>
             <label className="block">
-              <span className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Nume robot</span>
+              <span className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Calculator</span>
+              <input
+                value={calculatorNou}
+                onChange={(e) => setCalculatorNou(e.target.value)}
+                placeholder="ex. PC Ștefan"
+                maxLength={80}
+                autoComplete="off"
+                className={inputClass("mt-1.5")}
+              />
+            </label>
+            <label className="block">
+              <span className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Nume tehnic</span>
               <input
                 ref={numeRef}
                 value={nume}
@@ -456,7 +462,7 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
                   setNume(e.target.value);
                   if (eroareNume) setEroareNume(null);
                 }}
-                placeholder="ex. robot-14"
+                placeholder="ex. pc-stefan"
                 maxLength={80}
                 autoComplete="off"
                 aria-invalid={eroareNume ? true : undefined}
@@ -486,35 +492,103 @@ export function RobotiEcran({ dispozitive, eroare, acum }: { dispozitive: Dispoz
         )}
       </Modal>
 
+      {/* Redenumește: doar numele calculatorului */}
+      <Modal open={deRedenumit !== null} onOpenChange={(v) => (v ? undefined : setDeRedenumit(null))} label="Redenumește calculatorul">
+        <h2 className="text-[18px] font-semibold">Redenumește</h2>
+        <form className="mt-4 space-y-3" onSubmit={redenumeste} noValidate>
+          <label className="block">
+            <span className="text-[13px] font-medium uppercase tracking-[0.12em] text-muted-foreground">Calculator</span>
+            <input
+              value={calculator}
+              onChange={(e) => {
+                setCalculator(e.target.value);
+                if (eroareCalculator) setEroareCalculator(null);
+              }}
+              placeholder="ex. PC Ștefan, Laptop Vlăduț"
+              maxLength={80}
+              autoComplete="off"
+              autoFocus
+              aria-invalid={eroareCalculator ? true : undefined}
+              aria-describedby="robot-calculator-ajutor"
+              className={inputClass(`mt-1.5 ${eroareCalculator ? "border-rose/50" : ""}`)}
+            />
+            <span id="robot-calculator-ajutor" role={eroareCalculator ? "alert" : undefined} className={cn("mt-1 block text-[13px]", eroareCalculator ? "text-rose" : "text-muted-foreground/80")}>
+              {eroareCalculator ?? (deRedenumit ? `Numele tehnic (${deRedenumit.nume}) rămâne. Gol: se arată numele tehnic.` : "")}
+            </span>
+          </label>
+          <div className="flex justify-end gap-2 pt-1">
+            <Btn variant="ghost" onClick={() => setDeRedenumit(null)}>
+              Renunță
+            </Btn>
+            <Btn type="submit" variant="primary" disabled={salvez} icon={salvez ? Loader2 : undefined} aria-busy={salvez}>
+              Salvează
+            </Btn>
+          </div>
+        </form>
+      </Modal>
+
       <ConfirmDialog
-        open={deOprit !== null}
+        open={deToken !== null}
         onOpenChange={(v) => {
-          if (!v) setDeOprit(null);
+          if (!v) setDeToken(null);
         }}
-        title={deOprit ? `Dezactivezi ${deOprit.nume}?` : "Dezactivezi robotul?"}
-        description="Nu mai primește firme și nu mai raportează până îl activezi."
+        title={deToken ? `Token nou pentru ${numeCalculator(deToken)}?` : "Token nou?"}
+        description="Tokenul vechi nu mai merge din clipa asta. Cel nou se arată o singură dată."
         consequence={
-          deOprit
-            ? deOprit.firma_curenta
-              ? `Firma lui (#${deOprit.firma_curenta.nr} ${deOprit.firma_curenta.nume}) trece la alt robot când expiră rezervarea, ${untilRo(deOprit.firma_curenta.expira_la, acum)}.`
-              : "Nu are nicio firmă rezervată acum."
+          deToken && stareRobot(deToken, acum) !== "oprit"
+            ? "Terminalele care rulează acum primesc 401 până pui tokenul nou pe calculator."
             : undefined
         }
-        confirmLabel="Dezactivează"
+        confirmLabel="Generează tokenul"
+        tone="primary"
+        onConfirm={async () => {
+          if (!deToken) return;
+          const d = deToken;
+          setOcupat(d.id);
+          const result = await tokenNouRobot({ id: d.id });
+          setOcupat(null);
+          if (!result.ok || !result.data) {
+            notify(result.message, "error");
+            return;
+          }
+          setToken({ valoare: result.data.token, pentru: result.data.nume, nou: true });
+          notify(result.message);
+          router.refresh();
+        }}
+      />
+
+      <ConfirmDialog
+        open={deArhivat !== null}
+        onOpenChange={(v) => {
+          if (!v) setDeArhivat(null);
+        }}
+        title={deArhivat ? `Arhivezi ${numeCalculator(deArhivat)}?` : "Arhivezi robotul?"}
+        description="Iese din listă și rămâne în istoric. Tokenul lui nu mai merge."
+        consequence={
+          deArhivat
+            ? (() => {
+                const firme = firmeInLucru(deArhivat);
+                return firme.length > 0
+                  ? `Firmele lui în lucru (${firme.map((f) => `#${f.nr} ${f.nume}`).join(", ")}) trec acum la alt terminal.`
+                  : "Nu are nicio firmă în lucru.";
+              })()
+            : undefined
+        }
+        confirmLabel="Arhivează"
         tone="danger"
         onConfirm={async () => {
-          if (!deOprit) return;
-          const d = deOprit;
-          setComutId(d.id);
-          const result = await comutaRobot({ id: d.id, activ: false });
+          if (!deArhivat) return;
+          const d = deArhivat;
+          setOcupat(d.id);
+          const result = await arhiveazaRobot({ id: d.id, arhivat: true });
           notify(result.message, result.ok ? undefined : "error");
-          setComutId(null);
+          setOcupat(null);
           router.refresh();
         }}
       />
 
       <p className="sr-only" aria-live="polite">
-        {creez ? "Se generează tokenul." : comut ? "Se schimbă starea robotului." : ""}
+        {creez ? "Se generează tokenul." : salvez ? "Se salvează numele calculatorului." : ocupat ? "Se salvează." : ""}
       </p>
     </div>
   );
